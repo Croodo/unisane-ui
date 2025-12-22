@@ -1,0 +1,23 @@
+{
+  "extends": "./packages/typescript-config/base.json",
+  "compilerOptions": {
+    "jsx": "preserve"
+  },
+  "include": [
+    "apps/**/*",
+    "packages/**/*",
+    "scripts/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "registry",
+    "registry/**/*",
+    "registry/**",
+    "apps/docs/.next",
+    "apps/web/.next",
+    "dist",
+    "build",
+    "**/*.js",
+    "**/*.mjs"
+  ]
+}

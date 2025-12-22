@@ -1,0 +1,12 @@
+{
+  "name": "@unisane/registry",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Unisane UI registry - shadcn-style component source",
+  "devDependencies": {
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.1",
+    "react": "^19.2.0",
+    "typescript": "5.9.2"
+  }
+}

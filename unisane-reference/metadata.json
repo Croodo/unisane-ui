@@ -1,0 +1,7 @@
+{
+  "name": "Unisane UI",
+  "description": "Professional-grade billing, inventory, and accounting dashboard built with Material 3 and React.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

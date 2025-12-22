@@ -1,0 +1,180 @@
+/* Unisane UI Theme - Tailwind v4 Mapping */
+
+@theme inline {
+  /* Colors */
+  --color-primary: var(--uni-sys-color-primary);
+  --color-on-primary: var(--uni-sys-color-on-primary);
+  --color-primary-container: var(--uni-sys-color-primary-container);
+  --color-on-primary-container: var(--uni-sys-color-on-primary-container);
+  --color-secondary: var(--uni-sys-color-secondary);
+  --color-on-secondary: var(--uni-sys-color-on-secondary);
+  --color-secondary-container: var(--uni-sys-color-secondary-container);
+  --color-on-secondary-container: var(--uni-sys-color-on-secondary-container);
+  --color-tertiary: var(--uni-sys-color-tertiary);
+  --color-on-tertiary: var(--uni-sys-color-on-tertiary);
+  --color-tertiary-container: var(--uni-sys-color-tertiary-container);
+  --color-on-tertiary-container: var(--uni-sys-color-on-tertiary-container);
+  --color-surface: var(--uni-sys-color-surface);
+  --color-on-surface: var(--uni-sys-color-on-surface);
+  --color-surface-container-low: var(--uni-sys-color-surface-container-low);
+  --color-surface-container: var(--uni-sys-color-surface-container);
+  --color-surface-container-high: var(--uni-sys-color-surface-container-high);
+  --color-surface-container-highest: var(--uni-sys-color-surface-container-highest);
+  --color-surface-container-lowest: var(--uni-sys-color-surface-container-lowest);
+  --color-surface-variant: var(--uni-sys-color-surface-variant);
+  --color-on-surface-variant: var(--uni-sys-color-on-surface-variant);
+  --color-background: var(--uni-sys-color-background);
+  --color-on-background: var(--uni-sys-color-on-background);
+  --color-outline: var(--uni-sys-color-outline);
+  --color-outline-variant: var(--uni-sys-color-outline-variant);
+  --color-error: var(--uni-sys-color-error);
+  --color-on-error: var(--uni-sys-color-on-error);
+  --color-error-container: var(--uni-sys-color-error-container);
+  --color-on-error-container: var(--uni-sys-color-on-error-container);
+  --color-success: var(--uni-sys-color-success);
+  --color-on-success: var(--uni-sys-color-on-success);
+  --color-success-container: var(--uni-sys-color-success-container);
+  --color-on-success-container: var(--uni-sys-color-on-success-container);
+  --color-warning: var(--uni-sys-color-warning);
+  --color-on-warning: var(--uni-sys-color-on-warning);
+  --color-warning-container: var(--uni-sys-color-warning-container);
+  --color-on-warning-container: var(--uni-sys-color-on-warning-container);
+  --color-info: var(--uni-sys-color-info);
+  --color-on-info: var(--uni-sys-color-on-info);
+  --color-info-container: var(--uni-sys-color-info-container);
+  --color-on-info-container: var(--uni-sys-color-on-info-container);
+  --color-inverse-surface: var(--uni-sys-color-inverse-surface);
+  --color-inverse-on-surface: var(--uni-sys-color-inverse-on-surface);
+  --color-inverse-primary: var(--uni-sys-color-inverse-primary);
+  --color-scrim: var(--uni-sys-color-scrim);
+
+  /* Motion */
+  --animate-short: var(--uni-sys-motion-duration-short-2);
+  --animate-medium: var(--uni-sys-motion-duration-medium-2);
+  --animate-long: var(--uni-sys-motion-duration-long-2);
+  --ease-standard: var(--uni-sys-motion-ease-standard);
+  --ease-emphasized: var(--uni-sys-motion-ease-emphasized);
+
+  /* Icons */
+  --size-icon-xs: var(--uni-sys-icon-size-xs);
+  --size-icon-sm: var(--uni-sys-icon-size-sm);
+  --size-icon-md: var(--uni-sys-icon-size-md);
+  --size-icon-lg: var(--uni-sys-icon-size-lg);
+  --size-icon-xl: var(--uni-sys-icon-size-xl);
+
+  /* Typography */
+  --font-size-display-large: var(--uni-sys-type-display-large-size);
+  --line-height-display-large: var(--uni-sys-type-display-large-line);
+  --font-weight-display-large: var(--uni-sys-type-display-large-weight);
+  --letter-spacing-display-large: var(--uni-sys-type-display-large-tracking);
+  --font-size-display-medium: var(--uni-sys-type-display-medium-size);
+  --line-height-display-medium: var(--uni-sys-type-display-medium-line);
+  --font-weight-display-medium: var(--uni-sys-type-display-medium-weight);
+  --letter-spacing-display-medium: var(--uni-sys-type-display-medium-tracking);
+  --font-size-display-small: var(--uni-sys-type-display-small-size);
+  --line-height-display-small: var(--uni-sys-type-display-small-line);
+  --font-weight-display-small: var(--uni-sys-type-display-small-weight);
+  --letter-spacing-display-small: var(--uni-sys-type-display-small-tracking);
+  --font-size-headline-large: var(--uni-sys-type-headline-large-size);
+  --line-height-headline-large: var(--uni-sys-type-headline-large-line);
+  --font-weight-headline-large: var(--uni-sys-type-headline-large-weight);
+  --letter-spacing-headline-large: var(--uni-sys-type-headline-large-tracking);
+  --font-size-headline-medium: var(--uni-sys-type-headline-medium-size);
+  --line-height-headline-medium: var(--uni-sys-type-headline-medium-line);
+  --font-weight-headline-medium: var(--uni-sys-type-headline-medium-weight);
+  --letter-spacing-headline-medium: var(--uni-sys-type-headline-medium-tracking);
+  --font-size-headline-small: var(--uni-sys-type-headline-small-size);
+  --line-height-headline-small: var(--uni-sys-type-headline-small-line);
+  --font-weight-headline-small: var(--uni-sys-type-headline-small-weight);
+  --letter-spacing-headline-small: var(--uni-sys-type-headline-small-tracking);
+  --font-size-title-large: var(--uni-sys-type-title-large-size);
+  --line-height-title-large: var(--uni-sys-type-title-large-line);
+  --font-weight-title-large: var(--uni-sys-type-title-large-weight);
+  --letter-spacing-title-large: var(--uni-sys-type-title-large-tracking);
+  --font-size-title-medium: var(--uni-sys-type-title-medium-size);
+  --line-height-title-medium: var(--uni-sys-type-title-medium-line);
+  --font-weight-title-medium: var(--uni-sys-type-title-medium-weight);
+  --letter-spacing-title-medium: var(--uni-sys-type-title-medium-tracking);
+  --font-size-title-small: var(--uni-sys-type-title-small-size);
+  --line-height-title-small: var(--uni-sys-type-title-small-line);
+  --font-weight-title-small: var(--uni-sys-type-title-small-weight);
+  --letter-spacing-title-small: var(--uni-sys-type-title-small-tracking);
+  --font-size-body-large: var(--uni-sys-type-body-large-size);
+  --line-height-body-large: var(--uni-sys-type-body-large-line);
+  --font-weight-body-large: var(--uni-sys-type-body-large-weight);
+  --letter-spacing-body-large: var(--uni-sys-type-body-large-tracking);
+  --font-size-body-medium: var(--uni-sys-type-body-medium-size);
+  --line-height-body-medium: var(--uni-sys-type-body-medium-line);
+  --font-weight-body-medium: var(--uni-sys-type-body-medium-weight);
+  --letter-spacing-body-medium: var(--uni-sys-type-body-medium-tracking);
+  --font-size-body-small: var(--uni-sys-type-body-small-size);
+  --line-height-body-small: var(--uni-sys-type-body-small-line);
+  --font-weight-body-small: var(--uni-sys-type-body-small-weight);
+  --letter-spacing-body-small: var(--uni-sys-type-body-small-tracking);
+  --font-size-label-large: var(--uni-sys-type-label-large-size);
+  --line-height-label-large: var(--uni-sys-type-label-large-line);
+  --font-weight-label-large: var(--uni-sys-type-label-large-weight);
+  --letter-spacing-label-large: var(--uni-sys-type-label-large-tracking);
+  --font-size-label-medium: var(--uni-sys-type-label-medium-size);
+  --line-height-label-medium: var(--uni-sys-type-label-medium-line);
+  --font-weight-label-medium: var(--uni-sys-type-label-medium-weight);
+  --letter-spacing-label-medium: var(--uni-sys-type-label-medium-tracking);
+  --font-size-label-small: var(--uni-sys-type-label-small-size);
+  --line-height-label-small: var(--uni-sys-type-label-small-line);
+  --font-weight-label-small: var(--uni-sys-type-label-small-weight);
+  --letter-spacing-label-small: var(--uni-sys-type-label-small-tracking);
+
+  /* Radii */
+  --radius-xs: var(--uni-sys-shape-corner-extra-small);
+  --radius-sm: var(--uni-sys-shape-corner-small);
+  --radius-md: var(--uni-sys-shape-corner-medium);
+  --radius-lg: var(--uni-sys-shape-corner-large);
+  --radius-xl: var(--uni-sys-shape-corner-extra-large);
+
+  /* Shadows */
+  --shadow-0: var(--uni-sys-elevation-0);
+  --shadow-1: var(--uni-sys-elevation-1);
+  --shadow-2: var(--uni-sys-elevation-2);
+  --shadow-3: var(--uni-sys-elevation-3);
+  --shadow-4: var(--uni-sys-elevation-4);
+  --shadow-5: var(--uni-sys-elevation-5);
+
+  /* Spacing */
+  --spacing-1: var(--uni-sys-space-1);
+  --spacing-2: var(--uni-sys-space-2);
+  --spacing-3: var(--uni-sys-space-3);
+  --spacing-4: var(--uni-sys-space-4);
+  --spacing-5: var(--uni-sys-space-5);
+  --spacing-6: var(--uni-sys-space-6);
+  --spacing-7: var(--uni-sys-space-7);
+  --spacing-8: var(--uni-sys-space-8);
+  --spacing-9: var(--uni-sys-space-9);
+  --spacing-10: var(--uni-sys-space-10);
+  --spacing-11: var(--uni-sys-space-11);
+  --spacing-12: var(--uni-sys-space-12);
+  --spacing-13: var(--uni-sys-space-13);
+  --spacing-14: var(--uni-sys-space-14);
+  --spacing-15: var(--uni-sys-space-15);
+  --spacing-16: var(--uni-sys-space-16);
+  --spacing-0_5u: var(--uni-sys-space-0_5u);
+  --spacing-1u: var(--uni-sys-space-1u);
+  --spacing-1_5u: var(--uni-sys-space-1_5u);
+  --spacing-2u: var(--uni-sys-space-2u);
+  --spacing-3u: var(--uni-sys-space-3u);
+  --spacing-4u: var(--uni-sys-space-4u);
+  --spacing-5u: var(--uni-sys-space-5u);
+  --spacing-6u: var(--uni-sys-space-6u);
+  --spacing-8u: var(--uni-sys-space-8u);
+  --spacing-10u: var(--uni-sys-space-10u);
+  --spacing-12u: var(--uni-sys-space-12u);
+  --spacing-14u: var(--uni-sys-space-14u);
+  --spacing-16u: var(--uni-sys-space-16u);
+  --spacing-layout-margin: var(--uni-sys-layout-margin);
+  --spacing-layout-gutter: var(--uni-sys-layout-gutter);
+  --width-pane-list: var(--uni-sys-layout-pane-list-width);
+  --width-pane-fixed: var(--uni-sys-layout-pane-fixed-width);
+  --width-pane-supporting: var(--uni-sys-layout-pane-supporting-width);
+  --width-rail-collapsed: var(--uni-sys-layout-rail-collapsed-width);
+  --width-drawer: var(--uni-sys-layout-drawer-width);
+
+}

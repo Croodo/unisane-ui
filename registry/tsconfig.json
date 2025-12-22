@@ -1,0 +1,14 @@
+{
+  "extends": "../packages/typescript-config/base.json",
+  "compilerOptions": {
+    "jsx": "preserve",
+    "noEmit": true,
+    "checkJs": false,
+    "strict": false,
+    "noImplicitAny": false,
+    "skipLibCheck": true,
+    "types": ["react"]
+  },
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": []
+}

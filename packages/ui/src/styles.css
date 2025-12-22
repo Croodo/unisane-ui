@@ -1,0 +1,31 @@
+/* UI Package Styles - Import tokens and define theme for components */
+@import "@unisane/tokens/uni-tokens.css";
+@import "@unisane/tokens/uni-theme.css";
+@import "@unisane/tailwind-config";
+
+@theme {
+      --animate-ripple: ripple 600ms linear forwards;
+
+      @keyframes ripple {
+            from {
+                  opacity: 0.35;
+                  transform: scale(0);
+            }
+
+            to {
+                  opacity: 0;
+                  transform: scale(2);
+            }
+      }
+}
+
+@layer utilities {
+      .no-scrollbar::-webkit-scrollbar {
+            display: none;
+      }
+
+      .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+      }
+}

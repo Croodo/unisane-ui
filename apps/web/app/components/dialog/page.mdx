@@ -1,0 +1,25 @@
+import { DialogPreview } from "@/components/docs/previews/DialogPreview";
+
+export const metadata = {
+  title: "Dialog · Unisane UI",
+  description: "Modal confirmations.",
+};
+
+# Dialog
+
+Dialogs require explicit confirmation before a critical action is completed.
+
+<ComponentPreview
+  title="Interactive dialog"
+  description="Use dialogs for destructive or high-impact actions."
+>
+  <DialogPreview />
+</ComponentPreview>
+
+```tsx
+import { Dialog } from "@unisane/ui";
+
+<Dialog open={open} onClose={() => setOpen(false)} title="Deploy">
+  Confirm deployment across nodes.
+</Dialog>
+```

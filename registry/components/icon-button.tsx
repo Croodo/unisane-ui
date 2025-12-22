@@ -1,0 +1,123 @@
+import { type ButtonHTMLAttributes, forwardRef } from "react";
+import { cva, type VariantProps } from "class-variance-authority";
+import { Ripple } from "./ripple";
+import { cn } from "@ui/lib/utils";
+
+const iconButtonVariants = cva(
+  "relative inline-flex items-center justify-center rounded-xs transition-all duration-snappy ease-emphasized overflow-hidden disabled:opacity-38 disabled:cursor-not-allowed group active:scale-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary select-none",
+  {
+    variants: {
+      variant: {
+        filled: "bg-primary text-on-primary shadow-1",
+        tonal: "bg-surface-container-high text-on-surface",
+        outlined: "bg-transparent border border-outline text-on-surface-variant hover:bg-surface-variant/30",
+        standard: "bg-transparent text-on-surface-variant hover:bg-on-surface/5",
+      },
+      size: {
+        sm: "w-8u h-8u",
+        md: "w-10u h-10u",
+        lg: "w-12u h-12u",
+      },
+      selected: {
+        true: "",
+        false: "",
+      },
+    },
+    compoundVariants: [
+      { variant: "filled", selected: true, className: "bg-primary text-on-primary" },
+      { variant: "filled", selected: false, className: "bg-surface-container text-primary" },
+      { variant: "tonal", selected: true, className: "bg-secondary-container text-on-secondary-container" },
+      { variant: "outlined", selected: true, className: "bg-primary/10 border-primary text-primary" },
+      { variant: "standard", selected: true, className: "text-primary" },
+    ],
+    defaultVariants: {
+      variant: "standard",
+      size: "md",
+      selected: false,
+    },
+  }
+);
+
+export interface IconButtonProps
+  extends ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof iconButtonVariants> {
+  icon?: React.ReactNode;
+  loading?: boolean;
+  ariaLabel: string;
+  children?: React.ReactNode;
+}
+
+export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
+  (
+    {
+      icon,
+      variant = "standard",
+      size = "md",
+      selected = false,
+      disabled = false,
+      loading = false,
+      ariaLabel,
+      className = "",
+      type = "button",
+      children,
+      ...props
+    },
+    ref
+  ) => {
+    const iconSizeClasses = {
+      sm: "w-5u h-5u",
+      md: "w-6u h-6u",
+      lg: "w-7u h-7u",
+    };
+
+    return (
+      <button
+        ref={ref}
+        type={type}
+        className={cn(
+          iconButtonVariants({ variant, size, selected }),
+          className
+        )}
+        disabled={disabled || loading}
+        aria-label={ariaLabel}
+        {...props}
+      >
+        <div className="absolute inset-0 pointer-events-none bg-current opacity-0 transition-opacity group-hover:opacity-hover group-focus-visible:opacity-focus z-0" />
+        <Ripple center disabled={disabled || loading} />
+        {loading ? (
+          <svg
+            className={cn("animate-spin relative z-10", iconSizeClasses[size || "md"])}
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden="true"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            />
+          </svg>
+        ) : (
+          <span
+            className={cn(
+              "relative z-10 flex items-center justify-center",
+              iconSizeClasses[size || "md"]
+            )}
+          >
+            {children || icon}
+          </span>
+        )}
+      </button>
+    );
+  }
+);
+
+IconButton.displayName = "IconButton";

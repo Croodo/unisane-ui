@@ -1,0 +1,74 @@
+import { Icon, Surface, Tabs, TabsContent, TabsList, TabsTrigger, Typography } from "@unisane/ui";
+
+export const metadata = {
+  title: "Tabs · Unisane UI",
+  description: "Segmented navigation for dense screens.",
+};
+
+# Tabs
+
+Tabs organize content into switchable panels, keeping related data in a single surface.
+
+<ComponentPreview
+  title="Tabbed layout"
+  description="Default tabs with icon support."
+>
+  <div className="w-full">
+    <Tabs defaultValue="overview">
+      <TabsList>
+        <TabsTrigger value="overview" icon={<Icon symbol="grid_view" />}>
+          Overview
+        </TabsTrigger>
+        <TabsTrigger value="assets" icon={<Icon symbol="inventory_2" />}>
+          Assets
+        </TabsTrigger>
+        <TabsTrigger value="logs" icon={<Icon symbol="dataset" />}>
+          Logs
+        </TabsTrigger>
+      </TabsList>
+      <TabsContent value="overview">
+        <Surface
+          tone="surface"
+          elevation={0}
+          rounded="xs"
+          className="p-4u bg-surface-container-low"
+        >
+          <Typography variant="bodyMedium">Overview metrics streaming in real time.</Typography>
+        </Surface>
+      </TabsContent>
+      <TabsContent value="assets">
+        <Surface
+          tone="surface"
+          elevation={0}
+          rounded="xs"
+          className="p-4u bg-surface-container-low"
+        >
+          <Typography variant="bodyMedium">Asset registry synced with master nodes.</Typography>
+        </Surface>
+      </TabsContent>
+      <TabsContent value="logs">
+        <Surface
+          tone="surface"
+          elevation={0}
+          rounded="xs"
+          className="p-4u bg-surface-container-low"
+        >
+          <Typography variant="bodyMedium">Diagnostics logs filtered by priority.</Typography>
+        </Surface>
+      </TabsContent>
+    </Tabs>
+  </div>
+</ComponentPreview>
+
+```tsx
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@unisane/ui";
+
+<Tabs defaultValue="overview">
+  <TabsList>
+    <TabsTrigger value="overview">Overview</TabsTrigger>
+    <TabsTrigger value="assets">Assets</TabsTrigger>
+  </TabsList>
+  <TabsContent value="overview">...</TabsContent>
+  <TabsContent value="assets">...</TabsContent>
+</Tabs>
+```

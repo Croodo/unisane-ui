@@ -1,0 +1,38 @@
+import { SelectPreview } from "@/components/docs/previews/SelectPreview";
+import { SelectVariantsPreview } from "@/components/docs/previews/SelectVariantsPreview";
+
+export const metadata = {
+  title: "Select · Unisane UI",
+  description: "Single-select menus with compact density.",
+};
+
+# Select
+
+Select lets users choose a single option from a dropdown list. Use it for controlled or uncontrolled forms.
+
+<ComponentPreview
+  title="Default"
+  description="Controlled select with a compact option list."
+>
+  <SelectPreview />
+</ComponentPreview>
+
+<ComponentPreview
+  title="Variants"
+  description="Outlined, filled, error, and disabled states."
+>
+  <SelectVariantsPreview />
+</ComponentPreview>
+
+```tsx
+import { Select } from "@unisane/ui";
+
+<Select
+  label="Operator tier"
+  options={[
+    { value: "operator", label: "Operator" },
+    { value: "supervisor", label: "Supervisor" },
+    { value: "admin", label: "Admin" },
+  ]}
+/>
+```

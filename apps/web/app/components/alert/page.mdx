@@ -1,0 +1,41 @@
+import { Alert, Icon } from "@unisane/ui";
+
+export const metadata = {
+  title: "Alert · Unisane UI",
+  description: "Inline feedback states.",
+};
+
+# Alert
+
+Alerts surface important system events inline within the layout. Use variants for severity.
+
+<ComponentPreview
+  title="Alert variants"
+  description="Info, success, and warning messaging."
+>
+  <Alert variant="info" title="System Notice" icon={<Icon symbol="info" />}>
+    Scheduled maintenance window begins in 2 hours.
+  </Alert>
+  <Alert
+    variant="success"
+    title="Sync Complete"
+    icon={<Icon symbol="check_circle" />}
+  >
+    128 nodes updated without conflicts.
+  </Alert>
+  <Alert
+    variant="warning"
+    title="Latency Spike"
+    icon={<Icon symbol="warning" />}
+  >
+    Real-time throughput dipped below baseline.
+  </Alert>
+</ComponentPreview>
+
+```tsx
+import { Alert } from "@unisane/ui";
+
+<Alert variant="info" title="System Notice">
+  Scheduled maintenance window begins in 2 hours.
+</Alert>
+```

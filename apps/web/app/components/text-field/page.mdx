@@ -1,0 +1,38 @@
+import { Icon, TextField } from "@unisane/ui";
+
+export const metadata = {
+  title: "Text Field · Unisane UI",
+  description: "Floating labels with dense input spacing.",
+};
+
+# Text Field
+
+Text fields support outlined and filled variants with optional icons and helper text.
+
+<ComponentPreview
+  title="Outlined"
+  description="Default outlined input with helper text."
+>
+  <TextField
+    label="Work order ID"
+    helperText="12-character identifier"
+    leadingIcon={<Icon symbol="tag" />}
+  />
+</ComponentPreview>
+
+<ComponentPreview
+  title="Filled"
+  description="Filled variant for dense forms."
+>
+  <TextField
+    label="Cluster name"
+    variant="filled"
+    defaultValue="NX-043"
+  />
+</ComponentPreview>
+
+```tsx
+import { TextField } from "@unisane/ui";
+
+<TextField label="Cluster name" defaultValue="NX-043" />
+```

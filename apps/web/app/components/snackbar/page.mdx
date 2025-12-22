@@ -1,0 +1,23 @@
+import { SnackbarPreview } from "@/components/docs/previews/SnackbarPreview";
+
+export const metadata = {
+  title: "Snackbar · Unisane UI",
+  description: "Transient notifications.",
+};
+
+# Snackbar
+
+Snackbars provide brief confirmation of an action at the edge of the viewport.
+
+<ComponentPreview
+  title="Snackbar trigger"
+  description="Use snackbars for short-lived feedback with optional action."
+>
+  <SnackbarPreview />
+</ComponentPreview>
+
+```tsx
+import { Snackbar } from "@unisane/ui";
+
+<Snackbar open={open} onClose={() => setOpen(false)} message="Saved" />
+```

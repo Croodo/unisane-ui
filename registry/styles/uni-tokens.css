@@ -1,0 +1,502 @@
+/* Unisane UI Tokens - Reference and System Tokens */
+
+/* Reference Tokens */
+:root {
+  /* primary palette */
+  --uni-ref-primary-0: #000000;
+  --uni-ref-primary-10: #21005D;
+  --uni-ref-primary-20: #381E72;
+  --uni-ref-primary-30: #4F378B;
+  --uni-ref-primary-40: #6750A4;
+  --uni-ref-primary-50: #7F67BE;
+  --uni-ref-primary-60: #9A82DB;
+  --uni-ref-primary-70: #B69DF8;
+  --uni-ref-primary-80: #D0BCFF;
+  --uni-ref-primary-90: #EADDFF;
+  --uni-ref-primary-95: #F6EDFF;
+  --uni-ref-primary-99: #FDFBFF;
+  --uni-ref-primary-100: #FFFFFF;
+
+  /* secondary palette */
+  --uni-ref-secondary-0: #000000;
+  --uni-ref-secondary-10: #1D192B;
+  --uni-ref-secondary-20: #332D41;
+  --uni-ref-secondary-30: #4A4458;
+  --uni-ref-secondary-40: #625B71;
+  --uni-ref-secondary-50: #7A7289;
+  --uni-ref-secondary-60: #958DA5;
+  --uni-ref-secondary-70: #B0A7C0;
+  --uni-ref-secondary-80: #CCC2DC;
+  --uni-ref-secondary-90: #E8DEF8;
+  --uni-ref-secondary-95: #F6EDFF;
+  --uni-ref-secondary-99: #FFFBFE;
+  --uni-ref-secondary-100: #FFFFFF;
+
+  /* tertiary palette */
+  --uni-ref-tertiary-0: #000000;
+  --uni-ref-tertiary-10: #31111D;
+  --uni-ref-tertiary-20: #492532;
+  --uni-ref-tertiary-30: #633B48;
+  --uni-ref-tertiary-40: #7D5260;
+  --uni-ref-tertiary-50: #986977;
+  --uni-ref-tertiary-60: #B58392;
+  --uni-ref-tertiary-70: #D29DAC;
+  --uni-ref-tertiary-80: #EFB8C8;
+  --uni-ref-tertiary-90: #FFD8E4;
+  --uni-ref-tertiary-95: #FFECF1;
+  --uni-ref-tertiary-99: #FFFBFA;
+  --uni-ref-tertiary-100: #FFFFFF;
+
+  /* neutral palette */
+  --uni-ref-neutral-0: #000000;
+  --uni-ref-neutral-10: #1D1B20;
+  --uni-ref-neutral-20: #322F35;
+  --uni-ref-neutral-30: #484649;
+  --uni-ref-neutral-40: #605D62;
+  --uni-ref-neutral-50: #787579;
+  --uni-ref-neutral-60: #939094;
+  --uni-ref-neutral-70: #E6E0E9;
+  --uni-ref-neutral-80: #ECE6F0;
+  --uni-ref-neutral-90: #F3EDF7;
+  --uni-ref-neutral-95: #F7F2FA;
+  --uni-ref-neutral-99: #FEF7FF;
+  --uni-ref-neutral-100: #FFFFFF;
+
+  /* neutral-variant palette */
+  --uni-ref-neutral-variant-0: #000000;
+  --uni-ref-neutral-variant-10: #1D1B20;
+  --uni-ref-neutral-variant-20: #322F35;
+  --uni-ref-neutral-variant-30: #49454F;
+  --uni-ref-neutral-variant-40: #605D62;
+  --uni-ref-neutral-variant-50: #79747E;
+  --uni-ref-neutral-variant-60: #938F99;
+  --uni-ref-neutral-variant-70: #AEAAAE;
+  --uni-ref-neutral-variant-80: #CAC4D0;
+  --uni-ref-neutral-variant-90: #E7E0EC;
+  --uni-ref-neutral-variant-95: #F2F2F2;
+  --uni-ref-neutral-variant-99: #FFFBFE;
+  --uni-ref-neutral-variant-100: #FFFFFF;
+
+  /* error palette */
+  --uni-ref-error-0: #000000;
+  --uni-ref-error-10: #410E0B;
+  --uni-ref-error-20: #601410;
+  --uni-ref-error-30: #8C1D18;
+  --uni-ref-error-40: #B3261E;
+  --uni-ref-error-50: #DC362E;
+  --uni-ref-error-60: #E46962;
+  --uni-ref-error-70: #EC928E;
+  --uni-ref-error-80: #F2B8B5;
+  --uni-ref-error-90: #F9DEDC;
+  --uni-ref-error-95: #FCEEEE;
+  --uni-ref-error-99: #FFFBF9;
+  --uni-ref-error-100: #FFFFFF;
+
+}
+
+/* System Tokens - Light Mode */
+:root {
+  /* Scaling Knobs (SSOT) - Defined first for calc() usage */
+  --uni-sys-space-scale: 1;
+  --uni-sys-type-scale: 1;
+  --uni-sys-radius-scale: 1;
+  --uni-sys-u: calc(4px * var(--uni-sys-space-scale));
+
+  /* Pane Widths */
+  --width-pane-list: 360px;
+  --width-pane-fixed: 412px;
+  --width-pane-supporting: 400px;
+  --width-rail-collapsed: 96px;
+  --width-drawer-compact: 360px;
+
+  /* Color roles */
+  --uni-sys-color-primary: var(--uni-ref-primary-40);
+  --uni-sys-color-on-primary: var(--uni-ref-primary-100);
+  --uni-sys-color-primary-container: var(--uni-ref-primary-90);
+  --uni-sys-color-on-primary-container: var(--uni-ref-primary-10);
+
+  --uni-sys-color-secondary: var(--uni-ref-secondary-40);
+  --uni-sys-color-on-secondary: var(--uni-ref-secondary-100);
+  --uni-sys-color-secondary-container: var(--uni-ref-secondary-90);
+  --uni-sys-color-on-secondary-container: var(--uni-ref-secondary-10);
+
+  --uni-sys-color-tertiary: var(--uni-ref-tertiary-40);
+  --uni-sys-color-on-tertiary: var(--uni-ref-tertiary-100);
+  --uni-sys-color-tertiary-container: var(--uni-ref-tertiary-90);
+  --uni-sys-color-on-tertiary-container: var(--uni-ref-tertiary-10);
+
+  --uni-sys-color-surface: var(--uni-ref-neutral-99);
+  --uni-sys-color-on-surface: var(--uni-ref-neutral-10);
+  --uni-sys-color-surface-container-lowest: var(--uni-ref-neutral-100);
+  --uni-sys-color-surface-container-low: var(--uni-ref-neutral-95);
+  --uni-sys-color-surface-container: var(--uni-ref-neutral-90);
+  --uni-sys-color-surface-container-high: var(--uni-ref-neutral-80);
+  --uni-sys-color-surface-container-highest: var(--uni-ref-neutral-70);
+
+  --uni-sys-color-surface-variant: var(--uni-ref-neutral-variant-90);
+  --uni-sys-color-on-surface-variant: var(--uni-ref-neutral-variant-30);
+  --uni-sys-color-background: var(--uni-ref-neutral-99);
+  --uni-sys-color-on-background: var(--uni-ref-neutral-10);
+  --uni-sys-color-outline: var(--uni-ref-neutral-variant-50);
+  --uni-sys-color-outline-variant: var(--uni-ref-neutral-variant-80);
+  --uni-sys-color-error: var(--uni-ref-error-40);
+  --uni-sys-color-on-error: var(--uni-ref-error-100);
+  --uni-sys-color-error-container: var(--uni-ref-error-90);
+  --uni-sys-color-on-error-container: var(--uni-ref-error-10);
+
+  --uni-sys-color-success: oklch(0.55 0.18 145);
+  --uni-sys-color-on-success: oklch(0.98 0 0);
+  --uni-sys-color-success-container: oklch(0.92 0.08 145);
+  --uni-sys-color-on-success-container: oklch(0.25 0.1 145);
+
+  --uni-sys-color-warning: oklch(0.62 0.16 85);
+  --uni-sys-color-on-warning: oklch(0.98 0 0);
+  --uni-sys-color-warning-container: oklch(0.92 0.08 85);
+  --uni-sys-color-on-warning-container: oklch(0.25 0.1 85);
+
+  --uni-sys-color-info: oklch(0.58 0.16 245);
+  --uni-sys-color-on-info: oklch(0.98 0 0);
+  --uni-sys-color-info-container: oklch(0.92 0.08 245);
+  --uni-sys-color-on-info-container: oklch(0.25 0.08 245);
+
+  --uni-sys-color-inverse-surface: var(--uni-ref-neutral-20);
+  --uni-sys-color-inverse-on-surface: var(--uni-ref-neutral-95);
+  --uni-sys-color-inverse-primary: var(--uni-ref-primary-80);
+  --uni-sys-color-scrim: rgba(0, 0, 0, 0.32);
+
+  /* Typography tokens */
+  --uni-ref-font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --uni-sys-type-display-large-font: var(--uni-ref-font-sans);
+  --uni-sys-type-display-large-weight: 400;
+  --uni-sys-type-display-large-size: 3.5rem;
+  --uni-sys-type-display-large-line: 4rem;
+  --uni-sys-type-display-large-tracking: -0.015em;
+  --uni-sys-type-display-medium-font: var(--uni-ref-font-sans);
+  --uni-sys-type-display-medium-weight: 400;
+  --uni-sys-type-display-medium-size: 2.8125rem;
+  --uni-sys-type-display-medium-line: 3.25rem;
+  --uni-sys-type-display-medium-tracking: -0.005em;
+  --uni-sys-type-display-small-font: var(--uni-ref-font-sans);
+  --uni-sys-type-display-small-weight: 400;
+  --uni-sys-type-display-small-size: 2.25rem;
+  --uni-sys-type-display-small-line: 2.75rem;
+  --uni-sys-type-display-small-tracking: 0;
+  --uni-sys-type-headline-large-font: var(--uni-ref-font-sans);
+  --uni-sys-type-headline-large-weight: 400;
+  --uni-sys-type-headline-large-size: 2rem;
+  --uni-sys-type-headline-large-line: 2.5rem;
+  --uni-sys-type-headline-large-tracking: 0;
+  --uni-sys-type-headline-medium-font: var(--uni-ref-font-sans);
+  --uni-sys-type-headline-medium-weight: 400;
+  --uni-sys-type-headline-medium-size: 1.75rem;
+  --uni-sys-type-headline-medium-line: 2.25rem;
+  --uni-sys-type-headline-medium-tracking: 0;
+  --uni-sys-type-headline-small-font: var(--uni-ref-font-sans);
+  --uni-sys-type-headline-small-weight: 400;
+  --uni-sys-type-headline-small-size: 1.5rem;
+  --uni-sys-type-headline-small-line: 2rem;
+  --uni-sys-type-headline-small-tracking: 0;
+  --uni-sys-type-title-large-font: var(--uni-ref-font-sans);
+  --uni-sys-type-title-large-weight: 400;
+  --uni-sys-type-title-large-size: 1.375rem;
+  --uni-sys-type-title-large-line: 1.75rem;
+  --uni-sys-type-title-large-tracking: 0;
+  --uni-sys-type-title-medium-font: var(--uni-ref-font-sans);
+  --uni-sys-type-title-medium-weight: 600;
+  --uni-sys-type-title-medium-size: 1rem;
+  --uni-sys-type-title-medium-line: 1.5rem;
+  --uni-sys-type-title-medium-tracking: 0.01em;
+  --uni-sys-type-title-small-font: var(--uni-ref-font-sans);
+  --uni-sys-type-title-small-weight: 600;
+  --uni-sys-type-title-small-size: 0.875rem;
+  --uni-sys-type-title-small-line: 1.25rem;
+  --uni-sys-type-title-small-tracking: 0.005em;
+  --uni-sys-type-body-large-font: var(--uni-ref-font-sans);
+  --uni-sys-type-body-large-weight: 400;
+  --uni-sys-type-body-large-size: 1rem;
+  --uni-sys-type-body-large-line: 1.5rem;
+  --uni-sys-type-body-large-tracking: 0.01em;
+  --uni-sys-type-body-medium-font: var(--uni-ref-font-sans);
+  --uni-sys-type-body-medium-weight: 400;
+  --uni-sys-type-body-medium-size: 0.875rem;
+  --uni-sys-type-body-medium-line: 1.25rem;
+  --uni-sys-type-body-medium-tracking: 0.01em;
+  --uni-sys-type-body-small-font: var(--uni-ref-font-sans);
+  --uni-sys-type-body-small-weight: 400;
+  --uni-sys-type-body-small-size: 0.75rem;
+  --uni-sys-type-body-small-line: 1rem;
+  --uni-sys-type-body-small-tracking: 0.01em;
+  --uni-sys-type-label-large-font: var(--uni-ref-font-sans);
+  --uni-sys-type-label-large-weight: 500;
+  --uni-sys-type-label-large-size: 0.875rem;
+  --uni-sys-type-label-large-line: 1.25rem;
+  --uni-sys-type-label-large-tracking: 0.01em;
+  --uni-sys-type-label-medium-font: var(--uni-ref-font-sans);
+  --uni-sys-type-label-medium-weight: 500;
+  --uni-sys-type-label-medium-size: 0.75rem;
+  --uni-sys-type-label-medium-line: 1rem;
+  --uni-sys-type-label-medium-tracking: 0.01em;
+  --uni-sys-type-label-small-font: var(--uni-ref-font-sans);
+  --uni-sys-type-label-small-weight: 500;
+  --uni-sys-type-label-small-size: 0.6875rem;
+  --uni-sys-type-label-small-line: 1rem;
+  --uni-sys-type-label-small-tracking: 0.01em;
+
+  /* Shape tokens */
+  --uni-sys-shape-corner-none: 0px;
+  --uni-sys-shape-corner-extra-small: calc(4px * var(--uni-sys-radius-scale));
+  --uni-sys-shape-corner-small: calc(8px * var(--uni-sys-radius-scale));
+  --uni-sys-shape-corner-medium: calc(12px * var(--uni-sys-radius-scale));
+  --uni-sys-shape-corner-large: calc(16px * var(--uni-sys-radius-scale));
+  --uni-sys-shape-corner-extra-large: calc(28px * var(--uni-sys-radius-scale));
+  --uni-sys-shape-corner-full: 9999px;
+
+  /* Elevation tokens */
+  --uni-sys-elevation-0: none;
+  --uni-sys-elevation-1: 0px 1px 3px 1px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.30);
+  --uni-sys-elevation-2: 0px 2px 6px 2px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.30);
+  --uni-sys-elevation-3: 0px 4px 8px 3px rgba(0, 0, 0, 0.15), 0px 1px 3px 0px rgba(0, 0, 0, 0.30);
+  --uni-sys-elevation-4: 0px 6px 10px 4px rgba(0, 0, 0, 0.15), 0px 2px 3px 0px rgba(0, 0, 0, 0.30);
+  --uni-sys-elevation-5: 0px 8px 12px 6px rgba(0, 0, 0, 0.15), 0px 4px 4px 0px rgba(0, 0, 0, 0.30);
+
+  /* Motion tokens */
+  --uni-sys-motion-duration-short-1: 50ms;
+  --uni-sys-motion-duration-short-2: 100ms;
+  --uni-sys-motion-duration-snappy: 150ms;
+  --uni-sys-motion-duration-medium-1: 200ms;
+  --uni-sys-motion-duration-medium-2: 250ms;
+  --uni-sys-motion-duration-emphasized: 300ms;
+  --uni-sys-motion-duration-long-1: 400ms;
+  --uni-sys-motion-duration-long-2: 500ms;
+  --uni-sys-motion-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --uni-sys-motion-ease-standard-accelerate: cubic-bezier(0.3, 0, 1, 1);
+  --uni-sys-motion-ease-standard-decelerate: cubic-bezier(0, 0, 0, 1);
+  --uni-sys-motion-ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+  --uni-sys-motion-ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* State layer tokens */
+  --uni-sys-state-hover-opacity: var(--uni-sys-opacity-hover);
+  --uni-sys-state-pressed-opacity: var(--uni-sys-opacity-pressed);
+  --uni-sys-state-focus-opacity: var(--uni-sys-opacity-focus);
+
+  /* Opacity Scale */
+  --uni-sys-opacity-5: 0.05;
+  --uni-sys-opacity-10: 0.10;
+  --uni-sys-opacity-20: 0.20;
+  --uni-sys-opacity-25: 0.25;
+  --uni-sys-opacity-40: 0.40;
+  --uni-sys-opacity-50: 0.50;
+  --uni-sys-opacity-60: 0.60;
+  --uni-sys-opacity-75: 0.75;
+  --uni-sys-opacity-80: 0.80;
+  --uni-sys-opacity-90: 0.90;
+  --uni-sys-opacity-hover: 0.08;
+  --uni-sys-opacity-focus: 0.10;
+  --uni-sys-opacity-pressed: 0.12;
+  --uni-sys-opacity-dragged: 0.16;
+  --uni-sys-opacity-scrim: 0.30;
+  --uni-sys-opacity-disabled: 0.38;
+  --uni-sys-opacity-muted: 0.60;
+  --uni-sys-opacity-subtle: 0.04;
+
+  /* Icon Sizing (Fluid) */
+  --uni-sys-icon-size-xs: calc(16px * var(--uni-sys-space-scale));
+  --uni-sys-icon-size-sm: calc(20px * var(--uni-sys-space-scale));
+  --uni-sys-icon-size-md: calc(24px * var(--uni-sys-space-scale));
+  --uni-sys-icon-size-lg: calc(32px * var(--uni-sys-space-scale));
+  --uni-sys-icon-size-xl: calc(48px * var(--uni-sys-space-scale));
+
+  /* Responsive Scaling (Mobile) */
+  @media (max-width: 768px) {
+    :root:not([data-density="compact"]):not([data-density="dense"]) {
+      /* 3.5px / 4px = 0.875 */
+      --uni-sys-space-scale: 0.875;
+      --uni-sys-type-scale: 0.875;
+    }
+  }
+
+  /* Density Overrides */
+  :root[data-density="compact"] {
+    /* 3.5px / 4px = 0.875 */
+    --uni-sys-space-scale: 0.875;
+    --uni-sys-type-scale: 0.9;
+    --uni-sys-radius-scale: 0.9;
+  }
+  :root[data-density="dense"] {
+    /* 3px / 4px = 0.75 */
+    --uni-sys-space-scale: 0.75;
+    --uni-sys-type-scale: 0.85;
+    --uni-sys-radius-scale: 0.8;
+  }
+  :root[data-density="comfortable"] {
+    /* 4.4px / 4px = 1.1 */
+    --uni-sys-space-scale: 1.1;
+    --uni-sys-type-scale: 1.0;
+    --uni-sys-radius-scale: 1.1;
+  }
+
+  /* Spacing Units */
+  --uni-sys-space-0_5u: calc(var(--uni-sys-u) * 0.5);
+  --uni-sys-space-1u: calc(var(--uni-sys-u) * 1);
+  --uni-sys-space-1_5u: calc(var(--uni-sys-u) * 1.5);
+  --uni-sys-space-2u: calc(var(--uni-sys-u) * 2);
+  --uni-sys-space-2_5u: calc(var(--uni-sys-u) * 2.5);
+  --uni-sys-space-3u: calc(var(--uni-sys-u) * 3);
+  --uni-sys-space-3_5u: calc(var(--uni-sys-u) * 3.5);
+  --uni-sys-space-4u: calc(var(--uni-sys-u) * 4);
+  --uni-sys-space-4_5u: calc(var(--uni-sys-u) * 4.5);
+  --uni-sys-space-5u: calc(var(--uni-sys-u) * 5);
+  --uni-sys-space-5_5u: calc(var(--uni-sys-u) * 5.5);
+  --uni-sys-space-6u: calc(var(--uni-sys-u) * 6);
+  --uni-sys-space-6_5u: calc(var(--uni-sys-u) * 6.5);
+  --uni-sys-space-7u: calc(var(--uni-sys-u) * 7);
+  --uni-sys-space-7_5u: calc(var(--uni-sys-u) * 7.5);
+  --uni-sys-space-8u: calc(var(--uni-sys-u) * 8);
+  --uni-sys-space-8_5u: calc(var(--uni-sys-u) * 8.5);
+  --uni-sys-space-9u: calc(var(--uni-sys-u) * 9);
+  --uni-sys-space-9_5u: calc(var(--uni-sys-u) * 9.5);
+  --uni-sys-space-10u: calc(var(--uni-sys-u) * 10);
+  --uni-sys-space-10_5u: calc(var(--uni-sys-u) * 10.5);
+  --uni-sys-space-11u: calc(var(--uni-sys-u) * 11);
+  --uni-sys-space-11_5u: calc(var(--uni-sys-u) * 11.5);
+  --uni-sys-space-12u: calc(var(--uni-sys-u) * 12);
+  --uni-sys-space-12_5u: calc(var(--uni-sys-u) * 12.5);
+  --uni-sys-space-13u: calc(var(--uni-sys-u) * 13);
+  --uni-sys-space-13_5u: calc(var(--uni-sys-u) * 13.5);
+  --uni-sys-space-14u: calc(var(--uni-sys-u) * 14);
+  --uni-sys-space-14_5u: calc(var(--uni-sys-u) * 14.5);
+  --uni-sys-space-15u: calc(var(--uni-sys-u) * 15);
+  --uni-sys-space-15_5u: calc(var(--uni-sys-u) * 15.5);
+  --uni-sys-space-16u: calc(var(--uni-sys-u) * 16);
+  --uni-sys-space-20u: calc(var(--uni-sys-u) * 20);
+  --uni-sys-space-24u: calc(var(--uni-sys-u) * 24);
+  --uni-sys-space-28u: calc(var(--uni-sys-u) * 28);
+  --uni-sys-space-38u: calc(var(--uni-sys-u) * 38);
+
+  /* Legacy Spacing Mappings */
+  --uni-sys-space-1: calc(4px * var(--uni-sys-space-scale));
+  --uni-sys-space-2: calc(8px * var(--uni-sys-space-scale));
+  --uni-sys-space-3: calc(12px * var(--uni-sys-space-scale));
+  --uni-sys-space-4: calc(16px * var(--uni-sys-space-scale));
+  --uni-sys-space-5: calc(20px * var(--uni-sys-space-scale));
+  --uni-sys-space-6: calc(24px * var(--uni-sys-space-scale));
+  --uni-sys-space-7: calc(28px * var(--uni-sys-space-scale));
+  --uni-sys-space-8: calc(32px * var(--uni-sys-space-scale));
+  --uni-sys-space-9: calc(36px * var(--uni-sys-space-scale));
+  --uni-sys-space-10: calc(40px * var(--uni-sys-space-scale));
+  --uni-sys-space-11: calc(44px * var(--uni-sys-space-scale));
+  --uni-sys-space-12: calc(48px * var(--uni-sys-space-scale));
+  --uni-sys-space-13: calc(52px * var(--uni-sys-space-scale));
+  --uni-sys-space-14: calc(56px * var(--uni-sys-space-scale));
+  --uni-sys-space-15: calc(60px * var(--uni-sys-space-scale));
+  --uni-sys-space-16: calc(64px * var(--uni-sys-space-scale));
+
+  /* Fluid Typography (15 M3 Roles) */
+  --uni-sys-type-display-large-size: calc(64px * var(--uni-sys-type-scale));
+  --uni-sys-type-display-large-line: calc(80px * var(--uni-sys-type-scale));
+  --uni-sys-type-display-medium-size: calc(48px * var(--uni-sys-type-scale));
+  --uni-sys-type-display-medium-line: calc(60px * var(--uni-sys-type-scale));
+  --uni-sys-type-display-small-size: calc(40px * var(--uni-sys-type-scale));
+  --uni-sys-type-display-small-line: calc(50px * var(--uni-sys-type-scale));
+  --uni-sys-type-headline-large-size: calc(36px * var(--uni-sys-type-scale));
+  --uni-sys-type-headline-large-line: calc(45px * var(--uni-sys-type-scale));
+  --uni-sys-type-headline-medium-size: calc(32px * var(--uni-sys-type-scale));
+  --uni-sys-type-headline-medium-line: calc(40px * var(--uni-sys-type-scale));
+  --uni-sys-type-headline-small-size: calc(28px * var(--uni-sys-type-scale));
+  --uni-sys-type-headline-small-line: calc(35px * var(--uni-sys-type-scale));
+  --uni-sys-type-title-large-size: calc(22px * var(--uni-sys-type-scale));
+  --uni-sys-type-title-large-line: calc(28px * var(--uni-sys-type-scale));
+  --uni-sys-type-title-medium-size: calc(18px * var(--uni-sys-type-scale));
+  --uni-sys-type-title-medium-line: calc(23px * var(--uni-sys-type-scale));
+  --uni-sys-type-title-small-size: calc(16px * var(--uni-sys-type-scale));
+  --uni-sys-type-title-small-line: calc(20px * var(--uni-sys-type-scale));
+  --uni-sys-type-body-large-size: calc(18px * var(--uni-sys-type-scale));
+  --uni-sys-type-body-large-line: calc(23px * var(--uni-sys-type-scale));
+  --uni-sys-type-body-medium-size: calc(16px * var(--uni-sys-type-scale));
+  --uni-sys-type-body-medium-line: calc(20px * var(--uni-sys-type-scale));
+  --uni-sys-type-body-small-size: calc(14px * var(--uni-sys-type-scale));
+  --uni-sys-type-body-small-line: calc(18px * var(--uni-sys-type-scale));
+  --uni-sys-type-label-large-size: calc(16px * var(--uni-sys-type-scale));
+  --uni-sys-type-label-large-line: calc(20px * var(--uni-sys-type-scale));
+  --uni-sys-type-label-medium-size: calc(12px * var(--uni-sys-type-scale));
+  --uni-sys-type-label-medium-line: calc(15px * var(--uni-sys-type-scale));
+  --uni-sys-type-label-small-size: calc(10px * var(--uni-sys-type-scale));
+  --uni-sys-type-label-small-line: calc(13px * var(--uni-sys-type-scale));
+
+
+  /* Layout tokens */
+  --uni-sys-layout-margin: calc(16px * var(--uni-sys-space-scale));
+  --uni-sys-layout-gutter: calc(16px * var(--uni-sys-space-scale));
+  --uni-sys-layout-pane-gap: calc(20px * var(--uni-sys-space-scale));
+  --uni-sys-layout-pane-list-width: calc(360px * var(--uni-sys-space-scale));
+  --uni-sys-layout-pane-fixed-width: calc(412px * var(--uni-sys-space-scale));
+  --uni-sys-layout-pane-supporting-width: calc(400px * var(--uni-sys-space-scale));
+  --uni-sys-layout-rail-collapsed-width: calc(72px * var(--uni-sys-space-scale));
+  --uni-sys-layout-drawer-width: calc(360px * var(--uni-sys-space-scale));
+
+  /* Z-Index Scale */
+  --uni-sys-z-modal: 3000;
+  --uni-sys-z-popover: 2000;
+  --uni-sys-z-drawer: 1500;
+  --uni-sys-z-header: 1000;
+  --uni-sys-z-fab: 500;
+}
+
+/* Dark mode */
+.dark {
+  --uni-sys-color-primary: var(--uni-ref-primary-80);
+  --uni-sys-color-on-primary: var(--uni-ref-primary-20);
+  --uni-sys-color-primary-container: var(--uni-ref-primary-30);
+  --uni-sys-color-on-primary-container: var(--uni-ref-primary-90);
+
+  --uni-sys-color-secondary: var(--uni-ref-secondary-80);
+  --uni-sys-color-on-secondary: var(--uni-ref-secondary-20);
+  --uni-sys-color-secondary-container: var(--uni-ref-secondary-30);
+  --uni-sys-color-on-secondary-container: var(--uni-ref-secondary-90);
+
+  --uni-sys-color-tertiary: var(--uni-ref-tertiary-80);
+  --uni-sys-color-on-tertiary: var(--uni-ref-tertiary-20);
+  --uni-sys-color-tertiary-container: var(--uni-ref-tertiary-30);
+  --uni-sys-color-on-tertiary-container: var(--uni-ref-tertiary-90);
+
+  --uni-sys-color-surface: var(--uni-ref-neutral-10);
+  --uni-sys-color-on-surface: var(--uni-ref-neutral-90);
+  --uni-sys-color-surface-container-lowest: var(--uni-ref-neutral-10);
+  --uni-sys-color-surface-container-low: var(--uni-ref-neutral-20);
+  --uni-sys-color-surface-container: var(--uni-ref-neutral-30);
+  --uni-sys-color-surface-container-high: var(--uni-ref-neutral-40);
+  --uni-sys-color-surface-container-highest: var(--uni-ref-neutral-50);
+
+  --uni-sys-color-surface-variant: var(--uni-ref-neutral-variant-30);
+  --uni-sys-color-on-surface-variant: var(--uni-ref-neutral-variant-80);
+  --uni-sys-color-background: var(--uni-ref-neutral-10);
+  --uni-sys-color-on-background: var(--uni-ref-neutral-90);
+  --uni-sys-color-outline: var(--uni-ref-neutral-variant-60);
+  --uni-sys-color-outline-variant: var(--uni-ref-neutral-variant-30);
+
+  --uni-sys-color-error: var(--uni-ref-error-80);
+  --uni-sys-color-on-error: var(--uni-ref-error-20);
+  --uni-sys-color-error-container: var(--uni-ref-error-30);
+  --uni-sys-color-on-error-container: var(--uni-ref-error-90);
+
+  --uni-sys-color-success: oklch(0.8 0.18 145);
+  --uni-sys-color-on-success: oklch(0.2 0.1 145);
+  --uni-sys-color-success-container: oklch(0.3 0.1 145);
+  --uni-sys-color-on-success-container: oklch(0.9 0.1 145);
+
+  --uni-sys-color-warning: oklch(0.85 0.15 85);
+  --uni-sys-color-on-warning: oklch(0.2 0.1 85);
+  --uni-sys-color-warning-container: oklch(0.3 0.1 85);
+  --uni-sys-color-on-warning-container: oklch(0.9 0.1 85);
+
+  --uni-sys-color-info: oklch(0.8 0.18 245);
+  --uni-sys-color-on-info: oklch(0.2 0.1 245);
+  --uni-sys-color-info-container: oklch(0.3 0.1 245);
+  --uni-sys-color-on-info-container: oklch(0.9 0.1 245);
+
+  --uni-sys-color-inverse-surface: var(--uni-ref-neutral-90);
+  --uni-sys-color-inverse-on-surface: var(--uni-ref-neutral-20);
+  --uni-sys-color-inverse-primary: var(--uni-ref-primary-40);
+
+  --uni-sys-color-scrim: rgba(0, 0, 0, 0.32);
+}

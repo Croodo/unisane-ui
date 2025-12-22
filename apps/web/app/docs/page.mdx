@@ -1,0 +1,66 @@
+import { Button, Card, Icon, TextField, Typography } from "@unisane/ui";
+
+export const metadata = {
+  title: "Unisane UI Docs",
+  description: "Unisane UI documentation and getting started guide.",
+};
+
+# Unisane UI
+
+Unisane UI is a high-density component library inspired by Material 3, tuned for industrial workflows and data-heavy interfaces.
+
+## Installation
+
+```bash
+pnpm add @unisane/ui @unisane/tokens
+```
+
+## Quick Start
+
+```tsx
+import "@unisane/ui/styles.css";
+import { Button, TextField } from "@unisane/ui";
+```
+
+<ComponentPreview
+  title="Starter layout"
+  description="Compose surfaces, inputs, and actions with a tight visual hierarchy."
+>
+  <Card variant="outlined" padding="md" className="w-full max-w-[320px]">
+    <CardHeader>
+      <Typography variant="labelSmall">Deployment</Typography>
+      <CardTitle>Node handshake</CardTitle>
+    </CardHeader>
+    <CardContent>
+      <TextField label="Cluster ID" defaultValue="NX-043" />
+    </CardContent>
+  </Card>
+  <div className="flex flex-col gap-3u">
+    <Button variant="filled" className="min-w-[160px]">
+      Activate
+    </Button>
+    <Button variant="outlined" className="min-w-[160px]">
+      Review
+    </Button>
+  </div>
+</ComponentPreview>
+
+## Iconography
+
+Unisane UI uses Material Symbols for iconography. Include the font once in your app layout.
+
+```html
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+/>
+```
+
+<ComponentPreview
+  title="Icon usage"
+  description="Material Symbols are rendered via the Icon primitive."
+>
+  <Icon symbol="rocket_launch" />
+  <Icon symbol="memory" />
+  <Icon symbol="tune" />
+</ComponentPreview>

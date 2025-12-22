@@ -1,0 +1,29 @@
+import { Checkbox } from "@unisane/ui";
+
+export const metadata = {
+  title: "Checkbox · Unisane UI",
+  description: "Selection controls with indeterminate states.",
+};
+
+# Checkbox
+
+Checkboxes allow multi-select choices with optional error or indeterminate states.
+
+<ComponentPreview
+  title="States"
+  description="Default, checked, and error states."
+>
+  <div className="flex flex-col gap-3u">
+    <Checkbox label="Archive logs" defaultChecked />
+    <Checkbox label="Auto-export" />
+    <Checkbox label="Critical alerts" error />
+    <Checkbox label="Partial sync" indeterminate />
+    <Checkbox label="Disabled" disabled />
+  </div>
+</ComponentPreview>
+
+```tsx
+import { Checkbox } from "@unisane/ui";
+
+<Checkbox label="Archive logs" defaultChecked />
+```
