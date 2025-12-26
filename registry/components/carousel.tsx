@@ -2,10 +2,10 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@ui/lib/utils";
-import { Surface } from "@ui/primitives/surface";
+import { cn } from "@/lib/utils";
+import { Surface } from "@/primitives/surface";
 import { IconButton } from "./icon-button";
-import { StateLayer } from "@ui/primitives/state-layer";
+import { StateLayer } from "@/primitives/state-layer";
 
 const carouselVariants = cva("relative w-full overflow-hidden", {
   variants: {
@@ -81,7 +81,7 @@ export const Carousel: React.FC<CarouselProps> = ({
           <div
             key={index}
             className={cn(
-              "absolute inset-0 w-full h-full transition-opacity duration-long",
+              "absolute inset-0 w-full h-full transition-opacity duration-long ease-standard",
               index === currentIndex ? "opacity-100" : "opacity-0"
             )}
             aria-hidden={index !== currentIndex}

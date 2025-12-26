@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useEffect, useRef, useId, forwardRef } from "react";
-import { cn } from "@ui/lib/utils";
-import { Text } from "@ui/primitives/text";
-import { Surface } from "@ui/primitives/surface";
+import { cn } from "@/lib/utils";
+import { Text } from "@/primitives/text";
+import { Surface } from "@/primitives/surface";
 import { Ripple } from "./ripple";
 
 export interface DialogProps {
@@ -35,8 +35,15 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(
     const previousActiveElement = useRef<HTMLElement | null>(null);
     const titleId = useId();
     const descId = useId();
+    const setRefs = (node: HTMLDivElement | null) => {
+      dialogRef.current = node;
+      if (typeof ref === "function") {
+        ref(node);
+      } else if (ref) {
+        ref.current = node;
+      }
+    };
 
-    // Focus Management & Keyboard Handling
     useEffect(() => {
       if (open) {
         const dialogNode = dialogRef.current;
@@ -74,6 +81,10 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(
             const first = focusables[0];
             const last = focusables[focusables.length - 1];
             const activeElement = document.activeElement as HTMLElement | null;
+            if (!first || !last) {
+              e.preventDefault();
+              return;
+            }
 
             if (e.shiftKey) {
               if (activeElement === first || activeElement === dialogNode) {
@@ -105,26 +116,24 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(
         className="fixed inset-0 z-modal flex items-center justify-center p-6u medium:p-10u"
         role="presentation"
       >
-        {/* Backdrop */}
         <div
-          className="absolute inset-0 bg-scrim backdrop-blur-[calc(var(--uni-sys-u)/2)] transition-opacity animate-in fade-in duration-medium"
+          className="absolute inset-0 bg-scrim backdrop-blur-[calc(var(--unit)/2)] transition-opacity animate-in fade-in duration-medium ease-standard"
           onClick={onClose}
           aria-hidden="true"
         />
 
-        {/* Dialog Surface - Industrial XS Shape */}
         <Surface
-          ref={dialogRef}
+          ref={setRefs}
           role="dialog"
           aria-modal="true"
           aria-labelledby={titleId}
           aria-describedby={descId}
           tabIndex={-1}
           tone="surface"
-          elevation={3}
-          rounded="xs"
+          elevation={4}
+          rounded="sm"
           className={cn(
-            "relative outline-none w-full min-w-[calc(var(--uni-sys-u)*70)] max-w-[calc(var(--uni-sys-u)*78)] expanded:max-w-[calc(var(--uni-sys-u)*170)] flex flex-col border border-outline-variant/30 shadow-4 overflow-hidden",
+            "relative outline-none w-full min-w-[calc(var(--unit)*70)] max-w-[calc(var(--unit)*78)] expanded:max-w-[calc(var(--unit)*170)] flex flex-col border border-outline-variant/30 overflow-hidden",
             "animate-in fade-in zoom-in-95 duration-medium ease-emphasized",
             className
           )}
@@ -137,16 +146,16 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(
                     <Text
                       variant="titleMedium"
                       id={titleId}
-                      className="text-on-surface font-black uppercase tracking-tight leading-none pt-0.5u"
+                      className="text-on-surface leading-none"
                     >
                       {title}
                     </Text>
                   )}
                 </div>
               </div>
-              <button 
-                onClick={onClose} 
-                className="w-10u h-10u rounded-xs flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-variant transition-all relative overflow-hidden shrink-0"
+              <button
+                onClick={onClose}
+                className="w-10u h-10u rounded-full flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-variant transition-all relative overflow-hidden shrink-0"
                 aria-label="Close dialog"
               >
                   <Ripple />

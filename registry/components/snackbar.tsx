@@ -2,12 +2,12 @@
 
 import React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@ui/lib/utils";
+import { cn } from "@/lib/utils";
 import { Button } from "./button";
 import { Ripple } from "./ripple";
 
 const snackbarVariants = cva(
-  "fixed bottom-6u left-6u right-6u expanded:left-auto expanded:right-8u expanded:min-w-[calc(var(--uni-sys-u)*86)] z-[5000] flex justify-center pointer-events-none transition-all duration-medium ease-emphasized",
+  "fixed bottom-6u left-6u right-6u expanded:left-auto expanded:right-8u expanded:min-w-[calc(var(--unit)*86)] z-[5000] flex justify-center pointer-events-none transition-all duration-medium ease-emphasized",
   {
     variants: {
       variant: {
@@ -32,7 +32,7 @@ export type SnackbarProps = VariantProps<typeof snackbarVariants> & {
   };
   icon?: React.ReactNode;
   className?: string;
-  autoHideDuration?: number; // milliseconds
+  autoHideDuration?: number;
   withCloseIcon?: boolean;
 };
 
@@ -51,7 +51,6 @@ export const Snackbar: React.FC<SnackbarProps> = ({
   const resolvedAction =
     action || (actionLabel ? { label: actionLabel, onClick: onAction } : null);
 
-  // Auto-hide functionality
   React.useEffect(() => {
     if (!open || autoHideDuration <= 0) return;
 
@@ -72,40 +71,36 @@ export const Snackbar: React.FC<SnackbarProps> = ({
     >
       <div
         className={cn(
-          "pointer-events-auto flex items-center gap-4u px-4u py-3u bg-inverse-surface text-inverse-on-surface rounded-xs shadow-4 min-h-12u border border-outline-variant/10",
-          "animate-in slide-in-from-bottom-5 fade-in duration-medium ease-emphasized",
-          className
-        )}
+        "pointer-events-auto flex items-center gap-4u px-4u py-3u bg-inverse-surface text-inverse-on-surface rounded-sm shadow-4 min-h-12u border border-outline-variant/10",
+        "animate-in slide-in-from-bottom-5 fade-in duration-medium ease-emphasized",
+        className
+      )}
       >
-        {/* Icon */}
         {icon && (
           <div className="w-6u h-6u flex items-center justify-center text-inverse-on-surface shrink-0 opacity-90">
             {icon}
           </div>
         )}
 
-        {/* Message */}
-        <div className="flex-1 text-body-small font-bold uppercase tracking-tight py-1 relative z-10">
+        <div className="flex-1 text-body-small font-medium py-1 relative z-10">
           {message}
         </div>
 
-        {/* Action Button */}
         {resolvedAction && (
           <Button
             variant="text"
             size="sm"
             onClick={resolvedAction.onClick}
-            className="text-inverse-primary hover:bg-inverse-primary/10 h-8u px-3u font-black"
+            className="text-inverse-primary hover:bg-inverse-primary/10 h-8u px-3u font-medium"
           >
             {resolvedAction.label}
           </Button>
         )}
 
-        {/* Close Button */}
         {withCloseIcon && (
           <button
             onClick={onClose}
-            className="group p-1u rounded-xs transition-colors text-inverse-on-surface opacity-50 hover:opacity-100 relative overflow-hidden"
+            className="group p-1u rounded-full transition-colors text-inverse-on-surface opacity-50 hover:opacity-100 relative overflow-hidden"
             aria-label="Close"
           >
             <span className="absolute inset-0 bg-inverse-on-surface opacity-0 transition-opacity group-hover:opacity-hover pointer-events-none" />
@@ -121,7 +116,6 @@ export const Snackbar: React.FC<SnackbarProps> = ({
   );
 };
 
-// Snackbar Container for managing multiple snacks
 export const SnackbarContainer: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => {

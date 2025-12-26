@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useId } from "react";
-import { cn } from "@ui/lib/utils";
-import { Icon } from "@ui/primitives/icon";
+import { cn } from "@/lib/utils";
+import { Icon } from "@/primitives/icon";
 
 interface SelectOption {
   value: string;
@@ -134,7 +134,7 @@ export const Select: React.FC<SelectProps> = ({
   return (
     <div
       ref={containerRef}
-      className={cn("relative inline-flex flex-col w-full min-w-[calc(var(--uni-sys-u)*40)]", className)}
+      className={cn("relative inline-flex flex-col w-full min-w-[calc(var(--unit)*40)]", className)}
     >
       <button
         id={triggerId}
@@ -170,7 +170,7 @@ export const Select: React.FC<SelectProps> = ({
         {variant === "filled" && (
           <div
             className={cn(
-              "absolute bottom-[calc(var(--uni-sys-u)*-0.25)] left-0 right-0 h-0_5u scale-x-0 transition-transform duration-snappy ease-out origin-center",
+              "absolute bottom-[calc(var(--unit)*-0.25)] left-0 right-0 h-0_5u scale-x-0 transition-transform duration-snappy ease-out origin-center",
               error ? "bg-error scale-x-100" : "bg-primary",
               isOpen && "scale-x-100"
             )}
@@ -192,7 +192,7 @@ export const Select: React.FC<SelectProps> = ({
               htmlFor={triggerId}
               id={labelId}
               className={cn(
-                "absolute pointer-events-none truncate max-w-[calc(100%-calc(var(--uni-sys-u)*12))] transition-all duration-snappy ease-emphasized origin-left left-4u",
+                "absolute pointer-events-none truncate max-w-[calc(100%-calc(var(--unit)*12))] transition-all duration-snappy ease-emphasized origin-left left-4u",
                 !isFloating &&
                   "text-body-medium -translate-y-1/2 top-1/2 text-on-surface-variant",
                 isFloating && [
@@ -216,7 +216,7 @@ export const Select: React.FC<SelectProps> = ({
               symbol="keyboard_arrow_down"
               size={20}
               className={cn(
-                "transition-transform duration-snappy",
+                "transition-transform duration-snappy ease-emphasized",
                 isOpen && "rotate-180"
               )}
             />
@@ -229,7 +229,7 @@ export const Select: React.FC<SelectProps> = ({
           id={listboxId}
           role="listbox"
           aria-labelledby={label ? labelId : undefined}
-          className="absolute top-[calc(100%+var(--uni-sys-u))] left-0 w-full bg-surface border border-outline-variant rounded-xs shadow-3 py-1u max-h-[calc(var(--uni-sys-u)*70)] overflow-y-auto z-[100] animate-in fade-in zoom-in-95 duration-snappy"
+          className="absolute top-[calc(100%+var(--unit))] left-0 w-full bg-surface border border-outline-variant rounded-xs shadow-3 py-1u max-h-[calc(var(--unit)*70)] overflow-y-auto z-[100] animate-in fade-in zoom-in-95 duration-snappy"
         >
           {options.length > 0 ? (
             options.map((option, index) => {
@@ -245,7 +245,7 @@ export const Select: React.FC<SelectProps> = ({
                     "px-4u h-11u flex items-center text-body-small font-bold cursor-pointer transition-colors",
                     isHighlighted && !isDisabled && "bg-surface-container-high",
                     value === option.value
-                      ? "bg-primary/5 text-primary"
+                      ? "bg-primary/8 text-primary"
                       : "text-on-surface hover:bg-surface-container-high",
                     isDisabled && "opacity-38 cursor-not-allowed"
                   )}

@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { cn } from "@ui/lib/utils";
-import { Icon } from "@ui/primitives/icon";
+import { cn } from "@/lib/utils";
+import { Icon } from "@/primitives/icon";
 import { Ripple } from "./ripple";
 
 interface AccordionContextValue {
@@ -105,7 +105,7 @@ export const AccordionTrigger: React.FC<AccordionTriggerProps> = ({
       onClick={() => context?.toggle(value!)}
       className={cn(
         "w-full h-12u px-4u flex items-center justify-between text-label-medium font-black uppercase tracking-tight transition-all relative overflow-hidden group",
-        isExpanded ? "text-primary" : "text-on-surface hover:bg-on-surface/5"
+        isExpanded ? "text-primary" : "text-on-surface hover:bg-on-surface/8"
       )}
     >
       <Ripple />
@@ -135,7 +135,7 @@ export const AccordionContent: React.FC<AccordionContentProps> = ({
   <div
     className={cn(
       "overflow-hidden transition-all duration-medium ease-emphasized",
-      isExpanded ? "max-h-[calc(var(--uni-sys-u)*250)] opacity-100" : "max-h-0 opacity-0"
+      isExpanded ? "max-h-[calc(var(--unit)*250)] opacity-100" : "max-h-0 opacity-0"
     )}
   >
     <div className="px-4u pb-4u pt-1u text-on-surface-variant text-body-small font-medium leading-relaxed">

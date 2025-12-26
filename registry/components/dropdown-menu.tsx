@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { cn } from "@ui/lib/utils";
+import { cn } from "@/lib/utils";
 import {
   Menu,
   MenuItem,
   MenuDivider,
   MenuCheckboxItem,
   MenuRadioItem,
-} from "@ui/primitives/menu";
+} from "@/primitives/menu";
 
 export interface DropdownMenuProps {
   children: React.ReactNode;
@@ -98,7 +98,7 @@ export const DropdownMenuContent: React.FC<DropdownMenuContentProps> = ({
     <div
       ref={ref}
       className={cn(
-        "absolute z-50 mt-1 min-w-[calc(var(--uni-sys-u)*50)]",
+        "absolute z-50 mt-1 min-w-[calc(var(--unit)*50)]",
         align === "end" ? "right-0" : "left-0",
         className
       )}

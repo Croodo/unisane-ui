@@ -1,0 +1,808 @@
+{
+  "$schema": "./registry-schema.json",
+  "version": "0.1.0",
+  "components": {
+    "utils": {
+      "name": "Utils",
+      "type": "lib:util",
+      "description": "Utils utility",
+      "files": [
+        "lib/utils.ts"
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    "use-navigation-breakpoint": {
+      "name": "UseNavigationBreakpoint",
+      "type": "hooks:ui",
+      "description": "UseNavigationBreakpoint hook",
+      "files": [
+        "hooks/use-navigation-breakpoint.ts"
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    "use-navigation-hover": {
+      "name": "UseNavigationHover",
+      "type": "hooks:ui",
+      "description": "UseNavigationHover hook",
+      "files": [
+        "hooks/use-navigation-hover.ts"
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    "use-navigation-items": {
+      "name": "UseNavigationItems",
+      "type": "hooks:ui",
+      "description": "UseNavigationItems hook",
+      "files": [
+        "hooks/use-navigation-items.ts"
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    "use-navigation-state": {
+      "name": "UseNavigationState",
+      "type": "hooks:ui",
+      "description": "UseNavigationState hook",
+      "files": [
+        "hooks/use-navigation-state.ts"
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    "focus-ring": {
+      "name": "FocusRing",
+      "type": "primitives:ui",
+      "description": "FocusRing component",
+      "files": [
+        "primitives/focus-ring.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    "icon": {
+      "name": "Icon",
+      "type": "components:ui",
+      "description": "Icon component",
+      "files": [
+        "components/icon.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "icon"
+      ]
+    },
+    "menu": {
+      "name": "Menu",
+      "type": "primitives:ui",
+      "description": "Menu component",
+      "files": [
+        "primitives/menu.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "text",
+        "state-layer"
+      ]
+    },
+    "state-layer": {
+      "name": "StateLayer",
+      "type": "primitives:ui",
+      "description": "StateLayer component",
+      "files": [
+        "primitives/state-layer.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    "surface": {
+      "name": "Surface",
+      "type": "primitives:ui",
+      "description": "Surface component",
+      "files": [
+        "primitives/surface.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    "text": {
+      "name": "Text",
+      "type": "primitives:ui",
+      "description": "Text component",
+      "files": [
+        "primitives/text.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    "app-layout": {
+      "name": "AppLayout",
+      "type": "layout:ui",
+      "description": "AppLayout component",
+      "files": [
+        "layout/app-layout.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    "container": {
+      "name": "Container",
+      "type": "layout:ui",
+      "description": "Container component",
+      "files": [
+        "layout/container.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    "pane": {
+      "name": "Pane",
+      "type": "layout:ui",
+      "description": "Pane component",
+      "files": [
+        "layout/pane.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    "theme-provider": {
+      "name": "ThemeProvider",
+      "type": "layout:ui",
+      "description": "ThemeProvider component",
+      "files": [
+        "layout/theme-provider.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    "window-size-provider": {
+      "name": "WindowSizeProvider",
+      "type": "layout:ui",
+      "description": "WindowSizeProvider component",
+      "files": [
+        "layout/window-size-provider.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    "accordion": {
+      "name": "Accordion",
+      "type": "components:ui",
+      "description": "Accordion component",
+      "files": [
+        "components/accordion.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "icon",
+        "ripple"
+      ]
+    },
+    "alert": {
+      "name": "Alert",
+      "type": "components:ui",
+      "description": "Alert component",
+      "files": [
+        "components/alert.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "icon",
+        "typography"
+      ]
+    },
+    "avatar": {
+      "name": "Avatar",
+      "type": "components:ui",
+      "description": "Avatar component",
+      "files": [
+        "components/avatar.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "surface",
+        "text"
+      ]
+    },
+    "badge": {
+      "name": "Badge",
+      "type": "components:ui",
+      "description": "Badge component",
+      "files": [
+        "components/badge.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    "banner": {
+      "name": "Banner",
+      "type": "components:ui",
+      "description": "Banner component",
+      "files": [
+        "components/banner.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "surface",
+        "text",
+        "icon",
+        "button",
+        "icon-button"
+      ]
+    },
+    "bottom-app-bar": {
+      "name": "BottomAppBar",
+      "type": "components:ui",
+      "description": "BottomAppBar component",
+      "files": [
+        "components/bottom-app-bar.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "surface",
+        "state-layer"
+      ]
+    },
+    "breadcrumb": {
+      "name": "Breadcrumb",
+      "type": "components:ui",
+      "description": "Breadcrumb component",
+      "files": [
+        "components/breadcrumb.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "icon",
+        "icon-button"
+      ]
+    },
+    "button": {
+      "name": "Button",
+      "type": "components:ui",
+      "description": "Button component",
+      "files": [
+        "components/button.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "ripple"
+      ]
+    },
+    "calendar": {
+      "name": "Calendar",
+      "type": "components:ui",
+      "description": "Calendar component",
+      "files": [
+        "components/calendar.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "surface",
+        "text",
+        "state-layer",
+        "icon-button"
+      ]
+    },
+    "canonical-layouts": {
+      "name": "CanonicalLayouts",
+      "type": "components:ui",
+      "description": "CanonicalLayouts component",
+      "files": [
+        "components/canonical-layouts.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "icon-button"
+      ]
+    },
+    "card": {
+      "name": "Card",
+      "type": "components:ui",
+      "description": "Card component",
+      "files": [
+        "components/card.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "ripple"
+      ]
+    },
+    "carousel": {
+      "name": "Carousel",
+      "type": "components:ui",
+      "description": "Carousel component",
+      "files": [
+        "components/carousel.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "surface",
+        "state-layer",
+        "icon-button"
+      ]
+    },
+    "checkbox": {
+      "name": "Checkbox",
+      "type": "components:ui",
+      "description": "Checkbox component",
+      "files": [
+        "components/checkbox.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "ripple"
+      ]
+    },
+    "chip": {
+      "name": "Chip",
+      "type": "components:ui",
+      "description": "Chip component",
+      "files": [
+        "components/chip.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "icon",
+        "ripple"
+      ]
+    },
+    "combobox": {
+      "name": "Combobox",
+      "type": "components:ui",
+      "description": "Combobox component",
+      "files": [
+        "components/combobox.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "surface",
+        "text",
+        "icon",
+        "state-layer"
+      ]
+    },
+    "date-picker": {
+      "name": "DatePicker",
+      "type": "components:ui",
+      "description": "DatePicker component",
+      "files": [
+        "components/date-picker.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "surface",
+        "text",
+        "text-field",
+        "calendar",
+        "popover",
+        "icon-button"
+      ]
+    },
+    "dialog": {
+      "name": "Dialog",
+      "type": "components:ui",
+      "description": "Dialog component",
+      "files": [
+        "components/dialog.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "text",
+        "surface",
+        "ripple"
+      ]
+    },
+    "divider": {
+      "name": "Divider",
+      "type": "components:ui",
+      "description": "Divider component",
+      "files": [
+        "components/divider.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    "dropdown-menu": {
+      "name": "DropdownMenu",
+      "type": "components:ui",
+      "description": "DropdownMenu component",
+      "files": [
+        "components/dropdown-menu.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "menu"
+      ]
+    },
+    "fab-menu": {
+      "name": "FabMenu",
+      "type": "components:ui",
+      "description": "FabMenu component",
+      "files": [
+        "components/fab-menu.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "icon",
+        "fab"
+      ]
+    },
+    "fab": {
+      "name": "Fab",
+      "type": "components:ui",
+      "description": "Fab component",
+      "files": [
+        "components/fab.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "ripple"
+      ]
+    },
+    "icon-button": {
+      "name": "IconButton",
+      "type": "components:ui",
+      "description": "IconButton component",
+      "files": [
+        "components/icon-button.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "ripple"
+      ]
+    },
+    "list": {
+      "name": "List",
+      "type": "components:ui",
+      "description": "List component",
+      "files": [
+        "components/list.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "typography",
+        "ripple"
+      ]
+    },
+    "navigation-bar": {
+      "name": "NavigationBar",
+      "type": "components:ui",
+      "description": "NavigationBar component",
+      "files": [
+        "components/navigation-bar.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "ripple"
+      ]
+    },
+    "navigation-drawer": {
+      "name": "NavigationDrawer",
+      "type": "components:ui",
+      "description": "NavigationDrawer component",
+      "files": [
+        "components/navigation-drawer.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "ripple"
+      ]
+    },
+    "navigation-rail": {
+      "name": "NavigationRail",
+      "type": "components:ui",
+      "description": "NavigationRail component",
+      "files": [
+        "components/navigation-rail.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "ripple"
+      ]
+    },
+    "pagination": {
+      "name": "Pagination",
+      "type": "components:ui",
+      "description": "Pagination component",
+      "files": [
+        "components/pagination.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "surface",
+        "text",
+        "state-layer",
+        "icon-button"
+      ]
+    },
+    "pane-group": {
+      "name": "PaneGroup",
+      "type": "components:ui",
+      "description": "PaneGroup component",
+      "files": [
+        "components/pane-group.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    "popover": {
+      "name": "Popover",
+      "type": "components:ui",
+      "description": "Popover component",
+      "files": [
+        "components/popover.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    "progress": {
+      "name": "Progress",
+      "type": "components:ui",
+      "description": "Progress component",
+      "files": [
+        "components/progress.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    "radio": {
+      "name": "Radio",
+      "type": "components:ui",
+      "description": "Radio component",
+      "files": [
+        "components/radio.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "ripple"
+      ]
+    },
+    "rating": {
+      "name": "Rating",
+      "type": "components:ui",
+      "description": "Rating component",
+      "files": [
+        "components/rating.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "surface",
+        "text",
+        "state-layer"
+      ]
+    },
+    "ripple": {
+      "name": "Ripple",
+      "type": "components:ui",
+      "description": "Ripple component",
+      "files": [
+        "components/ripple.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    "scroll-area": {
+      "name": "ScrollArea",
+      "type": "components:ui",
+      "description": "ScrollArea component",
+      "files": [
+        "components/scroll-area.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    "search-bar": {
+      "name": "SearchBar",
+      "type": "components:ui",
+      "description": "SearchBar component",
+      "files": [
+        "components/search-bar.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "icon"
+      ]
+    },
+    "segmented-button": {
+      "name": "SegmentedButton",
+      "type": "components:ui",
+      "description": "SegmentedButton component",
+      "files": [
+        "components/segmented-button.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "ripple"
+      ]
+    },
+    "select": {
+      "name": "Select",
+      "type": "components:ui",
+      "description": "Select component",
+      "files": [
+        "components/select.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "icon"
+      ]
+    },
+    "selection-controls": {
+      "name": "SelectionControls",
+      "type": "components:ui",
+      "description": "SelectionControls component",
+      "files": [
+        "components/selection-controls.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "checkbox",
+        "radio",
+        "switch"
+      ]
+    },
+    "sheet": {
+      "name": "Sheet",
+      "type": "components:ui",
+      "description": "Sheet component",
+      "files": [
+        "components/sheet.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "ripple"
+      ]
+    },
+    "skeleton": {
+      "name": "Skeleton",
+      "type": "components:ui",
+      "description": "Skeleton component",
+      "files": [
+        "components/skeleton.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    "slider": {
+      "name": "Slider",
+      "type": "components:ui",
+      "description": "Slider component",
+      "files": [
+        "components/slider.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    "snackbar": {
+      "name": "Snackbar",
+      "type": "components:ui",
+      "description": "Snackbar component",
+      "files": [
+        "components/snackbar.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "button",
+        "ripple"
+      ]
+    },
+    "stepper": {
+      "name": "Stepper",
+      "type": "components:ui",
+      "description": "Stepper component",
+      "files": [
+        "components/stepper.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "icon",
+        "text",
+        "state-layer"
+      ]
+    },
+    "switch": {
+      "name": "Switch",
+      "type": "components:ui",
+      "description": "Switch component",
+      "files": [
+        "components/switch.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "icon"
+      ]
+    },
+    "table": {
+      "name": "Table",
+      "type": "components:ui",
+      "description": "Table component",
+      "files": [
+        "components/table.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    "tabs": {
+      "name": "Tabs",
+      "type": "components:ui",
+      "description": "Tabs component",
+      "files": [
+        "components/tabs.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "ripple"
+      ]
+    },
+    "text-field": {
+      "name": "TextField",
+      "type": "components:ui",
+      "description": "TextField component",
+      "files": [
+        "components/text-field.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    "theme-switcher": {
+      "name": "ThemeSwitcher",
+      "type": "components:ui",
+      "description": "ThemeSwitcher component",
+      "files": [
+        "components/theme-switcher.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    "time-picker": {
+      "name": "TimePicker",
+      "type": "components:ui",
+      "description": "TimePicker component",
+      "files": [
+        "components/time-picker.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "icon",
+        "dialog",
+        "button",
+        "icon-button",
+        "text-field"
+      ]
+    },
+    "tooltip": {
+      "name": "Tooltip",
+      "type": "components:ui",
+      "description": "Tooltip component",
+      "files": [
+        "components/tooltip.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    "top-app-bar": {
+      "name": "TopAppBar",
+      "type": "components:ui",
+      "description": "TopAppBar component",
+      "files": [
+        "components/top-app-bar.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "text"
+      ]
+    },
+    "typography": {
+      "name": "Typography",
+      "type": "components:ui",
+      "description": "Typography component",
+      "files": [
+        "components/typography.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    }
+  }
+}

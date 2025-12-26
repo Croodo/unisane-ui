@@ -1,6 +1,6 @@
 import React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@ui/lib/utils";
+import { cn } from "@/lib/utils";
 import { Typography } from "./typography";
 import { Ripple } from "./ripple";
 
@@ -39,8 +39,8 @@ const listItemVariants = cva(
   {
     variants: {
       active: {
-        true: "bg-primary/5 text-primary",
-        false: "text-on-surface hover:bg-on-surface/5",
+        true: "bg-primary/8 text-primary",
+        false: "text-on-surface hover:bg-on-surface/8",
       },
       disabled: {
         true: "opacity-38 pointer-events-none grayscale",

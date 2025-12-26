@@ -1,14 +1,14 @@
-// Layout primitives
 export {
   WindowSizeProvider,
   useWindowSize,
 } from "./layout/window-size-provider";
-export { ThemeProvider, useTheme } from "./layout/theme-provider";
+export { ThemeProvider, useTheme, useColorScheme, useDensity } from "./layout/theme-provider";
+export type { Theme, Density, RadiusTheme, ThemeConfig } from "./layout/theme-provider";
+export { ThemeSwitcher } from "./components/theme-switcher";
 export { Container } from "./layout/container";
 export { AppLayout, AppLayout as Scaffold } from "./layout/app-layout";
 export { Pane, PaneLayout, PaneDivider } from "./layout/pane";
 
-// Shared primitives
 export { Text } from "./primitives/text";
 export { Surface } from "./primitives/surface";
 export { StateLayer } from "./primitives/state-layer";
@@ -21,7 +21,6 @@ export {
   MenuIcon,
 } from "./primitives/icon";
 
-// Components
 export {
   Accordion,
   AccordionItem,
@@ -103,6 +102,36 @@ export { Snackbar, SnackbarContainer } from "./components/snackbar";
 export { Tabs, TabsList, TabsTrigger, TabsContent } from "./components/tabs";
 export { Divider } from "./components/divider";
 export { Typography } from "./components/typography";
+
+export {
+  Nav,
+  NavItem,
+  NavGroup,
+  useNavigationState,
+  useNavigationHover,
+  useNavigationItems,
+  useNavigationBreakpoint,
+} from "./components/navigation";
+export type {
+  NavProps,
+  NavItemProps,
+  NavGroupProps,
+  NavigationItem,
+  NavigationGroup,
+  NavigationState,
+  NavigationHoverState,
+  UseNavigationStateConfig,
+  UseNavigationHoverConfig,
+  ProcessedNavigationItems,
+  NavigationBreakpoint,
+  NavigationVariant,
+  NavigationDensity,
+  NavigationDrawerMode,
+  NavigationDrawerSide,
+  NavigationBarVariant,
+  NavigationScrollBehavior,
+} from "./components/navigation";
+
 export { NavigationBar } from "./components/navigation-bar";
 export {
   NavigationDrawer,
@@ -128,5 +157,42 @@ export {
   PaneGroup,
 } from "./components/canonical-layouts";
 
-// Utilities
+// Sidebar - Rail + Drawer navigation system
+export {
+  SidebarProvider,
+  useSidebar,
+  Sidebar,
+  SidebarRail,
+  SidebarRailItem,
+  SidebarDrawer,
+  SidebarHeader,
+  SidebarFooter,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarTrigger,
+  SidebarBackdrop,
+  SidebarInset,
+} from "./components/sidebar";
+export type {
+  SidebarState,
+  SidebarProviderProps,
+  SidebarProps,
+  SidebarRailProps,
+  SidebarRailItemProps,
+  SidebarDrawerProps,
+  SidebarHeaderProps,
+  SidebarFooterProps,
+  SidebarContentProps,
+  SidebarGroupProps,
+  SidebarGroupLabelProps,
+  SidebarMenuProps,
+  SidebarMenuItemProps,
+  SidebarTriggerProps,
+  SidebarBackdropProps,
+  SidebarInsetProps,
+} from "./components/sidebar";
+
 export { cn } from "./lib/utils";

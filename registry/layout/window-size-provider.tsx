@@ -53,9 +53,9 @@ export function WindowSizeProvider({ children }: WindowSizeProviderProps) {
 
       // Set data attributes and CSS variables on html element for CSS to use
       document.documentElement.setAttribute("data-wsc", sc);
-      document.documentElement.style.setProperty("--uni-sys-space-scale", spaceScale);
-      document.documentElement.style.setProperty("--uni-sys-type-scale", typeScale);
-      document.documentElement.style.setProperty("--uni-sys-radius-scale", radiusScale);
+      document.documentElement.style.setProperty("--scale-space", spaceScale);
+      document.documentElement.style.setProperty("--scale-type", typeScale);
+      document.documentElement.style.setProperty("--scale-radius", radiusScale);
     }
 
     // Initial setup

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { cn } from "@ui/lib/utils";
+import { cn } from "@/lib/utils";
 
 export interface SliderProps
   extends Omit<
@@ -101,7 +101,7 @@ export const Slider: React.FC<SliderProps> = ({
 
         <div
           className={cn(
-            "absolute h-full rounded-full transition-all duration-snappy",
+            "absolute h-full rounded-full transition-all duration-snappy ease-emphasized",
             disabled ? "bg-on-surface/38" : "bg-primary"
           )}
           style={{ width: `${percentage}%` }}
@@ -129,7 +129,7 @@ export const Slider: React.FC<SliderProps> = ({
         {!disabled && (
           <div
             className={cn(
-              "absolute w-10u h-10u rounded-full bg-primary transition-opacity duration-medium",
+              "absolute w-10u h-10u rounded-full bg-primary transition-opacity duration-medium ease-standard",
               isHovered || isPressed ? "opacity-10" : "opacity-0",
               isPressed && "opacity-20"
             )}
@@ -156,7 +156,7 @@ export const Slider: React.FC<SliderProps> = ({
               )}
             >
               {val}
-              <div className="absolute -bottom-1u left-1/2 -translate-x-1/2 w-2u h-2u bg-inverse-surface rotate-45 rounded-[calc(var(--uni-sys-u)/4)]" />
+              <div className="absolute -bottom-1u left-1/2 -translate-x-1/2 w-2u h-2u bg-inverse-surface rotate-45 rounded-[calc(var(--unit)/4)]" />
             </div>
           )}
         </div>

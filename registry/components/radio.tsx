@@ -2,7 +2,7 @@
 
 import { type InputHTMLAttributes, useId, forwardRef } from "react";
 import { Ripple } from "./ripple";
-import { cn } from "@ui/lib/utils";
+import { cn } from "@/lib/utils";
 
 interface RadioProps
   extends Omit<InputHTMLAttributes<HTMLInputElement>, "type"> {
@@ -30,12 +30,11 @@ export const Radio = forwardRef<HTMLInputElement, RadioProps>(
         )}
       >
         <div className="relative flex items-center justify-center w-10u h-10u">
-          {/* Ripple Container */}
           <div
             className={cn(
               "absolute inset-0 rounded-full transition-colors z-0 overflow-hidden",
-              "group-hover:bg-on-surface/5",
-              error && "group-hover:bg-error/5"
+              "group-hover:bg-on-surface/8",
+              error && "group-hover:bg-error/8"
             )}
           >
             <Ripple
@@ -54,7 +53,6 @@ export const Radio = forwardRef<HTMLInputElement, RadioProps>(
             {...props}
           />
 
-          {/* Radio outer circle */}
           <div
             className={cn(
               "relative z-10 w-5u h-5u rounded-full border-2 bg-surface",
@@ -64,7 +62,6 @@ export const Radio = forwardRef<HTMLInputElement, RadioProps>(
               error && "border-error peer-checked:border-error"
             )}
           >
-            {/* Radio inner dot */}
             <div
               className={cn(
                 "w-2.5u h-2.5u rounded-full transition-transform duration-snappy ease-emphasized scale-0 peer-checked:scale-100",

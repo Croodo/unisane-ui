@@ -1,46 +1,29 @@
+"use client";
+
 import React from "react";
-import { Surface, Typography, cn } from "@unisane/ui";
+import { cn, Typography, Surface } from "@unisane/ui";
 
 interface ComponentPreviewProps {
-  title: string;
-  description?: string;
   children: React.ReactNode;
   className?: string;
+  title?: string;
 }
 
-export const ComponentPreview: React.FC<ComponentPreviewProps> = ({
-  title,
-  description,
+export function ComponentPreview({
   children,
   className,
-}) => {
+  title,
+}: ComponentPreviewProps) {
   return (
-    <Surface
-      elevation={0}
-      rounded="xs"
-      className={cn(
-        "border border-outline-variant/30 bg-surface overflow-hidden",
-        className
+    <div className={cn("my-6u", className)}>
+      {title && (
+        <Typography variant="labelMedium" className="mb-2u text-on-surface-variant">
+          {title}
+        </Typography>
       )}
-    >
-      <div className="px-6u py-4u border-b border-outline-variant/30 bg-surface-container-low/50">
-        <div className="flex flex-col gap-1u">
-          <Typography
-            variant="labelSmall"
-            className="text-on-surface-variant font-black uppercase tracking-[0.3em] text-[8px]"
-          >
-            {title}
-          </Typography>
-          {description && (
-            <Typography variant="bodySmall" className="text-on-surface-variant">
-              {description}
-            </Typography>
-          )}
-        </div>
-      </div>
-      <div className="px-6u py-6u">
-        <div className="flex flex-wrap items-center gap-3u">{children}</div>
-      </div>
-    </Surface>
+      <Surface elevation={0} className="p-6u rounded-large bg-surface-container border border-outline-variant/50 flex items-center justify-center min-h-[120px]">
+        {children}
+      </Surface>
+    </div>
   );
-};
+}

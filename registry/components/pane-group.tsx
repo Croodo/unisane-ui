@@ -1,5 +1,5 @@
 import React from "react";
-import { cn } from "@ui/lib/utils";
+import { cn } from "@/lib/utils";
 
 export interface PaneGroupProps {
   /** The "List" pane. Always visible on Desktop. Hidden on Mobile if detail is active. */
@@ -24,7 +24,7 @@ export const PaneGroup: React.FC<PaneGroupProps> = ({
       {/* Sidebar Pane */}
       <div
         className={cn(
-          "flex-shrink-0 w-full medium:w-[var(--width-pane-list,calc(var(--uni-sys-u)*90))] h-full overflow-y-auto border-r border-outline-variant/20 transition-transform duration-long ease-emphasized",
+          "flex-shrink-0 w-full medium:w-[var(--width-pane-list,calc(var(--unit)*90))] h-full overflow-y-auto border-r border-outline-variant/20 transition-transform duration-long ease-emphasized",
           // Mobile Logic: If detail is shown, hide sidebar
           showDetail ? "hidden medium:block" : "block"
         )}

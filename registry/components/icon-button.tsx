@@ -1,17 +1,17 @@
 import { type ButtonHTMLAttributes, forwardRef } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Ripple } from "./ripple";
-import { cn } from "@ui/lib/utils";
+import { cn } from "@/lib/utils";
 
 const iconButtonVariants = cva(
-  "relative inline-flex items-center justify-center rounded-xs transition-all duration-snappy ease-emphasized overflow-hidden disabled:opacity-38 disabled:cursor-not-allowed group active:scale-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary select-none",
+  "relative inline-flex items-center justify-center rounded-full transition-all duration-snappy ease-emphasized overflow-hidden disabled:opacity-38 disabled:cursor-not-allowed group focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary select-none",
   {
     variants: {
       variant: {
-        filled: "bg-primary text-on-primary shadow-1",
-        tonal: "bg-surface-container-high text-on-surface",
-        outlined: "bg-transparent border border-outline text-on-surface-variant hover:bg-surface-variant/30",
-        standard: "bg-transparent text-on-surface-variant hover:bg-on-surface/5",
+        filled: "bg-primary text-on-primary",
+        tonal: "bg-secondary-container text-on-secondary-container",
+        outlined: "bg-transparent border border-outline text-on-surface-variant",
+        standard: "bg-transparent text-on-surface-variant",
       },
       size: {
         sm: "w-8u h-8u",
@@ -24,10 +24,16 @@ const iconButtonVariants = cva(
       },
     },
     compoundVariants: [
-      { variant: "filled", selected: true, className: "bg-primary text-on-primary" },
-      { variant: "filled", selected: false, className: "bg-surface-container text-primary" },
-      { variant: "tonal", selected: true, className: "bg-secondary-container text-on-secondary-container" },
-      { variant: "outlined", selected: true, className: "bg-primary/10 border-primary text-primary" },
+      {
+        variant: "tonal",
+        selected: true,
+        className: "bg-secondary-container text-on-secondary-container",
+      },
+      {
+        variant: "outlined",
+        selected: true,
+        className: "bg-primary/10 border-primary text-primary",
+      },
       { variant: "standard", selected: true, className: "text-primary" },
     ],
     defaultVariants: {
@@ -82,7 +88,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
         aria-label={ariaLabel}
         {...props}
       >
-        <div className="absolute inset-0 pointer-events-none bg-current opacity-0 transition-opacity group-hover:opacity-hover group-focus-visible:opacity-focus z-0" />
+        <div className="absolute inset-0 pointer-events-none bg-current opacity-0 transition-opacity group-hover:opacity-hover group-focus-visible:opacity-focus group-active:opacity-pressed z-0" />
         <Ripple center disabled={disabled || loading} />
         {loading ? (
           <svg

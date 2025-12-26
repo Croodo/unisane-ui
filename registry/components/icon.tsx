@@ -1,2 +1,2 @@
-export { Icon } from "@ui/primitives/icon";
-export type { IconProps } from "@ui/primitives/icon";
+export { Icon } from "@/primitives/icon";
+export type { IconProps } from "@/primitives/icon";

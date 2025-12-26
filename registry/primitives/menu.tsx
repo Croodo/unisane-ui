@@ -1,5 +1,5 @@
 import React from "react";
-import { cn } from "@ui/lib/utils";
+import { cn } from "@/lib/utils";
 import { Text } from "./text";
 import { StateLayer } from "./state-layer";
 
@@ -20,7 +20,7 @@ export const Menu: React.FC<MenuProps> = ({
   return (
     <div
       className={cn(
-        "min-w-[calc(var(--uni-sys-u)*50)] bg-surface rounded-md shadow-2 py-1 border border-outline-variant/20 overflow-hidden",
+        "min-w-[calc(var(--unit)*50)] bg-surface rounded-md shadow-2 py-1 border border-outline-variant/20 overflow-hidden",
         className
       )}
       role="menu"

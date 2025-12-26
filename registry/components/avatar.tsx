@@ -1,8 +1,8 @@
 import React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@ui/lib/utils";
-import { Surface } from "@ui/primitives/surface";
-import { Text } from "@ui/primitives/text";
+import { cn } from "@/lib/utils";
+import { Surface } from "@/primitives/surface";
+import { Text } from "@/primitives/text";
 
 const avatarVariants = cva(
   "relative inline-flex items-center justify-center overflow-hidden rounded-full",

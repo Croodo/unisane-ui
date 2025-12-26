@@ -1,9 +1,7 @@
 import React from "react";
 import { cva } from "class-variance-authority";
-import { cn } from "@ui/lib/utils";
+import { cn } from "@/lib/utils";
 import { Ripple } from "./ripple";
-
-// --- Types & Variants ---
 
 interface DrawerProps {
   open?: boolean;
@@ -12,8 +10,6 @@ interface DrawerProps {
   className?: string;
   modal?: boolean;
 }
-
-// --- Navigation Drawer Container ---
 
 export const NavigationDrawer: React.FC<DrawerProps> = ({
   open = true,
@@ -29,8 +25,8 @@ export const NavigationDrawer: React.FC<DrawerProps> = ({
       className={cn(
         "flex flex-col h-full bg-surface-container-low p-3u overflow-y-auto transition-transform duration-emphasized ease-standard",
         modal
-          ? "fixed inset-y-0 left-0 z-40 shadow-4 rounded-e-sm animate-in slide-in-from-left duration-emphasized ease-decelerate w-[min(calc(100vw-(var(--uni-sys-u)*14)),calc(var(--uni-sys-u)*80))]"
-          : "relative border-r border-outline-variant/30 rounded-none w-[calc(var(--uni-sys-u)*80)] z-20",
+          ? "fixed inset-y-0 left-0 z-40 shadow-4 rounded-e-sm animate-in slide-in-from-left duration-emphasized ease-decelerate w-[min(calc(100vw-(var(--unit)*14)),calc(var(--unit)*80))]"
+          : "relative border-r border-outline-variant/30 rounded-none w-[calc(var(--unit)*80)] z-20",
         !open && modal && "translate-x-full",
         className
       )}
@@ -42,7 +38,6 @@ export const NavigationDrawer: React.FC<DrawerProps> = ({
   if (modal) {
     return (
       <>
-        {/* Backdrop */}
         {open && (
           <div
             className="fixed inset-0 bg-scrim z-40 animate-in fade-in duration-short ease-standard"
@@ -58,15 +53,13 @@ export const NavigationDrawer: React.FC<DrawerProps> = ({
   return drawerContent;
 };
 
-// --- Navigation Drawer Item ---
-
 const drawerItemVariants = cva(
   "flex items-center gap-4u w-full min-h-12u py-3u px-4u rounded-xs text-label-medium font-black uppercase tracking-tight transition-all duration-snappy ease-emphasized cursor-pointer select-none group focus-visible:outline-2 focus-visible:outline-primary relative overflow-hidden shrink-0",
   {
     variants: {
       active: {
         true: "bg-primary text-on-primary shadow-1",
-        false: "bg-transparent text-on-surface-variant hover:bg-on-surface/5",
+        false: "bg-transparent text-on-surface-variant hover:bg-on-surface/8",
       },
     },
     defaultVariants: {

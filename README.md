@@ -1,59 +1,214 @@
-# Turborepo Tailwind CSS starter
+# Unisane UI
 
-This Turborepo starter is maintained by the Turborepo core team.
+A Material 3-based design system built with React, Tailwind CSS v4, and TypeScript. Production-ready components with sophisticated theming, accessibility, and developer experience.
 
-## Using this example
+---
 
-Run the following command:
+## Features
 
-```sh
-npx create-turbo@latest -e with-tailwind
+- ✅ **61 Components** - Complete Material 3 component library
+- ✅ **Dark Mode** - Auto-detect system preference with manual override
+- ✅ **4 Density Presets** - Dense, compact, standard, comfortable
+- ✅ **3 Radius Themes** - Sharp, standard, soft
+- ✅ **Industrial Units** - Density-aware spacing system (4u, 8u)
+- ✅ **TypeScript** - Full autocomplete for M3 tokens and components
+- ✅ **Navigation System** - Sophisticated rail + drawer patterns
+- ✅ **Accessibility** - WCAG AA compliant
+- ✅ **shadcn-style** - Copy components, own your code
+
+---
+
+## Quick Start
+
+```bash
+# Install
+pnpm add @unisane/ui
+
+# Initialize
+npx @unisane/cli init
+
+# Add components
+npx @unisane/cli add button card dialog
 ```
 
-## What's inside?
+```tsx
+import { ThemeProvider, Button } from "@unisane/ui";
+import "@unisane/ui/styles.css";
 
-This Turborepo includes the following packages/apps:
-
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app with [Tailwind CSS](https://tailwindcss.com/)
-- `web`: another [Next.js](https://nextjs.org/) app with [Tailwind CSS](https://tailwindcss.com/)
-- `ui`: a stub React component library with [Tailwind CSS](https://tailwindcss.com/) shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Building packages/ui
-
-This example is set up to produce compiled styles for `ui` components into the `dist` directory. The component `.tsx` files are consumed by the Next.js apps directly using `transpilePackages` in `next.config.ts`. This was chosen for several reasons:
-
-- Make sharing one `tailwind.config.ts` to apps and packages as easy as possible.
-- Make package compilation simple by only depending on the Next.js Compiler and `tailwindcss`.
-- Ensure Tailwind classes do not overwrite each other. The `ui` package uses a `ui-` prefix for it's classes.
-- Maintain clear package export boundaries.
-
-Another option is to consume `packages/ui` directly from source without building. If using this option, you will need to update the `tailwind.config.ts` in your apps to be aware of your package locations, so it can find all usages of the `tailwindcss` class names for CSS compilation.
-
-For example, in [tailwind.config.ts](packages/tailwind-config/tailwind.config.ts):
-
-```js
-  content: [
-    // app content
-    `src/**/*.{js,ts,jsx,tsx}`,
-    // include packages if not transpiling
-    "../../packages/ui/*.{js,ts,jsx,tsx}",
-  ],
+export default function App() {
+  return (
+    <ThemeProvider config={{ theme: "system", density: "standard" }}>
+      <Button variant="filled">Click me</Button>
+    </ThemeProvider>
+  );
+}
 ```
 
-If you choose this strategy, you can remove the `tailwindcss` and `autoprefixer` dependencies from the `ui` package.
+---
 
-### Utilities
+## Documentation
 
-This Turborepo has some additional tools already setup for you:
+**📚 [Complete Handbook](./handbook/README.md)** - Internal documentation for developers and LLMs
 
-- [Tailwind CSS](https://tailwindcss.com/) for styles
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-# unisane-ui
+### For Developers
+- [Getting Started](./handbook/guides/quick-start.md)
+- [Customization Guide](./handbook/design-system/customization.md)
+- [Spacing System](./handbook/design-system/spacing.md)
+- [Navigation System](./handbook/reference/navigation-system.md)
+
+### For Contributors
+- [Implementation Plan](./handbook/guides/implementation-plan.md)
+- [Current Status](./handbook/reference/current-status.md)
+- [System Blueprint](./handbook/llm-context/blueprint.md)
+
+---
+
+## Project Structure
+
+```
+unisane-ui/
+├── apps/
+│   ├── docs/                    # Documentation site
+│   └── web/                     # Demo app
+│
+├── packages/
+│   ├── ui/                      # Component library
+│   │   ├── src/
+│   │   │   ├── components/      # 49 components
+│   │   │   ├── primitives/      # 7 primitives
+│   │   │   ├── layout/          # 5 layout components
+│   │   │   └── hooks/           # Navigation & theme hooks
+│   │   └── registry/            # shadcn-style registry
+│   │
+│   ├── cli/                     # CLI tool
+│   ├── tokens/                  # Design tokens
+│   └── tailwind-config/         # Tailwind preset
+│
+├── handbook/                    # 📚 Documentation
+│   ├── design-system/           # Design fundamentals
+│   ├── components/              # Component docs
+│   ├── guides/                  # How-to guides
+│   ├── reference/               # Technical reference
+│   └── llm-context/             # LLM-specific context
+│
+└── docs/                        # Legacy docs (moved to handbook)
+```
+
+---
+
+## Technology Stack
+
+- **React 19** - Latest React features
+- **Tailwind CSS v4** - Token-driven utilities with `@theme inline`
+- **TypeScript** - Strict mode, full type safety
+- **Material Design 3** - Google's design system
+- **pnpm + Turborepo** - Monorepo management
+- **Class Variance Authority** - Type-safe variants
+
+---
+
+## Components
+
+### Primitives (7)
+ripple, icon, text, surface, state-layer, focus-ring, menu
+
+### Layout (5)
+container, pane, app-layout, theme-provider, window-size-provider
+
+### Components (49)
+button, icon-button, fab, text-field, checkbox, radio, switch, slider, card, chip, badge, avatar, dialog, sheet, popover, tooltip, dropdown-menu, select, combobox, tabs, alert, banner, snackbar, progress, skeleton, divider, accordion, list, table, pagination, breadcrumb, stepper, navigation-bar, navigation-rail, navigation-drawer, and more.
+
+---
+
+## Key Features
+
+### Dark Mode
+```tsx
+<ThemeProvider config={{ theme: "system" }}>
+  <ThemeSwitcher />
+</ThemeProvider>
+```
+
+### Density Control
+```tsx
+<ThemeProvider config={{ density: "compact" }}>
+  {/* All components scale automatically */}
+</ThemeProvider>
+```
+
+### Industrial Units
+```tsx
+<div className="p-4u gap-2u">
+  {/* Scales with density: 16px → 13.6px at compact */}
+</div>
+```
+
+### Navigation System
+```tsx
+const { isDrawerVisible, handleItemHover } = useNavigationHover({
+  items: navItems,
+  hoverDelay: 150,
+  exitDelay: 300,
+});
+```
+
+---
+
+## Development
+
+```bash
+# Install dependencies
+pnpm install
+
+# Build tokens
+cd packages/tokens
+pnpm build
+
+# Build UI library
+cd packages/ui
+pnpm build
+
+# Run dev app
+cd apps/web
+pnpm dev
+```
+
+---
+
+## Status
+
+- **Version**: 0.1.0-beta
+- **Progress**: 65% complete
+- **Components**: 61/61 implemented
+- **Documentation**: 10/71 docs complete
+- **Status**: Production-ready for internal use
+
+See [Current Status](./handbook/reference/current-status.md) for details.
+
+---
+
+## Contributing
+
+1. Read the [Implementation Plan](./handbook/guides/implementation-plan.md)
+2. Check [Current Status](./handbook/reference/current-status.md)
+3. Follow the [System Blueprint](./handbook/llm-context/blueprint.md)
+4. Submit a PR with tests
+
+---
+
+## License
+
+MIT
+
+---
+
+## Links
+
+- [Handbook](./handbook/README.md) - Complete documentation
+- [Quick Start](./handbook/guides/quick-start.md) - Get started guide
+- [Customization](./handbook/design-system/customization.md) - Theming guide
+- [Navigation System](./handbook/reference/navigation-system.md) - Navigation docs
+
+---
+
+**Built with ❤️ using Material Design 3**

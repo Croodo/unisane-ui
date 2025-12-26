@@ -1,10 +1,10 @@
 import React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@ui/lib/utils";
+import { cn } from "@/lib/utils";
 import { Ripple } from "./ripple";
 
 const fabVariants = cva(
-  "inline-flex items-center justify-center gap-2u transition-all duration-medium cursor-pointer overflow-hidden relative group shrink-0 z-30 select-none active:scale-95",
+  "inline-flex items-center justify-center gap-2u transition-all duration-medium ease-emphasized cursor-pointer overflow-hidden relative group shrink-0 z-30 select-none",
   {
     variants: {
       variant: {
@@ -14,10 +14,10 @@ const fabVariants = cva(
         tertiary: "bg-tertiary-container text-on-tertiary-container shadow-3 hover:shadow-4",
       },
       size: {
-        sm: "w-10u h-10u rounded-xs",
-        md: "w-14u h-14u rounded-xs",
-        lg: "w-24u h-24u rounded-sm",
-        extended: "h-14u px-6u rounded-xs w-auto min-w-20u",
+        sm: "w-10u h-10u rounded-md",
+        md: "w-14u h-14u rounded-lg",
+        lg: "w-24u h-24u rounded-xl",
+        extended: "h-14u px-6u rounded-lg w-auto min-w-20u",
       },
     },
     defaultVariants: {
@@ -64,7 +64,7 @@ export const Fab: React.FC<FabProps> = ({
           </span>
         )}
         {label && (
-          <span className="text-label-medium font-black uppercase tracking-widest leading-none pt-0.5u">
+          <span className="text-label-large font-medium leading-none pt-0.5u">
             {label}
           </span>
         )}

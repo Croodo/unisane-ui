@@ -4,333 +4,442 @@ import fs from "fs-extra";
 import path from "path";
 import { prompts } from "../utils/prompts.js";
 
-// Registry component mapping
-const COMPONENT_MAP = {
-  // Phase 1 Components
-  button: { file: "button.tsx", dependencies: ["ripple"] },
-  "icon-button": { file: "icon-button.tsx", dependencies: ["ripple", "icon"] },
-  "text-field": { file: "text-field.tsx", dependencies: [] },
-  checkbox: { file: "checkbox.tsx", dependencies: ["ripple"] },
-  radio: { file: "radio.tsx", dependencies: ["ripple"] },
-  switch: { file: "switch.tsx", dependencies: ["ripple", "icon"] },
-  card: { file: "card.tsx", dependencies: ["ripple"] },
-  chip: { file: "chip.tsx", dependencies: [] },
+// Registry types
+interface ComponentMetadata {
+  name: string;
+  type: string;
+  description: string;
+  files: string[];
+  dependencies: string[];
+  registryDependencies: string[];
+  devDependencies?: string[];
+  variants?: Record<string, string[]>;
+  accessibility?: {
+    keyboard?: boolean;
+    screenReader?: boolean;
+    contrast?: string;
+  };
+}
 
-  // Phase 2 Overlay Components
-  dialog: { file: "dialog.tsx", dependencies: ["surface", "text"] },
-  popover: { file: "popover.tsx", dependencies: [] },
-  tooltip: { file: "tooltip.tsx", dependencies: ["surface", "text"] },
-  "dropdown-menu": {
-    file: "dropdown-menu.tsx",
-    dependencies: ["menu", "surface", "text"],
-  },
-  tabs: { file: "tabs.tsx", dependencies: ["surface", "text"] },
+interface Registry {
+  $schema: string;
+  version: string;
+  components: Record<string, ComponentMetadata>;
+}
 
-  // Phase 3 Navigation Components
-  fab: { file: "fab.tsx", dependencies: ["surface", "state-layer", "text"] },
-  "top-app-bar": {
-    file: "top-app-bar.tsx",
-    dependencies: ["surface", "state-layer", "text", "icon-button"],
-  },
-  "navigation-bar": {
-    file: "navigation-bar.tsx",
-    dependencies: ["surface", "state-layer", "text", "icon"],
-  },
-  "navigation-rail": {
-    file: "navigation-rail.tsx",
-    dependencies: ["surface", "text"],
-  },
-  "navigation-drawer": {
-    file: "navigation-drawer.tsx",
-    dependencies: ["surface", "state-layer", "text"],
-  },
+interface UnisaneConfig {
+  aliases?: {
+    components?: string;
+    lib?: string;
+    hooks?: string;
+  };
+  srcDir?: string;
+}
 
-  // Additional Utilities
-  progress: { file: "progress.tsx", dependencies: [] },
-  skeleton: { file: "skeleton.tsx", dependencies: [] },
-  snackbar: {
-    file: "snackbar.tsx",
-    dependencies: ["surface", "text", "button", "icon-button"],
-  },
-  banner: {
-    file: "banner.tsx",
-    dependencies: ["surface", "text", "button", "icon-button"],
-  },
-  divider: { file: "divider.tsx", dependencies: [] },
+interface AddOptions {
+  yes?: boolean;
+  overwrite?: boolean;
+  all?: boolean;
+  path?: string;
+}
 
-  // New Components
-  avatar: { file: "avatar.tsx", dependencies: ["surface", "text"] },
-  badge: { file: "badge.tsx", dependencies: ["text"] },
-  alert: {
-    file: "alert.tsx",
-    dependencies: ["surface", "text", "icon-button"],
-  },
-  accordion: {
-    file: "accordion.tsx",
-    dependencies: ["surface", "text", "state-layer"],
-  },
-  "bottom-app-bar": {
-    file: "bottom-app-bar.tsx",
-    dependencies: ["surface", "state-layer"],
-  },
-  breadcrumb: { file: "breadcrumb.tsx", dependencies: ["text", "icon-button"] },
-  list: { file: "list.tsx", dependencies: ["surface", "text", "state-layer"] },
+// Load registry from @unisane/ui package
+async function loadRegistry(registryPath: string): Promise<Registry> {
+  try {
+    const registryJson = await fs.readJson(registryPath);
+    return registryJson;
+  } catch (error) {
+    throw new Error(
+      `Failed to load registry: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+}
 
-  // Data Display Components
-  table: { file: "table.tsx", dependencies: ["surface", "text"] },
-  pagination: {
-    file: "pagination.tsx",
-    dependencies: ["text", "icon-button", "state-layer"],
-  },
-  stepper: {
-    file: "stepper.tsx",
-    dependencies: ["surface", "text", "state-layer"],
-  },
-  slider: {
-    file: "slider.tsx",
-    dependencies: ["surface", "text", "state-layer"],
-  },
+// Load project config (unisane.json or from package.json)
+async function loadConfig(): Promise<UnisaneConfig> {
+  const configPath = path.join(process.cwd(), "unisane.json");
+  const packageJsonPath = path.join(process.cwd(), "package.json");
 
-  // Primitives
-  ripple: { file: "ripple.tsx", dependencies: [] },
-  icon: { file: "icon.tsx", dependencies: [] },
-  text: { file: "text.tsx", dependencies: [] },
-  surface: { file: "surface.tsx", dependencies: [] },
-  "state-layer": { file: "state-layer.tsx", dependencies: [] },
-  "focus-ring": { file: "focus-ring.tsx", dependencies: [] },
-  menu: { file: "menu.tsx", dependencies: ["state-layer", "text"] },
-
-  // Layout Primitives
-  container: { file: "container.tsx", dependencies: [] },
-  scaffold: { file: "scaffold.tsx", dependencies: ["window-size-provider"] },
-  "pane-group": {
-    file: "pane-group.tsx",
-    dependencies: ["window-size-provider"],
-  },
-  "window-size-provider": {
-    file: "window-size-provider.tsx",
-    dependencies: [],
-  },
-};
-
-type ComponentKey = keyof typeof COMPONENT_MAP;
-
-function getAllDependencies(
-  component: ComponentKey,
-  visited = new Set<ComponentKey>()
-): Set<ComponentKey> {
-  const deps = COMPONENT_MAP[component].dependencies as ComponentKey[];
-
-  for (const dep of deps) {
-    if (!visited.has(dep)) {
-      visited.add(dep);
-      getAllDependencies(dep, visited);
+  // Check for unisane.json first
+  if (await fs.pathExists(configPath)) {
+    try {
+      return await fs.readJson(configPath);
+    } catch {
+      // Fall through to defaults
     }
   }
 
-  visited.add(component);
+  // Check for unisane config in package.json
+  if (await fs.pathExists(packageJsonPath)) {
+    try {
+      const pkg = await fs.readJson(packageJsonPath);
+      if (pkg.unisane) {
+        return pkg.unisane;
+      }
+    } catch {
+      // Fall through to defaults
+    }
+  }
+
+  // Default config
+  return {
+    aliases: {
+      components: "@/components/ui",
+      lib: "@/lib",
+      hooks: "@/hooks",
+    },
+    srcDir: (await fs.pathExists(path.join(process.cwd(), "src")))
+      ? "src"
+      : "",
+  };
+}
+
+// Recursively get all dependencies for components
+function getAllDependencies(
+  components: string[],
+  registry: Registry,
+  visited = new Set<string>()
+): Set<string> {
+  for (const component of components) {
+    if (visited.has(component)) continue;
+
+    const meta = registry.components[component];
+    if (!meta) continue;
+
+    visited.add(component);
+
+    // Add registry dependencies recursively
+    const deps = meta.registryDependencies || [];
+    for (const dep of deps) {
+      if (!visited.has(dep)) {
+        getAllDependencies([dep], registry, visited);
+      }
+    }
+  }
+
   return visited;
 }
 
-async function copyComponent(
-  component: ComponentKey,
-  targetDir: string,
-  registryDir: string
-) {
-  const componentInfo = COMPONENT_MAP[component];
-  if (!componentInfo) {
-    throw new Error(`Unknown component: ${component}`);
+// Get target directory based on component type
+function getTargetDir(
+  type: string,
+  config: UnisaneConfig,
+  cwd: string,
+  customPath?: string
+): string {
+  if (customPath) {
+    return path.join(cwd, customPath);
   }
 
-  // Determine source path based on component type
-  let srcDir: string;
-  if (
-    ["text", "surface", "state-layer", "focus-ring", "icon"].includes(component)
-  ) {
-    srcDir = path.join(registryDir, "primitives");
-  } else if (
-    ["container", "scaffold", "pane-group", "window-size-provider"].includes(
-      component
-    )
-  ) {
-    srcDir = path.join(registryDir, "layout");
-  } else {
-    srcDir = path.join(registryDir, "components");
+  const srcDir = config.srcDir || "";
+  const basePath = srcDir ? path.join(cwd, srcDir) : cwd;
+
+  if (type === "lib:util") {
+    return path.join(basePath, "lib");
   }
-
-  const srcFile = path.join(srcDir, componentInfo.file);
-  const destFile = path.join(targetDir, `${component}.tsx`);
-
-  // Read and process the file
-  let content = await fs.readFile(srcFile, "utf-8");
-
-  // Update import paths to use relative imports from the components directory
-  content = content.replace(
-    /from\s+['"](\.\.\/)+(primitives|layout|components|lib)/g,
-    (match, dots, folder) => {
-      // Calculate relative path from components/ui to the target folder
-      const relativePath = folder === "lib" ? "../lib" : `./${folder}`;
-      return `from '${relativePath}`;
-    }
-  );
-
-  // Ensure target directory exists
-  await fs.ensureDir(targetDir);
-
-  // Write the processed file
-  await fs.writeFile(destFile, content);
-
-  return destFile;
+  if (type === "hooks:ui") {
+    return path.join(basePath, "hooks");
+  }
+  if (type === "types:ui") {
+    return path.join(basePath, "types");
+  }
+  // All other types go to components/ui
+  return path.join(basePath, "components", "ui");
 }
 
-export async function addCommand(
-  componentName?: string,
-  options?: { yes?: boolean }
-) {
-  const spinner = ora("Adding component...").start();
+// Transform import paths in component files
+function transformImports(content: string, config: UnisaneConfig): string {
+  const componentsAlias = config.aliases?.components || "@/components/ui";
+  const libAlias = config.aliases?.lib || "@/lib";
+  const hooksAlias = config.aliases?.hooks || "@/hooks";
 
-  try {
-    // Prompt for component selection if not provided
-    if (!componentName) {
-      const { component } = await prompts({
-        type: "select",
-        name: "component",
-        message: "Which component would you like to add?",
-        choices: [
-          // Phase 1 Components
-          { title: "Button", value: "button" },
-          { title: "Icon Button", value: "icon-button" },
-          { title: "TextField", value: "text-field" },
-          { title: "Checkbox", value: "checkbox" },
-          { title: "Radio", value: "radio" },
-          { title: "Switch", value: "switch" },
-          { title: "Card", value: "card" },
-          { title: "Chip", value: "chip" },
+  // Transform @ui/ imports
+  content = content.replace(
+    /from\s+['"]@ui\/(primitives|layout|components)\/([^'"]+)['"]/g,
+    `from '${componentsAlias}/$2'`
+  );
 
-          // Phase 2 Overlay Components
-          { title: "Dialog", value: "dialog" },
-          { title: "Popover", value: "popover" },
-          { title: "Tooltip", value: "tooltip" },
-          { title: "Dropdown Menu", value: "dropdown-menu" },
-          { title: "Tabs", value: "tabs" },
+  content = content.replace(
+    /from\s+['"]@ui\/lib\/([^'"]+)['"]/g,
+    `from '${libAlias}/$1'`
+  );
 
-          // Phase 3 Navigation Components
-          { title: "FAB", value: "fab" },
-          { title: "Top App Bar", value: "top-app-bar" },
-          { title: "Navigation Bar", value: "navigation-bar" },
-          { title: "Navigation Rail", value: "navigation-rail" },
-          { title: "Navigation Drawer", value: "navigation-drawer" },
+  content = content.replace(
+    /from\s+['"]@ui\/hooks\/([^'"]+)['"]/g,
+    `from '${hooksAlias}/$1'`
+  );
 
-          // Additional Utilities
-          { title: "Progress", value: "progress" },
-          { title: "Skeleton", value: "skeleton" },
-          { title: "Snackbar", value: "snackbar" },
-          { title: "Banner", value: "banner" },
-          { title: "Divider", value: "divider" },
+  return content;
+}
 
-          // New Components
-          { title: "Avatar", value: "avatar" },
-          { title: "Badge", value: "badge" },
-          { title: "Alert", value: "alert" },
-          { title: "Accordion", value: "accordion" },
-          { title: "Bottom App Bar", value: "bottom-app-bar" },
-          { title: "Breadcrumb", value: "breadcrumb" },
-          { title: "List", value: "list" },
+// Copy a single component
+async function copyComponent(
+  componentKey: string,
+  meta: ComponentMetadata,
+  config: UnisaneConfig,
+  registryDir: string,
+  cwd: string,
+  options: AddOptions
+): Promise<{ copied: string[]; skipped: string[] }> {
+  const copied: string[] = [];
+  const skipped: string[] = [];
+  const targetDir = getTargetDir(meta.type, config, cwd, options.path);
 
-          // Data Display Components
-          { title: "Table", value: "table" },
-          { title: "Pagination", value: "pagination" },
-          { title: "Stepper", value: "stepper" },
+  await fs.ensureDir(targetDir);
 
-          // Layout Primitives
-          { title: "Container", value: "container" },
-          { title: "Scaffold", value: "scaffold" },
-          { title: "PaneGroup", value: "pane-group" },
-        ],
-      });
-      componentName = component;
-    }
+  for (const file of meta.files) {
+    const srcFile = path.join(registryDir, file);
+    const fileName = path.basename(file);
+    const destFile = path.join(targetDir, fileName);
 
-    if (!componentName || !COMPONENT_MAP.hasOwnProperty(componentName)) {
-      spinner.fail(`Unknown component: ${componentName}`);
-      console.log(
-        chalk.yellow(
-          "Available components: button, icon-button, text-field, checkbox, radio, switch, card, chip, dialog, popover, tooltip, dropdown-menu, tabs, fab, top-app-bar, navigation-bar, navigation-rail, navigation-drawer, progress, skeleton, snackbar, banner, divider, avatar, badge, alert, accordion, bottom-app-bar, breadcrumb, list, table, pagination, stepper, container, scaffold, pane-group"
-        )
-      );
-      return;
-    }
-
-    // Check if we're in a Next.js project
-    const packageJsonPath = path.join(process.cwd(), "package.json");
-    const packageJson = await fs.readJson(packageJsonPath);
-
-    if (!packageJson.dependencies?.next) {
-      spinner.fail("This does not appear to be a Next.js project");
-      console.log(
-        chalk.yellow("Please run this command in a Next.js project directory.")
-      );
-      return;
-    }
-
-    // Determine target directory
-    const targetDir = path.join(process.cwd(), "src", "components", "ui");
-
-    // Get all dependencies including the component itself
-    const allComponents = getAllDependencies(componentName as ComponentKey);
-
-    spinner.text = `Adding ${componentName} and dependencies...`;
-
-    // Copy all components
-    const registryDir = path.join(
-      process.cwd(),
-      "node_modules",
-      "@unisane",
-      "ui",
-      "registry"
-    );
-    const copiedFiles: string[] = [];
-
-    for (const comp of allComponents) {
-      const destFile = await copyComponent(comp, targetDir, registryDir);
-      copiedFiles.push(destFile);
-    }
-
-    // Also copy utils if not exists
-    const utilsDir = path.join(process.cwd(), "src", "lib");
-    const utilsFile = path.join(utilsDir, "utils.ts");
-    if (!(await fs.pathExists(utilsFile))) {
-      await fs.ensureDir(utilsDir);
-      const registryUtils = path.join(registryDir, "lib", "utils.ts");
-      if (await fs.pathExists(registryUtils)) {
-        await fs.copy(registryUtils, utilsFile);
-        copiedFiles.push(utilsFile);
+    // Check if file exists
+    if (await fs.pathExists(destFile)) {
+      if (!options.overwrite) {
+        skipped.push(fileName);
+        continue;
       }
     }
 
-    spinner.succeed(
-      chalk.green(`✅ Component ${componentName} added successfully!`)
+    try {
+      let content = await fs.readFile(srcFile, "utf-8");
+      content = transformImports(content, config);
+      await fs.writeFile(destFile, content);
+      copied.push(path.relative(cwd, destFile));
+    } catch (error) {
+      console.warn(
+        chalk.yellow(`  Warning: Could not copy ${file}: ${error instanceof Error ? error.message : String(error)}`)
+      );
+    }
+  }
+
+  return { copied, skipped };
+}
+
+// Get all npm dependencies for components
+function getNpmDependencies(
+  components: Set<string>,
+  registry: Registry
+): { dependencies: Set<string>; devDependencies: Set<string> } {
+  const dependencies = new Set<string>();
+  const devDependencies = new Set<string>();
+
+  for (const comp of components) {
+    const meta = registry.components[comp];
+    if (!meta) continue;
+
+    for (const dep of meta.dependencies || []) {
+      dependencies.add(dep);
+    }
+    for (const dep of meta.devDependencies || []) {
+      devDependencies.add(dep);
+    }
+  }
+
+  return { dependencies, devDependencies };
+}
+
+export async function addCommand(
+  componentNames?: string[],
+  options: AddOptions = {}
+) {
+  const spinner = ora();
+
+  try {
+    const cwd = process.cwd();
+
+    // Find registry location
+    const registryPath = path.join(
+      cwd,
+      "node_modules",
+      "@unisane",
+      "ui",
+      "registry",
+      "registry.json"
     );
 
-    console.log(chalk.blue("\n📁 Created files:"));
-    for (const file of copiedFiles) {
-      console.log(chalk.gray(`  - ${path.relative(process.cwd(), file)}`));
+    // Check if registry exists
+    if (!(await fs.pathExists(registryPath))) {
+      console.log(chalk.red("\n✗ Registry not found"));
+      console.log(
+        chalk.yellow(
+          "\nMake sure you have installed @unisane/ui:"
+        )
+      );
+      console.log(chalk.gray("  pnpm add @unisane/ui"));
+      console.log(
+        chalk.gray("\nOr run init first:")
+      );
+      console.log(chalk.gray("  npx @unisane/cli init"));
+      return;
     }
 
-    console.log(chalk.blue("\n📝 Usage example:"));
-    const importName = componentName
-      .split("-")
-      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-      .join("");
-    console.log(
-      chalk.gray(
-        `import { ${importName} } from "@/components/ui/${componentName}";`
-      )
-    );
+    // Load registry and config
+    const registry = await loadRegistry(registryPath);
+    const config = await loadConfig();
+
+    // Get list of available UI components (exclude lib utils)
+    const availableComponents = Object.entries(registry.components)
+      .filter(([_, meta]) => meta.type !== "lib:util")
+      .map(([key]) => key)
+      .sort();
+
+    let selectedComponents: string[] = [];
+
+    // Handle --all flag
+    if (options.all) {
+      selectedComponents = availableComponents;
+      console.log(chalk.blue(`\nAdding all ${selectedComponents.length} components...`));
+    }
+    // Handle component names provided as arguments
+    else if (componentNames && componentNames.length > 0) {
+      // Validate component names
+      const invalid = componentNames.filter(
+        (name) => !registry.components[name]
+      );
+      if (invalid.length > 0) {
+        console.log(chalk.red(`\n✗ Unknown components: ${invalid.join(", ")}`));
+        console.log(chalk.gray("\nRun `npx @unisane/cli add` to see available components."));
+        return;
+      }
+      selectedComponents = componentNames;
+    }
+    // Interactive selection
+    else {
+      const choices = availableComponents.map((key) => {
+        const comp = registry.components[key];
+        return {
+          title: comp?.name || key,
+          value: key,
+          description: comp?.description || "",
+        };
+      });
+
+      const { components } = await prompts({
+        type: "multiselect",
+        name: "components",
+        message: "Which components would you like to add?",
+        choices,
+        hint: "Space to select. A to toggle all. Enter to submit.",
+        instructions: false,
+      });
+
+      if (!components || components.length === 0) {
+        console.log(chalk.yellow("\nNo components selected."));
+        return;
+      }
+
+      selectedComponents = components;
+    }
+
+    // Get all dependencies (including transitive)
+    const allComponents = getAllDependencies(selectedComponents, registry);
+
+    // Always include utils
+    allComponents.add("utils");
+
+    const depsCount = allComponents.size - selectedComponents.length;
+    if (depsCount > 0) {
+      console.log(
+        chalk.gray(`\nResolving ${depsCount} dependencies...`)
+      );
+    }
+
+    // Confirm if not using --yes
+    if (!options.yes && !options.all) {
+      const componentList = Array.from(allComponents).sort();
+      console.log(chalk.blue("\nComponents to add:"));
+      for (const comp of componentList) {
+        const meta = registry.components[comp];
+        const isSelected = selectedComponents.includes(comp);
+        const prefix = isSelected ? chalk.green("◉") : chalk.gray("○");
+        console.log(`  ${prefix} ${meta?.name || comp}${!isSelected ? chalk.gray(" (dependency)") : ""}`);
+      }
+
+      const { confirm } = await prompts({
+        type: "confirm",
+        name: "confirm",
+        message: "Proceed with installation?",
+        initial: true,
+      });
+
+      if (!confirm) {
+        console.log(chalk.yellow("\nCancelled."));
+        return;
+      }
+    }
+
+    // Copy components
+    spinner.start("Installing components...");
+
+    const registryDir = path.join(cwd, "node_modules", "@unisane", "ui", "registry");
+    const allCopied: string[] = [];
+    const allSkipped: string[] = [];
+
+    for (const comp of allComponents) {
+      const meta = registry.components[comp];
+      if (!meta) continue;
+
+      spinner.text = `Installing ${meta.name}...`;
+      const { copied, skipped } = await copyComponent(
+        comp,
+        meta,
+        config,
+        registryDir,
+        cwd,
+        options
+      );
+      allCopied.push(...copied);
+      allSkipped.push(...skipped);
+    }
+
+    spinner.succeed(chalk.green("Components installed successfully!"));
+
+    // Show results
+    if (allCopied.length > 0) {
+      console.log(chalk.blue("\n✓ Created files:"));
+      for (const file of allCopied) {
+        console.log(chalk.gray(`  ${file}`));
+      }
+    }
+
+    if (allSkipped.length > 0) {
+      console.log(chalk.yellow("\n⚠ Skipped existing files:"));
+      for (const file of allSkipped) {
+        console.log(chalk.gray(`  ${file}`));
+      }
+      console.log(chalk.gray("\n  Use --overwrite to replace existing files."));
+    }
+
+    // Check for npm dependencies
+    const { dependencies, devDependencies } = getNpmDependencies(allComponents, registry);
+
+    if (dependencies.size > 0 || devDependencies.size > 0) {
+      console.log(chalk.blue("\n📦 Required npm packages:"));
+
+      if (dependencies.size > 0) {
+        console.log(chalk.gray(`  pnpm add ${Array.from(dependencies).join(" ")}`));
+      }
+      if (devDependencies.size > 0) {
+        console.log(chalk.gray(`  pnpm add -D ${Array.from(devDependencies).join(" ")}`));
+      }
+    }
+
+    // Show usage example
+    if (selectedComponents.length === 1 && selectedComponents[0]) {
+      const comp = selectedComponents[0];
+      const meta = registry.components[comp];
+      if (meta) {
+        const importAlias = config.aliases?.components || "@/components/ui";
+        const importName = meta.name;
+        console.log(chalk.blue("\n📝 Usage:"));
+        console.log(chalk.gray(`  import { ${importName} } from "${importAlias}/${comp}";`));
+      }
+    }
+
   } catch (error) {
-    spinner.fail(chalk.red("Failed to add component"));
+    spinner.fail(chalk.red("Failed to add components"));
     console.error(
-      chalk.red("Error:"),
+      chalk.red("\nError:"),
       error instanceof Error ? error.message : String(error)
     );
     process.exit(1);

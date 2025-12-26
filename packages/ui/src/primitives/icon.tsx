@@ -4,8 +4,7 @@ import { cn } from "@ui/lib/utils";
 export interface IconProps extends React.HTMLAttributes<HTMLElement> {
   size?: number | "xs" | "sm" | "md" | "lg" | "xl";
   filled?: boolean;
-  symbol?: string; // If provided, renders Material Symbol
-  // Allow SVG props as well for backward compat
+  symbol?: string;
   viewBox?: string;
   fill?: string;
   stroke?: string;
@@ -30,7 +29,6 @@ export const Icon = forwardRef<HTMLElement, IconProps>(
     const isScale =
       typeof size === "string" && ["xs", "sm", "md", "lg", "xl"].includes(size);
 
-    // If symbol prop is passed OR children is a simple string, render as Material Symbol
     const isSymbol =
       symbol ||
       (typeof children === "string" &&
@@ -39,11 +37,11 @@ export const Icon = forwardRef<HTMLElement, IconProps>(
 
     const sizeClasses = isScale
       ? {
-          xs: "w-icon-xs h-icon-xs text-[var(--uni-sys-icon-size-xs)]",
-          sm: "w-icon-sm h-icon-sm text-[var(--uni-sys-icon-size-sm)]",
-          md: "w-icon-md h-icon-md text-[var(--uni-sys-icon-size-md)]",
-          lg: "w-icon-lg h-icon-lg text-[var(--uni-sys-icon-size-lg)]",
-          xl: "w-icon-xl h-icon-xl text-[var(--uni-sys-icon-size-xl)]",
+          xs: "w-icon-xs h-icon-xs text-[var(--icon-xs)]",
+          sm: "w-icon-sm h-icon-sm text-[var(--icon-sm)]",
+          md: "w-icon-md h-icon-md text-[var(--icon-md)]",
+          lg: "w-icon-lg h-icon-lg text-[var(--icon-lg)]",
+          xl: "w-icon-xl h-icon-xl text-[var(--icon-xl)]",
         }[size as string]
       : "";
 
@@ -61,7 +59,6 @@ export const Icon = forwardRef<HTMLElement, IconProps>(
             fontSize: !isScale ? size : undefined,
             width: !isScale ? size : undefined,
             height: !isScale ? size : undefined,
-            // M3 Icon Standard: FILL 0 or 1.
             fontVariationSettings: `'FILL' ${filled ? 1 : 0}, 'wght' 400, 'GRAD' 0, 'opsz' 24`,
             ...style,
           }}
@@ -72,7 +69,6 @@ export const Icon = forwardRef<HTMLElement, IconProps>(
       );
     }
 
-    // Fallback to SVG wrapper
     return (
       <svg
         ref={ref as React.Ref<SVGSVGElement>}
@@ -97,7 +93,6 @@ export const Icon = forwardRef<HTMLElement, IconProps>(
 
 Icon.displayName = "Icon";
 
-// Common icon components for convenience
 export const CheckIcon = (props: Omit<IconProps, "symbol">) => (
   <Icon symbol="check" {...props} />
 );

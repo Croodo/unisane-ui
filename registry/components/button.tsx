@@ -3,23 +3,23 @@
 import { type ReactNode, type ButtonHTMLAttributes, forwardRef } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Ripple } from "./ripple";
-import { cn } from "@ui/lib/utils";
+import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "relative inline-flex items-center justify-center gap-2u rounded-xs font-black transition-all duration-snappy ease-emphasized overflow-hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-38 disabled:cursor-not-allowed group active:scale-[0.98] whitespace-nowrap uppercase tracking-[0.15em] text-label-small leading-none select-none",
+  "relative inline-flex items-center justify-center gap-2u rounded-full font-medium transition-all duration-short ease-standard overflow-hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-38 disabled:cursor-not-allowed group whitespace-nowrap leading-none select-none",
   {
     variants: {
       variant: {
-        filled: "bg-primary text-on-primary shadow-1 hover:shadow-3 active:shadow-1",
-        tonal: "bg-surface-container-high text-on-surface shadow-0 hover:bg-surface-container-highest active:shadow-0 border border-outline-variant/30",
-        outlined: "border border-outline text-primary hover:bg-surface-variant active:bg-surface-container",
-        text: "text-primary hover:bg-primary/5 active:bg-primary/10",
-        elevated: "bg-surface text-primary shadow-2 hover:shadow-4 active:shadow-1 border border-outline-variant/10",
+        filled: "bg-primary text-on-primary",
+        tonal: "bg-secondary-container text-on-secondary-container",
+        outlined: "border border-outline text-primary bg-transparent",
+        text: "text-primary bg-transparent",
+        elevated: "bg-surface-container-low text-primary shadow-1",
       },
       size: {
-        sm: "h-8u px-4u text-label-small",
-        md: "h-10u px-8u text-label-small",
-        lg: "h-12u px-10u text-body-small",
+        sm: "h-8u px-4u text-label-medium",
+        md: "h-10u px-6u text-label-large",
+        lg: "h-12u px-8u text-label-large",
       },
     },
     defaultVariants: {
@@ -33,6 +33,8 @@ export interface ButtonProps
   extends ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   children: ReactNode;
+  variant?: "filled" | "tonal" | "outlined" | "text" | "elevated";
+  size?: "sm" | "md" | "lg";
   loading?: boolean;
   icon?: ReactNode;
   trailingIcon?: ReactNode;
@@ -67,6 +69,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         disabled={disabled || loading}
         {...props}
       >
+        <span className="absolute inset-0 pointer-events-none bg-current opacity-0 transition-opacity duration-snappy ease-standard group-hover:opacity-hover group-focus-visible:opacity-focus group-active:opacity-pressed" />
         <Ripple disabled={disabled || loading} />
         {loading && (
           <svg
@@ -101,7 +104,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
         <span
           className={cn(
-            "relative z-10 pointer-events-none pt-0.5u",
+            "relative z-10 pointer-events-none",
             loading ? "opacity-0" : "opacity-100"
           )}
         >
@@ -121,4 +124,3 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 );
 
 Button.displayName = "Button";
-

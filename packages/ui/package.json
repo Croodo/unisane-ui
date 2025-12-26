@@ -6,7 +6,8 @@
     "**/*.css"
   ],
   "files": [
-    "dist"
+    "dist",
+    "registry"
   ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -17,6 +18,7 @@
       "default": "./dist/index.js"
     },
     "./styles.css": "./dist/index.css",
+    "./registry": "./registry/registry.json",
     "./*": {
       "types": "./dist/*.d.ts",
       "import": "./dist/*.js",
@@ -25,7 +27,8 @@
   },
   "license": "MIT",
   "scripts": {
-    "build": "pnpm build:components && pnpm build:styles",
+    "build": "pnpm build:registry && pnpm build:components && pnpm build:styles",
+    "build:registry": "node scripts/build-registry.mjs",
     "build:styles": "tailwindcss -i ./src/styles.css -o ./dist/index.css",
     "build:components": "tsc -p tsconfig.json && tsc-alias -p tsconfig.json",
     "check-types": "tsc --noEmit",

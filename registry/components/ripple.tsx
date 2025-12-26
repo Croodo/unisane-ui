@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState, useLayoutEffect, useCallback } from "react";
-import { cn } from "@ui/lib/utils";
+import { cn } from "@/lib/utils";
 
 interface RippleProps {
-  color?: string; // Optional color override, defaults to currentColor
-  center?: boolean; // For icon buttons, ripple starts from center
+  color?: string;
+  center?: boolean;
   disabled?: boolean;
   className?: string;
 }
@@ -33,7 +33,6 @@ export const Ripple: React.FC<RippleProps> = ({
       const size =
         container.width > container.height ? container.width : container.height;
 
-      // If centered (e.g. icon buttons), ignore click coords
       const x = center ? container.width / 2 : e.clientX - container.left;
       const y = center ? container.height / 2 : e.clientY - container.top;
 
@@ -47,7 +46,7 @@ export const Ripple: React.FC<RippleProps> = ({
     if (ripples.length > 0) {
       const timer = setTimeout(() => {
         setRipples([]);
-      }, 600); // Matches CSS animation duration
+      }, 600);
       return () => clearTimeout(timer);
     }
   }, [ripples]);
@@ -63,7 +62,7 @@ export const Ripple: React.FC<RippleProps> = ({
       {ripples.map((ripple) => (
         <span
           key={ripple.id}
-          className="absolute rounded-full bg-current opacity-25 animate-ripple pointer-events-none"
+          className="absolute rounded-full bg-current opacity-pressed animate-ripple pointer-events-none"
           style={{
             top: ripple.y,
             left: ripple.x,

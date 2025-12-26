@@ -1,9 +1,9 @@
 import React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@ui/lib/utils";
-import { Icon } from "@ui/primitives/icon";
-import { Text } from "@ui/primitives/text";
-import { StateLayer } from "@ui/primitives/state-layer";
+import { cn } from "@/lib/utils";
+import { Icon } from "@/primitives/icon";
+import { Text } from "@/primitives/text";
+import { StateLayer } from "@/primitives/state-layer";
 
 interface Step {
   label: string;
@@ -42,7 +42,7 @@ export const Stepper: React.FC<StepperProps> = ({
             {!isLast && (
               <div
                 className={cn(
-                  "absolute top-4u left-1/2 w-full h-0_5u transition-colors duration-medium z-0",
+                  "absolute top-4u left-1/2 w-full h-0_5u transition-colors duration-medium ease-standard z-0",
                   isCompleted ? "bg-primary" : "bg-outline-variant/30"
                 )}
               />
@@ -50,7 +50,7 @@ export const Stepper: React.FC<StepperProps> = ({
 
             <div
               className={cn(
-                "w-8u h-8u rounded-xs flex items-center justify-center text-label-small font-black border-2 z-10 transition-all duration-emphasized",
+                "w-8u h-8u rounded-xs flex items-center justify-center text-label-small font-black border-2 z-10 transition-all duration-emphasized ease-emphasized",
                 isActive && "bg-primary border-primary text-on-primary shadow-2 scale-110",
                 isCompleted && "bg-primary border-primary text-on-primary",
                 !isActive &&
@@ -65,7 +65,7 @@ export const Stepper: React.FC<StepperProps> = ({
               )}
             </div>
 
-            <div className="mt-4u text-center px-2u max-w-[calc(var(--uni-sys-u)*30)]">
+            <div className="mt-4u text-center px-2u max-w-[calc(var(--unit)*30)]">
               <span
                 className={cn(
                   "block text-label-small font-black uppercase tracking-widest transition-colors",

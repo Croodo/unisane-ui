@@ -23,7 +23,7 @@ export function Container({
     <div
       className={`
       mx-auto 
-      px-[var(--uni-sys-layout-margin)] 
+      px-[var(--layout-margin)] 
       ${maxWidthClasses[maxWidth]}
       ${className}
     `}

@@ -1,11 +1,10 @@
 import { type ReactNode, type HTMLAttributes, forwardRef } from "react";
 import { Ripple } from "./ripple";
-import { CloseIcon } from "@ui/primitives/icon";
-import { cn } from "@ui/lib/utils";
+import { cn } from "@/lib/utils";
 import { cva, type VariantProps } from "class-variance-authority";
 
 const chipVariants = cva(
-  "inline-flex items-center gap-2u h-8u px-3u rounded-xs text-label-small font-black uppercase tracking-widest border transition-all cursor-pointer select-none relative overflow-hidden group focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary leading-none",
+  "inline-flex items-center gap-2u h-8u px-3u rounded-sm text-label-small font-medium border transition-all cursor-pointer select-none relative overflow-hidden group focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary leading-none",
   {
     variants: {
       variant: {
@@ -23,7 +22,7 @@ const chipVariants = cva(
       {
         variant: "filter",
         selected: true,
-        className: "bg-primary-container text-on-primary-container border-primary/20 shadow-1"
+        className: "bg-primary-container text-on-primary-container border-primary/20"
       },
     ],
     defaultVariants: {
@@ -33,7 +32,7 @@ const chipVariants = cva(
   }
 );
 
-export type ChipProps = Omit<HTMLAttributes<HTMLDivElement>, "onSelect"> & 
+export type ChipProps = Omit<HTMLAttributes<HTMLDivElement>, "onSelect"> &
   VariantProps<typeof chipVariants> & {
     label: string;
     icon?: ReactNode;
@@ -77,10 +76,9 @@ export const Chip = forwardRef<HTMLDivElement, ChipProps>(
         {...props}
       >
         <Ripple disabled={!isInteractive} />
-        
-        {/* State Layer Overlay */}
+
         <div className={cn(
-          "absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-hover group-active:opacity-pressed transition-opacity duration-medium",
+          "absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-hover group-active:opacity-pressed transition-opacity duration-medium ease-standard",
           selected && variant === 'filter' ? "bg-on-primary-container" : "bg-on-surface-variant"
         )} />
 
@@ -89,19 +87,19 @@ export const Chip = forwardRef<HTMLDivElement, ChipProps>(
             <polyline points="20 6 9 17 4 12" />
           </svg>
         )}
-        
+
         {icon && !selected && (
           <span className="w-4u h-4u flex items-center justify-center relative z-10 pointer-events-none" aria-hidden="true">
             {icon}
           </span>
         )}
-        
+
         <span className="relative z-10 truncate leading-none pt-0.5u">{label}</span>
-        
+
         {onDelete && (
           <button
             type="button"
-            className="ml-1u -mr-1u rounded-full p-0.5 hover:bg-on-surface/10 hover:text-on-surface transition-colors focus-visible:ring-2 focus-visible:ring-primary relative z-10"
+            className="ml-1u -mr-1u rounded-sm p-0.5 hover:bg-on-surface/10 hover:text-on-surface transition-colors focus-visible:ring-2 focus-visible:ring-primary relative z-10"
             onClick={(e) => {
               e.stopPropagation();
               onDelete();
@@ -109,7 +107,10 @@ export const Chip = forwardRef<HTMLDivElement, ChipProps>(
             aria-label={`Remove ${label}`}
             disabled={disabled}
           >
-            <CloseIcon size={12} />
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
           </button>
         )}
       </div>

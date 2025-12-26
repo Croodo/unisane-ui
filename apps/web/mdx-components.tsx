@@ -1,8 +1,6 @@
 import type { MDXComponents } from "mdx/types";
 import Link from "next/link";
 import { Typography, cn } from "@unisane/ui";
-import { CardContent, CardHeader, CardTitle } from "@/components/docs/CardBlocks";
-import { ComponentIndex } from "@/components/docs/ComponentIndex";
 import { ComponentPreview } from "@/components/docs/ComponentPreview";
 import React from "react";
 
@@ -112,10 +110,6 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
       );
     },
     ComponentPreview,
-    ComponentIndex,
-    CardHeader,
-    CardTitle,
-    CardContent,
     ...components,
   };
 }

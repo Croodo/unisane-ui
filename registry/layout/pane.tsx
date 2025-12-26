@@ -2,7 +2,7 @@
 
 import React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@ui/lib/utils";
+import { cn } from "@/lib/utils";
 
 // --- Pane ---
 
@@ -18,7 +18,7 @@ const paneVariants = cva(
       },
       isActive: {
         true: "block",
-        false: "hidden",
+        false: "hidden medium:block",
       },
     },
     defaultVariants: {
@@ -54,10 +54,10 @@ export const Pane = React.forwardRef<HTMLDivElement, PaneProps>(
     if (!width) {
       if (role === "list")
         widthClass =
-          "w-full medium:w-[var(--width-pane-list,calc(var(--uni-sys-u)*90))] shrink-0";
+          "w-full medium:w-[var(--width-pane-list,calc(var(--unit)*90))] shrink-0";
       if (role === "supporting")
         widthClass =
-          "w-full medium:w-[var(--width-pane-supporting,calc(var(--uni-sys-u)*100))] shrink-0";
+          "w-full medium:w-[var(--width-pane-supporting,calc(var(--unit)*100))] shrink-0";
       if (role === "main") widthClass = "w-full flex-1 min-w-0";
     }
 

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { cn } from "@ui/lib/utils";
+import { cn } from "@/lib/utils";
 
 export interface PopoverProps {
   trigger: React.ReactNode;
@@ -55,9 +55,9 @@ export const Popover: React.FC<PopoverProps> = ({
       {isOpen && (
         <div
           className={cn(
-            "absolute z-modal min-w-[calc(var(--uni-sys-u)*50)] bg-surface rounded-xs shadow-4 p-4u animate-in fade-in zoom-in-95 duration-short ease-standard border border-outline-variant/30",
-            side === "bottom" && "top-[calc(100%+(var(--uni-sys-u)*2))]",
-            side === "top" && "bottom-[calc(100%+(var(--uni-sys-u)*2))]",
+            "absolute z-modal min-w-[calc(var(--unit)*50)] bg-surface rounded-xs shadow-4 p-4u animate-in fade-in zoom-in-95 duration-short ease-standard border border-outline-variant/30",
+            side === "bottom" && "top-[calc(100%+(var(--unit)*2))]",
+            side === "top" && "bottom-[calc(100%+(var(--unit)*2))]",
             align === "center" && "left-1/2 -translate-x-1/2",
             align === "start" && "left-0",
             align === "end" && "right-0",

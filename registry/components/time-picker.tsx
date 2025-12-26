@@ -4,8 +4,8 @@ import React, { useState } from "react";
 import { Dialog } from "./dialog";
 import { Button } from "./button";
 import { IconButton } from "./icon-button";
-import { Icon } from "@ui/primitives/icon";
-import { cn } from "@ui/lib/utils";
+import { Icon } from "@/primitives/icon";
+import { cn } from "@/lib/utils";
 import { TextField } from "./text-field";
 
 export interface TimePickerProps {
@@ -170,7 +170,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
         {inputType === "dial" && (
           <div className="relative flex justify-center w-full mb-4 animate-in fade-in zoom-in-95 duration-emphasized">
             <div
-              className="w-[calc(var(--uni-sys-u)*64)] h-[calc(var(--uni-sys-u)*64)] rounded-full bg-surface-container-highest relative cursor-pointer touch-none select-none shrink-0"
+              className="w-[calc(var(--unit)*64)] h-[calc(var(--unit)*64)] rounded-full bg-surface-container-highest relative cursor-pointer touch-none select-none shrink-0"
               onClick={handleClockClick}
             >
               {/* Center Dot */}
@@ -178,7 +178,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
 
               {/* Hand */}
               <div
-                className="absolute top-1/2 left-1/2 h-[calc(var(--uni-sys-u)*25)] w-0_5u bg-primary origin-bottom z-10 transition-transform duration-long ease-smooth"
+                className="absolute top-1/2 left-1/2 h-[calc(var(--unit)*25)] w-0_5u bg-primary origin-bottom z-10 transition-transform duration-long ease-smooth"
                 style={{
                   transform: `translate(-50%, -100%) rotate(${getRotation()}deg)`,
                 }}
@@ -186,7 +186,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-primary border-2 border-surface -mt-1" />
                 {/* Hand Selection Circle */}
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-primary -mt-6 opacity-20" />
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1_5u h-1_5u rounded-full bg-primary -mt-[calc(var(--uni-sys-u)*0.75)] border border-surface" />
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1_5u h-1_5u rounded-full bg-primary -mt-[calc(var(--unit)*0.75)] border border-surface" />
               </div>
 
               {/* Numbers */}

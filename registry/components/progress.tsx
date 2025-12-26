@@ -2,7 +2,7 @@
 
 import React, { useEffect } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@ui/lib/utils";
+import { cn } from "@/lib/utils";
 
 const progressVariants = cva(
   "relative w-full overflow-hidden rounded-full bg-surface-container-highest",
@@ -79,7 +79,7 @@ export const Progress: React.FC<ProgressProps> = ({
           />
           <circle
             className={cn(
-              "text-primary transition-all duration-emphasized",
+              "text-primary transition-all duration-emphasized ease-emphasized",
               indeterminate && "animate-spin"
             )}
             stroke="currentColor"
@@ -113,7 +113,7 @@ export const Progress: React.FC<ProgressProps> = ({
     >
       <div
         className={cn(
-          "h-full bg-primary transition-all duration-emphasized",
+          "h-full bg-primary transition-all duration-emphasized ease-emphasized",
           indeterminate && "animate-pulse"
         )}
         style={{

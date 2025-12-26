@@ -1,10 +1,10 @@
 import React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@ui/lib/utils";
-import { Surface } from "@ui/primitives/surface";
-import { Text } from "@ui/primitives/text";
+import { cn } from "@/lib/utils";
+import { Surface } from "@/primitives/surface";
+import { Text } from "@/primitives/text";
 import { IconButton } from "./icon-button";
-import { StateLayer } from "@ui/primitives/state-layer";
+import { StateLayer } from "@/primitives/state-layer";
 
 const paginationVariants = cva("flex items-center gap-2", {
   variants: {

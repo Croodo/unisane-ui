@@ -7,7 +7,6 @@
     "dist"
   ],
   "exports": {
-    ".": "./dist/index.js",
     "./uni-tokens.css": "./dist/uni-tokens.css",
     "./uni-theme.css": "./dist/uni-theme.css"
   },

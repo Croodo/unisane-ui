@@ -26,8 +26,8 @@ export const TurborepoLogo = () => {
           y1="2.81244"
           y2="22.4844"
         >
-          <stop stopColor="var(--uni-sys-color-primary)"></stop>
-          <stop offset="1" stopColor="var(--uni-sys-color-tertiary)"></stop>
+          <stop stopColor="var(--color-primary)"></stop>
+          <stop offset="1" stopColor="var(--color-tertiary)"></stop>
         </linearGradient>
       </defs>
     </svg>

@@ -1,19 +1,8 @@
-@import "@unisane/ui/styles.css";
+/* Tailwind v4 + Unisane UI */
+@import "tailwindcss";
+@import "@unisane/tokens/uni-tokens.css";
+@import "@unisane/tokens/uni-theme.css";
+
+/* Source paths for Tailwind class scanning */
 @source "../**/*.{ts,tsx,mdx}";
-
-html,
-body {
-  height: 100%;
-}
-
-body {
-  background-color: var(--uni-sys-color-background);
-  color: var(--uni-sys-color-on-background);
-  min-height: 100dvh;
-  overflow: hidden;
-  background-image:
-    radial-gradient(900px 520px at 85% -10%, var(--uni-sys-color-surface-container-high), transparent 70%),
-    radial-gradient(700px 420px at -10% 10%, var(--uni-sys-color-surface-container-low), transparent 65%),
-    linear-gradient(180deg, var(--uni-sys-color-surface-container-lowest), var(--uni-sys-color-background));
-  background-attachment: fixed;
-}
+@source "../../../packages/ui/src/**/*.{ts,tsx}";

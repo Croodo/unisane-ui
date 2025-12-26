@@ -1,12 +1,18 @@
 import "./globals.css";
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import { Inter } from "next/font/google";
+import { ThemeProvider } from "@unisane/ui";
 
-const geist = Geist({ subsets: ["latin"] });
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+});
 
 export const metadata: Metadata = {
-  title: "Unisane UI",
-  description: "Material 3 Industrial Design System",
+  title: "Unisane UI - Material 3 Design System",
+  description:
+    "Production-ready React components with sophisticated theming, accessibility, and exceptional developer experience.",
 };
 
 export default function RootLayout({
@@ -15,15 +21,23 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning className={inter.variable}>
       <head>
         <link
           rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
         />
       </head>
-      <body className={geist.className} data-density="compact">
-        {children}
+      <body>
+        <ThemeProvider
+          config={{
+            density: "standard",
+            theme: "system",
+            radius: "standard",
+          }}
+        >
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

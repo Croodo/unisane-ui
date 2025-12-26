@@ -2,11 +2,11 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@ui/lib/utils";
-import { Surface } from "@ui/primitives/surface";
-import { Text } from "@ui/primitives/text";
-import { Icon } from "@ui/primitives/icon";
-import { StateLayer } from "@ui/primitives/state-layer";
+import { cn } from "@/lib/utils";
+import { Surface } from "@/primitives/surface";
+import { Text } from "@/primitives/text";
+import { Icon } from "@/primitives/icon";
+import { StateLayer } from "@/primitives/state-layer";
 
 const comboboxVariants = cva("relative w-full", {
   variants: {
@@ -137,12 +137,11 @@ export const Combobox: React.FC<ComboboxProps> = ({
         </div>
       </Surface>
 
-      {/* Dropdown menu */}
       {isOpen && !disabled && (
         <Surface
           tone="surface"
           elevation={3}
-          className="absolute top-[calc(100%+var(--uni-sys-u))] left-0 right-0 rounded-xs border border-outline-variant/30 z-50 max-h-60 overflow-y-auto bg-surface-container-high shadow-4"
+          className="absolute top-[calc(100%+var(--unit))] left-0 right-0 rounded-xs border border-outline-variant/30 z-50 max-h-60 overflow-y-auto bg-surface-container-high shadow-4"
         >
           <div className="py-2u">
             {filteredOptions.length > 0 ? (
@@ -151,7 +150,7 @@ export const Combobox: React.FC<ComboboxProps> = ({
                   key={option.value}
                   className={cn(
                     "relative px-4u py-3u cursor-pointer flex items-center gap-3u transition-colors",
-                    "hover:bg-on-surface/5",
+                    "hover:bg-on-surface/8",
                     value === option.value && "bg-primary/10",
                     option.disabled && "opacity-38 cursor-not-allowed"
                   )}

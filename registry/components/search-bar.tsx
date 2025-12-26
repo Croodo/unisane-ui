@@ -1,6 +1,6 @@
 import React from "react";
-import { cn } from "@ui/lib/utils";
-import { Icon } from "@ui/primitives/icon";
+import { cn } from "@/lib/utils";
+import { Icon } from "@/primitives/icon";
 
 export interface SearchBarProps
   extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -20,7 +20,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   return (
     <div
       className={cn(
-        "group relative flex items-center w-full h-14 rounded-full bg-surface-container-high hover:bg-surface-container-highest hover:shadow-1 focus-within:bg-surface-container-highest focus-within:shadow-1 transition-all duration-medium cursor-text",
+        "group relative flex items-center w-full h-14 rounded-full bg-surface-container-high hover:bg-surface-container-highest hover:shadow-1 focus-within:bg-surface-container-highest focus-within:shadow-1 transition-all duration-medium ease-standard cursor-text",
         className
       )}
     >

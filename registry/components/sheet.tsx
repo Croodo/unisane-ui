@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Ripple } from './ripple';
-import { cn } from '@ui/lib/utils';
+import { cn } from '@/lib/utils';
 
 export type SheetSize = 'sm' | 'md' | 'lg' | 'xl' | 'full';
 
@@ -61,18 +61,18 @@ export function Sheet({
   if (typeof document === "undefined") return null;
 
   const sizeClasses = {
-    sm: "max-w-[calc(var(--uni-sys-u)*100)]",
-    md: "max-w-[calc(var(--uni-sys-u)*150)]",
-    lg: "max-w-[calc(var(--uni-sys-u)*210)]",
-    xl: "max-w-[calc(var(--uni-sys-u)*280)]",
-    full: "max-w-[calc(100vw-(var(--uni-sys-u)*14))]"
+    sm: "max-w-[calc(var(--unit)*100)]",
+    md: "max-w-[calc(var(--unit)*150)]",
+    lg: "max-w-[calc(var(--unit)*210)]",
+    xl: "max-w-[calc(var(--unit)*280)]",
+    full: "max-w-[calc(100vw-(var(--unit)*14))]"
   };
 
   return createPortal(
     <div className="fixed inset-0 z-modal flex justify-end overflow-hidden" role="presentation">
       <div 
         className={cn(
-          "absolute inset-0 bg-scrim/30 backdrop-blur-[calc(var(--uni-sys-u)/2)] transition-opacity",
+          "absolute inset-0 bg-scrim/30 backdrop-blur-[calc(var(--unit)/2)] transition-opacity",
           isVisible ? "opacity-100" : "opacity-0"
         )}
         style={{ 
@@ -100,7 +100,7 @@ export function Sheet({
         <header className="px-6u py-4u border-b border-outline-variant flex items-center justify-between bg-surface shrink-0 z-20">
           <div className="flex items-center gap-3u">
             {icon && (
-               <div className="w-10u h-10u rounded-xs bg-inverse-surface text-inverse-on-surface flex items-center justify-center shrink-0 shadow-1 transition-all duration-short">
+               <div className="w-10u h-10u rounded-xs bg-inverse-surface text-inverse-on-surface flex items-center justify-center shrink-0 shadow-1 transition-all duration-short ease-standard">
                   {icon}
                </div>
             )}

@@ -1,11 +1,11 @@
 import React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@ui/lib/utils";
-import { Surface } from "@ui/primitives/surface";
-import { Text } from "@ui/primitives/text";
+import { cn } from "@/lib/utils";
+import { Surface } from "@/primitives/surface";
+import { Text } from "@/primitives/text";
 import { Button } from "./button";
 import { IconButton } from "./icon-button";
-import { Icon } from "@ui/primitives/icon";
+import { Icon } from "@/primitives/icon";
 
 const bannerVariants = cva(
   "relative w-full flex items-start gap-4u p-4u border-b border-outline-variant/30 transition-all",

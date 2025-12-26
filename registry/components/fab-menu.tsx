@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { cn } from "@ui/lib/utils";
+import { cn } from "@/lib/utils";
 import { Fab } from "./fab";
-import { Icon } from "@ui/primitives/icon";
+import { Icon } from "@/primitives/icon";
 
 export interface FabAction {
   label: string;
@@ -84,7 +84,7 @@ export const FabMenu: React.FC<FabMenuProps> = ({
         variant={isOpen ? "tertiary" : "primary"}
         size="md"
         className={cn(
-          "transition-transform duration-emphasized",
+          "transition-transform duration-emphasized ease-emphasized",
           isOpen ? "rotate-90" : "rotate-0"
         )}
         onClick={() => setIsOpen(!isOpen)}

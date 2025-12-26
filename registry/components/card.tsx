@@ -2,11 +2,11 @@
 
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@ui/lib/utils";
+import { cn } from "@/lib/utils";
 import { Ripple } from "./ripple";
 
 const cardVariants = cva(
-  "rounded-xs overflow-hidden flex flex-col transition-all duration-medium ease-emphasized relative group isolate",
+  "rounded-sm overflow-hidden flex flex-col transition-all duration-medium ease-emphasized relative group isolate",
   {
     variants: {
       variant: {
@@ -18,7 +18,7 @@ const cardVariants = cva(
         high: "bg-surface-container-high border-none shadow-1",
       },
       interactive: {
-        true: "cursor-pointer active:scale-[0.99] hover:shadow-2",
+        true: "cursor-pointer",
         false: "",
       },
       padding: {
@@ -65,7 +65,7 @@ const CardRoot = React.forwardRef<HTMLDivElement, CardProps>(
       >
         {isInteractive && (
           <>
-            <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-5 transition-opacity bg-primary z-0" />
+            <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-8 transition-opacity bg-primary z-0" />
             <Ripple />
           </>
         )}
@@ -138,7 +138,7 @@ const CardTitle = React.forwardRef<
   <h3
     ref={ref}
     className={cn(
-      "text-title-large font-semibold leading-none tracking-tight",
+      "text-title-large leading-none",
       className
     )}
     {...props}

@@ -1,25 +1,60 @@
-/* UI Package Styles - Import tokens and define theme for components */
+/* UI Package Styles - Tailwind v4 with Unisane Design Tokens */
+@import "tailwindcss";
 @import "@unisane/tokens/uni-tokens.css";
 @import "@unisane/tokens/uni-theme.css";
-@import "@unisane/tailwind-config";
 
-@theme {
-      --animate-ripple: ripple 600ms linear forwards;
+/* Scan component files for Tailwind classes */
+@source "./**/*.{ts,tsx}";
 
-      @keyframes ripple {
-            from {
-                  opacity: 0.35;
-                  transform: scale(0);
-            }
+/* Ripple animation - moved outside @theme for better performance */
+@keyframes ripple {
+      from {
+            opacity: 0.35;
+            transform: scale(0);
+      }
+      to {
+            opacity: 0;
+            transform: scale(2);
+      }
+}
 
-            to {
-                  opacity: 0;
-                  transform: scale(2);
-            }
+/* Stagger animation for list items */
+@keyframes stagger-in {
+      from {
+            opacity: 0;
+            transform: translateY(8px);
+      }
+      to {
+            opacity: 1;
+            transform: translateY(0);
+      }
+}
+
+@layer base {
+      /* Remove default focus outline */
+      *:focus {
+            outline: none;
+      }
+
+      /* Apply custom focus ring only for keyboard navigation */
+      *:focus-visible {
+            outline: 2px solid var(--color-primary);
+            outline-offset: 2px;
+      }
+
+      /* Ensure focus is visible on interactive elements */
+      button:focus-visible,
+      a:focus-visible,
+      input:focus-visible,
+      select:focus-visible,
+      textarea:focus-visible {
+            outline: 2px solid var(--color-primary);
+            outline-offset: 2px;
       }
 }
 
 @layer utilities {
+      /* Scrollbar utilities */
       .no-scrollbar::-webkit-scrollbar {
             display: none;
       }
@@ -27,5 +62,29 @@
       .no-scrollbar {
             -ms-overflow-style: none;
             scrollbar-width: none;
+      }
+
+      /* Ripple container */
+      .ripple-container {
+            position: relative;
+            overflow: hidden;
+      }
+
+      /* Animation utilities */
+      .animate-in {
+            animation-fill-mode: both;
+      }
+
+      .animate-out {
+            animation-fill-mode: both;
+            animation-direction: reverse;
+      }
+
+      .animate-stagger {
+            animation: stagger-in 300ms ease-out;
+      }
+
+      .animate-ripple {
+            animation: ripple 600ms ease-out;
       }
 }

@@ -2,7 +2,7 @@
 
 import React, { useId, useState, useEffect, useRef } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@ui/lib/utils";
+import { cn } from "@/lib/utils";
 
 const textFieldContainerVariants = cva(
   "relative flex w-full transition-all duration-snappy ease-emphasized group cursor-text",
@@ -10,15 +10,15 @@ const textFieldContainerVariants = cva(
     variants: {
       variant: {
         outlined:
-          "rounded-xs border border-outline-variant bg-surface hover:border-outline focus-within:!border-primary focus-within:ring-1 focus-within:ring-primary/20",
+          "rounded-sm border border-outline-variant bg-surface hover:border-outline focus-within:!border-primary focus-within:ring-1 focus-within:ring-primary/20",
         filled:
-          "rounded-t-xs rounded-b-none border-b border-outline-variant bg-surface-container-low hover:bg-surface-container focus-within:bg-surface",
+          "rounded-t-sm rounded-b-none border-b border-outline-variant bg-surface-container-low hover:bg-surface-container focus-within:bg-surface",
       },
       error: {
         true: "border-error focus-within:border-error hover:border-error ring-error/20",
       },
       disabled: {
-        true: "opacity-40 cursor-not-allowed pointer-events-none grayscale",
+        true: "opacity-38 cursor-not-allowed pointer-events-none grayscale",
       },
     },
     defaultVariants: {
@@ -98,15 +98,12 @@ export const TextField = React.forwardRef<
       internalValue !== "";
     const isFloating = isFocused || hasValue;
 
-    // Merge refs if needed, for simplicity using internalRef for rendering
-    // Ideally we would use a useMergeRefs hook
     useEffect(() => {
       if (ref) {
         if (typeof ref === "function") {
           ref(internalRef.current);
         } else {
-          // @ts-ignore
-          ref.current = internalRef.current;
+          (ref as React.MutableRefObject<HTMLInputElement | HTMLTextAreaElement | null>).current = internalRef.current;
         }
       }
     }, [ref]);
@@ -148,7 +145,7 @@ export const TextField = React.forwardRef<
                 onBlur={handleBlur}
                 onChange={handleChange}
                 className={cn(
-                  "w-full h-full bg-transparent px-4u outline-none border-none focus:ring-0 text-on-surface text-body-small font-bold caret-primary placeholder-transparent resize-none py-5u min-h-[calc(var(--uni-sys-u)*30)]",
+                  "w-full h-full bg-transparent px-4u outline-none border-none focus:ring-0 text-on-surface text-body-large caret-primary placeholder-transparent resize-none py-5u min-h-[calc(var(--unit)*30)]",
                   variant === "filled" ? "pt-7u pb-3u" : ""
                 )}
                 placeholder=" "
@@ -165,7 +162,7 @@ export const TextField = React.forwardRef<
                 onBlur={handleBlur}
                 onChange={handleChange}
                 className={cn(
-                  "w-full h-full bg-transparent px-4u outline-none border-none focus:ring-0 text-on-surface text-body-small font-bold caret-primary placeholder-transparent",
+                  "w-full h-full bg-transparent px-4u outline-none border-none focus:ring-0 text-on-surface text-body-large caret-primary placeholder-transparent",
                   variant === "filled" ? "pt-7u pb-1u" : ""
                 )}
                 placeholder=" "
@@ -175,16 +172,16 @@ export const TextField = React.forwardRef<
             <label
               htmlFor={inputId}
               className={cn(
-                "absolute pointer-events-none truncate max-w-[calc(100%-calc(var(--uni-sys-u)*4))] transition-all duration-medium ease-emphasized origin-left left-4u",
+                "absolute pointer-events-none truncate max-w-[calc(100%-calc(var(--unit)*4))] transition-all duration-medium ease-emphasized origin-left left-4u",
                 !isFloating && [
-                  "text-body-small font-bold text-on-surface-variant",
+                  "text-body-large text-on-surface-variant",
                   multiline ? "top-5u" : "top-1/2 -translate-y-1/2",
                 ],
                 isFloating && [
-                  "scale-[0.8] font-black uppercase tracking-widest",
+                  "text-label-small font-medium",
                   variant === "outlined" && [
                     "top-0 -translate-y-1/2 px-1u -ml-1u",
-                    labelBg || "bg-surface", // Changed to match Unisane semantic token usually
+                    labelBg || "bg-surface",
                     labelClassName,
                   ],
                   variant === "filled" && "top-2u translate-y-0",
@@ -217,7 +214,7 @@ export const TextField = React.forwardRef<
         {helperText && (
           <span
             className={cn(
-              "text-label-small mt-1.5u px-4u font-black uppercase tracking-tight",
+              "text-label-small mt-1.5u px-4u font-medium",
               error ? "text-error" : "text-on-surface-variant"
             )}
           >

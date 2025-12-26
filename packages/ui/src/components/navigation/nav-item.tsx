@@ -1,0 +1,145 @@
+"use client";
+
+import React, { forwardRef } from "react";
+import { cn } from "@ui/lib/utils";
+import { Ripple } from "../ripple";
+import type { NavigationVariant } from "../../types/navigation";
+
+export interface NavItemProps extends Omit<React.HTMLAttributes<HTMLElement>, 'onClick'> {
+  children: React.ReactNode;
+  icon?: React.ReactNode;
+  badge?: string | number;
+  active?: boolean;
+  disabled?: boolean;
+  href?: string;
+  onClick?: (e: React.MouseEvent) => void;
+  variant?: NavigationVariant;
+  compact?: boolean;
+  className?: string;
+  as?: 'button' | 'a' | 'div';
+  external?: boolean;
+}
+
+export const NavItem = forwardRef<HTMLElement, NavItemProps>(
+  (
+    {
+      children,
+      icon,
+      badge,
+      active = false,
+      disabled = false,
+      href,
+      onClick,
+      variant = "default",
+      compact = false,
+      className,
+      as,
+      external = false,
+      ...props
+    },
+    ref
+  ) => {
+    const Component = as || (href ? 'a' : 'button');
+
+    const baseClasses = cn(
+      "group relative flex items-center gap-3u",
+      "w-full text-left",
+      "rounded-sm",
+      "transition-all duration-short ease-standard",
+      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+      "overflow-hidden select-none",
+      variant === "compact" && "px-3u py-2u min-h-10u",
+      variant === "default" && "px-4u py-2.5u min-h-12u",
+      variant === "comfortable" && "px-5u py-3u min-h-14u",
+      active && [
+        "bg-secondary-container text-on-secondary-container",
+        "font-semibold",
+      ],
+      !active && [
+        "text-on-surface-variant",
+        !disabled && "hover:bg-surface-variant hover:text-on-surface",
+      ],
+      disabled && "opacity-38 cursor-not-allowed pointer-events-none",
+
+      className
+    );
+
+    const badgeElement = badge !== undefined && (
+      <span
+        className={cn(
+          "absolute top-1u right-1u",
+          "min-w-4u h-4u px-1u",
+          "flex items-center justify-center",
+          "bg-error text-on-error",
+          "text-label-small font-medium leading-none",
+          "rounded-full",
+          "pointer-events-none z-20",
+          "ring-1 ring-surface",
+          typeof badge === "number" && badge < 10 && "min-w-3u h-3u p-1u"
+        )}
+      >
+        {badge}
+      </span>
+    );
+
+    const content = (
+      <>
+        <span
+          className={cn(
+            "absolute inset-0 pointer-events-none bg-current opacity-0 transition-opacity duration-short",
+            "group-hover:opacity-hover",
+            "group-focus-visible:opacity-focus",
+            "group-active:opacity-pressed"
+          )}
+        />
+
+        {!disabled && <Ripple disabled={disabled} />}
+
+        {icon && (
+          <span
+            className={cn(
+              "relative z-10 flex items-center justify-center flex-shrink-0",
+              "w-6u h-6u",
+              "transition-transform duration-short",
+              active && "scale-110"
+            )}
+          >
+            {icon}
+          </span>
+        )}
+
+        {!compact && (
+          <span
+            className={cn(
+              "relative z-10 flex-1 min-w-0",
+              "text-label-large leading-tight",
+              "truncate"
+            )}
+          >
+            {children}
+          </span>
+        )}
+
+        {badgeElement}
+      </>
+    );
+
+    const componentProps = {
+      ref: ref as any,
+      className: baseClasses,
+      onClick: disabled ? undefined : onClick,
+      disabled: Component === 'button' ? disabled : undefined,
+      href: Component === 'a' && !disabled ? href : undefined,
+      target: Component === 'a' && external ? '_blank' : undefined,
+      rel: Component === 'a' && external ? 'noopener noreferrer' : undefined,
+      'aria-current': active ? ('page' as const) : undefined,
+      'aria-disabled': disabled || undefined,
+      tabIndex: disabled ? -1 : undefined,
+      ...props,
+    };
+
+    return <Component {...componentProps}>{content}</Component>;
+  }
+);
+
+NavItem.displayName = "NavItem";

@@ -114,8 +114,8 @@ Default components (buttons, alerts, switches) stay flat and rely on state layer
 Use `data-radius` to switch corner softness without changing components:
 
 - `data-radius="sharp"` → `--uni-sys-radius-scale: 0.75`
-- `data-radius="standard"` → `--uni-sys-radius-scale: 0.85`
-- `data-radius="soft"` → `--uni-sys-radius-scale: 1.0`
+- `data-radius="standard"` → `--uni-sys-radius-scale: 1.0`
+- `data-radius="soft"` → `--uni-sys-radius-scale: 1.15`
 
 ---
 

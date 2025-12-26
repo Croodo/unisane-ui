@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { cn } from "@ui/lib/utils";
+import { cn } from "@/lib/utils";
 
 export interface AppLayoutProps {
   topBar?: React.ReactNode;
@@ -49,9 +49,9 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           </div>
         )}
 
-        {/* Desktop Secondary Nav */}
+        {/* Expanded+ Secondary Nav */}
         {secondaryNavigation && (
-          <div className="z-10 shrink-0 relative hidden medium:block">
+          <div className="z-10 shrink-0 relative hidden expanded:block">
             {secondaryNavigation}
           </div>
         )}

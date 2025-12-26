@@ -1,5 +1,5 @@
 import React from "react";
-import { cn } from "@ui/lib/utils";
+import { cn } from "@/lib/utils";
 import { Ripple } from "./ripple";
 
 export interface RailItem {
@@ -38,7 +38,7 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
   return (
     <nav
       className={cn(
-        "flex flex-col items-center w-[var(--width-rail-collapsed)] h-full bg-surface text-on-surface py-4u gap-6 border-r border-outline-variant/30 z-20 shrink-0 transition-all duration-medium ease-standard",
+        "flex flex-col items-center w-24u h-full bg-surface text-on-surface py-4u gap-6 border-r border-outline-variant/30 z-20 shrink-0 transition-all duration-medium ease-standard",
         className
       )}
       aria-label="Sidebar Navigation"
@@ -65,10 +65,10 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
               <div className="relative flex items-center justify-center">
                 <div
                   className={cn(
-                    "w-14u h-8u rounded-full flex items-center justify-center transition-all duration-medium ease-emphasized overflow-hidden relative",
+                    "w-14u h-8u rounded-sm flex items-center justify-center transition-all duration-medium ease-emphasized overflow-hidden relative",
                     isActive
                       ? "bg-secondary-container text-on-secondary-container"
-                      : "text-on-surface-variant bg-transparent hover:bg-on-surface/5"
+                      : "text-on-surface-variant bg-transparent hover:bg-on-surface/8"
                   )}
                 >
                   <Ripple center disabled={item.disabled} />
@@ -80,7 +80,7 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
                 {item.badge !== undefined && (
                   <span
                     className={cn(
-                      "absolute -top-1u -right-1u min-w-4u h-4u px-1u bg-error text-on-error text-label-small leading-none flex items-center justify-center rounded-xs font-black z-20 pointer-events-none shadow-1 ring-1 ring-surface",
+                      "absolute -top-1u -right-1u min-w-4u h-4u px-1u bg-error text-on-error text-label-small leading-none flex items-center justify-center rounded-full font-medium z-20 pointer-events-none ring-1 ring-surface",
                       typeof item.badge === "number" && item.badge < 10
                         ? "min-w-3u h-3u p-1u"
                         : ""
@@ -93,10 +93,10 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
 
               <span
                 className={cn(
-                  "text-label-small leading-none font-semibold transition-all duration-short text-center px-1u max-w-full opacity-60",
+                  "text-label-small leading-none font-semibold transition-colors duration-short ease-standard text-center px-1u max-w-full opacity-60",
                   isActive
                     ? "text-on-surface opacity-100"
-                    : "text-on-surface-variant"
+                    : "text-on-surface-variant group-hover:text-on-surface group-hover:opacity-80"
                 )}
               >
                 {item.label}
@@ -105,7 +105,7 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
           );
 
           const commonClasses = cn(
-            "group flex flex-col items-center gap-1u w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-xs py-1u min-h-14u relative select-none",
+            "group flex flex-col items-center gap-1u w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-sm py-1u min-h-14u relative select-none",
             item.disabled && "opacity-38 cursor-not-allowed"
           );
 
@@ -126,6 +126,8 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
                 }
                 className={commonClasses}
                 aria-current={isActive ? "page" : undefined}
+                aria-disabled={item.disabled || undefined}
+                tabIndex={item.disabled ? -1 : undefined}
               >
                 {content}
               </a>
@@ -141,8 +143,7 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
               }
               disabled={item.disabled}
               className={commonClasses}
-              aria-selected={isActive}
-              role="tab"
+              aria-current={isActive ? "page" : undefined}
             >
               {content}
             </button>

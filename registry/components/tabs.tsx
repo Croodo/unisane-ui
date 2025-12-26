@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState } from "react";
-import { cn } from "@ui/lib/utils";
+import { cn } from "@/lib/utils";
 import { Ripple } from "./ripple";
 
 interface TabsContextValue {
@@ -118,7 +118,7 @@ export const TabsTrigger: React.FC<TabsTriggerProps> = ({
 
       {/* Active Indicator */}
       {isSelected && (
-        <div className="absolute bottom-0 w-full h-[calc(var(--uni-sys-u)*0.75)] bg-primary animate-in zoom-in-x duration-medium ease-emphasized z-20 rounded-t-full" />
+        <div className="absolute bottom-0 w-full h-[calc(var(--unit)*0.75)] bg-primary animate-in zoom-in-x duration-medium ease-emphasized z-20 rounded-t-full" />
       )}
     </button>
   );
