@@ -2,7 +2,7 @@
 
 import React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@ui/lib/utils";
+import { cn } from "@/lib/utils";
 
 const paneVariants = cva(
   "relative h-full overflow-hidden transition-all duration-long ease-emphasized bg-surface",

@@ -82,10 +82,7 @@ const renderIcon = (icon: React.ReactNode | string, isActive: boolean = false) =
   if (typeof icon === "string") {
     return (
       <span
-        className={cn(
-          "material-symbols-outlined text-[20px]! transition-transform duration-short",
-          isActive && "scale-105"
-        )}
+        className="material-symbols-outlined text-[24px]! transition-all duration-short"
         style={isActive ? { fontVariationSettings: "'FILL' 1" } : undefined}
       >
         {icon}
@@ -112,10 +109,10 @@ export function SidebarRailItem({
       <div className="relative flex items-center justify-center">
         <div
           className={cn(
-            "w-12u h-7u rounded-full flex items-center justify-center",
+            "w-14u h-8u rounded-full flex items-center justify-center",
             "transition-all duration-medium ease-emphasized overflow-hidden relative",
             isActive
-              ? "bg-secondary-container text-on-secondary-container"
+              ? "bg-secondary-container text-primary"
               : "text-on-surface-variant bg-transparent hover:bg-on-surface/8"
           )}
         >
@@ -144,10 +141,10 @@ export function SidebarRailItem({
 
       <span
         className={cn(
-          "text-[11px] leading-none font-medium transition-colors duration-short",
-          "text-center px-0.5u max-w-full tracking-normal",
+          "text-label-small font-medium transition-colors duration-short",
+          "text-center px-0.5u max-w-full",
           isActive
-            ? "text-on-surface font-semibold"
+            ? "text-primary font-semibold"
             : "text-on-surface-variant group-hover:text-on-surface"
         )}
       >
@@ -467,7 +464,7 @@ export function SidebarMenuItem({
     "text-body-medium transition-colors duration-short cursor-pointer",
     "relative overflow-hidden select-none",
     isActive
-      ? "bg-secondary-container text-on-secondary-container font-medium"
+      ? "bg-secondary-container text-primary font-medium"
       : "text-on-surface-variant hover:bg-on-surface/8 hover:text-on-surface",
     disabled && "opacity-38 cursor-not-allowed pointer-events-none",
     className

@@ -6,44 +6,34 @@ Get up and running with Unisane UI in minutes.
 
 ## Installation
 
-### 1. Install the CLI
-
-```bash
-pnpm add -D @unisane/cli
-# or
-npx @unisane/cli init
-```
-
-### 2. Initialize your project
+### 1. Initialize your project
 
 ```bash
 npx @unisane/cli init
 ```
 
-This copies all necessary files to your project:
+This creates all necessary files:
 
 ```
 src/
 ├── styles/
-│   ├── uni-tokens.css      # Design tokens (CSS variables)
-│   ├── uni-theme.css       # Tailwind v4 theme mapping
-│   └── uni-base.css        # Animations & utilities
+│   └── unisane.css           # All tokens, theme, and base styles
 ├── lib/
-│   └── utils.ts            # cn(), focusRing, stateLayer
+│   └── utils.ts              # cn(), stateLayer helpers
 ├── components/
-│   ├── theme-provider.tsx  # Theme management
-│   └── ui/                 # UI components added here
+│   ├── theme-provider.tsx    # Optional - for runtime theming
+│   └── ui/                   # Components added here
 └── app/
-    └── globals.css         # Updated with imports
+    └── globals.css           # Updated with imports
 ```
 
-### 3. Install dependencies
+### 2. Install dependencies
 
 ```bash
 pnpm add clsx tailwind-merge class-variance-authority
 ```
 
-### 4. Add components
+### 3. Add components
 
 ```bash
 npx @unisane/cli add button
@@ -53,59 +43,6 @@ npx @unisane/cli add dialog
 
 Components are copied to `src/components/ui/` with all dependencies auto-resolved.
 
-For the full component documentation, see [Design System](../design-system/).
-
-### 5. Configure paths (optional)
-
-Create `unisane.json` in your project root to customize paths:
-
-```json
-{
-  "aliases": {
-    "components": "@/components/ui",
-    "lib": "@/lib",
-    "hooks": "@/hooks"
-  },
-  "srcDir": "src"
-}
-```
-
-Or add to `package.json`:
-
-```json
-{
-  "unisane": {
-    "aliases": {
-      "components": "~/components/ui"
-    }
-  }
-}
-```
-
----
-
-## Project Structure After Init
-
-```
-src/
-├── app/
-│   ├── globals.css          # Imports tokens and theme
-│   └── layout.tsx           # Add ThemeProvider here
-├── styles/
-│   ├── uni-tokens.css       # All CSS variables
-│   ├── uni-theme.css        # Tailwind theme mapping
-│   └── uni-base.css         # Base styles & animations
-├── lib/
-│   └── utils.ts             # cn, focusRing, stateLayer
-├── components/
-│   ├── theme-provider.tsx   # Theme management
-│   └── ui/
-│       ├── button.tsx       # After `add button`
-│       └── ...
-└── hooks/                   # After adding hooks
-    └── ...
-```
-
 ---
 
 ## globals.css
@@ -113,33 +50,43 @@ src/
 After init, your `globals.css` looks like:
 
 ```css
-/* Unisane UI - Tailwind v4 with Material 3 Design Tokens */
+/* Tailwind v4 + Unisane UI */
 @import "tailwindcss";
-@import "../styles/uni-tokens.css";
-@import "../styles/uni-theme.css";
-@import "../styles/uni-base.css";
+@import "@unisane/tokens/unisane.css";
 
-/* Scan your project files for Tailwind classes */
+/* Source paths for Tailwind class scanning */
 @source "../**/*.{ts,tsx,mdx}";
 
-/* Base document styles */
-* {
-  box-sizing: border-box;
-}
+/* Uses library defaults (blue theme) - no overrides needed */
+```
 
-html, body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-}
+### Customizing the Theme
 
-body {
-  background-color: var(--color-background);
-  color: var(--color-on-background);
-  font-family: inherit;
-  -webkit-font-smoothing: antialiased;
+To override the default blue theme, add your own `:root` block:
+
+```css
+/* Tailwind v4 + Unisane UI */
+@import "tailwindcss";
+@import "@unisane/tokens/unisane.css";
+
+@source "../**/*.{ts,tsx,mdx}";
+
+/* Custom theme - overrides library defaults */
+:root {
+  --hue: 145;     /* Green theme */
+  --chroma: 0.14; /* Color intensity */
 }
 ```
+
+**Available hues:**
+- Blue: `240` (default)
+- Green: `145`
+- Teal: `180`
+- Purple: `285`
+- Orange: `70`
+- Red: `25`
+
+Or use any value from 0-360 for custom colors.
 
 ---
 
@@ -155,10 +102,134 @@ export default function Page() {
 }
 ```
 
-### With Theme Provider
+### Simple Layout (No ThemeProvider needed!)
 
 ```tsx
 // app/layout.tsx
+import "./globals.css";
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <head>
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+        />
+      </head>
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+Dark mode, density, and radius all work automatically via CSS!
+
+---
+
+## Theming
+
+### Theme Architecture
+
+The theming system uses OKLCH color science with a simple 2-variable approach:
+
+```
+--hue (0-360)     →  Primary color on the color wheel
+--chroma (0-0.2)  →  Color intensity (0 = gray, 0.2 = vibrant)
+        ↓
+All palettes auto-generated:
+  - Primary, Secondary, Tertiary
+  - Neutral surfaces
+  - Error, Success, Warning, Info
+```
+
+### Change Theme Color
+
+In your `globals.css`:
+
+```css
+:root {
+  --hue: 145;     /* Green theme */
+  --chroma: 0.14; /* Standard intensity */
+}
+```
+
+**Quick reference:**
+| Color  | Hue  | Recommended Chroma |
+|--------|------|-------------------|
+| Blue   | 240  | 0.13              |
+| Green  | 145  | 0.14              |
+| Teal   | 180  | 0.12              |
+| Purple | 285  | 0.15              |
+| Orange | 70   | 0.16              |
+| Red    | 25   | 0.16              |
+
+### Monochrome / Black Theme
+
+For a pure black/white/gray theme:
+
+```css
+:root {
+  --hue: 0;
+  --chroma: 0;
+  --chroma-neutral: 0;  /* Important: removes tint from surfaces */
+}
+```
+
+### Dark Mode (CSS-only)
+
+Dark mode works automatically via `prefers-color-scheme`.
+
+To force a specific mode:
+```html
+<html class="dark">  <!-- Force dark -->
+<html class="light"> <!-- Force light -->
+```
+
+### Theme Modifiers (HTML Attributes)
+
+Add these to your `<html>` element:
+
+**Scheme** (color strategy):
+```html
+<html data-scheme="tonal">        <!-- Full color (default) -->
+<html data-scheme="monochrome">   <!-- Pure grayscale -->
+<html data-scheme="neutral">      <!-- Low saturation, professional -->
+```
+
+**Contrast** (accessibility):
+```html
+<html data-contrast="standard">   <!-- Default -->
+<html data-contrast="medium">     <!-- Boosted readability -->
+<html data-contrast="high">       <!-- WCAG AAA compliant -->
+```
+
+**Density**:
+```html
+<html data-density="compact">     <!-- Tighter spacing (87.5%) -->
+<html data-density="dense">       <!-- Even tighter (75%) -->
+<html data-density="comfortable"> <!-- More spacious (110%) -->
+```
+
+**Radius**:
+```html
+<html data-radius="sharp">  <!-- Sharper corners (75%) -->
+<html data-radius="soft">   <!-- Rounder corners (115%) -->
+```
+
+**Combining modifiers:**
+```html
+<html class="dark" data-scheme="neutral" data-contrast="high">
+```
+
+---
+
+## ThemeProvider (Optional)
+
+ThemeProvider is **only needed** if you want runtime theme switching UI (like a dark mode toggle button).
+
+```tsx
+// app/layout.tsx - WITH ThemeProvider (for runtime controls)
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 
@@ -187,53 +258,19 @@ export default function RootLayout({ children }) {
 }
 ```
 
----
+Then use the hook:
 
-## Customization
+```tsx
+import { useTheme } from "@/components/theme-provider";
 
-### Colors (CSS Variables)
-
-Edit `src/styles/uni-tokens.css`:
-
-```css
-:root {
-  /* Override primary color */
-  --uni-sys-color-primary: #FF5722;
-  --uni-sys-color-on-primary: #FFFFFF;
-  --uni-sys-color-primary-container: #FFCCBC;
-  --uni-sys-color-on-primary-container: #BF360C;
+function ThemeToggle() {
+  const { theme, setTheme } = useTheme();
+  return (
+    <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
+      Toggle Theme
+    </button>
+  );
 }
-
-.dark {
-  --uni-sys-color-primary: #FFAB91;
-  --uni-sys-color-on-primary: #BF360C;
-}
-```
-
-### Dark Mode
-
-```tsx
-// Use ThemeProvider config
-<ThemeProvider config={{ theme: "dark" }}>
-
-// Or "system" to auto-detect
-<ThemeProvider config={{ theme: "system" }}>
-```
-
-### Density
-
-Options: `dense` | `compact` | `standard` | `comfortable`
-
-```tsx
-<ThemeProvider config={{ density: "compact" }}>
-```
-
-### Radius Theme
-
-Options: `sharp` | `standard` | `soft`
-
-```tsx
-<ThemeProvider config={{ radius: "soft" }}>
 ```
 
 ---
@@ -258,13 +295,11 @@ Options: `sharp` | `standard` | `soft`
 <Button size="lg">Large</Button>
 ```
 
-See [Buttons & Actions](../design-system/04-buttons-actions.md) for complete documentation.
-
 ---
 
 ## Spacing System
 
-### Recommended: Industrial Units
+### Industrial Units (Recommended)
 
 ```tsx
 <div className="p-4u gap-2u">
@@ -275,25 +310,11 @@ See [Buttons & Actions](../design-system/04-buttons-actions.md) for complete doc
 ```
 
 **Common values:**
-- `1u` = 4px (scaled)
+- `1u` = 4px (scaled by density)
 - `2u` = 8px (scaled)
 - `4u` = 16px (scaled)
 - `6u` = 24px (scaled)
 - `8u` = 32px (scaled)
-
-### Legacy: Fixed Spacing (Still works)
-
-```tsx
-<div className="p-4 gap-2">
-  {/* Always 16px and 8px */}
-</div>
-```
-
-**When to use:**
-- Use `4u` for component spacing (scales with density)
-- Use `4` only when you need exact pixel values
-
-See [Getting Started](../design-system/01-getting-started.md) for complete spacing documentation.
 
 ---
 
@@ -385,81 +406,53 @@ export function ProductCard() {
 }
 ```
 
-See [Containers](../design-system/07-containers.md) for more card patterns.
-
----
-
-## Navigation
-
-### Rail + Drawer Pattern
-
-For sophisticated navigation, see [Navigation](../design-system/08-navigation.md).
-
-```tsx
-import { useNavigation } from "@/hooks/use-navigation";
-import { NavigationRail, NavigationDrawer } from "@/components/ui";
-
-const navigation = useNavigation(NAV_DATA);
-
-<NavigationRail
-  items={railItems}
-  value={navigation.activeCategoryId}
-  onChange={navigation.handleCategoryClick}
-  onItemHover={navigation.handleInteractionEnter}
-/>
-
-<NavigationDrawer
-  open={navigation.isDrawerVisible}
-  modal={false}
-/>
-```
-
----
-
-## Accessibility
-
-### Keyboard Navigation
-
-All components support:
-- `Tab` - Navigate between elements
-- `Enter`/`Space` - Activate buttons
-- `Escape` - Close dialogs/menus
-- Arrow keys - Navigate lists/menus
-
-### Focus Indicators
-
-Automatic focus rings on all interactive elements:
-
-```tsx
-{/* Already styled with focus-visible ring */}
-<Button>Accessible</Button>
-```
-
-### ARIA Labels
-
-```tsx
-<IconButton ariaLabel="Close dialog">
-  <span className="material-symbols-outlined">close</span>
-</IconButton>
-```
-
 ---
 
 ## Troubleshooting
 
 ### Styles not applying
 
-1. Check that globals.css imports are correct:
+1. Check that globals.css has the import:
 
 ```css
-/* app/globals.css */
 @import "tailwindcss";
-@import "../styles/uni-tokens.css";
-@import "../styles/uni-theme.css";
-@import "../styles/uni-base.css";
+@import "@unisane/tokens/unisane.css";
 ```
 
-2. Verify the styles directory exists with all three files.
+2. Verify `@unisane/tokens` package is installed.
+
+### Theme override not working
+
+Make sure your `:root` block is **after** the imports and is not inside a layer:
+
+```css
+@import "tailwindcss";
+@import "@unisane/tokens/unisane.css";
+
+/* This will work - unlayered CSS has highest priority */
+:root {
+  --hue: 145;
+  --chroma: 0.14;
+}
+```
+
+### Colors have unwanted tint in monochrome mode
+
+For pure grayscale, also zero out the neutral chroma:
+
+```css
+:root {
+  --hue: 0;
+  --chroma: 0;
+  --chroma-neutral: 0;  /* Removes tint from surfaces */
+}
+```
+
+### Dark mode not working
+
+Dark mode works automatically via `prefers-color-scheme`. To test:
+- Use browser dev tools to simulate dark mode
+- Or add `class="dark"` to `<html>`
 
 ### TypeScript errors
 
@@ -483,11 +476,9 @@ Make sure you added the component:
 npx @unisane/cli add button
 ```
 
-Components are copied to `src/components/ui/`.
-
 ### Missing dependencies
 
-After adding components, install any peer dependencies:
+After adding components, install peer dependencies:
 
 ```bash
 pnpm add clsx tailwind-merge class-variance-authority
@@ -495,29 +486,21 @@ pnpm add clsx tailwind-merge class-variance-authority
 
 ---
 
-## Next Steps
+## Summary
 
-1. **Explore Components** - Browse [Design System docs](../design-system/)
-2. **Navigation Patterns** - Study [Navigation](../design-system/08-navigation.md)
-3. **Layout System** - Check [Layout](../design-system/03-layout.md)
-4. **Customize Tokens** - Edit `src/styles/uni-tokens.css`
+| Feature | How it works |
+|---------|--------------|
+| **Theme color** | Set `--hue` and `--chroma` in CSS |
+| **Dark mode** | Automatic, or add `.dark` class |
+| **Scheme** | Add `data-scheme="monochrome"` attribute |
+| **Contrast** | Add `data-contrast="high"` attribute |
+| **Density** | Add `data-density="compact"` attribute |
+| **Radius** | Add `data-radius="soft"` attribute |
+| **Runtime controls** | Optional ThemeProvider |
 
----
-
-## Resources
-
-### Documentation
-
-- [Design System](../design-system/) - Complete component documentation
-- [Getting Started](../design-system/01-getting-started.md) - Setup and tokens
-- [Utilities](../design-system/02-utilities.md) - Ripple, StateLayer, etc.
-
-### Source
-
-- Component Source: `packages/ui/src/components/`
-- Registry: `packages/ui/registry/`
+**Key insight**: CSS handles everything by default. ThemeProvider is only for runtime UI controls.
 
 ---
 
-**Last Updated**: 2025-12-25
-**Version**: 0.2.0
+**Last Updated**: 2025-12-27
+**Version**: 0.4.0

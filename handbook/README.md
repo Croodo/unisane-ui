@@ -105,13 +105,16 @@ Unisane UI is a Material 3-based design system built with:
 ### Key Features
 
 - **61+ Components** - Complete component library
-- **Dark Mode** - Auto-detect system preference
+- **OKLCH Theming** - Single-variable color system (--hue, --chroma)
+- **Dark Mode** - Auto-detect system preference or `.dark` class
+- **3 Color Schemes** - Tonal (default), monochrome, neutral
+- **3 Contrast Levels** - Standard, medium, high (WCAG AAA)
 - **4 Density Presets** - Dense, compact, standard, comfortable
 - **3 Radius Themes** - Sharp, standard, soft
 - **Industrial Units** - Density-aware spacing (4u, 8u)
 - **TypeScript Autocomplete** - Full IntelliSense for M3 tokens
 - **Navigation System** - Sophisticated rail + drawer patterns
-- **Accessibility** - WCAG AA compliant
+- **Accessibility** - WCAG AA compliant (AAA with high contrast)
 
 ---
 
@@ -175,13 +178,16 @@ button, icon-button, fab, fab-menu, text-field, checkbox, radio, switch, slider,
 
 ### 1. Token-First
 
-All styling derives from design tokens:
+All styling derives from OKLCH-based design tokens:
 
 ```css
 :root {
-  --uni-ref-primary-40: #6750A4;
-  --uni-sys-color-primary: var(--uni-ref-primary-40);
+  --hue: 240;           /* Primary hue (0-360) */
+  --chroma: 0.13;       /* Color intensity (0-0.2) */
 }
+
+/* All colors auto-generated from hue + chroma */
+--color-primary: oklch(0.55 var(--chroma) var(--hue));
 ```
 
 ### 2. CVA Pattern
@@ -273,6 +279,6 @@ Spacing that scales with density:
 
 ---
 
-**Last Updated**: 2025-12-25
-**Version**: 0.1.0
+**Last Updated**: 2025-12-27
+**Version**: 0.4.0
 **Status**: Active Development

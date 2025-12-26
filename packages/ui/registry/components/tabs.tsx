@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState } from "react";
-import { cn } from "@ui/lib/utils";
+import { cn } from "@/lib/utils";
 import { Ripple } from "./ripple";
 
 interface TabsContextValue {

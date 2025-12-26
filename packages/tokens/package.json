@@ -1,14 +1,17 @@
 {
   "name": "@unisane/tokens",
-  "version": "0.0.1",
+  "version": "0.4.0",
   "type": "module",
   "private": true,
   "files": [
     "dist"
   ],
   "exports": {
+    ".": "./dist/unisane.css",
+    "./unisane.css": "./dist/unisane.css",
     "./uni-tokens.css": "./dist/uni-tokens.css",
-    "./uni-theme.css": "./dist/uni-theme.css"
+    "./uni-theme.css": "./dist/uni-theme.css",
+    "./uni-base.css": "./dist/uni-base.css"
   },
   "scripts": {
     "build": "node scripts/build.mjs",

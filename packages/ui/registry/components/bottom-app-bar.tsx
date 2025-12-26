@@ -1,8 +1,8 @@
 import React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@ui/lib/utils";
-import { Surface } from "@ui/primitives/surface";
-import { StateLayer } from "@ui/primitives/state-layer";
+import { cn } from "@/lib/utils";
+import { Surface } from "@/primitives/surface";
+import { StateLayer } from "@/primitives/state-layer";
 
 const bottomAppBarVariants = cva(
   "fixed bottom-0 left-0 right-0 h-20 flex items-center justify-between px-4 z-20",

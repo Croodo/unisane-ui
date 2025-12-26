@@ -20,7 +20,7 @@ export function ChoosingTable({ choosing, className }: ChoosingTableProps) {
   const hasExamples = choosing.rows.some((row) => row.examples);
 
   return (
-    <div className={cn("overflow-x-auto rounded-large border border-outline-variant/30", className)}>
+    <div className={cn("overflow-x-auto rounded-lg border border-outline-variant/30", className)}>
       <table className="w-full text-body-medium">
         <thead>
           <tr className="bg-surface-container-low border-b border-outline-variant/30">

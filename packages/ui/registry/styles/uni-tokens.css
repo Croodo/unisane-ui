@@ -1,241 +1,6 @@
-#!/usr/bin/env node
-
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
-import { dirname, join } from "path";
-import { fileURLToPath } from "url";
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const rootDir = join(__dirname, "..");
-const srcDir = join(rootDir, "src");
-const distDir = join(rootDir, "dist");
-
-// Ensure dist directory exists
-mkdirSync(distDir, { recursive: true });
-
-/**
- * OKLCH Color Generation System - Simplified for Best DX
- *
- * This system generates complete color palettes from a single primary hue.
- * Secondary, tertiary, and neutral colors are derived using color theory.
- *
- * RUNTIME THEMING - Just set ONE variable:
- *   :root { --hue: 145; }  // Green theme
- *
- * Available hues:
- *   Blue: 240 (default)  Green: 145   Teal: 180
- *   Purple: 285          Orange: 70   Red: 25
- *
- * NO JS REQUIRED - CSS handles:
- *   - Dark mode via prefers-color-scheme OR .dark class
- *   - Density via data-density attribute
- *   - Radius via data-radius attribute
- *
- * To switch build themes: node scripts/build.mjs --theme=green
- */
-
-// M3-style tonal palette lightness values (0-100 scale mapped to OKLCH 0-1)
-// Includes intermediate tones (4, 6, 12, 17, 22, 24) for dark mode surface containers
-const TONAL_LIGHTNESS = {
-  0: 0.0,
-  4: 0.10,    // Dark mode surface-container-lowest
-  6: 0.13,    // Dark mode surface
-  10: 0.22,
-  12: 0.25,   // Dark mode surface-container-low
-  17: 0.30,   // Dark mode surface-container
-  20: 0.33,
-  22: 0.36,   // Dark mode surface-container-high
-  24: 0.38,   // Dark mode surface-container-highest
-  30: 0.44,
-  40: 0.55,
-  50: 0.65,
-  60: 0.74,
-  70: 0.82,
-  80: 0.88,
-  90: 0.94,
-  95: 0.97,
-  99: 0.995,
-  100: 1.0,
-};
-
-// Chroma scaling per lightness level (colors desaturate at extremes)
-const CHROMA_SCALE = {
-  0: 0,
-  4: 0.5,     // Very dark, low chroma
-  6: 0.6,     // Very dark, low chroma
-  10: 0.7,
-  12: 0.75,
-  17: 0.8,
-  20: 0.85,
-  22: 0.87,
-  24: 0.88,
-  30: 0.95,
-  40: 1.0,
-  50: 1.0,
-  60: 0.95,
-  70: 0.85,
-  80: 0.7,
-  90: 0.5,
-  95: 0.3,
-  99: 0.1,
-  100: 0,
-};
-
-/**
- * Convert OKLCH to approximate hex (for backwards compatibility)
- * Uses simplified Oklab -> sRGB conversion
- */
-function oklchToHex(l, c, h) {
-  const hRad = (h * Math.PI) / 180;
-
-  // Convert to Oklab
-  const a = c * Math.cos(hRad);
-  const b = c * Math.sin(hRad);
-
-  // Oklab to linear sRGB (approximate)
-  const l_ = l + 0.3963377774 * a + 0.2158037573 * b;
-  const m_ = l - 0.1055613458 * a - 0.0638541728 * b;
-  const s_ = l - 0.0894841775 * a - 1.2914855480 * b;
-
-  const l3 = l_ * l_ * l_;
-  const m3 = m_ * m_ * m_;
-  const s3 = s_ * s_ * s_;
-
-  let r = 4.0767416621 * l3 - 3.3077115913 * m3 + 0.2309699292 * s3;
-  let g = -1.2684380046 * l3 + 2.6097574011 * m3 - 0.3413193965 * s3;
-  let bl = -0.0041960863 * l3 - 0.7034186147 * m3 + 1.7076147010 * s3;
-
-  // Gamma correction
-  const gamma = (x) => x <= 0.0031308 ? 12.92 * x : 1.055 * Math.pow(x, 1/2.4) - 0.055;
-
-  r = Math.round(Math.max(0, Math.min(1, gamma(r))) * 255);
-  g = Math.round(Math.max(0, Math.min(1, gamma(g))) * 255);
-  bl = Math.round(Math.max(0, Math.min(1, gamma(bl))) * 255);
-
-  return `#${r.toString(16).padStart(2, '0').toUpperCase()}${g.toString(16).padStart(2, '0').toUpperCase()}${bl.toString(16).padStart(2, '0').toUpperCase()}`;
-}
-
-/**
- * Generate a tonal palette from hue and base chroma
- */
-function generateTonalPalette(hue, baseChroma) {
-  const palette = {};
-
-  for (const [tone, lightness] of Object.entries(TONAL_LIGHTNESS)) {
-    const chromaMultiplier = CHROMA_SCALE[tone];
-    const chroma = baseChroma * chromaMultiplier;
-    palette[tone] = oklchToHex(lightness, chroma, hue);
-  }
-
-  return palette;
-}
-
-/**
- * Generate neutral palette with optional tint from primary
- */
-function generateNeutralPalette(primaryHue, tintAmount = 0.02) {
-  const palette = {};
-
-  for (const [tone, lightness] of Object.entries(TONAL_LIGHTNESS)) {
-    // Neutrals have very low chroma, slightly tinted toward primary
-    const chroma = tintAmount * CHROMA_SCALE[tone];
-    palette[tone] = oklchToHex(lightness, chroma, primaryHue);
-  }
-
-  return palette;
-}
-
-/**
- * Load theme configuration
- */
-function loadThemeConfig(themeName = 'blue') {
-  const themePath = join(srcDir, 'themes', `${themeName}.json`);
-  const configPath = join(srcDir, 'theme-config.json');
-
-  // Load base config
-  let baseConfig;
-  if (existsSync(configPath)) {
-    baseConfig = JSON.parse(readFileSync(configPath, 'utf-8'));
-  } else {
-    // Default config if file doesn't exist
-    baseConfig = {
-      name: "Blue",
-      primary: { hue: 210, chroma: 0.15 },
-      secondary: { strategy: "analogous", hueShift: 0, chromaScale: 0.4 },
-      tertiary: { strategy: "complementary", hueShift: 60, chromaScale: 0.7 },
-      neutral: { tintFromPrimary: 0.02 },
-      error: { hue: 25, chroma: 0.18 },
-    };
-  }
-
-  // Override with specific theme if exists
-  if (existsSync(themePath)) {
-    const themeOverride = JSON.parse(readFileSync(themePath, 'utf-8'));
-    baseConfig.primary = { ...baseConfig.primary, ...themeOverride.primary };
-    baseConfig.name = themeOverride.name || baseConfig.name;
-  }
-
-  return baseConfig;
-}
-
-/**
- * Generate all palettes from theme config
- */
-function generatePalettes(config) {
-  const primaryHue = config.primary.hue;
-  const primaryChroma = config.primary.chroma;
-
-  // Secondary: desaturated version of primary (same hue family)
-  const secondaryChroma = primaryChroma * (config.secondary?.chromaScale || 0.4);
-  const secondaryHue = primaryHue + (config.secondary?.hueShift || 0);
-
-  // Tertiary: complementary accent (typically 60° shift for triadic harmony)
-  const tertiaryHue = (primaryHue + (config.tertiary?.hueShift || 60)) % 360;
-  const tertiaryChroma = primaryChroma * (config.tertiary?.chromaScale || 0.7);
-
-  // Neutral: very low chroma, tinted toward primary
-  const neutralTint = config.neutral?.tintFromPrimary || 0.02;
-
-  // Error: fixed red/orange hue for consistency
-  const errorHue = config.error?.hue || 25;
-  const errorChroma = config.error?.chroma || 0.18;
-
-  return {
-    primary: generateTonalPalette(primaryHue, primaryChroma),
-    secondary: generateTonalPalette(secondaryHue, secondaryChroma),
-    tertiary: generateTonalPalette(tertiaryHue, tertiaryChroma),
-    neutral: generateNeutralPalette(primaryHue, neutralTint),
-    "neutral-variant": generateNeutralPalette(primaryHue, neutralTint * 1.5),
-    error: generateTonalPalette(errorHue, errorChroma),
-  };
-}
-
-// Get theme from command line args
-const themeName = process.argv.find(arg => arg.startsWith('--theme='))?.split('=')[1] || 'blue';
-
-// Load config and generate palettes
-const config = loadThemeConfig(themeName);
-const palettes = generatePalettes(config);
-
-// Save generated palettes as ref.json for inspection/debugging
-writeFileSync(join(srcDir, 'ref.json'), JSON.stringify(palettes, null, 2));
-
-/**
- * Generate uni-tokens.css (registry-compatible format with --uni-ref-* naming)
- * SIMPLIFIED: Uses --hue instead of --uni-hue-primary for better DX
- */
-function generateUniTokens() {
-  const primaryHue = config.primary.hue;
-  const primaryChroma = config.primary.chroma;
-  const secondaryChromaScale = config.secondary?.chromaScale || 0.4;
-  const tertiaryHueShift = config.tertiary?.hueShift || 60;
-  const tertiaryChromaScale = config.tertiary?.chromaScale || 0.7;
-  const neutralTint = config.neutral?.tintFromPrimary || 0.02;
-  const errorHue = config.error?.hue || 25;
-  const errorChroma = config.error?.chroma || 0.18;
-
-  let css = `/* ============================================================
+/* ============================================================
    Unisane UI Design Tokens
-   Generated from "${config.name}" theme using OKLCH color science
+   Generated from "Blue" theme using OKLCH color science
    ============================================================ */
 
 /* ============================================================
@@ -281,66 +46,154 @@ function generateUniTokens() {
       <html class="dark" data-scheme="neutral" data-contrast="high">
    ============================================================ */
 
-/* Theme defaults layer - can be overridden by unlayered app CSS */
-@layer unisane-defaults {
-  :root {
-    --hue: ${primaryHue};
-    --chroma: ${primaryChroma};
-  }
-}
-
 :root {
+  /* === THEME CONFIG === */
+  --hue: 240;
+  --chroma: 0.13;
 
   /* Derived hues (auto-calculated) */
   --hue-secondary: var(--hue);
-  --hue-tertiary: calc(var(--hue) + ${tertiaryHueShift});
+  --hue-tertiary: calc(var(--hue) + 60);
   --hue-neutral: var(--hue);
-  --hue-error: ${errorHue};
+  --hue-error: 25;
 
   /* Derived chromas */
-  --chroma-secondary: calc(var(--chroma) * ${secondaryChromaScale});
-  --chroma-tertiary: calc(var(--chroma) * ${tertiaryChromaScale});
-  --chroma-neutral: ${neutralTint};
-  --chroma-error: ${errorChroma};
-`;
+  --chroma-secondary: calc(var(--chroma) * 1.2);
+  --chroma-tertiary: calc(var(--chroma) * 0.7);
+  --chroma-neutral: 0.02;
+  --chroma-error: 0.18;
 
-  // Generate OKLCH-based reference tokens
-  // Use CSS calc() for runtime theming support
-  const paletteConfigs = [
-    { name: 'primary', hueVar: '--hue', chromaVar: '--chroma' },
-    { name: 'secondary', hueVar: '--hue-secondary', chromaVar: '--chroma-secondary' },
-    { name: 'tertiary', hueVar: '--hue-tertiary', chromaVar: '--chroma-tertiary' },
-    { name: 'neutral', hueVar: '--hue-neutral', chromaVar: '--chroma-neutral' },
-    { name: 'neutral-variant', hueVar: '--hue-neutral', chromaVar: '--chroma-neutral-variant' },
-    { name: 'error', hueVar: '--hue-error', chromaVar: '--chroma-error' },
-  ];
-
-  css += `
   /* Neutral variant chroma (1.5x neutral) */
   --chroma-neutral-variant: calc(var(--chroma-neutral) * 1.5);
-`;
 
-  css += `\n  /* === REFERENCE PALETTES (auto-derived from --hue and --chroma) === */\n`;
+  /* === REFERENCE PALETTES (auto-derived from --hue and --chroma) === */
 
-  for (const { name, hueVar, chromaVar } of paletteConfigs) {
-    css += `\n  /* ${name} */\n`;
+  /* primary */
+  --ref-primary-0: #000000;
+  --ref-primary-4: oklch(0.1 calc(var(--chroma) * 0.5) var(--hue));
+  --ref-primary-6: oklch(0.13 calc(var(--chroma) * 0.6) var(--hue));
+  --ref-primary-10: oklch(0.22 calc(var(--chroma) * 0.7) var(--hue));
+  --ref-primary-12: oklch(0.25 calc(var(--chroma) * 0.75) var(--hue));
+  --ref-primary-17: oklch(0.3 calc(var(--chroma) * 0.8) var(--hue));
+  --ref-primary-20: oklch(0.33 calc(var(--chroma) * 0.85) var(--hue));
+  --ref-primary-22: oklch(0.36 calc(var(--chroma) * 0.87) var(--hue));
+  --ref-primary-24: oklch(0.38 calc(var(--chroma) * 0.88) var(--hue));
+  --ref-primary-30: oklch(0.44 calc(var(--chroma) * 0.95) var(--hue));
+  --ref-primary-40: oklch(0.55 calc(var(--chroma) * 1) var(--hue));
+  --ref-primary-50: oklch(0.65 calc(var(--chroma) * 1) var(--hue));
+  --ref-primary-60: oklch(0.74 calc(var(--chroma) * 0.95) var(--hue));
+  --ref-primary-70: oklch(0.82 calc(var(--chroma) * 0.85) var(--hue));
+  --ref-primary-80: oklch(0.88 calc(var(--chroma) * 0.7) var(--hue));
+  --ref-primary-90: oklch(0.94 calc(var(--chroma) * 0.5) var(--hue));
+  --ref-primary-95: oklch(0.97 calc(var(--chroma) * 0.3) var(--hue));
+  --ref-primary-99: oklch(0.995 calc(var(--chroma) * 0.1) var(--hue));
+  --ref-primary-100: #FFFFFF;
 
-    for (const [tone, lightness] of Object.entries(TONAL_LIGHTNESS)) {
-      const chromaMultiplier = CHROMA_SCALE[tone];
+  /* secondary */
+  --ref-secondary-0: #000000;
+  --ref-secondary-4: oklch(0.1 calc(var(--chroma-secondary) * 0.5) var(--hue-secondary));
+  --ref-secondary-6: oklch(0.13 calc(var(--chroma-secondary) * 0.6) var(--hue-secondary));
+  --ref-secondary-10: oklch(0.22 calc(var(--chroma-secondary) * 0.7) var(--hue-secondary));
+  --ref-secondary-12: oklch(0.25 calc(var(--chroma-secondary) * 0.75) var(--hue-secondary));
+  --ref-secondary-17: oklch(0.3 calc(var(--chroma-secondary) * 0.8) var(--hue-secondary));
+  --ref-secondary-20: oklch(0.33 calc(var(--chroma-secondary) * 0.85) var(--hue-secondary));
+  --ref-secondary-22: oklch(0.36 calc(var(--chroma-secondary) * 0.87) var(--hue-secondary));
+  --ref-secondary-24: oklch(0.38 calc(var(--chroma-secondary) * 0.88) var(--hue-secondary));
+  --ref-secondary-30: oklch(0.44 calc(var(--chroma-secondary) * 0.95) var(--hue-secondary));
+  --ref-secondary-40: oklch(0.55 calc(var(--chroma-secondary) * 1) var(--hue-secondary));
+  --ref-secondary-50: oklch(0.65 calc(var(--chroma-secondary) * 1) var(--hue-secondary));
+  --ref-secondary-60: oklch(0.74 calc(var(--chroma-secondary) * 0.95) var(--hue-secondary));
+  --ref-secondary-70: oklch(0.82 calc(var(--chroma-secondary) * 0.85) var(--hue-secondary));
+  --ref-secondary-80: oklch(0.88 calc(var(--chroma-secondary) * 0.7) var(--hue-secondary));
+  --ref-secondary-90: oklch(0.94 calc(var(--chroma-secondary) * 0.5) var(--hue-secondary));
+  --ref-secondary-95: oklch(0.97 calc(var(--chroma-secondary) * 0.3) var(--hue-secondary));
+  --ref-secondary-99: oklch(0.995 calc(var(--chroma-secondary) * 0.1) var(--hue-secondary));
+  --ref-secondary-100: #FFFFFF;
 
-      // Pure black and white for extremes
-      if (tone === '0') {
-        css += `  --ref-${name}-0: #000000;\n`;
-      } else if (tone === '100') {
-        css += `  --ref-${name}-100: #FFFFFF;\n`;
-      } else {
-        // Use calc() with CSS variable for runtime theming
-        css += `  --ref-${name}-${tone}: oklch(${lightness} calc(var(${chromaVar}) * ${chromaMultiplier}) var(${hueVar}));\n`;
-      }
-    }
-  }
+  /* tertiary */
+  --ref-tertiary-0: #000000;
+  --ref-tertiary-4: oklch(0.1 calc(var(--chroma-tertiary) * 0.5) var(--hue-tertiary));
+  --ref-tertiary-6: oklch(0.13 calc(var(--chroma-tertiary) * 0.6) var(--hue-tertiary));
+  --ref-tertiary-10: oklch(0.22 calc(var(--chroma-tertiary) * 0.7) var(--hue-tertiary));
+  --ref-tertiary-12: oklch(0.25 calc(var(--chroma-tertiary) * 0.75) var(--hue-tertiary));
+  --ref-tertiary-17: oklch(0.3 calc(var(--chroma-tertiary) * 0.8) var(--hue-tertiary));
+  --ref-tertiary-20: oklch(0.33 calc(var(--chroma-tertiary) * 0.85) var(--hue-tertiary));
+  --ref-tertiary-22: oklch(0.36 calc(var(--chroma-tertiary) * 0.87) var(--hue-tertiary));
+  --ref-tertiary-24: oklch(0.38 calc(var(--chroma-tertiary) * 0.88) var(--hue-tertiary));
+  --ref-tertiary-30: oklch(0.44 calc(var(--chroma-tertiary) * 0.95) var(--hue-tertiary));
+  --ref-tertiary-40: oklch(0.55 calc(var(--chroma-tertiary) * 1) var(--hue-tertiary));
+  --ref-tertiary-50: oklch(0.65 calc(var(--chroma-tertiary) * 1) var(--hue-tertiary));
+  --ref-tertiary-60: oklch(0.74 calc(var(--chroma-tertiary) * 0.95) var(--hue-tertiary));
+  --ref-tertiary-70: oklch(0.82 calc(var(--chroma-tertiary) * 0.85) var(--hue-tertiary));
+  --ref-tertiary-80: oklch(0.88 calc(var(--chroma-tertiary) * 0.7) var(--hue-tertiary));
+  --ref-tertiary-90: oklch(0.94 calc(var(--chroma-tertiary) * 0.5) var(--hue-tertiary));
+  --ref-tertiary-95: oklch(0.97 calc(var(--chroma-tertiary) * 0.3) var(--hue-tertiary));
+  --ref-tertiary-99: oklch(0.995 calc(var(--chroma-tertiary) * 0.1) var(--hue-tertiary));
+  --ref-tertiary-100: #FFFFFF;
 
-  css += `
+  /* neutral */
+  --ref-neutral-0: #000000;
+  --ref-neutral-4: oklch(0.1 calc(var(--chroma-neutral) * 0.5) var(--hue-neutral));
+  --ref-neutral-6: oklch(0.13 calc(var(--chroma-neutral) * 0.6) var(--hue-neutral));
+  --ref-neutral-10: oklch(0.22 calc(var(--chroma-neutral) * 0.7) var(--hue-neutral));
+  --ref-neutral-12: oklch(0.25 calc(var(--chroma-neutral) * 0.75) var(--hue-neutral));
+  --ref-neutral-17: oklch(0.3 calc(var(--chroma-neutral) * 0.8) var(--hue-neutral));
+  --ref-neutral-20: oklch(0.33 calc(var(--chroma-neutral) * 0.85) var(--hue-neutral));
+  --ref-neutral-22: oklch(0.36 calc(var(--chroma-neutral) * 0.87) var(--hue-neutral));
+  --ref-neutral-24: oklch(0.38 calc(var(--chroma-neutral) * 0.88) var(--hue-neutral));
+  --ref-neutral-30: oklch(0.44 calc(var(--chroma-neutral) * 0.95) var(--hue-neutral));
+  --ref-neutral-40: oklch(0.55 calc(var(--chroma-neutral) * 1) var(--hue-neutral));
+  --ref-neutral-50: oklch(0.65 calc(var(--chroma-neutral) * 1) var(--hue-neutral));
+  --ref-neutral-60: oklch(0.74 calc(var(--chroma-neutral) * 0.95) var(--hue-neutral));
+  --ref-neutral-70: oklch(0.82 calc(var(--chroma-neutral) * 0.85) var(--hue-neutral));
+  --ref-neutral-80: oklch(0.88 calc(var(--chroma-neutral) * 0.7) var(--hue-neutral));
+  --ref-neutral-90: oklch(0.94 calc(var(--chroma-neutral) * 0.5) var(--hue-neutral));
+  --ref-neutral-95: oklch(0.97 calc(var(--chroma-neutral) * 0.3) var(--hue-neutral));
+  --ref-neutral-99: oklch(0.995 calc(var(--chroma-neutral) * 0.1) var(--hue-neutral));
+  --ref-neutral-100: #FFFFFF;
+
+  /* neutral-variant */
+  --ref-neutral-variant-0: #000000;
+  --ref-neutral-variant-4: oklch(0.1 calc(var(--chroma-neutral-variant) * 0.5) var(--hue-neutral));
+  --ref-neutral-variant-6: oklch(0.13 calc(var(--chroma-neutral-variant) * 0.6) var(--hue-neutral));
+  --ref-neutral-variant-10: oklch(0.22 calc(var(--chroma-neutral-variant) * 0.7) var(--hue-neutral));
+  --ref-neutral-variant-12: oklch(0.25 calc(var(--chroma-neutral-variant) * 0.75) var(--hue-neutral));
+  --ref-neutral-variant-17: oklch(0.3 calc(var(--chroma-neutral-variant) * 0.8) var(--hue-neutral));
+  --ref-neutral-variant-20: oklch(0.33 calc(var(--chroma-neutral-variant) * 0.85) var(--hue-neutral));
+  --ref-neutral-variant-22: oklch(0.36 calc(var(--chroma-neutral-variant) * 0.87) var(--hue-neutral));
+  --ref-neutral-variant-24: oklch(0.38 calc(var(--chroma-neutral-variant) * 0.88) var(--hue-neutral));
+  --ref-neutral-variant-30: oklch(0.44 calc(var(--chroma-neutral-variant) * 0.95) var(--hue-neutral));
+  --ref-neutral-variant-40: oklch(0.55 calc(var(--chroma-neutral-variant) * 1) var(--hue-neutral));
+  --ref-neutral-variant-50: oklch(0.65 calc(var(--chroma-neutral-variant) * 1) var(--hue-neutral));
+  --ref-neutral-variant-60: oklch(0.74 calc(var(--chroma-neutral-variant) * 0.95) var(--hue-neutral));
+  --ref-neutral-variant-70: oklch(0.82 calc(var(--chroma-neutral-variant) * 0.85) var(--hue-neutral));
+  --ref-neutral-variant-80: oklch(0.88 calc(var(--chroma-neutral-variant) * 0.7) var(--hue-neutral));
+  --ref-neutral-variant-90: oklch(0.94 calc(var(--chroma-neutral-variant) * 0.5) var(--hue-neutral));
+  --ref-neutral-variant-95: oklch(0.97 calc(var(--chroma-neutral-variant) * 0.3) var(--hue-neutral));
+  --ref-neutral-variant-99: oklch(0.995 calc(var(--chroma-neutral-variant) * 0.1) var(--hue-neutral));
+  --ref-neutral-variant-100: #FFFFFF;
+
+  /* error */
+  --ref-error-0: #000000;
+  --ref-error-4: oklch(0.1 calc(var(--chroma-error) * 0.5) var(--hue-error));
+  --ref-error-6: oklch(0.13 calc(var(--chroma-error) * 0.6) var(--hue-error));
+  --ref-error-10: oklch(0.22 calc(var(--chroma-error) * 0.7) var(--hue-error));
+  --ref-error-12: oklch(0.25 calc(var(--chroma-error) * 0.75) var(--hue-error));
+  --ref-error-17: oklch(0.3 calc(var(--chroma-error) * 0.8) var(--hue-error));
+  --ref-error-20: oklch(0.33 calc(var(--chroma-error) * 0.85) var(--hue-error));
+  --ref-error-22: oklch(0.36 calc(var(--chroma-error) * 0.87) var(--hue-error));
+  --ref-error-24: oklch(0.38 calc(var(--chroma-error) * 0.88) var(--hue-error));
+  --ref-error-30: oklch(0.44 calc(var(--chroma-error) * 0.95) var(--hue-error));
+  --ref-error-40: oklch(0.55 calc(var(--chroma-error) * 1) var(--hue-error));
+  --ref-error-50: oklch(0.65 calc(var(--chroma-error) * 1) var(--hue-error));
+  --ref-error-60: oklch(0.74 calc(var(--chroma-error) * 0.95) var(--hue-error));
+  --ref-error-70: oklch(0.82 calc(var(--chroma-error) * 0.85) var(--hue-error));
+  --ref-error-80: oklch(0.88 calc(var(--chroma-error) * 0.7) var(--hue-error));
+  --ref-error-90: oklch(0.94 calc(var(--chroma-error) * 0.5) var(--hue-error));
+  --ref-error-95: oklch(0.97 calc(var(--chroma-error) * 0.3) var(--hue-error));
+  --ref-error-99: oklch(0.995 calc(var(--chroma-error) * 0.1) var(--hue-error));
+  --ref-error-100: #FFFFFF;
+
 
   /* === SCALING KNOBS === */
   --scale-space: 1;
@@ -464,38 +317,84 @@ function generateUniTokens() {
 
   /* Typography */
   --font-sans: var(--font-inter, system-ui), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-`;
 
-  // M3 Type Scale
-  const typeScale = {
-    "display-large": { size: 57, line: 64, weight: 400, tracking: "-0.25px" },
-    "display-medium": { size: 45, line: 52, weight: 400, tracking: "0" },
-    "display-small": { size: 36, line: 44, weight: 400, tracking: "0" },
-    "headline-large": { size: 32, line: 40, weight: 400, tracking: "0" },
-    "headline-medium": { size: 28, line: 36, weight: 400, tracking: "0" },
-    "headline-small": { size: 24, line: 32, weight: 400, tracking: "0" },
-    "title-large": { size: 22, line: 28, weight: 400, tracking: "0" },
-    "title-medium": { size: 16, line: 24, weight: 500, tracking: "0.15px" },
-    "title-small": { size: 14, line: 20, weight: 500, tracking: "0.1px" },
-    "body-large": { size: 16, line: 24, weight: 400, tracking: "0.5px" },
-    "body-medium": { size: 14, line: 20, weight: 400, tracking: "0.25px" },
-    "body-small": { size: 12, line: 16, weight: 400, tracking: "0.4px" },
-    "label-large": { size: 14, line: 20, weight: 500, tracking: "0.1px" },
-    "label-medium": { size: 12, line: 16, weight: 500, tracking: "0.5px" },
-    "label-small": { size: 11, line: 16, weight: 500, tracking: "0.5px" },
-  };
+  /* === TYPOGRAPHY === */
+  --type-display-large-font: var(--font-sans);
+  --type-display-large-weight: 400;
+  --type-display-large-size: calc(57px * var(--scale-type));
+  --type-display-large-line: calc(64px * var(--scale-type));
+  --type-display-large-tracking: -0.25px;
+  --type-display-medium-font: var(--font-sans);
+  --type-display-medium-weight: 400;
+  --type-display-medium-size: calc(45px * var(--scale-type));
+  --type-display-medium-line: calc(52px * var(--scale-type));
+  --type-display-medium-tracking: 0;
+  --type-display-small-font: var(--font-sans);
+  --type-display-small-weight: 400;
+  --type-display-small-size: calc(36px * var(--scale-type));
+  --type-display-small-line: calc(44px * var(--scale-type));
+  --type-display-small-tracking: 0;
+  --type-headline-large-font: var(--font-sans);
+  --type-headline-large-weight: 400;
+  --type-headline-large-size: calc(32px * var(--scale-type));
+  --type-headline-large-line: calc(40px * var(--scale-type));
+  --type-headline-large-tracking: 0;
+  --type-headline-medium-font: var(--font-sans);
+  --type-headline-medium-weight: 400;
+  --type-headline-medium-size: calc(28px * var(--scale-type));
+  --type-headline-medium-line: calc(36px * var(--scale-type));
+  --type-headline-medium-tracking: 0;
+  --type-headline-small-font: var(--font-sans);
+  --type-headline-small-weight: 400;
+  --type-headline-small-size: calc(24px * var(--scale-type));
+  --type-headline-small-line: calc(32px * var(--scale-type));
+  --type-headline-small-tracking: 0;
+  --type-title-large-font: var(--font-sans);
+  --type-title-large-weight: 400;
+  --type-title-large-size: calc(22px * var(--scale-type));
+  --type-title-large-line: calc(28px * var(--scale-type));
+  --type-title-large-tracking: 0;
+  --type-title-medium-font: var(--font-sans);
+  --type-title-medium-weight: 500;
+  --type-title-medium-size: calc(16px * var(--scale-type));
+  --type-title-medium-line: calc(24px * var(--scale-type));
+  --type-title-medium-tracking: 0.15px;
+  --type-title-small-font: var(--font-sans);
+  --type-title-small-weight: 500;
+  --type-title-small-size: calc(14px * var(--scale-type));
+  --type-title-small-line: calc(20px * var(--scale-type));
+  --type-title-small-tracking: 0.1px;
+  --type-body-large-font: var(--font-sans);
+  --type-body-large-weight: 400;
+  --type-body-large-size: calc(16px * var(--scale-type));
+  --type-body-large-line: calc(24px * var(--scale-type));
+  --type-body-large-tracking: 0.5px;
+  --type-body-medium-font: var(--font-sans);
+  --type-body-medium-weight: 400;
+  --type-body-medium-size: calc(14px * var(--scale-type));
+  --type-body-medium-line: calc(20px * var(--scale-type));
+  --type-body-medium-tracking: 0.25px;
+  --type-body-small-font: var(--font-sans);
+  --type-body-small-weight: 400;
+  --type-body-small-size: calc(12px * var(--scale-type));
+  --type-body-small-line: calc(16px * var(--scale-type));
+  --type-body-small-tracking: 0.4px;
+  --type-label-large-font: var(--font-sans);
+  --type-label-large-weight: 500;
+  --type-label-large-size: calc(14px * var(--scale-type));
+  --type-label-large-line: calc(20px * var(--scale-type));
+  --type-label-large-tracking: 0.1px;
+  --type-label-medium-font: var(--font-sans);
+  --type-label-medium-weight: 500;
+  --type-label-medium-size: calc(12px * var(--scale-type));
+  --type-label-medium-line: calc(16px * var(--scale-type));
+  --type-label-medium-tracking: 0.5px;
+  --type-label-small-font: var(--font-sans);
+  --type-label-small-weight: 500;
+  --type-label-small-size: calc(11px * var(--scale-type));
+  --type-label-small-line: calc(16px * var(--scale-type));
+  --type-label-small-tracking: 0.5px;
 
-  css += `\n  /* === TYPOGRAPHY === */\n`;
-  for (const [name, props] of Object.entries(typeScale)) {
-    css += `  --type-${name}-font: var(--font-sans);
-  --type-${name}-weight: ${props.weight};
-  --type-${name}-size: calc(${props.size}px * var(--scale-type));
-  --type-${name}-line: calc(${props.line}px * var(--scale-type));
-  --type-${name}-tracking: ${props.tracking};
-`;
-  }
-
-  css += `
   /* === SHAPE (Radius) === */
   --radius-none: 0px;
   --radius-xs: calc(4px * var(--scale-radius));
@@ -541,19 +440,43 @@ function generateUniTokens() {
   --icon-xl: calc(48px * var(--scale-space));
 
   /* === SPACING (Unit-based) === */
-`;
+  --space-0_5u: calc(var(--unit) * 0.5);
+  --space-1u: calc(var(--unit) * 1);
+  --space-1_5u: calc(var(--unit) * 1.5);
+  --space-2u: calc(var(--unit) * 2);
+  --space-2_5u: calc(var(--unit) * 2.5);
+  --space-3u: calc(var(--unit) * 3);
+  --space-3_5u: calc(var(--unit) * 3.5);
+  --space-4u: calc(var(--unit) * 4);
+  --space-4_5u: calc(var(--unit) * 4.5);
+  --space-5u: calc(var(--unit) * 5);
+  --space-5_5u: calc(var(--unit) * 5.5);
+  --space-6u: calc(var(--unit) * 6);
+  --space-6_5u: calc(var(--unit) * 6.5);
+  --space-7u: calc(var(--unit) * 7);
+  --space-7_5u: calc(var(--unit) * 7.5);
+  --space-8u: calc(var(--unit) * 8);
+  --space-8_5u: calc(var(--unit) * 8.5);
+  --space-9u: calc(var(--unit) * 9);
+  --space-9_5u: calc(var(--unit) * 9.5);
+  --space-10u: calc(var(--unit) * 10);
+  --space-10_5u: calc(var(--unit) * 10.5);
+  --space-11u: calc(var(--unit) * 11);
+  --space-11_5u: calc(var(--unit) * 11.5);
+  --space-12u: calc(var(--unit) * 12);
+  --space-12_5u: calc(var(--unit) * 12.5);
+  --space-13u: calc(var(--unit) * 13);
+  --space-13_5u: calc(var(--unit) * 13.5);
+  --space-14u: calc(var(--unit) * 14);
+  --space-14_5u: calc(var(--unit) * 14.5);
+  --space-15u: calc(var(--unit) * 15);
+  --space-15_5u: calc(var(--unit) * 15.5);
+  --space-16u: calc(var(--unit) * 16);
+  --space-20u: calc(var(--unit) * 20);
+  --space-24u: calc(var(--unit) * 24);
+  --space-28u: calc(var(--unit) * 28);
+  --space-38u: calc(var(--unit) * 38);
 
-  // Unit spacing (0.5u to 16u, plus larger values)
-  const units = [];
-  for (let i = 1; i <= 32; i++) units.push(i / 2);
-  units.push(20, 24, 28, 38);
-
-  for (const u of units) {
-    const key = u.toString().replace(".", "_");
-    css += `  --space-${key}u: calc(var(--unit) * ${u});\n`;
-  }
-
-  css += `
   /* === LAYOUT === */
   --layout-margin: calc(16px * var(--scale-space));
   --layout-gutter: calc(16px * var(--scale-space));
@@ -934,341 +857,4 @@ function generateUniTokens() {
 
 .dark {
   scrollbar-color: var(--color-outline-variant) var(--color-surface-container);
-}
-`;
-
-  return css;
-}
-
-/**
- * Generate Tailwind v4 @theme mapping
- * References the simplified CSS variables
- */
-function generateTailwindTheme() {
-  let css = `
-/* ============================================================
-   TAILWIND v4 THEME MAPPING
-   Maps CSS variables to Tailwind utilities
-   ============================================================ */
-
-@theme {
-  /* Breakpoints */
-  --breakpoint-sm: 640px;
-  --breakpoint-md: 768px;
-  --breakpoint-lg: 1024px;
-  --breakpoint-xl: 1280px;
-  --breakpoint-2xl: 1536px;
-  --breakpoint-compact: 0px;
-  --breakpoint-medium: 600px;
-  --breakpoint-expanded: 840px;
-
-  /* Colors - Direct reference to CSS vars */
-  --color-primary: var(--color-primary);
-  --color-on-primary: var(--color-on-primary);
-  --color-primary-container: var(--color-primary-container);
-  --color-on-primary-container: var(--color-on-primary-container);
-  --color-secondary: var(--color-secondary);
-  --color-on-secondary: var(--color-on-secondary);
-  --color-secondary-container: var(--color-secondary-container);
-  --color-on-secondary-container: var(--color-on-secondary-container);
-  --color-tertiary: var(--color-tertiary);
-  --color-on-tertiary: var(--color-on-tertiary);
-  --color-tertiary-container: var(--color-tertiary-container);
-  --color-on-tertiary-container: var(--color-on-tertiary-container);
-  --color-surface: var(--color-surface);
-  --color-on-surface: var(--color-on-surface);
-  --color-surface-container-lowest: var(--color-surface-container-lowest);
-  --color-surface-container-low: var(--color-surface-container-low);
-  --color-surface-container: var(--color-surface-container);
-  --color-surface-container-high: var(--color-surface-container-high);
-  --color-surface-container-highest: var(--color-surface-container-highest);
-  --color-surface-variant: var(--color-surface-variant);
-  --color-on-surface-variant: var(--color-on-surface-variant);
-  --color-background: var(--color-background);
-  --color-on-background: var(--color-on-background);
-  --color-outline: var(--color-outline);
-  --color-outline-variant: var(--color-outline-variant);
-  --color-error: var(--color-error);
-  --color-on-error: var(--color-on-error);
-  --color-error-container: var(--color-error-container);
-  --color-on-error-container: var(--color-on-error-container);
-  --color-success: var(--color-success);
-  --color-on-success: var(--color-on-success);
-  --color-success-container: var(--color-success-container);
-  --color-on-success-container: var(--color-on-success-container);
-  --color-warning: var(--color-warning);
-  --color-on-warning: var(--color-on-warning);
-  --color-warning-container: var(--color-warning-container);
-  --color-on-warning-container: var(--color-on-warning-container);
-  --color-info: var(--color-info);
-  --color-on-info: var(--color-on-info);
-  --color-info-container: var(--color-info-container);
-  --color-on-info-container: var(--color-on-info-container);
-  --color-inverse-surface: var(--color-inverse-surface);
-  --color-inverse-on-surface: var(--color-inverse-on-surface);
-  --color-inverse-primary: var(--color-inverse-primary);
-  --color-scrim: var(--color-scrim);
-
-  /* Radius */
-  --radius-none: var(--radius-none);
-  --radius-xs: var(--radius-xs);
-  --radius-sm: var(--radius-sm);
-  --radius-md: var(--radius-md);
-  --radius-lg: var(--radius-lg);
-  --radius-xl: var(--radius-xl);
-  --radius-2xl: var(--radius-2xl);
-  --radius-full: var(--radius-full);
-
-  /* Shadows */
-  --shadow-0: var(--shadow-0);
-  --shadow-1: var(--shadow-1);
-  --shadow-2: var(--shadow-2);
-  --shadow-3: var(--shadow-3);
-  --shadow-4: var(--shadow-4);
-  --shadow-5: var(--shadow-5);
-
-  /* Motion */
-  --duration-short: var(--duration-short);
-  --duration-snappy: var(--duration-snappy);
-  --duration-medium: var(--duration-medium);
-  --duration-emphasized: var(--duration-emphasized);
-  --duration-long: var(--duration-long);
-  --ease-standard: var(--ease-standard);
-  --ease-emphasized: var(--ease-emphasized);
-  --ease-decelerate: var(--ease-decelerate);
-  --ease-accelerate: var(--ease-accelerate);
-
-  /* Typography - using --text-* for Tailwind v4 text-* utilities */
-  --font-sans: var(--font-sans);
-`;
-
-  // Typography scale - Tailwind v4 uses --text-* to generate text-* utilities
-  // The --text-*--line-height, --text-*--letter-spacing, --text-*--font-weight suffixes
-  // are automatically applied when using the text-* utility
-  const typeNames = [
-    "display-large", "display-medium", "display-small",
-    "headline-large", "headline-medium", "headline-small",
-    "title-large", "title-medium", "title-small",
-    "body-large", "body-medium", "body-small",
-    "label-large", "label-medium", "label-small",
-  ];
-
-  for (const name of typeNames) {
-    css += `  --text-${name}: var(--type-${name}-size);
-  --text-${name}--line-height: var(--type-${name}-line);
-  --text-${name}--letter-spacing: var(--type-${name}-tracking);
-  --text-${name}--font-weight: var(--type-${name}-weight);
-`;
-  }
-
-  css += `
-  /* Spacing */
-`;
-
-  // Unit spacing
-  const units = [];
-  for (let i = 1; i <= 32; i++) units.push(i / 2);
-  units.push(20, 24, 28, 38);
-
-  for (const u of units) {
-    const key = u.toString().replace(".", "_");
-    css += `  --spacing-${key}u: var(--space-${key}u);\n`;
-  }
-
-  css += `
-  /* Layout */
-  --spacing-layout-margin: var(--layout-margin);
-  --spacing-layout-gutter: var(--layout-gutter);
-  --width-pane-list: var(--layout-pane-list);
-  --width-pane-fixed: var(--layout-pane-fixed);
-  --width-pane-supporting: var(--layout-pane-supporting);
-  --width-rail: var(--layout-rail);
-  --width-drawer: var(--layout-drawer);
-
-  /* Z-Index */
-  --z-fab: var(--z-fab);
-  --z-header: var(--z-header);
-  --z-drawer: var(--z-drawer);
-  --z-popover: var(--z-popover);
-  --z-modal: var(--z-modal);
-
-  /* Icons */
-  --spacing-icon-xs: var(--icon-xs);
-  --spacing-icon-sm: var(--icon-sm);
-  --spacing-icon-md: var(--icon-md);
-  --spacing-icon-lg: var(--icon-lg);
-  --spacing-icon-xl: var(--icon-xl);
-
-  /* Opacity */
-  --opacity-hover: var(--opacity-hover);
-  --opacity-focus: var(--opacity-focus);
-  --opacity-pressed: var(--opacity-pressed);
-  --opacity-dragged: var(--opacity-dragged);
-  --opacity-disabled: var(--opacity-disabled);
-  --opacity-muted: var(--opacity-muted);
-}
-`;
-
-  return css;
-}
-
-/**
- * Generate base styles (animations, focus rings, utilities)
- */
-function generateBaseStyles() {
-  return `
-/* ============================================================
-   BASE STYLES - Animations, Focus Rings, Utilities
-   ============================================================ */
-
-/* Ripple animation */
-@keyframes ripple {
-  from {
-    opacity: 0.35;
-    transform: scale(0);
-  }
-  to {
-    opacity: 0;
-    transform: scale(2);
-  }
-}
-
-/* Stagger animation for list items */
-@keyframes stagger-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@layer base {
-  /* Global box-sizing */
-  *,
-  *::before,
-  *::after {
-    box-sizing: border-box;
-  }
-
-  /* Remove default focus outline */
-  *:focus {
-    outline: none;
-  }
-
-  /* Apply custom focus ring only for keyboard navigation */
-  *:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
-  }
-
-  /* Ensure focus is visible on interactive elements */
-  button:focus-visible,
-  a:focus-visible,
-  input:focus-visible,
-  select:focus-visible,
-  textarea:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
-  }
-
-  /* Base document styles */
-  html,
-  body {
-    height: 100%;
-    margin: 0;
-    padding: 0;
-  }
-
-  body {
-    background-color: var(--color-background);
-    color: var(--color-on-background);
-    font-family: var(--font-sans);
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-}
-
-@layer utilities {
-  /* Scrollbar utilities */
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-
-  .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-
-  /* Ripple container */
-  .ripple-container {
-    position: relative;
-    overflow: hidden;
-  }
-
-  /* Animation utilities */
-  .animate-in {
-    animation-fill-mode: both;
-  }
-
-  .animate-out {
-    animation-fill-mode: both;
-    animation-direction: reverse;
-  }
-
-  .animate-stagger {
-    animation: stagger-in 300ms ease-out;
-  }
-}
-`;
-}
-
-// Build
-function build() {
-  console.log(`Building Unisane tokens for "${config.name}" theme...`);
-  console.log(`  Primary: hue=${config.primary.hue}°, chroma=${config.primary.chroma}`);
-
-  // Generate all parts
-  const tokensCss = generateUniTokens();
-  const tailwindTheme = generateTailwindTheme();
-  const baseStyles = generateBaseStyles();
-
-  // Merge into single file: unisane.css
-  const mergedCss = tokensCss + tailwindTheme + baseStyles;
-  writeFileSync(join(distDir, "unisane.css"), mergedCss);
-  console.log("✓ Generated unisane.css (merged: tokens + theme + base)");
-
-  // Add deprecation notice to individual files
-  const deprecationNotice = `/*
- * DEPRECATED: This file will be removed in a future version.
- * Please use the merged file instead:
- *   @import "@unisane/tokens/unisane.css";
- */
-
-`;
-
-  // Output individual files with deprecation notice (for backwards compatibility)
-  writeFileSync(join(distDir, "uni-tokens.css"), deprecationNotice + tokensCss);
-  writeFileSync(join(distDir, "uni-theme.css"), deprecationNotice + tailwindTheme);
-  writeFileSync(join(distDir, "uni-base.css"), deprecationNotice + baseStyles);
-  console.log("✓ Generated individual files with deprecation notice");
-
-  console.log("\nDone! Use the single merged import:");
-  console.log('  @import "@unisane/tokens/unisane.css";');
-}
-
-build();
-
-// Watch mode
-if (process.argv.includes("--watch")) {
-  console.log("Watching for changes...");
-  const chokidar = await import("chokidar");
-  const watcher = chokidar.watch([join(srcDir, "**/*.json")]);
-
-  watcher.on("change", (path) => {
-    console.log(`File changed: ${path}`);
-    build();
-  });
 }

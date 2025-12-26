@@ -19,7 +19,7 @@ export function PlacementExamples({ placement, className }: PlacementExamplesPro
       {placement.examples.map((example, index) => (
         <div
           key={index}
-          className="bg-surface-container-low rounded-extra-large p-8u border border-outline-variant/15"
+          className="bg-surface-container-low rounded-xl p-8u border border-outline-variant/15"
         >
           {/* Title */}
           <h3 className="text-title-medium font-medium text-on-surface mb-6u">

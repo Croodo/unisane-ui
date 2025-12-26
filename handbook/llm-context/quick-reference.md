@@ -17,22 +17,30 @@ Essential context for AI assistants working with Unisane UI.
 
 ### 1. Token Purity
 
-- ALWAYS use design tokens (--uni-sys-*, --uni-ref-*)
+- ALWAYS use design tokens (--color-*, --ref-*, --hue)
 - NEVER hardcode colors (#hex, rgb())
 - NEVER use arbitrary pixel values
 
-### 2. Spacing System
+### 2. Single Variable Theming
+
+- Change `--hue` (0-360) and `--chroma` (0-0.2) to theme the entire app
+- Available hues: Blue (240), Green (145), Teal (180), Purple (285), Orange (70), Red (25)
+- Monochrome: `--hue: 0; --chroma: 0; --chroma-neutral: 0;`
+
+### 3. CSS-Only Mode Switching
+
+- Dark mode: automatic via `prefers-color-scheme` or `.dark` class
+- Scheme: `data-scheme="tonal|monochrome|neutral"`
+- Contrast: `data-contrast="standard|medium|high"`
+- Density: `data-density="compact|dense|comfortable"`
+- Radius: `data-radius="sharp|soft"`
+
+### 4. Spacing System
 
 - PREFER industrial units (4u, 8u) - scales with density
 - LEGACY fixed spacing (4, 8) - exact pixels only
 
-### 3. Material 3 Compliance
-
-- Keep M3 references in internal docs only
-- Don't mention "Material 3" in user-facing code/comments
-- Follow M3 spec for component behavior
-
-### 4. Code Style
+### 5. Code Style
 
 - No unnecessary comments in components
 - Use JSDoc for public APIs
@@ -51,27 +59,73 @@ packages/ui/src/
 ├── hooks/              # Navigation & theme hooks
 └── types/              # TypeScript definitions
 
+registry/               # shadcn-style registry
+├── styles/
+│   └── unisane.css     # Single merged CSS file
+├── lib/
+│   └── utils.ts        # cn() helper
+├── primitives/
+├── layout/
+└── components/
+
 handbook/
 ├── design-system/      # Complete component documentation (16 files)
-│   ├── 01-getting-started.md      # Setup, tokens, Tailwind
-│   ├── 02-utilities.md            # Ripple, StateLayer, FocusRing
-│   ├── 03-layout.md               # Container, Pane, Canonical Layouts
-│   ├── 04-buttons-actions.md      # Button, IconButton, FAB
-│   ├── 05-inputs-forms.md         # TextField, Select, Checkbox
-│   ├── 06-display.md              # Typography, List, Chip
-│   ├── 07-containers.md           # Card, Dialog, Sheet
-│   ├── 08-navigation.md           # NavigationRail, NavigationDrawer
-│   ├── 09-feedback.md             # Snackbar, Alert, Progress
-│   ├── 10-overlays.md             # Tooltip, Menu, Dropdown
-│   ├── 11-data-display.md         # Table, DataGrid
-│   ├── 12-media.md                # Image, Carousel
-│   ├── 13-advanced.md             # ScrollArea, Accordion
-│   ├── 14-specialized.md          # DatePicker, Combobox
-│   ├── 15-forms-extended.md       # ToggleGroup, Form
-│   └── 16-pagination-rating.md    # Pagination, Rating
 ├── guides/             # Implementation guides
 ├── reference/          # Technical reference
 └── llm-context/        # LLM-specific (YOU ARE HERE)
+```
+
+---
+
+## Token System (OKLCH)
+
+### Config Tokens (User adjustable)
+
+```css
+:root {
+  --hue: 240;           /* Primary hue 0-360 */
+  --chroma: 0.13;       /* Color intensity (0-0.2) */
+}
+
+/* For monochrome/black theme: */
+:root {
+  --hue: 0;
+  --chroma: 0;
+  --chroma-neutral: 0;  /* Removes tint from surfaces */
+}
+```
+
+### Reference Tokens (Auto-generated)
+
+```css
+--ref-primary-40: oklch(0.55 0.150 var(--hue));
+--ref-primary-80: oklch(0.88 0.105 var(--hue));
+--ref-primary-90: oklch(0.94 0.075 var(--hue));
+```
+
+### Semantic Tokens (Components use these)
+
+```css
+--color-primary: var(--ref-primary-40);
+--color-on-primary: var(--ref-primary-100);
+--color-primary-container: var(--ref-primary-90);
+--color-surface: var(--ref-neutral-99);
+--color-secondary-container: var(--ref-secondary-90);
+```
+
+---
+
+## CSS Import (Single File)
+
+```css
+/* Consumer app globals.css */
+@import "tailwindcss";
+@import "../styles/unisane.css";
+
+/* Theme your app */
+:root {
+  --hue: 145;  /* Green theme */
+}
 ```
 
 ---
@@ -96,9 +150,9 @@ Complete navigation system with:
 
 ### Files
 
-- Rail: [packages/ui/src/components/navigation-rail.tsx](../../packages/ui/src/components/navigation-rail.tsx)
-- Drawer: [packages/ui/src/components/navigation-drawer.tsx](../../packages/ui/src/components/navigation-drawer.tsx)
-- Docs: [handbook/design-system/08-navigation.md](../design-system/08-navigation.md)
+- Rail: `packages/ui/src/components/navigation-rail.tsx`
+- Drawer: `packages/ui/src/components/navigation-drawer.tsx`
+- Docs: `handbook/design-system/08-navigation.md`
 
 ---
 
@@ -110,12 +164,14 @@ Complete navigation system with:
 // Scales with density
 <div className="p-4u gap-2u">
   {/* Standard: 16px padding, 8px gap */}
-  {/* Compact: 13.6px padding, 6.8px gap */}
-  {/* Dense: 12px padding, 6px gap */}
+  {/* Compact: ~14px padding, ~7px gap */}
+  {/* Dense: ~12px padding, ~6px gap */}
 </div>
 ```
 
-### Theme Configuration
+### Theme Configuration (Optional)
+
+ThemeProvider is ONLY needed for runtime UI controls:
 
 ```tsx
 <ThemeProvider
@@ -127,26 +183,30 @@ Complete navigation system with:
 />
 ```
 
-### Navigation Pattern
+### CSS-Only Theming (Recommended)
 
-```tsx
-const navigation = useNavigation(NAV_DATA);
+```html
+<!-- Dark mode -->
+<html class="dark">
 
-const {
-  activeCategoryId,
-  activeSubItemId,
-  effectiveCategory,
-  isDrawerVisible,
-  isPushMode,
-  isMobileMenuOpen,
-  handleCategoryClick,
-  handleSubItemClick,
-  handleInteractionEnter,
-  handleInteractionLeave,
-  handleDrawerEnter,
-  handleDrawerLeave,
-  toggleMobileMenu,
-} = navigation;
+<!-- Scheme (color strategy) -->
+<html data-scheme="tonal">        <!-- Full color (default) -->
+<html data-scheme="monochrome">   <!-- Pure grayscale -->
+<html data-scheme="neutral">      <!-- Low saturation -->
+
+<!-- Contrast (accessibility) -->
+<html data-contrast="standard">   <!-- Default -->
+<html data-contrast="medium">     <!-- Boosted readability -->
+<html data-contrast="high">       <!-- WCAG AAA compliant -->
+
+<!-- Density -->
+<html data-density="compact">
+
+<!-- Radius -->
+<html data-radius="soft">
+
+<!-- Combining modifiers -->
+<html class="dark" data-scheme="neutral" data-contrast="high">
 ```
 
 ---
@@ -225,7 +285,7 @@ Component.displayName = "Component";
 ### For Users
 
 - [Quick Start](../guides/quick-start.md) - Getting started
-- [Website Plan](../guides/website-plan.md) - Documentation site
+- [Blueprint](./blueprint.md) - Complete system architecture
 
 ### For Status
 
@@ -243,12 +303,19 @@ Component.displayName = "Component";
 
 ---
 
-## Current Status (v0.1.0-beta)
+## Current Status (v0.4.0)
 
 ### Completed
 
+- OKLCH token system with `--hue` and `--chroma` theming
+- CSS-only dark mode (prefers-color-scheme + .dark class)
+- CSS-only scheme variants (tonal, monochrome, neutral)
+- CSS-only contrast variants (standard, medium, high - WCAG AAA)
+- CSS-only density and radius variants
+- Monochrome/black theme support (--chroma-neutral: 0)
+- Single CSS file import (`unisane.css`)
 - Component registry system
-- Enhanced ThemeProvider (dark mode, density, radius)
+- Enhanced ThemeProvider (optional, for runtime controls)
 - TypeScript autocomplete
 - Navigation system (primitives + sophisticated hover hooks)
 - Complete design system documentation (16 files)
@@ -304,20 +371,24 @@ cd apps/web && pnpm dev
 
 ---
 
-## Session Context
+## Key Files
 
-This handbook was reorganized on 2025-12-25. The design system documentation was moved from a separate `design-system/` folder into `handbook/design-system/` to consolidate all documentation.
+### Token System
+- Config: `packages/tokens/src/theme-config.json`
+- Build: `packages/tokens/scripts/build.mjs`
+- Output: `packages/tokens/dist/unisane.css`
 
-Key achievements:
-1. Complete design system documentation (16 files covering all components)
-2. Navigation system with sophisticated hover hooks
-3. Pane system and Canonical Layouts
-4. CVA + cn pattern throughout all components
+### Registry
+- Styles: `registry/styles/unisane.css`
+- Utils: `registry/lib/utils.ts`
+- Components: `registry/components/`
 
-See [Session Summary](./session-summary.md) for full context.
+### Web App
+- Globals: `apps/web/app/globals.css`
+- Layout: `apps/web/app/layout.tsx`
 
 ---
 
-**Last Updated**: 2025-12-25
+**Last Updated**: 2025-12-27
 **For**: Claude Code & AI Assistants
-**Version**: 0.1.0
+**Version**: 0.4.0

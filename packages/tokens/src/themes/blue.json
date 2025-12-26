@@ -1,5 +1,5 @@
 {
   "name": "Blue",
-  "primary": { "hue": 240, "chroma": 0.15 },
-  "description": "Professional, trustworthy - default theme"
+  "primary": { "hue": 240, "chroma": 0.13 },
+  "description": "Teal-blue - professional, low saturation with high contrast"
 }

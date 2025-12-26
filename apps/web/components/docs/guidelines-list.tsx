@@ -68,7 +68,7 @@ export function GuidelinesList({ guidelines, className }: GuidelinesListProps) {
                 <li
                   key={index}
                   className={cn(
-                    "flex items-start gap-3u p-4u rounded-medium border",
+                    "flex items-start gap-3u p-4u rounded-md border",
                     config.className
                   )}
                 >

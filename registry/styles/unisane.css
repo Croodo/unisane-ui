@@ -536,3 +536,304 @@
 [data-radius="soft"] {
   --scale-radius: 1.15;
 }
+
+/* ============================================================
+   TAILWIND v4 THEME MAPPING
+   Maps CSS variables to Tailwind utilities
+   ============================================================ */
+
+@theme {
+  /* Breakpoints */
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+  --breakpoint-compact: 0px;
+  --breakpoint-medium: 600px;
+  --breakpoint-expanded: 840px;
+
+  /* Colors - Direct reference to CSS vars */
+  --color-primary: var(--color-primary);
+  --color-on-primary: var(--color-on-primary);
+  --color-primary-container: var(--color-primary-container);
+  --color-on-primary-container: var(--color-on-primary-container);
+  --color-secondary: var(--color-secondary);
+  --color-on-secondary: var(--color-on-secondary);
+  --color-secondary-container: var(--color-secondary-container);
+  --color-on-secondary-container: var(--color-on-secondary-container);
+  --color-tertiary: var(--color-tertiary);
+  --color-on-tertiary: var(--color-on-tertiary);
+  --color-tertiary-container: var(--color-tertiary-container);
+  --color-on-tertiary-container: var(--color-on-tertiary-container);
+  --color-surface: var(--color-surface);
+  --color-on-surface: var(--color-on-surface);
+  --color-surface-container-lowest: var(--color-surface-container-lowest);
+  --color-surface-container-low: var(--color-surface-container-low);
+  --color-surface-container: var(--color-surface-container);
+  --color-surface-container-high: var(--color-surface-container-high);
+  --color-surface-container-highest: var(--color-surface-container-highest);
+  --color-surface-variant: var(--color-surface-variant);
+  --color-on-surface-variant: var(--color-on-surface-variant);
+  --color-background: var(--color-background);
+  --color-on-background: var(--color-on-background);
+  --color-outline: var(--color-outline);
+  --color-outline-variant: var(--color-outline-variant);
+  --color-error: var(--color-error);
+  --color-on-error: var(--color-on-error);
+  --color-error-container: var(--color-error-container);
+  --color-on-error-container: var(--color-on-error-container);
+  --color-success: var(--color-success);
+  --color-on-success: var(--color-on-success);
+  --color-success-container: var(--color-success-container);
+  --color-on-success-container: var(--color-on-success-container);
+  --color-warning: var(--color-warning);
+  --color-on-warning: var(--color-on-warning);
+  --color-warning-container: var(--color-warning-container);
+  --color-on-warning-container: var(--color-on-warning-container);
+  --color-info: var(--color-info);
+  --color-on-info: var(--color-on-info);
+  --color-info-container: var(--color-info-container);
+  --color-on-info-container: var(--color-on-info-container);
+  --color-inverse-surface: var(--color-inverse-surface);
+  --color-inverse-on-surface: var(--color-inverse-on-surface);
+  --color-inverse-primary: var(--color-inverse-primary);
+  --color-scrim: var(--color-scrim);
+
+  /* Radius */
+  --radius-none: var(--radius-none);
+  --radius-xs: var(--radius-xs);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-2xl: var(--radius-2xl);
+  --radius-full: var(--radius-full);
+
+  /* Shadows */
+  --shadow-0: var(--shadow-0);
+  --shadow-1: var(--shadow-1);
+  --shadow-2: var(--shadow-2);
+  --shadow-3: var(--shadow-3);
+  --shadow-4: var(--shadow-4);
+  --shadow-5: var(--shadow-5);
+
+  /* Motion */
+  --duration-short: var(--duration-short);
+  --duration-snappy: var(--duration-snappy);
+  --duration-medium: var(--duration-medium);
+  --duration-emphasized: var(--duration-emphasized);
+  --duration-long: var(--duration-long);
+  --ease-standard: var(--ease-standard);
+  --ease-emphasized: var(--ease-emphasized);
+  --ease-decelerate: var(--ease-decelerate);
+  --ease-accelerate: var(--ease-accelerate);
+
+  /* Typography */
+  --font-sans: var(--font-sans);
+  --font-size-display-large: var(--type-display-large-size);
+  --line-height-display-large: var(--type-display-large-line);
+  --font-size-display-medium: var(--type-display-medium-size);
+  --line-height-display-medium: var(--type-display-medium-line);
+  --font-size-display-small: var(--type-display-small-size);
+  --line-height-display-small: var(--type-display-small-line);
+  --font-size-headline-large: var(--type-headline-large-size);
+  --line-height-headline-large: var(--type-headline-large-line);
+  --font-size-headline-medium: var(--type-headline-medium-size);
+  --line-height-headline-medium: var(--type-headline-medium-line);
+  --font-size-headline-small: var(--type-headline-small-size);
+  --line-height-headline-small: var(--type-headline-small-line);
+  --font-size-title-large: var(--type-title-large-size);
+  --line-height-title-large: var(--type-title-large-line);
+  --font-size-title-medium: var(--type-title-medium-size);
+  --line-height-title-medium: var(--type-title-medium-line);
+  --font-size-title-small: var(--type-title-small-size);
+  --line-height-title-small: var(--type-title-small-line);
+  --font-size-body-large: var(--type-body-large-size);
+  --line-height-body-large: var(--type-body-large-line);
+  --font-size-body-medium: var(--type-body-medium-size);
+  --line-height-body-medium: var(--type-body-medium-line);
+  --font-size-body-small: var(--type-body-small-size);
+  --line-height-body-small: var(--type-body-small-line);
+  --font-size-label-large: var(--type-label-large-size);
+  --line-height-label-large: var(--type-label-large-line);
+  --font-size-label-medium: var(--type-label-medium-size);
+  --line-height-label-medium: var(--type-label-medium-line);
+  --font-size-label-small: var(--type-label-small-size);
+  --line-height-label-small: var(--type-label-small-line);
+
+  /* Spacing */
+  --spacing-0_5u: var(--space-0_5u);
+  --spacing-1u: var(--space-1u);
+  --spacing-1_5u: var(--space-1_5u);
+  --spacing-2u: var(--space-2u);
+  --spacing-2_5u: var(--space-2_5u);
+  --spacing-3u: var(--space-3u);
+  --spacing-3_5u: var(--space-3_5u);
+  --spacing-4u: var(--space-4u);
+  --spacing-4_5u: var(--space-4_5u);
+  --spacing-5u: var(--space-5u);
+  --spacing-5_5u: var(--space-5_5u);
+  --spacing-6u: var(--space-6u);
+  --spacing-6_5u: var(--space-6_5u);
+  --spacing-7u: var(--space-7u);
+  --spacing-7_5u: var(--space-7_5u);
+  --spacing-8u: var(--space-8u);
+  --spacing-8_5u: var(--space-8_5u);
+  --spacing-9u: var(--space-9u);
+  --spacing-9_5u: var(--space-9_5u);
+  --spacing-10u: var(--space-10u);
+  --spacing-10_5u: var(--space-10_5u);
+  --spacing-11u: var(--space-11u);
+  --spacing-11_5u: var(--space-11_5u);
+  --spacing-12u: var(--space-12u);
+  --spacing-12_5u: var(--space-12_5u);
+  --spacing-13u: var(--space-13u);
+  --spacing-13_5u: var(--space-13_5u);
+  --spacing-14u: var(--space-14u);
+  --spacing-14_5u: var(--space-14_5u);
+  --spacing-15u: var(--space-15u);
+  --spacing-15_5u: var(--space-15_5u);
+  --spacing-16u: var(--space-16u);
+  --spacing-20u: var(--space-20u);
+  --spacing-24u: var(--space-24u);
+  --spacing-28u: var(--space-28u);
+  --spacing-38u: var(--space-38u);
+
+  /* Layout */
+  --spacing-layout-margin: var(--layout-margin);
+  --spacing-layout-gutter: var(--layout-gutter);
+  --width-pane-list: var(--layout-pane-list);
+  --width-pane-fixed: var(--layout-pane-fixed);
+  --width-pane-supporting: var(--layout-pane-supporting);
+  --width-rail: var(--layout-rail);
+  --width-drawer: var(--layout-drawer);
+
+  /* Z-Index */
+  --z-fab: var(--z-fab);
+  --z-header: var(--z-header);
+  --z-drawer: var(--z-drawer);
+  --z-popover: var(--z-popover);
+  --z-modal: var(--z-modal);
+
+  /* Icons */
+  --spacing-icon-xs: var(--icon-xs);
+  --spacing-icon-sm: var(--icon-sm);
+  --spacing-icon-md: var(--icon-md);
+  --spacing-icon-lg: var(--icon-lg);
+  --spacing-icon-xl: var(--icon-xl);
+
+  /* Opacity */
+  --opacity-hover: var(--opacity-hover);
+  --opacity-focus: var(--opacity-focus);
+  --opacity-pressed: var(--opacity-pressed);
+  --opacity-dragged: var(--opacity-dragged);
+  --opacity-disabled: var(--opacity-disabled);
+  --opacity-muted: var(--opacity-muted);
+}
+
+/* ============================================================
+   BASE STYLES - Animations, Focus Rings, Utilities
+   ============================================================ */
+
+/* Ripple animation */
+@keyframes ripple {
+  from {
+    opacity: 0.35;
+    transform: scale(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(2);
+  }
+}
+
+/* Stagger animation for list items */
+@keyframes stagger-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@layer base {
+  /* Global box-sizing */
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  /* Remove default focus outline */
+  *:focus {
+    outline: none;
+  }
+
+  /* Apply custom focus ring only for keyboard navigation */
+  *:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  /* Ensure focus is visible on interactive elements */
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  /* Base document styles */
+  html,
+  body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-on-background);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer utilities {
+  /* Scrollbar utilities */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Ripple container */
+  .ripple-container {
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Animation utilities */
+  .animate-in {
+    animation-fill-mode: both;
+  }
+
+  .animate-out {
+    animation-fill-mode: both;
+    animation-direction: reverse;
+  }
+
+  .animate-stagger {
+    animation: stagger-in 300ms ease-out;
+  }
+}

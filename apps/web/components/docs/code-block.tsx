@@ -11,7 +11,7 @@ export function CodeBlock({ code, className }: CodeBlockProps) {
   return (
     <div
       className={cn(
-        "p-6u bg-surface-container-high rounded-large overflow-x-auto",
+        "p-6u bg-surface-container-high rounded-lg overflow-x-auto",
         className
       )}
     >

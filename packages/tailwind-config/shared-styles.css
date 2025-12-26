@@ -1,5 +1,4 @@
 /* Unisane Tailwind Config - Shared Styles */
 /* This file imports the complete theme from tokens package */
 
-@import "@unisane/tokens/uni-tokens.css";
-@import "@unisane/tokens/uni-theme.css";
+@import "@unisane/tokens/unisane.css";

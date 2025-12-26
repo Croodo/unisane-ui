@@ -1,6 +1,6 @@
 {
   "$schema": "./registry-schema.json",
-  "version": "0.1.0",
+  "version": "0.4.0",
   "components": {
     "utils": {
       "name": "Utils",

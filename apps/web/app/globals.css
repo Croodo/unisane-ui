@@ -1,8 +1,43 @@
 /* Tailwind v4 + Unisane UI */
 @import "tailwindcss";
-@import "@unisane/tokens/uni-tokens.css";
-@import "@unisane/tokens/uni-theme.css";
+@import "@unisane/tokens/unisane.css";
 
 /* Source paths for Tailwind class scanning */
 @source "../**/*.{ts,tsx,mdx}";
 @source "../../../packages/ui/src/**/*.{ts,tsx}";
+
+/* ============================================================
+   THEME CONFIGURATION (Single Source of Truth)
+
+   Set your app's theme here. These CSS variables control
+   the entire color system via OKLCH color science.
+   ============================================================ */
+
+/* Uses library defaults (blue theme) - no overrides needed */
+
+/* ============================================================
+   THEME MODIFIERS (optional - via HTML attributes)
+
+   SCHEME (color strategy):
+     data-scheme="tonal"        Full color (default)
+     data-scheme="monochrome"   Pure grayscale
+     data-scheme="neutral"      Low saturation, professional
+
+   CONTRAST (accessibility):
+     data-contrast="standard"   Default
+     data-contrast="medium"     Boosted readability
+     data-contrast="high"       WCAG AAA compliant
+
+   DARK MODE:
+     class="dark"               Enable dark mode
+
+   DENSITY:
+     data-density="compact"     Tighter spacing
+     data-density="comfortable" More breathing room
+
+   RADIUS:
+     data-radius="sharp"        Sharper corners
+     data-radius="soft"         Rounder corners
+
+   Example: <html class="dark" data-scheme="neutral">
+   ============================================================ */

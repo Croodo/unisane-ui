@@ -16,7 +16,7 @@ export function ExamplePreview({ example, className }: ExamplePreviewProps) {
   return (
     <div
       className={cn(
-        "rounded-large border border-outline-variant/30 overflow-hidden",
+        "rounded-lg border border-outline-variant/30 overflow-hidden",
         className
       )}
     >
@@ -35,11 +35,11 @@ export function ExamplePreview({ example, className }: ExamplePreviewProps) {
 
         {/* Tab Buttons */}
         {example.code && (
-          <div className="flex gap-1u bg-surface-container rounded-medium p-1u">
+          <div className="flex gap-1u bg-surface-container rounded-md p-1u">
             <button
               onClick={() => setActiveTab("preview")}
               className={cn(
-                "px-4u py-2u rounded-small text-label-medium font-medium transition-colors",
+                "px-4u py-2u rounded-sm text-label-medium font-medium transition-colors",
                 activeTab === "preview"
                   ? "bg-primary text-on-primary"
                   : "text-on-surface-variant hover:bg-on-surface/8"
@@ -50,7 +50,7 @@ export function ExamplePreview({ example, className }: ExamplePreviewProps) {
             <button
               onClick={() => setActiveTab("code")}
               className={cn(
-                "px-4u py-2u rounded-small text-label-medium font-medium transition-colors",
+                "px-4u py-2u rounded-sm text-label-medium font-medium transition-colors",
                 activeTab === "code"
                   ? "bg-primary text-on-primary"
                   : "text-on-surface-variant hover:bg-on-surface/8"

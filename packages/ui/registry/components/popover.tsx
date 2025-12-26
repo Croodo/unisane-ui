@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { cn } from "@ui/lib/utils";
+import { cn } from "@/lib/utils";
 
 export interface PopoverProps {
   trigger: React.ReactNode;

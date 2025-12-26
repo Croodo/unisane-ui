@@ -1,7 +1,7 @@
 import React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@ui/lib/utils";
-import { Icon } from "@ui/primitives/icon";
+import { cn } from "@/lib/utils";
+import { Icon } from "@/primitives/icon";
 import { Typography } from "./typography";
 
 const alertVariants = cva(

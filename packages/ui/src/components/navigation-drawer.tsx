@@ -65,11 +65,11 @@ NavigationDrawer.displayName = "NavigationDrawer";
 
 // NavigationDrawerItem
 const navigationDrawerItemVariants = cva(
-  "flex items-center gap-3u w-full min-h-12u py-3u px-4u rounded-full text-label-large font-medium cursor-pointer select-none group relative overflow-hidden shrink-0 outline-none transition-all duration-short mx-auto focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset",
+  "flex items-center gap-3u w-full min-h-14u py-3u px-4u rounded-full text-label-large font-medium cursor-pointer select-none group relative overflow-hidden shrink-0 outline-none transition-all duration-short mx-auto focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset",
   {
     variants: {
       active: {
-        true: "bg-secondary-container text-on-secondary-container",
+        true: "bg-secondary-container text-primary",
         false: "bg-transparent text-on-surface-variant hover:bg-on-surface-variant/8",
       },
       disabled: {
@@ -103,7 +103,7 @@ export const NavigationDrawerItem = forwardRef<
         <span
           className={cn(
             "material-symbols-outlined text-[24px]! transition-colors",
-            active ? "text-on-secondary-container" : "text-on-surface-variant"
+            active ? "text-primary" : "text-on-surface-variant"
           )}
           style={active ? { fontVariationSettings: "'FILL' 1" } : undefined}
         >
@@ -127,7 +127,7 @@ export const NavigationDrawerItem = forwardRef<
           className={cn(
             "absolute inset-0 pointer-events-none transition-opacity duration-short",
             active
-              ? "bg-on-secondary-container opacity-0 group-hover:opacity-[0.08] group-focus-visible:opacity-[0.12] group-active:opacity-[0.12]"
+              ? "bg-primary opacity-0 group-hover:opacity-[0.08] group-focus-visible:opacity-[0.12] group-active:opacity-[0.12]"
               : ""
           )}
         />

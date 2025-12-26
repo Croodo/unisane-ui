@@ -1,5 +1,5 @@
 import React from "react";
-import { cn } from "@ui/lib/utils";
+import { cn } from "@/lib/utils";
 import { IconButton } from "./icon-button";
 import { Pane, PaneLayout } from "../layout/pane";
 

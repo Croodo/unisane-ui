@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { cn } from "@ui/lib/utils";
+import { cn } from "@/lib/utils";
 import {
   Menu,
   MenuItem,
   MenuDivider,
   MenuCheckboxItem,
   MenuRadioItem,
-} from "@ui/primitives/menu";
+} from "@/primitives/menu";
 
 export interface DropdownMenuProps {
   children: React.ReactNode;

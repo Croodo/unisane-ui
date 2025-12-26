@@ -2,7 +2,7 @@
 
 import React, { useEffect } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@ui/lib/utils";
+import { cn } from "@/lib/utils";
 
 const progressVariants = cva(
   "relative w-full overflow-hidden rounded-sm bg-surface-container-highest",

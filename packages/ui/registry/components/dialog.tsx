@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useEffect, useRef, useId, forwardRef } from "react";
-import { cn } from "@ui/lib/utils";
-import { Text } from "@ui/primitives/text";
-import { Surface } from "@ui/primitives/surface";
+import { cn } from "@/lib/utils";
+import { Text } from "@/primitives/text";
+import { Surface } from "@/primitives/surface";
 import { Ripple } from "./ripple";
 
 export interface DialogProps {

@@ -3,7 +3,7 @@
 import React from "react";
 import { useColorScheme, type Theme } from "../layout/theme-provider";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@ui/lib/utils";
+import { cn } from "@/lib/utils";
 
 const themeSwitcherVariants = cva(
   "inline-flex items-center rounded-sm border border-outline overflow-hidden",

@@ -5,15 +5,15 @@
 
   "primary": {
     "hue": 240,
-    "chroma": 0.15,
-    "comment": "True blue - professional, trustworthy"
+    "chroma": 0.13,
+    "comment": "Teal-blue (240°) with moderate chroma - professional, less saturated"
   },
 
   "secondary": {
     "strategy": "analogous",
     "hueShift": 0,
-    "chromaScale": 0.4,
-    "comment": "Desaturated primary for subtle accents"
+    "chromaScale": 1.2,
+    "comment": "Slightly boosted chroma (1.2x) to maintain visible secondary-container"
   },
 
   "tertiary": {

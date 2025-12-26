@@ -2,7 +2,7 @@
 
 import React, { useId, useState, useEffect, useRef } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@ui/lib/utils";
+import { cn } from "@/lib/utils";
 
 const textFieldContainerVariants = cva(
   "relative flex w-full transition-all duration-snappy ease-emphasized group cursor-text",

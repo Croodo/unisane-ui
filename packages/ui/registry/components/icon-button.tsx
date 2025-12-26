@@ -1,7 +1,7 @@
 import { type ButtonHTMLAttributes, forwardRef } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Ripple } from "./ripple";
-import { cn } from "@ui/lib/utils";
+import { cn } from "@/lib/utils";
 
 const iconButtonVariants = cva(
   "relative inline-flex items-center justify-center rounded-full transition-all duration-snappy ease-emphasized overflow-hidden disabled:opacity-38 disabled:cursor-not-allowed group focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary select-none",

@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { cn } from "@ui/lib/utils";
+import { cn } from "@/lib/utils";
 import { Fab } from "./fab";
-import { Icon } from "@ui/primitives/icon";
+import { Icon } from "@/primitives/icon";
 
 export interface FabAction {
   label: string;

@@ -19,7 +19,7 @@ export function VariantsTable({ variants, className }: VariantsTableProps) {
             <code className="text-primary font-mono text-title-small font-semibold">
               {variant.name}
             </code>
-            <code className="text-on-surface-variant font-mono text-body-small bg-surface-variant/40 px-2u py-0.5u rounded-extra-small">
+            <code className="text-on-surface-variant font-mono text-body-small bg-surface-variant/40 px-2u py-0.5u rounded-xs">
               {variant.type}
             </code>
             <span className="text-body-small text-on-surface-variant">
@@ -31,7 +31,7 @@ export function VariantsTable({ variants, className }: VariantsTableProps) {
             {variant.options.map((option) => (
               <div
                 key={option.value}
-                className="p-4u rounded-medium bg-surface-container-low border border-outline-variant/15"
+                className="p-4u rounded-md bg-surface-container-low border border-outline-variant/15"
               >
                 <div className="flex items-center gap-2u mb-2u">
                   <code className="text-primary font-mono text-label-large font-medium">

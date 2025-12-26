@@ -1,7 +1,7 @@
 import { type ReactNode, type HTMLAttributes, forwardRef } from "react";
 import { Ripple } from "./ripple";
-import { CloseIcon } from "@ui/primitives/icon";
-import { cn } from "@ui/lib/utils";
+import { CloseIcon } from "@/primitives/icon";
+import { cn } from "@/lib/utils";
 import { cva, type VariantProps } from "class-variance-authority";
 
 const chipVariants = cva(

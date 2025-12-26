@@ -32,7 +32,7 @@ export default function RootLayout({
         <ThemeProvider
           config={{
             density: "standard",
-            theme: "system",
+            theme: "light",
             radius: "standard",
           }}
         >

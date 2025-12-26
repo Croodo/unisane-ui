@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Ripple } from './ripple';
-import { cn } from '@ui/lib/utils';
+import { cn } from "@/lib/utils";
 
 export type SheetSize = 'sm' | 'md' | 'lg' | 'xl' | 'full';
 

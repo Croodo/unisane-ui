@@ -28,10 +28,10 @@ export function RelatedComponents({
             href={`/docs/components/${item.slug}`}
             className="group block"
           >
-            <div className="p-6u rounded-large bg-surface-container-low border border-outline-variant/15 hover:bg-surface-container hover:border-outline-variant/30 transition-all">
+            <div className="p-6u rounded-lg bg-surface-container-low border border-outline-variant/15 hover:bg-surface-container hover:border-outline-variant/30 transition-all">
               <div className="flex items-center gap-3u mb-3u">
                 {component.icon && (
-                  <div className="w-10u h-10u rounded-medium bg-primary-container flex items-center justify-center">
+                  <div className="w-10u h-10u rounded-md bg-primary-container flex items-center justify-center">
                     <span className="material-symbols-outlined text-[20px] text-on-primary-container">
                       {component.icon}
                     </span>

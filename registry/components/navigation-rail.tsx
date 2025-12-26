@@ -65,16 +65,14 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
               <div className="relative flex items-center justify-center">
                 <div
                   className={cn(
-                    "w-14u h-8u rounded-sm flex items-center justify-center transition-all duration-medium ease-emphasized overflow-hidden relative",
+                    "w-14u h-8u rounded-full flex items-center justify-center transition-all duration-medium ease-emphasized overflow-hidden relative",
                     isActive
-                      ? "bg-secondary-container text-on-secondary-container"
+                      ? "bg-secondary-container text-primary"
                       : "text-on-surface-variant bg-transparent hover:bg-on-surface/8"
                   )}
                 >
                   <Ripple center disabled={item.disabled} />
-                  <span className="z-10 relative scale-110">
-                    {isActive && item.activeIcon ? item.activeIcon : item.icon}
-                  </span>
+                  {isActive && item.activeIcon ? item.activeIcon : item.icon}
                 </div>
 
                 {item.badge !== undefined && (
@@ -93,10 +91,10 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
 
               <span
                 className={cn(
-                  "text-label-small leading-none font-semibold transition-colors duration-short ease-standard text-center px-1u max-w-full opacity-60",
+                  "text-label-small font-medium transition-colors duration-short text-center px-1u max-w-full",
                   isActive
-                    ? "text-on-surface opacity-100"
-                    : "text-on-surface-variant group-hover:text-on-surface group-hover:opacity-80"
+                    ? "text-primary font-semibold"
+                    : "text-on-surface-variant group-hover:text-on-surface"
                 )}
               >
                 {item.label}

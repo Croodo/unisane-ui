@@ -7,7 +7,7 @@ const withMDX = createMDX({
 });
 
 const config: NextConfig = {
-  transpilePackages: ["@unisane/ui"],
+  transpilePackages: ["@unisane/ui", "@unisane/tokens"],
   turbopack: {
     root: path.join(process.cwd(), "..", ".."),
   },

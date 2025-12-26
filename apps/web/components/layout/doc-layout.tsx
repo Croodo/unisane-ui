@@ -39,7 +39,7 @@ export function DocLayout({
 
           {/* Hero Visual */}
           {heroContent && (
-            <Surface elevation={0} className="w-full @5xl:w-[600px] @5xl:h-[400px] h-[300px] rounded-large overflow-hidden shrink-0 bg-surface-container border border-outline-variant/30">
+            <Surface elevation={0} className="w-full @5xl:w-[600px] @5xl:h-[400px] h-[300px] rounded-lg overflow-hidden shrink-0 bg-surface-container border border-outline-variant/30">
               {heroContent}
             </Surface>
           )}

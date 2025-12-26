@@ -1,6 +1,6 @@
 import React from "react";
-import { cn } from "@ui/lib/utils";
-import { Icon } from "@ui/primitives/icon";
+import { cn } from "@/lib/utils";
+import { Icon } from "@/primitives/icon";
 
 export interface SearchBarProps
   extends React.InputHTMLAttributes<HTMLInputElement> {

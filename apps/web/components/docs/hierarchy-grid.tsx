@@ -19,7 +19,7 @@ export function HierarchyGrid({ hierarchy, className }: HierarchyGridProps) {
       {hierarchy.items.map((item, index) => (
         <div key={index} className="flex flex-col gap-4u">
           {/* Visual container */}
-          <div className="bg-surface-container-low p-8u rounded-extra-large flex items-center justify-center min-h-60 border border-outline-variant/15">
+          <div className="bg-surface-container-low p-8u rounded-xl flex items-center justify-center min-h-60 border border-outline-variant/15">
             {item.component}
           </div>
 

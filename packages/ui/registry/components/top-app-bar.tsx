@@ -1,7 +1,7 @@
 import React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@ui/lib/utils";
-import { Text } from "@ui/primitives/text";
+import { cn } from "@/lib/utils";
+import { Text } from "@/primitives/text";
 
 const topAppBarVariants = cva(
   "w-full flex items-center px-4u transition-all duration-medium ease-standard bg-surface text-on-surface relative z-20 border-b border-outline-variant/30",

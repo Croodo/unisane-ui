@@ -2,11 +2,11 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@ui/lib/utils";
-import { Surface } from "@ui/primitives/surface";
-import { Text } from "@ui/primitives/text";
-import { Icon } from "@ui/primitives/icon";
-import { StateLayer } from "@ui/primitives/state-layer";
+import { cn } from "@/lib/utils";
+import { Surface } from "@/primitives/surface";
+import { Text } from "@/primitives/text";
+import { Icon } from "@/primitives/icon";
+import { StateLayer } from "@/primitives/state-layer";
 
 const comboboxVariants = cva("relative w-full", {
   variants: {

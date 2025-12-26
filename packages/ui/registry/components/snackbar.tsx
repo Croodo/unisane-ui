@@ -2,7 +2,7 @@
 
 import React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@ui/lib/utils";
+import { cn } from "@/lib/utils";
 import { Button } from "./button";
 import { Ripple } from "./ripple";
 

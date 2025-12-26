@@ -1,7 +1,6 @@
 /* UI Package Styles - Tailwind v4 with Unisane Design Tokens */
 @import "tailwindcss";
-@import "@unisane/tokens/uni-tokens.css";
-@import "@unisane/tokens/uni-theme.css";
+@import "@unisane/tokens/unisane.css";
 
 /* Scan component files for Tailwind classes */
 @source "./**/*.{ts,tsx}";

@@ -17,10 +17,7 @@ const renderIcon = (icon: React.ReactNode | string, isActive: boolean = false) =
   if (typeof icon === "string") {
     return (
       <span
-        className={cn(
-          "material-symbols-outlined text-[20px]! transition-transform duration-short",
-          isActive && "scale-105"
-        )}
+        className="material-symbols-outlined text-[24px]! transition-all duration-short"
         style={isActive ? { fontVariationSettings: "'FILL' 1" } : undefined}
       >
         {icon}
@@ -83,18 +80,16 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
               <div className="relative flex items-center justify-center">
                 <div
                   className={cn(
-                    "w-12u h-7u rounded-full flex items-center justify-center transition-all duration-medium ease-emphasized overflow-hidden relative",
+                    "w-14u h-8u rounded-full flex items-center justify-center transition-all duration-medium ease-emphasized overflow-hidden relative",
                     isActive
-                      ? "bg-secondary-container text-on-secondary-container"
+                      ? "bg-secondary-container text-primary"
                       : "text-on-surface-variant bg-transparent hover:bg-on-surface/8"
                   )}
                 >
                   <Ripple center disabled={item.disabled} />
-                  <span className="z-10 relative">
-                    {isActive && item.activeIcon
-                      ? renderIcon(item.activeIcon, true)
-                      : renderIcon(item.icon, isActive)}
-                  </span>
+                  {isActive && item.activeIcon
+                    ? renderIcon(item.activeIcon, true)
+                    : renderIcon(item.icon, isActive)}
                 </div>
 
                 {item.badge !== undefined && (
@@ -113,9 +108,9 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
 
               <span
                 className={cn(
-                  "text-[11px] leading-none font-medium transition-colors duration-short text-center px-0.5u max-w-full tracking-normal",
+                  "text-label-small font-medium transition-colors duration-short text-center px-0.5u max-w-full",
                   isActive
-                    ? "text-on-surface font-semibold"
+                    ? "text-primary font-semibold"
                     : "text-on-surface-variant group-hover:text-on-surface"
                 )}
               >

@@ -21,7 +21,7 @@ export function ComponentPreview({
           {title}
         </Typography>
       )}
-      <Surface elevation={0} className="p-6u rounded-large bg-surface-container border border-outline-variant/50 flex items-center justify-center min-h-[120px]">
+      <Surface elevation={0} className="p-6u rounded-lg bg-surface-container border border-outline-variant/50 flex items-center justify-center min-h-[120px]">
         {children}
       </Surface>
     </div>

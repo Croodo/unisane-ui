@@ -25,7 +25,7 @@ export function SubComponentsSection({
       {subComponents.map((sub) => (
         <div
           key={sub.name}
-          className="rounded-large bg-surface-container-low border border-outline-variant/15 overflow-hidden"
+          className="rounded-lg bg-surface-container-low border border-outline-variant/15 overflow-hidden"
         >
           {/* Header */}
           <div className="flex items-center justify-between px-6u py-5u bg-surface-container-low/50">
@@ -72,7 +72,7 @@ export function SubComponentsSection({
                         </code>
                       </td>
                       <td className="px-6u py-4u">
-                        <code className="text-body-small bg-surface-container px-2u py-1u rounded-small text-on-surface-variant border border-outline-variant/20">
+                        <code className="text-body-small bg-surface-container px-2u py-1u rounded-sm text-on-surface-variant border border-outline-variant/20">
                           {prop.type}
                         </code>
                       </td>

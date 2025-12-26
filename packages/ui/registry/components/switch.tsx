@@ -1,8 +1,8 @@
 "use client";
 
 import { type InputHTMLAttributes, useId, forwardRef } from "react";
-import { cn } from "@ui/lib/utils";
-import { Icon } from "@ui/primitives/icon";
+import { cn } from "@/lib/utils";
+import { Icon } from "@/primitives/icon";
 
 interface SwitchProps
   extends Omit<InputHTMLAttributes<HTMLInputElement>, "type"> {

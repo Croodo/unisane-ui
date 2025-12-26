@@ -87,7 +87,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
               {/* Interactive Large Display */}
               <div
                 className={cn(
-                  "rounded-lg px-4 py-3 h-20u min-w-24u flex items-center justify-center text-display-large leading-display-large cursor-pointer transition-colors border-2",
+                  "rounded-lg px-4 py-3 h-20u min-w-24u flex items-center justify-center text-display-large cursor-pointer transition-colors border-2",
                   dialMode === "hour"
                     ? "bg-primary-container text-on-primary-container border-transparent"
                     : "bg-surface-container-highest text-on-surface border-transparent hover:bg-surface-container-highest/80"
@@ -97,13 +97,13 @@ export const TimePicker: React.FC<TimePickerProps> = ({
                 {hours.toString().padStart(2, "0")}
               </div>
 
-              <span className="text-display-large leading-display-large text-on-surface mb-2">
+              <span className="text-display-large text-on-surface mb-2">
                 :
               </span>
 
               <div
                 className={cn(
-                  "rounded-lg px-4 py-3 h-20u min-w-24u flex items-center justify-center text-display-large leading-display-large cursor-pointer transition-colors border-2",
+                  "rounded-lg px-4 py-3 h-20u min-w-24u flex items-center justify-center text-display-large cursor-pointer transition-colors border-2",
                   dialMode === "minute"
                     ? "bg-primary-container text-on-primary-container border-transparent"
                     : "bg-surface-container-highest text-on-surface border-transparent hover:bg-surface-container-highest/80"

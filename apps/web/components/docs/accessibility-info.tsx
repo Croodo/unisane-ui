@@ -58,7 +58,7 @@ export function AccessibilityInfo({
               Keyboard Navigation
             </h4>
           </div>
-          <div className="overflow-x-auto rounded-large border border-outline-variant/30">
+          <div className="overflow-x-auto rounded-lg border border-outline-variant/30">
             <table className="w-full text-body-small">
               <thead>
                 <tr className="bg-surface-container-low border-b border-outline-variant/30">
@@ -77,7 +77,7 @@ export function AccessibilityInfo({
                     className="border-b border-outline-variant/15 last:border-none"
                   >
                     <td className="px-6u py-3u">
-                      <kbd className="inline-flex items-center gap-1u px-2u py-1u bg-surface-container rounded-small text-label-medium font-mono font-medium text-on-surface border border-outline-variant/30">
+                      <kbd className="inline-flex items-center gap-1u px-2u py-1u bg-surface-container rounded-sm text-label-medium font-mono font-medium text-on-surface border border-outline-variant/30">
                         {item.key}
                       </kbd>
                     </td>
@@ -107,7 +107,7 @@ export function AccessibilityInfo({
             {accessibility.screenReader.map((item, index) => (
               <li
                 key={index}
-                className="flex items-start gap-3u p-3u rounded-medium bg-surface-container-low"
+                className="flex items-start gap-3u p-3u rounded-md bg-surface-container-low"
               >
                 <span className="material-symbols-outlined text-[16px]! text-primary shrink-0 mt-0.5">
                   check
@@ -136,7 +136,7 @@ export function AccessibilityInfo({
             {accessibility.focus.map((item, index) => (
               <li
                 key={index}
-                className="flex items-start gap-3u p-3u rounded-medium bg-surface-container-low"
+                className="flex items-start gap-3u p-3u rounded-md bg-surface-container-low"
               >
                 <span className="material-symbols-outlined text-[16px]! text-primary shrink-0 mt-0.5">
                   check

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useLayoutEffect, useCallback } from "react";
-import { cn } from "@ui/lib/utils";
+import { cn } from "@/lib/utils";
 
 interface RippleProps {
   color?: string;

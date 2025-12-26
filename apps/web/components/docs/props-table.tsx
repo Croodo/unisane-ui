@@ -14,7 +14,7 @@ export function PropsTable({ props, className }: PropsTableProps) {
   return (
     <div
       className={cn(
-        "w-full overflow-x-auto rounded-large border border-outline-variant/30",
+        "w-full overflow-x-auto rounded-lg border border-outline-variant/30",
         className
       )}
     >
@@ -53,7 +53,7 @@ export function PropsTable({ props, className }: PropsTableProps) {
                 </code>
               </td>
               <td className="px-6u py-4u align-top">
-                <code className="text-tertiary font-mono text-label-small bg-surface-variant/40 px-2u py-1u rounded-small">
+                <code className="text-tertiary font-mono text-label-small bg-surface-variant/40 px-2u py-1u rounded-sm">
                   {prop.type}
                 </code>
               </td>

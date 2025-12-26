@@ -3,8 +3,12 @@
 import { type ReactNode, type ButtonHTMLAttributes, forwardRef } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Ripple } from "./ripple";
-import { cn } from "@ui/lib/utils";
+import { cn } from "@/lib/utils";
 
+/**
+ * Button variants following Material Design 3 specifications.
+ * Each variant serves a specific purpose in the visual hierarchy.
+ */
 const buttonVariants = cva(
   "relative inline-flex items-center justify-center gap-2u rounded-full font-medium transition-all duration-short ease-standard overflow-hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-38 disabled:cursor-not-allowed group whitespace-nowrap leading-none select-none",
   {
@@ -29,17 +33,55 @@ const buttonVariants = cva(
   }
 );
 
+/**
+ * Props for the Button component.
+ */
 export interface ButtonProps
   extends ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
+  /** Button content */
   children: ReactNode;
+  /**
+   * Visual style variant:
+   * - `filled`: High emphasis, primary actions (CTAs)
+   * - `tonal`: Medium emphasis, secondary actions
+   * - `outlined`: Low emphasis, tertiary actions
+   * - `text`: Lowest emphasis, inline actions
+   * - `elevated`: Floating actions with shadow
+   * @default "filled"
+   */
   variant?: "filled" | "tonal" | "outlined" | "text" | "elevated";
+  /**
+   * Button size
+   * @default "md"
+   */
   size?: "sm" | "md" | "lg";
+  /** Shows loading spinner and disables button */
   loading?: boolean;
+  /** Icon to display before the label */
   icon?: ReactNode;
+  /** Icon to display after the label */
   trailingIcon?: ReactNode;
 }
 
+/**
+ * Material Design 3 Button component with ripple effect and state layers.
+ *
+ * @example
+ * ```tsx
+ * // Primary action
+ * <Button variant="filled">Save</Button>
+ *
+ * // Secondary action
+ * <Button variant="tonal">Edit</Button>
+ *
+ * // With icon
+ * <Button icon={<Icon name="add" />}>Add Item</Button>
+ *
+ * // Loading state
+ * <Button loading>Saving...</Button>
+ * ```
+ */
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   (
     {

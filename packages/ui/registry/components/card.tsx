@@ -2,9 +2,12 @@
 
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@ui/lib/utils";
+import { cn } from "@/lib/utils";
 import { Ripple } from "./ripple";
 
+/**
+ * Card variants following Material Design 3 container specifications.
+ */
 const cardVariants = cva(
   "rounded-sm overflow-hidden flex flex-col transition-all duration-medium ease-emphasized relative group isolate",
   {
@@ -43,12 +46,50 @@ const cardVariants = cva(
   }
 );
 
+/**
+ * Props for the Card component.
+ */
 export interface CardProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof cardVariants> {
+  /**
+   * Makes the card clickable with hover/press states and ripple effect
+   * @default false
+   */
   interactive?: boolean;
 }
 
+/**
+ * Material Design 3 Card component for grouping related content.
+ *
+ * Cards support multiple surface treatments and can be interactive.
+ * Use compound components for structured content.
+ *
+ * @example
+ * ```tsx
+ * // Basic card
+ * <Card variant="filled" padding="md">
+ *   <p>Card content</p>
+ * </Card>
+ *
+ * // Structured card
+ * <Card variant="outlined">
+ *   <Card.Media src="/image.jpg" alt="Preview" />
+ *   <Card.Header>
+ *     <Card.Title>Card Title</Card.Title>
+ *   </Card.Header>
+ *   <Card.Content>Description text...</Card.Content>
+ *   <Card.Footer>
+ *     <Button variant="tonal">Action</Button>
+ *   </Card.Footer>
+ * </Card>
+ *
+ * // Interactive card
+ * <Card interactive onClick={() => navigate('/details')}>
+ *   ...
+ * </Card>
+ * ```
+ */
 const CardRoot = React.forwardRef<HTMLDivElement, CardProps>(
   ({ className, variant, padding, interactive, onClick, children, ...props }, ref) => {
     const isInteractive = interactive || !!onClick;
@@ -80,6 +121,7 @@ const CardRoot = React.forwardRef<HTMLDivElement, CardProps>(
 );
 CardRoot.displayName = "Card";
 
+/** Card header section for titles and metadata */
 const CardHeader = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
@@ -92,6 +134,7 @@ const CardHeader = React.forwardRef<
 ));
 CardHeader.displayName = "CardHeader";
 
+/** Card content section for body text */
 const CardContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
@@ -107,6 +150,7 @@ const CardContent = React.forwardRef<
 ));
 CardContent.displayName = "CardContent";
 
+/** Card footer section for actions and supplementary content */
 const CardFooter = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
@@ -119,6 +163,7 @@ const CardFooter = React.forwardRef<
 ));
 CardFooter.displayName = "CardFooter";
 
+/** Card media section for images and visual content */
 const CardMedia = React.forwardRef<
   HTMLImageElement,
   React.ImgHTMLAttributes<HTMLImageElement>
@@ -131,6 +176,7 @@ const CardMedia = React.forwardRef<
 ));
 CardMedia.displayName = "CardMedia";
 
+/** Card title heading element */
 const CardTitle = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLHeadingElement>

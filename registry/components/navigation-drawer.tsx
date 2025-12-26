@@ -54,11 +54,11 @@ export const NavigationDrawer: React.FC<DrawerProps> = ({
 };
 
 const drawerItemVariants = cva(
-  "flex items-center gap-4u w-full min-h-12u py-3u px-4u rounded-xs text-label-medium font-black uppercase tracking-tight transition-all duration-snappy ease-emphasized cursor-pointer select-none group focus-visible:outline-2 focus-visible:outline-primary relative overflow-hidden shrink-0",
+  "flex items-center gap-4u w-full min-h-14u py-3u px-4u rounded-full text-label-large font-medium transition-all duration-short ease-emphasized cursor-pointer select-none group focus-visible:outline-2 focus-visible:outline-primary relative overflow-hidden shrink-0",
   {
     variants: {
       active: {
-        true: "bg-primary text-on-primary shadow-1",
+        true: "bg-secondary-container text-primary",
         false: "bg-transparent text-on-surface-variant hover:bg-on-surface/8",
       },
     },
@@ -94,7 +94,7 @@ export const NavigationDrawerItem: React.FC<NavigationDrawerItemProps> = ({
         <span
           className={cn(
             "w-6u h-6u flex items-center justify-center relative z-10",
-            active ? "text-current" : "text-on-surface-variant"
+            active ? "text-primary" : "text-on-surface-variant"
           )}
         >
           {icon}

@@ -58,20 +58,22 @@ export function useDensity() {
   };
 }
 
+// Synced with CSS in uni-tokens.css [data-density="..."] selectors
 const DENSITY_PRESETS: Record<
   Density,
   { space: number; type: number; radius: number }
 > = {
   dense: { space: 0.75, type: 0.85, radius: 0.75 },
   compact: { space: 0.85, type: 0.9, radius: 0.8 },
-  standard: { space: 1, type: 1, radius: 0.85 },
+  standard: { space: 1, type: 1, radius: 1.0 },
   comfortable: { space: 1.1, type: 1, radius: 1.0 },
 };
 
+// Synced with CSS in uni-tokens.css [data-radius="..."] selectors
 const RADIUS_PRESETS: Record<RadiusTheme, number> = {
   sharp: 0.75,
-  standard: 0.85,
-  soft: 1.0,
+  standard: 1.0,
+  soft: 1.15,
 };
 
 export interface ThemeConfig {
@@ -159,23 +161,18 @@ export function ThemeProvider({
 
     const root = document.documentElement;
 
+    // Dark mode via class (CSS handles color switching)
     if (resolvedTheme === "dark") {
       root.classList.add("dark");
     } else {
       root.classList.remove("dark");
     }
 
+    // Data attributes trigger CSS selectors in uni-tokens.css
+    // No inline styles needed - CSS handles all scaling
     root.setAttribute("data-density", density);
-
     root.setAttribute("data-radius", radiusTheme);
-
-    root.style.setProperty("--scale-space", spaceScale.toString());
-    root.style.setProperty("--scale-type", typeScale.toString());
-    root.style.setProperty(
-      "--scale-radius",
-      RADIUS_PRESETS[radiusTheme].toString()
-    );
-  }, [resolvedTheme, density, radiusTheme, spaceScale, typeScale]);
+  }, [resolvedTheme, density, radiusTheme]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
