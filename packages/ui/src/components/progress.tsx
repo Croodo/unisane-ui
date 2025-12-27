@@ -9,8 +9,8 @@ const progressVariants = cva(
   {
     variants: {
       variant: {
-        linear: "h-1",
-        circular: "w-16 h-16",
+        linear: "h-1u",
+        circular: "w-16u h-16u",
       },
       indeterminate: {
         true: "",
@@ -66,7 +66,13 @@ export const Progress: React.FC<ProgressProps> = ({
       : circumference - (clampedValue / 100) * circumference;
 
     return (
-      <div className={cn("relative w-16 h-16", className)}>
+      <div
+        className={cn("relative w-16u h-16u", className)}
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={indeterminate ? undefined : clampedValue}
+      >
         <svg className="w-full h-full" viewBox="0 0 64 64">
           <circle
             className="text-surface-container-highest"

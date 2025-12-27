@@ -58,10 +58,9 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
           <div
             className={cn(
               "absolute top-1/2 -translate-y-1/2 rounded-full transition-all duration-emphasized ease-emphasized flex items-center justify-center z-10",
-              "w-4u h-4u",
-              "left-1u bg-outline group-hover:bg-on-surface-variant",
-              "peer-checked:translate-x-5u peer-checked:bg-on-primary peer-checked:w-6u peer-checked:h-6u",
-              "group-active:w-7u group-active:translate-x-0 peer-checked:group-active:translate-x-4u"
+              props.checked
+                ? "translate-x-5u bg-on-primary w-6u h-6u left-1u"
+                : "left-1u bg-outline group-hover:bg-on-surface-variant w-4u h-4u"
             )}
           >
             {icons && (
@@ -75,7 +74,7 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
                   strokeWidth="3"
                   className={cn(
                     "w-4u h-4u text-primary absolute transition-opacity duration-snappy ease-standard",
-                    "opacity-0 group-has-checked/switch:opacity-100"
+                    props.checked ? "opacity-100" : "opacity-0"
                   )}
                 >
                   <polyline points="20 6 9 17 4 12" />
@@ -89,7 +88,7 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
                   strokeWidth="3"
                   className={cn(
                     "w-3u h-3u text-surface-container absolute transition-opacity duration-snappy ease-standard",
-                    "opacity-100 group-has-checked/switch:opacity-0"
+                    props.checked ? "opacity-0" : "opacity-100"
                   )}
                 >
                   <line x1="18" y1="6" x2="6" y2="18" />

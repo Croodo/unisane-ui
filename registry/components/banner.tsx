@@ -8,7 +8,7 @@ import { IconButton } from "./icon-button";
 import { Icon } from "@/primitives/icon";
 
 const bannerVariants = cva(
-  "relative w-full flex items-start gap-4u p-4u border-b border-outline-variant/30 transition-all",
+  "relative w-full flex items-start gap-4u p-4u border-b border-outline-variant/30 transition-all duration-medium ease-standard",
   {
     variants: {
       variant: {
@@ -49,23 +49,24 @@ export const Banner: React.FC<BannerProps> = ({
 }) => {
   if (!open) return null;
 
+  const role = variant === "error" ? "alert" : variant === "warning" ? "alert" : "status";
+
   return (
     <Surface
       tone="surface"
       className={cn(bannerVariants({ variant, className }))}
-      role="banner"
+      role={role}
+      aria-live={variant === "error" || variant === "warning" ? "assertive" : "polite"}
     >
-      {/* Icon */}
       {icon && (
         <div className="w-6u h-6u flex items-center justify-center text-primary mt-0.5u shrink-0">
           {icon}
         </div>
       )}
 
-      {/* Content */}
       <div className="flex-1 min-w-0">
         {title && (
-          <Text variant="titleSmall" className="text-on-surface font-black uppercase tracking-widest mb-1u">
+          <Text variant="titleSmall" className="text-on-surface mb-1u">
             {title}
           </Text>
         )}
@@ -73,7 +74,6 @@ export const Banner: React.FC<BannerProps> = ({
           {message}
         </div>
 
-        {/* Actions */}
         {actions && actions.length > 0 && (
           <div className="flex gap-2u mt-4u">
             {actions.map((action, index) => (
@@ -82,7 +82,7 @@ export const Banner: React.FC<BannerProps> = ({
                 variant="text"
                 size="sm"
                 onClick={action.onClick}
-                className="text-primary font-bold"
+                className="text-primary font-medium"
               >
                 {action.label}
               </Button>
@@ -91,7 +91,6 @@ export const Banner: React.FC<BannerProps> = ({
         )}
       </div>
 
-      {/* Close Button */}
       <IconButton
         icon={<Icon symbol="close" size="sm" />}
         onClick={onClose}

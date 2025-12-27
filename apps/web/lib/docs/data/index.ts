@@ -11,6 +11,51 @@ import type { ComponentDoc, ComponentCategory, ComponentListItem } from "../type
 // Import detailed docs as they are created
 import { buttonDoc } from "./button";
 import { cardDoc } from "./card";
+import { iconButtonDoc } from "./icon-button";
+import { fabDoc } from "./fab";
+import { dialogDoc } from "./dialog";
+import { checkboxDoc } from "./checkbox";
+import { switchDoc } from "./switch";
+import { textFieldDoc } from "./text-field";
+import { selectDoc } from "./select";
+import { tabsDoc } from "./tabs";
+import { toastDoc } from "./toast";
+import { chipDoc } from "./chip";
+import { radioDoc } from "./radio";
+import { progressDoc } from "./progress";
+import { badgeDoc } from "./badge";
+import { avatarDoc } from "./avatar";
+import { sliderDoc } from "./slider";
+import { accordionDoc } from "./accordion";
+import { sheetDoc } from "./sheet";
+import { tooltipDoc } from "./tooltip";
+import { alertDoc } from "./alert";
+import { skeletonDoc } from "./skeleton";
+import { bannerDoc } from "./banner";
+import { popoverDoc } from "./popover";
+import { dropdownMenuDoc } from "./dropdown-menu";
+import { listDoc } from "./list";
+import { tableDoc } from "./table";
+import { paginationDoc } from "./pagination";
+import { stepperDoc } from "./stepper";
+import { breadcrumbDoc } from "./breadcrumb";
+import { dividerDoc } from "./divider";
+import { calendarDoc } from "./calendar";
+import { carouselDoc } from "./carousel";
+import { comboboxDoc } from "./combobox";
+import { datePickerDoc } from "./date-picker";
+import { fabMenuDoc } from "./fab-menu";
+import { navigationBarDoc } from "./navigation-bar";
+import { navigationDrawerDoc } from "./navigation-drawer";
+import { navigationRailDoc } from "./navigation-rail";
+import { ratingDoc } from "./rating";
+import { scrollAreaDoc } from "./scroll-area";
+import { searchBarDoc } from "./search-bar";
+import { segmentedButtonDoc } from "./segmented-button";
+import { timePickerDoc } from "./time-picker";
+import { topAppBarDoc } from "./top-app-bar";
+import { bottomAppBarDoc } from "./bottom-app-bar";
+import { typographyDoc } from "./typography";
 
 /**
  * Registry of all components with full documentation.
@@ -19,6 +64,51 @@ import { cardDoc } from "./card";
 const DETAILED_DOCS: Record<string, ComponentDoc> = {
   button: buttonDoc,
   card: cardDoc,
+  "icon-button": iconButtonDoc,
+  fab: fabDoc,
+  dialog: dialogDoc,
+  checkbox: checkboxDoc,
+  switch: switchDoc,
+  "text-field": textFieldDoc,
+  select: selectDoc,
+  tabs: tabsDoc,
+  toast: toastDoc,
+  chip: chipDoc,
+  radio: radioDoc,
+  progress: progressDoc,
+  badge: badgeDoc,
+  avatar: avatarDoc,
+  slider: sliderDoc,
+  accordion: accordionDoc,
+  sheet: sheetDoc,
+  tooltip: tooltipDoc,
+  alert: alertDoc,
+  skeleton: skeletonDoc,
+  banner: bannerDoc,
+  popover: popoverDoc,
+  "dropdown-menu": dropdownMenuDoc,
+  list: listDoc,
+  table: tableDoc,
+  pagination: paginationDoc,
+  stepper: stepperDoc,
+  breadcrumb: breadcrumbDoc,
+  divider: dividerDoc,
+  calendar: calendarDoc,
+  carousel: carouselDoc,
+  combobox: comboboxDoc,
+  "date-picker": datePickerDoc,
+  "fab-menu": fabMenuDoc,
+  "navigation-bar": navigationBarDoc,
+  "navigation-drawer": navigationDrawerDoc,
+  "navigation-rail": navigationRailDoc,
+  rating: ratingDoc,
+  "scroll-area": scrollAreaDoc,
+  "search-bar": searchBarDoc,
+  "segmented-button": segmentedButtonDoc,
+  "time-picker": timePickerDoc,
+  "top-app-bar": topAppBarDoc,
+  "bottom-app-bar": bottomAppBarDoc,
+  typography: typographyDoc,
 };
 
 // ─── BASIC COMPONENT REGISTRY ─────────────────────────────────────────────────
@@ -153,10 +243,10 @@ export const COMPONENT_REGISTRY: ComponentListItem[] = [
     icon: "campaign",
   },
   {
-    slug: "snackbar",
-    name: "Snackbar",
+    slug: "toast",
+    name: "Toast",
     description:
-      "Snackbars provide brief messages about app processes at the bottom of the screen.",
+      "Toasts display brief, temporary notifications that stack and auto-dismiss.",
     category: "communication",
     status: "stable",
     icon: "notifications",
@@ -457,6 +547,17 @@ export const COMPONENT_REGISTRY: ComponentListItem[] = [
     status: "stable",
     icon: "grid_view",
   },
+
+  // Foundations
+  {
+    slug: "typography",
+    name: "Typography",
+    description:
+      "Typography component provides semantic text styles following Material Design type scale.",
+    category: "foundations",
+    status: "stable",
+    icon: "text_fields",
+  },
 ];
 
 // ─── HELPER FUNCTIONS ─────────────────────────────────────────────────────────
@@ -500,6 +601,7 @@ export function getComponentsByCategory(): Record<ComponentCategory, ComponentLi
     "text-inputs": [],
     "data-display": [],
     layout: [],
+    foundations: [],
   };
 
   for (const component of COMPONENT_REGISTRY) {
@@ -548,6 +650,7 @@ export const CATEGORY_LABELS: Record<ComponentCategory, string> = {
   "text-inputs": "Text Inputs",
   "data-display": "Data Display",
   layout: "Layout",
+  foundations: "Foundations",
 };
 
 export const CATEGORY_ICONS: Record<ComponentCategory, string> = {
@@ -559,6 +662,7 @@ export const CATEGORY_ICONS: Record<ComponentCategory, string> = {
   "text-inputs": "edit_note",
   "data-display": "table_chart",
   layout: "grid_view",
+  foundations: "layers",
 };
 
 /**

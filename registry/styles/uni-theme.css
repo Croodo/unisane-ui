@@ -193,3 +193,8 @@
   --opacity-disabled: var(--opacity-disabled);
   --opacity-muted: var(--opacity-muted);
 }
+
+/* Z-index utility classes */
+.z-modal {
+  z-index: var(--z-modal, 3000);
+}

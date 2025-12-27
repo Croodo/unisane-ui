@@ -14,5 +14,6 @@ export { ChoosingTable } from "./choosing-table";
 export { HierarchyGrid } from "./hierarchy-grid";
 export { PlacementExamples } from "./placement-examples";
 export { CodeBlock } from "./code-block";
+export { CliCommand } from "./cli-command";
 export { SubComponentsSection } from "./sub-components-section";
 export { PageNavigation } from "./page-navigation";

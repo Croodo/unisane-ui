@@ -1,5 +1,5 @@
-import React from "react";
-import { cn } from "@ui/lib/utils";
+import React, { isValidElement, cloneElement } from "react";
+import { cn, Slot } from "@ui/lib/utils";
 import { Icon } from "@ui/primitives/icon";
 import { IconButton } from "./icon-button";
 
@@ -24,18 +24,38 @@ export const BreadcrumbItem: React.FC<{
 export const BreadcrumbLink: React.FC<{
   children: React.ReactNode;
   onClick?: () => void;
+  href?: string;
   className?: string;
-}> = ({ children, onClick, className }) => (
-  <button
-    onClick={onClick}
-    className={cn(
-      "text-label-medium font-medium text-on-surface-variant hover:text-primary transition-colors leading-none pt-0.5u",
-      className
-    )}
-  >
-    {children}
-  </button>
-);
+  asChild?: boolean;
+}> = ({ children, onClick, href, className, asChild }) => {
+  const linkClasses = cn(
+    "text-label-medium font-medium text-on-surface-variant hover:text-primary transition-colors leading-none pt-0.5u",
+    className
+  );
+
+  // asChild pattern: render user's Link component
+  if (asChild && isValidElement(children)) {
+    return (
+      <Slot className={linkClasses}>
+        {children}
+      </Slot>
+    );
+  }
+
+  if (href) {
+    return (
+      <a href={href} className={linkClasses}>
+        {children}
+      </a>
+    );
+  }
+
+  return (
+    <button onClick={onClick} className={linkClasses}>
+      {children}
+    </button>
+  );
+};
 
 export const BreadcrumbPage: React.FC<{
   children: React.ReactNode;

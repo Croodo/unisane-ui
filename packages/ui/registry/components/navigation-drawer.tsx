@@ -65,12 +65,12 @@ NavigationDrawer.displayName = "NavigationDrawer";
 
 // NavigationDrawerItem
 const navigationDrawerItemVariants = cva(
-  "flex items-center gap-3u w-full min-h-14u py-3u px-4u rounded-full text-label-large font-medium cursor-pointer select-none group relative overflow-hidden shrink-0 outline-none transition-all duration-short mx-auto focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset",
+  "flex items-center gap-3u w-full min-h-14u py-3u px-4u rounded-full text-label-large cursor-pointer select-none group relative overflow-hidden shrink-0 outline-none transition-all duration-short mx-auto focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset",
   {
     variants: {
       active: {
-        true: "bg-secondary-container text-primary",
-        false: "bg-transparent text-on-surface-variant hover:bg-on-surface-variant/8",
+        true: "bg-secondary-container text-primary font-semibold",
+        false: "bg-transparent text-on-surface-variant hover:bg-on-surface-variant/8 font-medium",
       },
       disabled: {
         true: "opacity-38 cursor-not-allowed",
@@ -169,7 +169,7 @@ export const NavigationDrawerHeadline = ({
 }) => (
   <div
     className={cn(
-      "px-5u pt-4u pb-2u text-title-small font-medium text-on-surface-variant",
+      "px-5u pt-4u pb-2u text-title-small font-semibold text-on-surface-variant",
       className
     )}
   >

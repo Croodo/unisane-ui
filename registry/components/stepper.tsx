@@ -3,7 +3,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 import { Icon } from "@/primitives/icon";
 import { Text } from "@/primitives/text";
-import { StateLayer } from "@/primitives/state-layer";
+import { Ripple } from "./ripple";
 
 interface Step {
   label: string;
@@ -88,7 +88,7 @@ export const Stepper: React.FC<StepperProps> = ({
 };
 
 const stepVariants = cva(
-  "relative flex items-center gap-3 cursor-pointer select-none",
+  "relative flex items-center gap-3u cursor-pointer select-none overflow-hidden rounded-sm",
   {
     variants: {
       orientation: {
@@ -130,15 +130,26 @@ export const Step: React.FC<StepProps> = ({
   onClick,
   className,
 }) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if ((e.key === "Enter" || e.key === " ") && onClick) {
+      e.preventDefault();
+      onClick();
+    }
+  };
+
   return (
     <div
       className={cn(stepVariants({ orientation, active, completed, className }))}
       onClick={onClick}
+      onKeyDown={handleKeyDown}
+      role="button"
+      tabIndex={onClick ? 0 : undefined}
+      aria-current={active ? "step" : undefined}
     >
-      <StateLayer />
+      <Ripple />
       <div
         className={cn(
-          "w-8 h-8 rounded-full flex items-center justify-center transition-colors",
+          "w-8u h-8u rounded-sm flex items-center justify-center transition-colors duration-medium ease-standard",
           active
             ? "bg-primary text-on-primary"
             : completed
@@ -149,7 +160,7 @@ export const Step: React.FC<StepProps> = ({
         <Text variant="labelLarge">{completed ? "✓" : stepNumber}</Text>
       </div>
 
-      <div className={cn("flex-1", orientation === "vertical" && "ml-0 mt-2")}>
+      <div className={cn("flex-1", orientation === "vertical" && "ml-0 mt-2u")}>
         {children}
       </div>
     </div>

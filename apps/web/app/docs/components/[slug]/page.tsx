@@ -1,9 +1,11 @@
+"use client";
+
 import { notFound } from "next/navigation";
+import { use } from "react";
 import { DocLayout, DocSection } from "@/components/layout";
 import {
   getComponentBySlug,
   getAdjacentComponents,
-  COMPONENT_REGISTRY,
 } from "@/lib/docs/data";
 import {
   PropsTable,
@@ -13,22 +15,18 @@ import {
   AccessibilityInfo,
   RelatedComponents,
   CodeBlock,
+  CliCommand,
   SubComponentsSection,
   PageNavigation,
+  ExampleGrid,
 } from "@/components/docs";
 
 interface ComponentPageProps {
   params: Promise<{ slug: string }>;
 }
 
-export async function generateStaticParams() {
-  return COMPONENT_REGISTRY.map((component) => ({
-    slug: component.slug,
-  }));
-}
-
-export default async function ComponentPage({ params }: ComponentPageProps) {
-  const { slug } = await params;
+export default function ComponentPage({ params }: ComponentPageProps) {
+  const { slug } = use(params);
   const component = getComponentBySlug(slug);
 
   if (!component) {
@@ -38,8 +36,20 @@ export default async function ComponentPage({ params }: ComponentPageProps) {
   const { previous, next } = getAdjacentComponents(slug);
 
   // Build table of contents based on available sections
+  // Order: Installation → Usage → Design guidance → API → Accessibility → Related
   const toc: Array<{ id: string; label: string }> = [];
 
+  // Installation first - how to add to project
+  toc.push({ id: "installation", label: "Installation" });
+  // Interactive examples
+  if (component.examples?.length) {
+    toc.push({ id: "examples", label: "Examples" });
+  }
+  // Usage - code example
+  if (component.implementation) {
+    toc.push({ id: "usage", label: "Usage" });
+  }
+  // Design guidance sections
   if (component.choosing) {
     toc.push({ id: "choosing", label: `Choosing ${component.name.toLowerCase()}` });
   }
@@ -49,18 +59,18 @@ export default async function ComponentPage({ params }: ComponentPageProps) {
   if (component.placement) {
     toc.push({ id: "placement", label: "Placement" });
   }
+  // API documentation
   if (component.props?.length) {
     toc.push({ id: "api", label: "API Reference" });
   }
   if (component.subComponents?.length) {
     toc.push({ id: "sub-components", label: "Sub-components" });
   }
+  // Accessibility
   if (component.accessibility) {
     toc.push({ id: "accessibility", label: "Accessibility" });
   }
-  if (component.implementation) {
-    toc.push({ id: "implementation", label: "Implementation" });
-  }
+  // Related components last
   if (component.related?.length) {
     toc.push({ id: "related", label: "Related" });
   }
@@ -72,6 +82,37 @@ export default async function ComponentPage({ params }: ComponentPageProps) {
       toc={toc}
       heroContent={component.heroVisual}
     >
+      {/* ─── INSTALLATION SECTION ───────────────────────────────────────────────── */}
+      <DocSection
+        id="installation"
+        title="Installation"
+        description="Add this component to your project using the CLI."
+      >
+        <CliCommand command={`@unisane/cli add ${slug}`} />
+      </DocSection>
+
+      {/* ─── EXAMPLES SECTION ──────────────────────────────────────────────────────── */}
+      {component.examples?.length ? (
+        <DocSection
+          id="examples"
+          title="Examples"
+          description="Interactive examples to explore the component."
+        >
+          <ExampleGrid examples={component.examples} />
+        </DocSection>
+      ) : null}
+
+      {/* ─── USAGE SECTION ───────────────────────────────────────────────────────── */}
+      {component.implementation && (
+        <DocSection
+          id="usage"
+          title="Usage"
+          description={component.implementation.description}
+        >
+          <CodeBlock code={component.implementation.code} language="tsx" />
+        </DocSection>
+      )}
+
       {/* ─── CHOOSING SECTION ───────────────────────────────────────────────────── */}
       {component.choosing && (
         <DocSection
@@ -121,7 +162,7 @@ export default async function ComponentPage({ params }: ComponentPageProps) {
         <DocSection
           id="sub-components"
           title="Sub-components"
-          description="Use these distinct sub-components to structure your card content."
+          description="Additional components for building structured layouts."
         >
           <SubComponentsSection subComponents={component.subComponents} />
         </DocSection>
@@ -131,17 +172,6 @@ export default async function ComponentPage({ params }: ComponentPageProps) {
       {component.accessibility && (
         <DocSection id="accessibility" title="Accessibility">
           <AccessibilityInfo accessibility={component.accessibility} />
-        </DocSection>
-      )}
-
-      {/* ─── IMPLEMENTATION ─────────────────────────────────────────────────────── */}
-      {component.implementation && (
-        <DocSection
-          id="implementation"
-          title="Implementation"
-          description={component.implementation.description}
-        >
-          <CodeBlock code={component.implementation.code} />
         </DocSection>
       )}
 

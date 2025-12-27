@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useId } from "react";
 import { cn } from "@ui/lib/utils";
 
 export interface TooltipProps {
@@ -18,11 +18,15 @@ export const Tooltip: React.FC<TooltipProps> = ({
   className,
   side = "top",
 }) => {
+  const tooltipId = useId();
+
   return (
-    <div className="relative group inline-flex">
+    <div className="relative group inline-flex" aria-describedby={tooltipId}>
       {children}
 
       <div
+        id={tooltipId}
+        role="tooltip"
         className={cn(
           "absolute z-modal opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100 transition-all duration-snappy ease-emphasized pointer-events-none whitespace-nowrap",
           side === "top" && "bottom-[calc(100%+(var(--unit)*2))] left-1/2 -translate-x-1/2",

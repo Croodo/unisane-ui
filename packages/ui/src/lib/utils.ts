@@ -1,3 +1,4 @@
+import React, { cloneElement, isValidElement } from "react";
 import { clsx, type ClassValue } from "clsx";
 import { extendTailwindMerge } from "tailwind-merge";
 
@@ -130,3 +131,20 @@ export const animation = {
   stagger: "animate-stagger",
   ripple: "animate-ripple",
 } as const;
+
+// Slot component for asChild pattern - merges props onto child element
+export interface SlotProps extends React.HTMLAttributes<HTMLElement> {
+  children: React.ReactNode;
+}
+
+export function Slot({ children, ...props }: SlotProps) {
+  if (isValidElement(children)) {
+    const childProps = children.props as Record<string, unknown>;
+    return cloneElement(children as React.ReactElement<Record<string, unknown>>, {
+      ...props,
+      ...childProps,
+      className: cn(props.className as string | undefined, childProps.className as string | undefined),
+    });
+  }
+  return null;
+}

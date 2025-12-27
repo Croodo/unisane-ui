@@ -16,6 +16,91 @@
 /* Uses library defaults (blue theme) - no overrides needed */
 
 /* ============================================================
+   COLOR THEMES (via data-theme attribute)
+
+   Usage: <html data-theme="green">
+
+   Available themes (one per color family):
+     blue, purple, pink, red, orange, yellow, green, cyan, neutral, black
+   ============================================================ */
+
+/* Blue - Default (hue: 240) */
+:root[data-theme="blue"] {
+  --hue: 240 !important;
+  --chroma: 0.13 !important;
+  
+}
+
+/* Purple (hue: 285) */
+:root[data-theme="purple"] {
+  --hue: 285 !important;
+  --chroma: 0.14 !important;
+}
+
+/* Pink (hue: 340) */
+:root[data-theme="pink"] {
+  --hue: 340 !important;
+  --chroma: 0.15 !important;
+}
+
+/* Red (hue: 25) */
+:root[data-theme="red"] {
+  --hue: 25 !important;
+  --chroma: 0.16 !important;
+}
+
+/* Orange (hue: 55) */
+:root[data-theme="orange"] {
+  --hue: 55 !important;
+  --chroma: 0.16 !important;
+}
+
+/* Yellow (hue: 85) */
+:root[data-theme="yellow"] {
+  --hue: 85 !important;
+  --chroma: 0.14 !important;
+}
+
+/* Green (hue: 145) */
+:root[data-theme="green"] {
+  --hue: 145 !important;
+  --chroma: 0.14 !important;
+}
+
+/* Cyan (hue: 195) */
+:root[data-theme="cyan"] {
+  --hue: 195 !important;
+  --chroma: 0.12 !important;
+}
+
+/* Neutral - Monochrome with subtle warmth */
+:root[data-theme="neutral"] {
+  --hue: 60 !important;
+  --chroma: 0.02 !important;
+}
+
+/* Black - Pure monochrome with dark primary buttons */
+:root[data-theme="black"] {
+  --hue: 0 !important;
+  --chroma: 0 !important;
+  --chroma-neutral: 0 !important;
+
+  /* Remap to darker tones for true black buttons */
+  --tone-primary: var(--ref-primary-20) !important;
+  --tone-on-primary: var(--ref-primary-95) !important;
+  --tone-primary-container: var(--ref-primary-90) !important;
+  --tone-on-primary-container: var(--ref-primary-10) !important;
+}
+
+/* Black theme in dark mode */
+:root.dark[data-theme="black"] {
+  --tone-primary: var(--ref-primary-90) !important;
+  --tone-on-primary: var(--ref-primary-10) !important;
+  --tone-primary-container: var(--ref-primary-20) !important;
+  --tone-on-primary-container: var(--ref-primary-90) !important;
+}
+
+/* ============================================================
    THEME MODIFIERS (optional - via HTML attributes)
 
    SCHEME (color strategy):
@@ -41,3 +126,14 @@
 
    Example: <html class="dark" data-scheme="neutral">
    ============================================================ */
+
+/* ============================================================
+   UTILITY CLASSES
+   ============================================================ */
+
+@layer utilities {
+  /* Z-index utilities for layering system */
+  .z-modal {
+    z-index: var(--z-modal, 3000);
+  }
+}

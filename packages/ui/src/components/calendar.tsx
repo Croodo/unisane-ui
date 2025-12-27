@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@ui/lib/utils";
 import { Surface } from "@ui/primitives/surface";
 import { Text } from "@ui/primitives/text";
 import { IconButton } from "./icon-button";
-import { StateLayer } from "@ui/primitives/state-layer";
+import { Ripple } from "./ripple";
 
 const calendarVariants = cva("w-full max-w-sm rounded-sm overflow-hidden", {
   variants: {
@@ -31,6 +31,7 @@ export const Calendar: React.FC<CalendarProps> = ({
   className,
 }) => {
   const [currentMonth, setCurrentMonth] = useState(selectedDate || new Date());
+  const [focusedDay, setFocusedDay] = useState<number | null>(null);
 
   const monthNames = [
     "January",
@@ -69,12 +70,14 @@ export const Calendar: React.FC<CalendarProps> = ({
     setCurrentMonth(
       new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1)
     );
+    setFocusedDay(null);
   };
 
   const handleNextMonth = () => {
     setCurrentMonth(
       new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1)
     );
+    setFocusedDay(null);
   };
 
   const handleDateClick = (day: number) => {
@@ -86,9 +89,42 @@ export const Calendar: React.FC<CalendarProps> = ({
     onDateSelect?.(newDate);
   };
 
+  const handleKeyDown = useCallback((e: React.KeyboardEvent, day: number) => {
+    const daysInMonth = getDaysInMonth(currentMonth);
+    let newDay = day;
+
+    switch (e.key) {
+      case "ArrowLeft":
+        e.preventDefault();
+        newDay = day > 1 ? day - 1 : daysInMonth;
+        break;
+      case "ArrowRight":
+        e.preventDefault();
+        newDay = day < daysInMonth ? day + 1 : 1;
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        newDay = day > 7 ? day - 7 : day + daysInMonth - 7;
+        break;
+      case "ArrowDown":
+        e.preventDefault();
+        newDay = day + 7 <= daysInMonth ? day + 7 : day + 7 - daysInMonth;
+        break;
+      case "Enter":
+      case " ":
+        e.preventDefault();
+        handleDateClick(day);
+        return;
+      default:
+        return;
+    }
+
+    setFocusedDay(newDay);
+  }, [currentMonth]);
+
   const daysInMonth = getDaysInMonth(currentMonth);
   const firstDay = getFirstDayOfMonth(currentMonth);
-  const days = [];
+  const days: (number | null)[] = [];
 
   for (let i = 0; i < firstDay; i++) {
     days.push(null);
@@ -103,8 +139,10 @@ export const Calendar: React.FC<CalendarProps> = ({
       tone="surface"
       elevation={1}
       className={cn(calendarVariants({ className }))}
+      role="application"
+      aria-label={`Calendar, ${monthNames[currentMonth.getMonth()]} ${currentMonth.getFullYear()}`}
     >
-      <div className="flex items-center justify-between p-4 border-b border-outline-variant">
+      <div className="flex items-center justify-between p-4u border-b border-outline-variant">
         <IconButton
           icon={
             <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
@@ -115,7 +153,7 @@ export const Calendar: React.FC<CalendarProps> = ({
           ariaLabel="Previous month"
         />
 
-        <Text variant="titleMedium">
+        <Text variant="titleMedium" aria-live="polite">
           {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
         </Text>
 
@@ -130,9 +168,9 @@ export const Calendar: React.FC<CalendarProps> = ({
         />
       </div>
 
-      <div className="grid grid-cols-7 gap-1 p-2">
+      <div className="grid grid-cols-7 gap-1u p-2u" role="row">
         {dayNames.map((day) => (
-          <div key={day} className="text-center py-2">
+          <div key={day} className="text-center py-2u" role="columnheader">
             <Text variant="labelSmall" className="text-on-surface-variant">
               {day}
             </Text>
@@ -140,14 +178,15 @@ export const Calendar: React.FC<CalendarProps> = ({
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-1 p-2 pb-4">
+      <div className="grid grid-cols-7 gap-1u p-2u pb-4u" role="grid" aria-label="Calendar dates">
         {days.map((day, index) => (
-          <div key={index} className="aspect-square">
+          <div key={index} className="aspect-square" role="gridcell">
             {day ? (
               <button
                 className={cn(
-                  "relative w-full h-full rounded-sm flex items-center justify-center",
-                  "hover:bg-on-surface/10 transition-colors",
+                  "relative w-full h-full rounded-full flex items-center justify-center overflow-hidden",
+                  "transition-colors duration-short ease-standard",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
                   selectedDate &&
                     isSameDay(
                       new Date(
@@ -158,16 +197,34 @@ export const Calendar: React.FC<CalendarProps> = ({
                       selectedDate
                     )
                     ? "bg-primary text-on-primary"
-                    : "text-on-surface"
+                    : "text-on-surface hover:bg-on-surface/8"
                 )}
                 onClick={() => handleDateClick(day)}
-                aria-label={`Select ${monthNames[currentMonth.getMonth()]} ${day}, ${currentMonth.getFullYear()}`}
+                onKeyDown={(e) => handleKeyDown(e, day)}
+                aria-label={`${monthNames[currentMonth.getMonth()]} ${day}, ${currentMonth.getFullYear()}`}
+                aria-selected={
+                  selectedDate &&
+                  isSameDay(
+                    new Date(
+                      currentMonth.getFullYear(),
+                      currentMonth.getMonth(),
+                      day
+                    ),
+                    selectedDate
+                  )
+                }
+                tabIndex={focusedDay === day || (focusedDay === null && day === 1) ? 0 : -1}
+                ref={(el) => {
+                  if (focusedDay === day && el) {
+                    el.focus();
+                  }
+                }}
               >
-                <StateLayer />
-                <Text variant="bodyMedium">{day}</Text>
+                <Ripple />
+                <Text variant="bodyMedium" className="relative z-10">{day}</Text>
               </button>
             ) : (
-              <div />
+              <div aria-hidden="true" />
             )}
           </div>
         ))}

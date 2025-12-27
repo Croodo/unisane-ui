@@ -98,7 +98,21 @@ export { Chip } from "./components/chip";
 export { Badge } from "./components/badge";
 export { Alert } from "./components/alert";
 export { Banner } from "./components/banner";
-export { Snackbar, SnackbarContainer } from "./components/snackbar";
+export {
+  toast,
+  useToast,
+  Toaster,
+  ToastProvider,
+} from "./components/toast";
+export type {
+  Toast,
+  ToastOptions,
+  ToastVariant,
+  ToastPosition,
+  ToastAction,
+  ToasterProps,
+  ToastProviderProps,
+} from "./components/toast";
 export { Tabs, TabsList, TabsTrigger, TabsContent } from "./components/tabs";
 export { Divider } from "./components/divider";
 export { Typography } from "./components/typography";
@@ -175,6 +189,7 @@ export {
   SidebarTrigger,
   SidebarBackdrop,
   SidebarInset,
+  SidebarCollapsibleGroup,
 } from "./components/sidebar";
 export type {
   SidebarState,
@@ -193,6 +208,10 @@ export type {
   SidebarTriggerProps,
   SidebarBackdropProps,
   SidebarInsetProps,
+  SidebarCollapsibleGroupProps,
 } from "./components/sidebar";
 
 export { cn } from "./lib/utils";
+
+// Hooks
+export { useScrollLock } from "./hooks/use-scroll-lock";

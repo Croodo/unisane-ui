@@ -1,7 +1,7 @@
 "use client";
 
-import React, { forwardRef } from "react";
-import { cn } from "@ui/lib/utils";
+import React, { forwardRef, isValidElement, cloneElement } from "react";
+import { cn, Slot } from "@ui/lib/utils";
 import { Ripple } from "../ripple";
 import type { NavigationVariant } from "../../types/navigation";
 
@@ -18,6 +18,8 @@ export interface NavItemProps extends Omit<React.HTMLAttributes<HTMLElement>, 'o
   className?: string;
   as?: 'button' | 'a' | 'div';
   external?: boolean;
+  asChild?: boolean;
+  linkElement?: React.ReactNode;
 }
 
 export const NavItem = forwardRef<HTMLElement, NavItemProps>(
@@ -35,6 +37,8 @@ export const NavItem = forwardRef<HTMLElement, NavItemProps>(
       className,
       as,
       external = false,
+      asChild = false,
+      linkElement,
       ...props
     },
     ref
@@ -137,6 +141,20 @@ export const NavItem = forwardRef<HTMLElement, NavItemProps>(
       tabIndex: disabled ? -1 : undefined,
       ...props,
     };
+
+    // asChild pattern: render user's Link component with merged props
+    if (asChild && linkElement && isValidElement(linkElement)) {
+      return (
+        <Slot
+          className={baseClasses}
+          onClick={disabled ? undefined : onClick}
+          aria-current={active ? "page" : undefined}
+          aria-disabled={disabled || undefined}
+        >
+          {cloneElement(linkElement as React.ReactElement, {}, content)}
+        </Slot>
+      );
+    }
 
     return <Component {...componentProps}>{content}</Component>;
   }

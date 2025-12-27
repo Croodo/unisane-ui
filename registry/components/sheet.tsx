@@ -57,6 +57,23 @@ export function Sheet({
     };
   }, [open]);
 
+  // Handle Escape key
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && open) {
+        event.preventDefault();
+        onClose();
+      }
+    };
+
+    if (open) {
+      document.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open, onClose]);
+
   if (!shouldRender) return null;
   if (typeof document === "undefined") return null;
 

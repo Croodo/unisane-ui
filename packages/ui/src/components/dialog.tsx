@@ -5,6 +5,7 @@ import { cn } from "@ui/lib/utils";
 import { Text } from "@ui/primitives/text";
 import { Surface } from "@ui/primitives/surface";
 import { Ripple } from "./ripple";
+import { useScrollLock } from "@ui/hooks/use-scroll-lock";
 
 export interface DialogProps {
   open: boolean;
@@ -44,6 +45,9 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(
       }
     };
 
+    // Lock body scroll while preventing layout shift
+    useScrollLock(open);
+
     useEffect(() => {
       if (open) {
         const dialogNode = dialogRef.current;
@@ -64,8 +68,6 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(
         };
 
         const timer = setTimeout(focusFirstElement, 0);
-
-        document.body.style.overflow = "hidden";
 
         const handleKeyDown = (e: KeyboardEvent) => {
           if (e.key === "Escape") {
@@ -102,7 +104,6 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(
 
         return () => {
           clearTimeout(timer);
-          document.body.style.overflow = "";
           document.removeEventListener("keydown", handleKeyDown);
           previousActiveElement.current?.focus();
         };

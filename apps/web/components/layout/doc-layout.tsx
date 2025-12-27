@@ -1,5 +1,8 @@
+"use client";
+
 import React from "react";
 import { Typography, Surface } from "@unisane/ui";
+import { TableOfContents } from "./table-of-contents";
 
 export interface TocItem {
   id: string;
@@ -51,24 +54,7 @@ export function DocLayout({
 
       {/* Right Sidebar (Table of Contents) - Sticky */}
       {toc && toc.length > 0 && (
-        <aside className="hidden @4xl:block w-64 shrink-0">
-          <div className="sticky top-8u pl-8u border-l border-outline-variant/30 max-h-[calc(100vh-4rem)] overflow-y-auto">
-            <Typography variant="labelMedium" component="h4" className="mb-4u uppercase tracking-wider">
-              On this page
-            </Typography>
-            <nav className="flex flex-col gap-3u">
-              {toc.map((item) => (
-                <a
-                  key={item.id}
-                  href={`#${item.id}`}
-                  className="text-body-small text-on-surface-variant hover:text-primary transition-colors text-left py-1u block"
-                >
-                  {item.label}
-                </a>
-              ))}
-            </nav>
-          </div>
-        </aside>
+        <TableOfContents title={title} items={toc} />
       )}
     </div>
   );

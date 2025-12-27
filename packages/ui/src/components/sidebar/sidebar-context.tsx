@@ -10,85 +10,52 @@ import React, {
 } from "react";
 import type { NavigationItem } from "../../types/navigation";
 
-// ============================================================================
-// Types
-// ============================================================================
-
 export interface SidebarState {
-  /** Currently active item ID */
   activeId: string | null;
-  /** Set active item */
   setActiveId: (id: string | null) => void;
-  /** Sidebar is expanded (drawer locked open) */
   expanded: boolean;
-  /** Set expanded state */
   setExpanded: (expanded: boolean) => void;
-  /** Toggle expanded state */
   toggleExpanded: () => void;
-  /** Mobile menu is open */
   mobileOpen: boolean;
-  /** Set mobile menu open state */
   setMobileOpen: (open: boolean) => void;
-  /** Toggle mobile menu */
   toggleMobile: () => void;
-  /** Currently hovered item ID */
   hoveredId: string | null;
-  /** Drawer is visible (via hover or expanded) */
   isDrawerVisible: boolean;
-  /** Effective item for drawer content */
   effectiveItem: NavigationItem | null;
-  /** Handle item hover */
   handleHover: (id: string) => void;
-  /** Handle item click */
   handleClick: (id: string) => void;
-  /** Handle rail mouse leave */
   handleRailLeave: () => void;
-  /** Handle drawer mouse enter */
   handleDrawerEnter: () => void;
-  /** Handle drawer mouse leave */
   handleDrawerLeave: () => void;
-  /** Navigation items */
   items: NavigationItem[];
-  /** Current breakpoint */
   isMobile: boolean;
   isDesktop: boolean;
-  /** Rail width in pixels */
   railWidth: number;
-  /** Drawer width in pixels */
   drawerWidth: number;
-  /** Content margin based on state */
+  mobileDrawerWidth: number;
   contentMargin: number;
+  hasActiveChild: (parentId: string, childIds: string[]) => boolean;
+  expandedGroups: Set<string>;
+  setGroupExpanded: (groupId: string, expanded: boolean) => void;
+  toggleGroup: (groupId: string) => void;
+  isGroupExpanded: (groupId: string, childIds?: string[]) => boolean;
 }
 
 export interface SidebarProviderProps {
   children: React.ReactNode;
-  /** Navigation items */
   items?: NavigationItem[];
-  /** Initial active item */
   defaultActiveId?: string | null;
-  /** Initial expanded state */
   defaultExpanded?: boolean;
-  /** Persist state to localStorage */
   persist?: boolean;
-  /** Storage key for persistence */
   storageKey?: string;
-  /** Hover delay in ms */
   hoverDelay?: number;
-  /** Exit delay in ms */
   exitDelay?: number;
-  /** Rail width in pixels (default: 96) */
   railWidth?: number;
-  /** Drawer width in pixels (default: 220) */
   drawerWidth?: number;
-  /** Callback when active changes */
+  mobileDrawerWidth?: number;
   onActiveChange?: (id: string | null) => void;
-  /** Callback when expanded changes */
   onExpandedChange?: (expanded: boolean) => void;
 }
-
-// ============================================================================
-// Context
-// ============================================================================
 
 const SidebarContext = createContext<SidebarState | null>(null);
 
@@ -99,10 +66,6 @@ export function useSidebar(): SidebarState {
   }
   return context;
 }
-
-// ============================================================================
-// Provider
-// ============================================================================
 
 export function SidebarProvider({
   children,
@@ -115,20 +78,19 @@ export function SidebarProvider({
   exitDelay = 300,
   railWidth = 96,
   drawerWidth = 220,
+  mobileDrawerWidth = 280,
   onActiveChange,
   onExpandedChange,
 }: SidebarProviderProps) {
-  // -------------------------------------------------------------------------
-  // State
-  // -------------------------------------------------------------------------
   const [activeId, setActiveIdState] = useState<string | null>(defaultActiveId);
   const [expanded, setExpandedState] = useState<boolean>(defaultExpanded);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [lastContentId, setLastContentId] = useState<string | null>(defaultActiveId);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
-  // Hydrate from localStorage after mount (to avoid SSR mismatch)
   useEffect(() => {
     if (!persist) {
       setIsHydrated(true);
@@ -138,6 +100,7 @@ export function SidebarProvider({
     try {
       const storedActive = localStorage.getItem(`${storageKey}-active`);
       const storedExpanded = localStorage.getItem(`${storageKey}-expanded`);
+      const storedGroups = localStorage.getItem(`${storageKey}-groups`);
 
       if (storedActive) {
         const parsedActive = JSON.parse(storedActive);
@@ -147,49 +110,47 @@ export function SidebarProvider({
       if (storedExpanded) {
         setExpandedState(JSON.parse(storedExpanded));
       }
+      if (storedGroups) {
+        const parsedGroups = JSON.parse(storedGroups);
+        setExpandedGroups(new Set(parsedGroups));
+      }
     } catch {}
 
     setIsHydrated(true);
   }, [persist, storageKey]);
 
-  // Breakpoint detection
   const [isMobile, setIsMobile] = useState(false);
   const [isDesktop, setIsDesktop] = useState(true);
 
-  // Hover timers
   const entryTimeoutRef = useRef<number | null>(null);
   const exitTimeoutRef = useRef<number | null>(null);
 
-  // -------------------------------------------------------------------------
-  // Effects
-  // -------------------------------------------------------------------------
-
-  // Sync activeId when defaultActiveId prop changes (e.g., route changes)
+  const prevDefaultActiveIdRef = useRef(defaultActiveId);
   useEffect(() => {
-    if (defaultActiveId && defaultActiveId !== activeId) {
-      setActiveIdState(defaultActiveId);
-      setLastContentId(defaultActiveId);
-      // Expand if the new active item has children
-      const item = items.find((i) => i.id === defaultActiveId);
-      if (item?.items && item.items.length > 0) {
-        setExpandedState(true);
+    if (defaultActiveId !== prevDefaultActiveIdRef.current) {
+      prevDefaultActiveIdRef.current = defaultActiveId;
+      if (defaultActiveId) {
+        setActiveIdState(defaultActiveId);
+        setLastContentId(defaultActiveId);
+        const item = items.find((i) => i.id === defaultActiveId);
+        if (item?.items && item.items.length > 0) {
+          setExpandedState(true);
+        }
       }
     }
   }, [defaultActiveId, items]);
 
-  // Breakpoint detection
   useEffect(() => {
     const updateBreakpoint = () => {
       const width = window.innerWidth;
-      setIsMobile(width < 768);
-      setIsDesktop(width >= 768);
+      setIsMobile(width < 600);
+      setIsDesktop(width >= 600);
     };
     updateBreakpoint();
     window.addEventListener("resize", updateBreakpoint);
     return () => window.removeEventListener("resize", updateBreakpoint);
   }, []);
 
-  // Persist state
   useEffect(() => {
     if (!persist || typeof window === "undefined") return;
     try {
@@ -204,17 +165,19 @@ export function SidebarProvider({
     } catch {}
   }, [expanded, persist, storageKey]);
 
-  // Cleanup timers
+  useEffect(() => {
+    if (!persist || typeof window === "undefined") return;
+    try {
+      localStorage.setItem(`${storageKey}-groups`, JSON.stringify(Array.from(expandedGroups)));
+    } catch {}
+  }, [expandedGroups, persist, storageKey]);
+
   useEffect(() => {
     return () => {
       if (entryTimeoutRef.current) clearTimeout(entryTimeoutRef.current);
       if (exitTimeoutRef.current) clearTimeout(exitTimeoutRef.current);
     };
   }, []);
-
-  // -------------------------------------------------------------------------
-  // Callbacks
-  // -------------------------------------------------------------------------
 
   const setActiveId = useCallback(
     (id: string | null) => {
@@ -242,7 +205,6 @@ export function SidebarProvider({
 
   const handleClick = useCallback(
     (id: string) => {
-      // Clear timers
       if (entryTimeoutRef.current) {
         clearTimeout(entryTimeoutRef.current);
         entryTimeoutRef.current = null;
@@ -254,42 +216,30 @@ export function SidebarProvider({
 
       const item = items.find((i) => i.id === id);
       const hasChildren = item?.items && item.items.length > 0;
-
-      // Check if drawer is currently visible (via expanded OR hover)
       const wasDrawerVisible = expanded || !!hoveredId;
 
-      // Clear hover state
       setHoveredId(null);
 
       if (activeId === id) {
-        // Clicking same item - toggle expanded if it has children
         if (hasChildren) {
           setExpanded(!expanded);
         } else {
           setExpanded(false);
         }
       } else {
-        // Switching to a different item
         setActiveId(id);
 
         if (hasChildren) {
-          // Update lastContentId immediately to prevent content flash
           setLastContentId(id);
 
-          // If drawer was visible (via expanded or hover), lock it open
-          // This prevents the close/open flicker when switching items
           if (wasDrawerVisible) {
-            // Ensure expanded is true so drawer stays visible after hover clears
             if (!expanded) {
               setExpanded(true);
             }
-            // If already expanded, it stays expanded - no state change needed
           } else {
-            // Drawer wasn't visible, expand it
             setExpanded(true);
           }
         } else {
-          // New item has no children, collapse
           setExpanded(false);
         }
       }
@@ -353,21 +303,69 @@ export function SidebarProvider({
     }, exitDelay);
   }, [isMobile, exitDelay]);
 
-  // -------------------------------------------------------------------------
-  // Derived State
-  // -------------------------------------------------------------------------
+  const hasActiveChild = useCallback(
+    (parentId: string, childIds: string[]): boolean => {
+      if (!activeId) return false;
+      return childIds.includes(activeId);
+    },
+    [activeId]
+  );
+
+  const setGroupExpanded = useCallback((groupId: string, isExpanded: boolean) => {
+    if (isExpanded) {
+      setExpandedGroups((prev) => new Set(prev).add(groupId));
+      setCollapsedGroups((prev) => {
+        const next = new Set(prev);
+        next.delete(groupId);
+        return next;
+      });
+    } else {
+      setExpandedGroups((prev) => {
+        const next = new Set(prev);
+        next.delete(groupId);
+        return next;
+      });
+      setCollapsedGroups((prev) => new Set(prev).add(groupId));
+    }
+  }, []);
+
+  const toggleGroup = useCallback((groupId: string) => {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(groupId)) {
+        next.delete(groupId);
+        setCollapsedGroups((collapsed) => new Set(collapsed).add(groupId));
+      } else {
+        next.add(groupId);
+        setCollapsedGroups((collapsed) => {
+          const newCollapsed = new Set(collapsed);
+          newCollapsed.delete(groupId);
+          return newCollapsed;
+        });
+      }
+      return next;
+    });
+  }, []);
+
+  const isGroupExpanded = useCallback(
+    (groupId: string, childIds?: string[]): boolean => {
+      if (collapsedGroups.has(groupId)) return false;
+      if (expandedGroups.has(groupId)) return true;
+      if (childIds && activeId && childIds.includes(activeId)) return true;
+      return false;
+    },
+    [expandedGroups, collapsedGroups, activeId]
+  );
 
   const activeItem = items.find((i) => i.id === activeId);
   const hoveredItem = hoveredId ? items.find((i) => i.id === hoveredId) : null;
   const hoverHasChildren = !!(hoveredItem?.items && hoveredItem.items.length > 0);
 
-  // Determine effective item for drawer content
   let targetItem = activeItem;
   if (hoveredItem && hoverHasChildren) {
     targetItem = hoveredItem;
   }
 
-  // Update last content ID when target changes
   useEffect(() => {
     if (targetItem?.items && targetItem.items.length > 0) {
       setLastContentId(targetItem.id);
@@ -375,20 +373,12 @@ export function SidebarProvider({
   }, [targetItem]);
 
   const effectiveItem = items.find((i) => i.id === lastContentId) || null;
-
-  // Drawer visibility
   const isDrawerVisible = expanded || (!!hoveredId && hoverHasChildren);
-
-  // Content margin calculation
   const contentMargin = isDesktop
     ? expanded
       ? railWidth + drawerWidth
       : railWidth
     : 0;
-
-  // -------------------------------------------------------------------------
-  // Context Value
-  // -------------------------------------------------------------------------
 
   const value: SidebarState = {
     activeId,
@@ -412,8 +402,18 @@ export function SidebarProvider({
     isDesktop,
     railWidth,
     drawerWidth,
+    mobileDrawerWidth,
     contentMargin,
+    hasActiveChild,
+    expandedGroups,
+    setGroupExpanded,
+    toggleGroup,
+    isGroupExpanded,
   };
+
+  if (persist && !isHydrated) {
+    return null;
+  }
 
   return (
     <SidebarContext.Provider value={value}>{children}</SidebarContext.Provider>

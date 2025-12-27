@@ -86,4 +86,9 @@
       .animate-ripple {
             animation: ripple 600ms ease-out;
       }
+
+      /* Z-index utilities for layering system */
+      .z-modal {
+            z-index: var(--z-modal, 3000);
+      }
 }

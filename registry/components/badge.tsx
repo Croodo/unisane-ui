@@ -35,10 +35,11 @@ const badgeVariants = cva(
       { variant: "tonal", color: "tertiary", className: "bg-tertiary-container text-on-tertiary-container" },
       { variant: "tonal", color: "error", className: "bg-error-container text-on-error-container" },
       { variant: "tonal", color: "success", className: "bg-success-container text-on-success-container" },
-      { variant: "outlined", color: "primary", className: "text-primary" },
-      { variant: "outlined", color: "secondary", className: "text-secondary" },
-      { variant: "outlined", color: "tertiary", className: "text-tertiary" },
-      { variant: "outlined", color: "error", className: "text-error" },
+      { variant: "outlined", color: "primary", className: "text-primary border-primary/30" },
+      { variant: "outlined", color: "secondary", className: "text-secondary border-secondary/30" },
+      { variant: "outlined", color: "tertiary", className: "text-tertiary border-tertiary/30" },
+      { variant: "outlined", color: "error", className: "text-error border-error/30" },
+      { variant: "outlined", color: "success", className: "text-success border-success/30" },
     ],
     defaultVariants: {
       variant: "filled",
@@ -58,6 +59,7 @@ export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
     return (
       <span
         ref={ref}
+        role="status"
         className={cn(badgeVariants({ variant, color, size, className }))}
         {...props}
       >

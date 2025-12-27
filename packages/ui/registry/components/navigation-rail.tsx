@@ -17,8 +17,8 @@ const renderIcon = (icon: React.ReactNode | string, isActive: boolean = false) =
   if (typeof icon === "string") {
     return (
       <span
-        className="material-symbols-outlined text-[24px]! transition-all duration-short"
-        style={isActive ? { fontVariationSettings: "'FILL' 1" } : undefined}
+        className="material-symbols-outlined text-[26px]! transition-all duration-short"
+        style={isActive ? { fontVariationSettings: "'FILL' 1, 'wght' 500" } : { fontVariationSettings: "'wght' 400" }}
       >
         {icon}
       </span>
@@ -108,10 +108,10 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
 
               <span
                 className={cn(
-                  "text-label-small font-medium transition-colors duration-short text-center px-0.5u max-w-full",
+                  "text-label-medium transition-colors duration-short text-center px-0.5u max-w-full",
                   isActive
-                    ? "text-primary font-semibold"
-                    : "text-on-surface-variant group-hover:text-on-surface"
+                    ? "text-primary font-bold"
+                    : "text-on-surface-variant font-semibold group-hover:text-on-surface"
                 )}
               >
                 {item.label}

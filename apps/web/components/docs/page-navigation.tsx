@@ -26,13 +26,13 @@ export function PageNavigation({ previous, next, className }: PageNavigationProp
           <Card
             variant="filled"
             padding="lg"
-            className="h-full transition-all hover:bg-surface-container-high"
+            className="h-full rounded-lg transition-all hover:bg-surface-container-high"
           >
             <div className="flex items-center gap-2u text-body-small text-on-surface-variant mb-2u">
               <Icon size="sm">arrow_back</Icon>
               <span>Previous</span>
             </div>
-            <span className="text-title-medium font-medium text-on-surface group-hover:text-primary transition-colors">
+            <span className="text-title-large font-medium text-on-surface group-hover:text-primary transition-colors">
               {previous.name}
             </span>
           </Card>
@@ -47,13 +47,13 @@ export function PageNavigation({ previous, next, className }: PageNavigationProp
           <Card
             variant="filled"
             padding="lg"
-            className="h-full transition-all hover:bg-surface-container-high"
+            className="h-full rounded-lg transition-all hover:bg-surface-container-high"
           >
             <div className="flex items-center justify-end gap-2u text-body-small text-on-surface-variant mb-2u">
               <span>Up next</span>
               <Icon size="sm">arrow_forward</Icon>
             </div>
-            <span className="text-title-medium font-medium text-on-surface text-right block group-hover:text-primary transition-colors">
+            <span className="text-title-large font-medium text-on-surface text-right block group-hover:text-primary transition-colors">
               {next.name}
             </span>
           </Card>

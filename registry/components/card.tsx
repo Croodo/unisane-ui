@@ -50,17 +50,29 @@ export interface CardProps
 }
 
 const CardRoot = React.forwardRef<HTMLDivElement, CardProps>(
-  ({ className, variant, padding, interactive, onClick, children, ...props }, ref) => {
+  ({ className, variant, padding, interactive, onClick, onKeyDown, children, ...props }, ref) => {
     const isInteractive = interactive || !!onClick;
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (isInteractive && (e.key === "Enter" || e.key === " ")) {
+        e.preventDefault();
+        onClick?.(e as unknown as React.MouseEvent<HTMLDivElement>);
+      }
+      onKeyDown?.(e);
+    };
 
     return (
       <div
         ref={ref}
         className={cn(
           cardVariants({ variant, padding, interactive: isInteractive }),
+          isInteractive && "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
           className
         )}
         onClick={onClick}
+        onKeyDown={isInteractive ? handleKeyDown : onKeyDown}
+        role={isInteractive ? "button" : undefined}
+        tabIndex={isInteractive ? 0 : undefined}
         {...props}
       >
         {isInteractive && (
@@ -122,10 +134,11 @@ CardFooter.displayName = "CardFooter";
 const CardMedia = React.forwardRef<
   HTMLImageElement,
   React.ImgHTMLAttributes<HTMLImageElement>
->(({ className, ...props }, ref) => (
+>(({ className, alt, ...props }, ref) => (
   <img
     ref={ref}
     className={cn("w-full object-cover relative z-10", className)}
+    alt={alt || ""}
     {...props}
   />
 ));

@@ -57,14 +57,15 @@ export const Radio = forwardRef<HTMLInputElement, RadioProps>(
             className={cn(
               "relative z-10 w-5u h-5u rounded-full border-2 bg-surface",
               "transition-colors duration-snappy ease-emphasized flex items-center justify-center",
-              !error &&
-                "border-outline group-hover:border-on-surface peer-checked:border-primary",
-              error && "border-error peer-checked:border-error"
+              !error && "border-outline group-hover:border-on-surface",
+              !error && props.checked && "border-primary",
+              error && "border-error"
             )}
           >
             <div
               className={cn(
-                "w-2.5u h-2.5u rounded-full transition-transform duration-snappy ease-emphasized scale-0 peer-checked:scale-100",
+                "w-2.5u h-2.5u rounded-full transition-transform duration-snappy ease-emphasized",
+                props.checked ? "scale-100" : "scale-0",
                 !error && "bg-primary",
                 error && "bg-error"
               )}

@@ -80,11 +80,19 @@ export const ListItem: React.FC<ListItemProps> = ({
 }) => {
   const isInteractive = !!onClick && !disabled;
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (isInteractive && (e.key === "Enter" || e.key === " ")) {
+      e.preventDefault();
+      onClick?.();
+    }
+  };
+
   if (!headline) {
     return (
       <div
         className={cn(listItemVariants({ active, disabled, className }))}
         onClick={isInteractive ? onClick : undefined}
+        onKeyDown={isInteractive ? handleKeyDown : undefined}
         role={isInteractive ? "button" : "listitem"}
         tabIndex={isInteractive ? 0 : undefined}
         {...props}
@@ -99,6 +107,7 @@ export const ListItem: React.FC<ListItemProps> = ({
     <div
       className={cn(listItemVariants({ active, disabled, className }))}
       onClick={isInteractive ? onClick : undefined}
+      onKeyDown={isInteractive ? handleKeyDown : undefined}
       role={isInteractive ? "button" : "listitem"}
       tabIndex={isInteractive ? 0 : undefined}
       {...props}
@@ -163,14 +172,14 @@ export const ListItemContent: React.FC<ListItemContentProps> = ({
   className,
 }) => {
   return (
-    <div className={cn("flex items-center gap-3 flex-1 min-w-0", className)}>
+    <div className={cn("flex items-center gap-3u flex-1 min-w-0", className)}>
       {leading && (
-        <div className="w-6 h-6 flex items-center justify-center">
+        <div className="w-6u h-6u flex items-center justify-center">
           {leading}
         </div>
       )}
       <div className="flex-1 min-w-0">{children}</div>
-      {trailing && <div className="flex items-center gap-2">{trailing}</div>}
+      {trailing && <div className="flex items-center gap-2u">{trailing}</div>}
     </div>
   );
 };

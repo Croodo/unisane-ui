@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Ripple } from './ripple';
 import { cn } from '@ui/lib/utils';
+import { useScrollLock } from '@ui/hooks/use-scroll-lock';
 
 export type SheetSize = 'sm' | 'md' | 'lg' | 'xl' | 'full';
 
@@ -32,8 +33,11 @@ export function Sheet({
   const [isVisible, setIsVisible] = useState(false);
   const timerRef = useRef<number | null>(null);
 
-  const OPEN_DURATION = 600; 
-  const CLOSE_DURATION = 250; 
+  const OPEN_DURATION = 600;
+  const CLOSE_DURATION = 250;
+
+  // Lock body scroll while preventing layout shift
+  useScrollLock(open);
 
   useEffect(() => {
     if (open) {
@@ -44,18 +48,33 @@ export function Sheet({
           setIsVisible(true);
         });
       });
-      document.body.style.overflow = 'hidden';
     } else {
       setIsVisible(false);
       timerRef.current = window.setTimeout(() => {
         setShouldRender(false);
-        document.body.style.overflow = '';
       }, CLOSE_DURATION);
     }
     return () => {
       if (timerRef.current) window.clearTimeout(timerRef.current);
     };
   }, [open]);
+
+  // Handle Escape key
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && open) {
+        event.preventDefault();
+        onClose();
+      }
+    };
+
+    if (open) {
+      document.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open, onClose]);
 
   if (!shouldRender) return null;
   if (typeof document === "undefined") return null;

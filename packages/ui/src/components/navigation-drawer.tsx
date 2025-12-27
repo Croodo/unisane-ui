@@ -1,6 +1,6 @@
-import React, { forwardRef } from "react";
+import React, { forwardRef, cloneElement, isValidElement } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@ui/lib/utils";
+import { cn, Slot } from "@ui/lib/utils";
 import { Ripple } from "./ripple";
 
 const navigationDrawerVariants = cva(
@@ -65,12 +65,12 @@ NavigationDrawer.displayName = "NavigationDrawer";
 
 // NavigationDrawerItem
 const navigationDrawerItemVariants = cva(
-  "flex items-center gap-3u w-full min-h-14u py-3u px-4u rounded-full text-label-large font-medium cursor-pointer select-none group relative overflow-hidden shrink-0 outline-none transition-all duration-short mx-auto focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset",
+  "flex items-center gap-3u w-full min-h-14u py-3u px-4u rounded-full text-label-large cursor-pointer select-none group relative overflow-hidden shrink-0 outline-none transition-all duration-short mx-auto focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset",
   {
     variants: {
       active: {
-        true: "bg-secondary-container text-primary",
-        false: "bg-transparent text-on-surface-variant hover:bg-on-surface-variant/8",
+        true: "bg-secondary-container text-primary font-semibold",
+        false: "bg-transparent text-on-surface-variant hover:bg-on-surface-variant/8 font-medium",
       },
       disabled: {
         true: "opacity-38 cursor-not-allowed",
@@ -91,12 +91,14 @@ interface NavigationDrawerItemProps
   icon?: React.ReactNode | string;
   badge?: string | number | React.ReactNode;
   activeIcon?: React.ReactNode | string;
+  href?: string;
+  asChild?: boolean;
 }
 
 export const NavigationDrawerItem = forwardRef<
   HTMLButtonElement,
   NavigationDrawerItemProps
->(({ active, icon, activeIcon, badge, children, disabled, className, ...props }, ref) => {
+>(({ active, icon, activeIcon, badge, children, disabled, className, href, asChild, ...props }, ref) => {
   const renderIcon = (iconValue: React.ReactNode | string) => {
     if (typeof iconValue === "string") {
       return (
@@ -114,44 +116,77 @@ export const NavigationDrawerItem = forwardRef<
     return iconValue;
   };
 
+  const innerContent = (
+    <>
+      {/* State Layer for active items */}
+      <span
+        className={cn(
+          "absolute inset-0 pointer-events-none transition-opacity duration-short",
+          active
+            ? "bg-primary opacity-0 group-hover:opacity-[0.08] group-focus-visible:opacity-[0.12] group-active:opacity-[0.12]"
+            : ""
+        )}
+      />
+      <Ripple disabled={disabled ?? false} />
+
+      {icon && (
+        <span className="relative z-10">
+          {active && activeIcon ? renderIcon(activeIcon) : renderIcon(icon)}
+        </span>
+      )}
+
+      <span className="flex-1 text-left relative z-10 truncate">{children}</span>
+
+      {badge && (
+        <span className="relative z-10 ml-auto">
+          {typeof badge === "string" || typeof badge === "number" ? (
+            <span className="text-label-small font-medium text-on-surface-variant px-1.5u py-0.5u min-w-5u text-center inline-block">
+              {badge}
+            </span>
+          ) : (
+            badge
+          )}
+        </span>
+      )}
+    </>
+  );
+
+  const itemClasses = cn(navigationDrawerItemVariants({ active, disabled }), className);
+
+  // asChild pattern: render user's Link component with merged props
+  if (asChild && isValidElement(children)) {
+    return (
+      <div className="px-3u w-full">
+        <Slot className={itemClasses} {...props}>
+          {cloneElement(children as React.ReactElement, {}, innerContent)}
+        </Slot>
+      </div>
+    );
+  }
+
+  if (href && !disabled) {
+    return (
+      <div className="px-3u w-full">
+        <a
+          href={href}
+          className={itemClasses}
+          aria-current={active ? "page" : undefined}
+        >
+          {innerContent}
+        </a>
+      </div>
+    );
+  }
+
   return (
     <div className="px-3u w-full">
       <button
         ref={ref}
         disabled={disabled ?? false}
-        className={cn(navigationDrawerItemVariants({ active, disabled }), className)}
+        className={itemClasses}
         {...props}
       >
-        {/* State Layer for active items */}
-        <span
-          className={cn(
-            "absolute inset-0 pointer-events-none transition-opacity duration-short",
-            active
-              ? "bg-primary opacity-0 group-hover:opacity-[0.08] group-focus-visible:opacity-[0.12] group-active:opacity-[0.12]"
-              : ""
-          )}
-        />
-        <Ripple disabled={disabled ?? false} />
-
-        {icon && (
-          <span className="relative z-10">
-            {active && activeIcon ? renderIcon(activeIcon) : renderIcon(icon)}
-          </span>
-        )}
-
-        <span className="flex-1 text-left relative z-10 truncate">{children}</span>
-
-        {badge && (
-          <span className="relative z-10 ml-auto">
-            {typeof badge === "string" || typeof badge === "number" ? (
-              <span className="text-label-small font-medium text-on-surface-variant px-1.5u py-0.5u min-w-5u text-center inline-block">
-                {badge}
-              </span>
-            ) : (
-              badge
-            )}
-          </span>
-        )}
+        {innerContent}
       </button>
     </div>
   );
@@ -169,7 +204,7 @@ export const NavigationDrawerHeadline = ({
 }) => (
   <div
     className={cn(
-      "px-5u pt-4u pb-2u text-title-small font-medium text-on-surface-variant",
+      "px-5u pt-4u pb-2u text-title-small font-semibold text-on-surface-variant",
       className
     )}
   >

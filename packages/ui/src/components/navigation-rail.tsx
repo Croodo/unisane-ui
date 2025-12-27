@@ -1,5 +1,5 @@
-import React from "react";
-import { cn } from "@ui/lib/utils";
+import React, { cloneElement, isValidElement } from "react";
+import { cn, Slot } from "@ui/lib/utils";
 import { Ripple } from "./ripple";
 
 export interface RailItem {
@@ -10,6 +10,8 @@ export interface RailItem {
   badge?: string | number;
   disabled?: boolean;
   href?: string;
+  asChild?: boolean;
+  linkElement?: React.ReactNode;
 }
 
 // Helper to render icon - handles both ReactNode and Material Symbol string
@@ -17,8 +19,8 @@ const renderIcon = (icon: React.ReactNode | string, isActive: boolean = false) =
   if (typeof icon === "string") {
     return (
       <span
-        className="material-symbols-outlined text-[24px]! transition-all duration-short"
-        style={isActive ? { fontVariationSettings: "'FILL' 1" } : undefined}
+        className="material-symbols-outlined text-[26px]! transition-all duration-short"
+        style={isActive ? { fontVariationSettings: "'FILL' 1, 'wght' 500" } : { fontVariationSettings: "'wght' 400" }}
       >
         {icon}
       </span>
@@ -108,10 +110,10 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
 
               <span
                 className={cn(
-                  "text-label-small font-medium transition-colors duration-short text-center px-0.5u max-w-full",
+                  "text-label-medium transition-colors duration-short text-center px-0.5u max-w-full",
                   isActive
-                    ? "text-primary font-semibold"
-                    : "text-on-surface-variant group-hover:text-on-surface"
+                    ? "text-primary font-bold"
+                    : "text-on-surface-variant font-semibold group-hover:text-on-surface"
                 )}
               >
                 {item.label}
@@ -124,24 +126,37 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
             item.disabled && "opacity-38 cursor-not-allowed pointer-events-none"
           );
 
+          const commonProps = {
+            onClick: (e: React.MouseEvent) => {
+              if (item.disabled) {
+                e.preventDefault();
+                return;
+              }
+              onChange(item.value);
+            },
+            onMouseEnter: () => !item.disabled && onItemHover && onItemHover(item.value),
+            className: commonClasses,
+            "aria-current": isActive ? ("page" as const) : undefined,
+            "aria-disabled": item.disabled || undefined,
+          };
+
+          // asChild pattern: render user's Link component with merged props
+          if (item.asChild && item.linkElement) {
+            return (
+              <Slot key={item.value} {...commonProps}>
+                {isValidElement(item.linkElement)
+                  ? cloneElement(item.linkElement as React.ReactElement, {}, content)
+                  : item.linkElement}
+              </Slot>
+            );
+          }
+
           if (item.href) {
             return (
               <a
                 key={item.value}
                 href={item.disabled ? undefined : item.href}
-                onClick={(e) => {
-                  if (item.disabled) {
-                    e.preventDefault();
-                    return;
-                  }
-                  onChange(item.value);
-                }}
-                onMouseEnter={() =>
-                  !item.disabled && onItemHover && onItemHover(item.value)
-                }
-                className={commonClasses}
-                aria-current={isActive ? "page" : undefined}
-                aria-disabled={item.disabled || undefined}
+                {...commonProps}
                 tabIndex={item.disabled ? -1 : undefined}
               >
                 {content}

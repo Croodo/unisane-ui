@@ -1,9 +1,9 @@
 "use client";
 
-import { type ReactNode, type ButtonHTMLAttributes, forwardRef } from "react";
+import { type ReactNode, type ButtonHTMLAttributes, forwardRef, isValidElement, cloneElement } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Ripple } from "./ripple";
-import { cn } from "@ui/lib/utils";
+import { cn, Slot } from "@ui/lib/utils";
 
 const buttonVariants = cva(
   "relative inline-flex items-center justify-center gap-2u rounded-full font-medium transition-all duration-short ease-standard overflow-hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-38 disabled:cursor-not-allowed group whitespace-nowrap leading-none select-none",
@@ -38,6 +38,7 @@ export interface ButtonProps
   loading?: boolean;
   icon?: ReactNode;
   trailingIcon?: ReactNode;
+  asChild?: boolean;
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -52,20 +53,16 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       trailingIcon,
       className = "",
       type = "button",
+      asChild = false,
       ...props
     },
     ref
   ) => {
     const iconSizeClass = "w-4.5u h-4.5u";
+    const buttonClasses = cn(buttonVariants({ variant, size }), className);
 
-    return (
-      <button
-        ref={ref}
-        type={type}
-        className={cn(buttonVariants({ variant, size }), className)}
-        disabled={disabled || loading}
-        {...props}
-      >
+    const innerContent = (
+      <>
         <span className="absolute inset-0 pointer-events-none bg-current opacity-0 transition-opacity duration-snappy group-hover:opacity-hover group-focus-visible:opacity-focus group-active:opacity-pressed" />
         <Ripple disabled={disabled || loading} />
         {loading && (
@@ -105,7 +102,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             loading ? "opacity-0" : "opacity-100"
           )}
         >
-          {children}
+          {asChild ? null : children}
         </span>
 
         {!loading && trailingIcon && (
@@ -115,6 +112,27 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             {trailingIcon}
           </span>
         )}
+      </>
+    );
+
+    // asChild pattern: render user's element (e.g., Next.js Link) with button styles
+    if (asChild && isValidElement(children)) {
+      return (
+        <Slot className={buttonClasses}>
+          {cloneElement(children as React.ReactElement, {}, innerContent)}
+        </Slot>
+      );
+    }
+
+    return (
+      <button
+        ref={ref}
+        type={type}
+        className={buttonClasses}
+        disabled={disabled || loading}
+        {...props}
+      >
+        {innerContent}
       </button>
     );
   }

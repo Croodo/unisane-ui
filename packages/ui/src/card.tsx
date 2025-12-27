@@ -1,30 +1,51 @@
 import { type ReactNode } from "react";
+import { cn } from "@ui/lib/utils";
 
-export function Card({
-  title,
-  children,
-  href,
-}: {
+export interface LinkCardProps {
   title: string;
   children: ReactNode;
   href: string;
-}) {
+  className?: string;
+}
+
+/**
+ * LinkCard - A simple external link card component.
+ * For the full Card component with variants, see components/card.tsx
+ */
+export function LinkCard({
+  title,
+  children,
+  href,
+  className,
+}: LinkCardProps) {
   return (
     <a
-      className="ui:group ui:rounded-lg ui:border ui:border-transparent ui:px-5 ui:py-4 ui:transition-colors hover:ui:border-neutral-700 hover:ui:bg-neutral-800/30"
-      href={`${href}?utm_source=create-turbo&utm_medium=with-tailwind&utm_campaign=create-turbo"`}
+      className={cn(
+        "group relative block rounded-md border border-outline-variant/20 px-5u py-4u",
+        "bg-surface-container transition-colors duration-short ease-standard",
+        "hover:border-outline hover:bg-surface-container-high",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+        className
+      )}
+      href={href}
       rel="noopener noreferrer"
       target="_blank"
     >
-      <h2 className="ui:mb-3 ui:text-title-large ui:font-semibold">
+      <h2 className="mb-3u text-title-large font-semibold text-on-surface">
         {title}{" "}
-        <span className="ui:inline-block ui:transition-transform group-hover:ui:translate-x-1 motion-reduce:ui:transform-none">
-          -&gt;
+        <span
+          className="inline-block transition-transform duration-short ease-standard group-hover:translate-x-1u motion-reduce:transform-none"
+          aria-hidden="true"
+        >
+          →
         </span>
       </h2>
-      <p className="ui:m-0 ui:max-w-[30ch] ui:text-body-small ui:opacity-50">
+      <p className="m-0 max-w-[30ch] text-body-small text-on-surface-variant">
         {children}
       </p>
     </a>
   );
 }
+
+// Backwards compatibility alias
+export const Card = LinkCard;

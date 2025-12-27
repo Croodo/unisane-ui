@@ -1,0 +1,270 @@
+"use client";
+
+import { useState } from "react";
+import { ComponentDoc } from "../types";
+import { NavigationRail, Fab } from "@unisane/ui";
+
+// ─── HERO VISUAL ─────────────────────────────────────────────────────────────
+const NavigationRailHeroVisual = () => (
+  <div className="relative w-full h-full bg-linear-to-br from-tertiary-container to-secondary-container flex items-center justify-center p-8 overflow-hidden isolate">
+    {/* Decorative Circles */}
+    <div className="absolute top-[-40px] left-[-40px] w-56 h-56 bg-tertiary/20 rounded-full blur-3xl" />
+    <div className="absolute bottom-[-50px] right-[-30px] w-64 h-64 bg-secondary/20 rounded-full blur-3xl" />
+
+    {/* Mock App with Rail */}
+    <div className="relative bg-surface w-[320px] h-[220px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 z-10 flex">
+      {/* Navigation Rail */}
+      <div className="w-20u bg-surface-container border-r border-outline-variant/30 flex flex-col items-center py-4u gap-6u">
+        {/* FAB */}
+        <div className="w-14u h-14u rounded-2xl bg-primary-container flex items-center justify-center mb-2u">
+          <span className="material-symbols-outlined text-on-primary-container">edit</span>
+        </div>
+        {/* Nav Items */}
+        <div className="flex flex-col items-center gap-1u">
+          <div className="w-14u h-8u rounded-full bg-secondary-container flex items-center justify-center">
+            <span className="material-symbols-outlined text-primary text-[22px]">inbox</span>
+          </div>
+          <span className="text-label-medium text-primary">Inbox</span>
+        </div>
+        <div className="flex flex-col items-center gap-1u">
+          <div className="w-14u h-8u flex items-center justify-center">
+            <span className="material-symbols-outlined text-on-surface-variant text-[22px]">send</span>
+          </div>
+          <span className="text-label-medium text-on-surface-variant">Sent</span>
+        </div>
+      </div>
+      {/* Main Content */}
+      <div className="flex-1 p-4u">
+        <div className="space-y-3u">
+          <div className="h-4u bg-surface-container-high rounded-sm w-full" />
+          <div className="h-4u bg-surface-container-high rounded-sm w-3/4" />
+          <div className="h-4u bg-surface-container-high rounded-sm w-1/2" />
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+// ─── INTERACTIVE EXAMPLES ────────────────────────────────────────────────────
+const NavigationRailBasicExample = () => {
+  const [active, setActive] = useState("inbox");
+
+  return (
+    <div className="h-[280px] w-full max-w-xs flex bg-surface-container-low rounded-lg overflow-hidden">
+      <NavigationRail
+        items={[
+          { value: "inbox", label: "Inbox", icon: "inbox", activeIcon: "inbox", badge: 3 },
+          { value: "sent", label: "Sent", icon: "send", activeIcon: "send" },
+          { value: "drafts", label: "Drafts", icon: "drafts", activeIcon: "drafts" },
+          { value: "trash", label: "Trash", icon: "delete", activeIcon: "delete" },
+        ]}
+        value={active}
+        onChange={setActive}
+        header={
+          <Fab
+            size="md"
+            variant="tertiary"
+            icon={<span className="material-symbols-outlined">edit</span>}
+            aria-label="Compose"
+          />
+        }
+        className="h-full"
+      />
+      <div className="flex-1 p-4u">
+        <div className="text-body-medium text-on-surface-variant">
+          Selected: <span className="text-on-surface font-medium">{active}</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export const navigationRailDoc: ComponentDoc = {
+  // ─── BASIC INFO ─────────────────────────────────────────────────────────────
+  slug: "navigation-rail",
+  name: "Navigation Rail",
+  description:
+    "Navigation rail provides compact vertical navigation for tablet and desktop screens.",
+  category: "navigation",
+  status: "stable",
+  icon: "view_sidebar",
+
+  // ─── IMPORT INFO ────────────────────────────────────────────────────────────
+  importPath: "@unisane/ui",
+  exports: ["NavigationRail"],
+
+  // ─── HERO VISUAL ───────────────────────────────────────────────────────────
+  heroVisual: <NavigationRailHeroVisual />,
+
+  // ─── CHOOSING SECTION ──────────────────────────────────────────────────────
+  choosing: {
+    description:
+      "Choose navigation component based on screen size and number of destinations.",
+    columns: {
+      emphasis: "Component",
+      component: "Preview",
+      rationale: "When to use",
+      examples: "Common uses",
+    },
+    rows: [
+      {
+        emphasis: "Navigation Rail",
+        component: (
+          <div className="w-10 h-20 bg-surface-container rounded-sm flex flex-col items-center py-2u gap-2u border-r border-outline-variant">
+            <div className="w-6u h-4u rounded-full bg-secondary-container" />
+            <div className="w-6u h-4u rounded-full bg-surface-container-high" />
+            <div className="w-6u h-4u rounded-full bg-surface-container-high" />
+          </div>
+        ),
+        rationale: "Compact vertical navigation for larger screens.",
+        examples: "Desktop apps, Tablet apps, Admin panels",
+      },
+      {
+        emphasis: "Navigation Drawer",
+        component: (
+          <div className="w-20 h-16 bg-surface-container rounded-sm p-2u border-r border-outline-variant">
+            <div className="h-3u rounded-sm bg-secondary-container mb-2u" />
+            <div className="h-3u rounded-sm bg-surface-container-high" />
+          </div>
+        ),
+        rationale: "Full navigation with labels always visible.",
+        examples: "Complex apps, Many destinations",
+      },
+      {
+        emphasis: "Navigation Bar",
+        component: (
+          <div className="w-32 h-8u bg-surface-container rounded-sm flex items-center justify-around px-2u">
+            <div className="w-4u h-4u rounded-full bg-secondary-container" />
+            <div className="w-4u h-4u rounded-full bg-surface-container-high" />
+            <div className="w-4u h-4u rounded-full bg-surface-container-high" />
+          </div>
+        ),
+        rationale: "Bottom navigation for mobile screens.",
+        examples: "Mobile apps, Phone interfaces",
+      },
+    ],
+  },
+
+  // ─── PLACEMENT SECTION ─────────────────────────────────────────────────────
+  placement: {
+    description:
+      "Navigation rails are placed at the left edge of the screen on larger devices.",
+    examples: [
+      {
+        title: "With header FAB",
+        visual: <NavigationRailBasicExample />,
+        caption: "Click items to navigate",
+      },
+    ],
+  },
+
+  // ─── PROPS ──────────────────────────────────────────────────────────────────
+  props: [
+    {
+      name: "items",
+      type: "RailItem[]",
+      required: true,
+      description: "Array of navigation items.",
+    },
+    {
+      name: "value",
+      type: "string",
+      required: true,
+      description: "Currently active item value.",
+    },
+    {
+      name: "onChange",
+      type: "(value: string) => void",
+      required: true,
+      description: "Callback when active item changes.",
+    },
+    {
+      name: "header",
+      type: "ReactNode",
+      description: "Content at top of rail (usually a FAB).",
+    },
+    {
+      name: "footer",
+      type: "ReactNode",
+      description: "Content at bottom of rail.",
+    },
+    {
+      name: "alignment",
+      type: '"start" | "center" | "end"',
+      default: '"start"',
+      description: "Vertical alignment of items.",
+    },
+    {
+      name: "onItemHover",
+      type: "(value: string) => void",
+      description: "Callback when item is hovered.",
+    },
+  ],
+
+  // ─── ACCESSIBILITY ──────────────────────────────────────────────────────────
+  accessibility: {
+    screenReader: [
+      "Uses semantic <nav> element with aria-label.",
+      "Active item indicated via aria-current.",
+      "Badges are announced for notifications.",
+    ],
+    keyboard: [
+      { key: "Tab", description: "Navigate between items" },
+      { key: "Enter/Space", description: "Activate focused item" },
+    ],
+    focus: [
+      "Focus ring visible on rail items.",
+      "Active state clearly distinguished.",
+    ],
+  },
+
+  // ─── IMPLEMENTATION ────────────────────────────────────────────────────────
+  implementation: {
+    description: "Use with controlled state or router.",
+    code: `import { NavigationRail, Fab } from "@unisane/ui";
+import { usePathname, useRouter } from "next/navigation";
+
+function SideNav() {
+  const pathname = usePathname();
+  const router = useRouter();
+
+  const items = [
+    { value: "/", label: "Home", icon: "home", activeIcon: "home" },
+    { value: "/inbox", label: "Inbox", icon: "inbox", badge: 12 },
+    { value: "/sent", label: "Sent", icon: "send" },
+    { value: "/settings", label: "Settings", icon: "settings" },
+  ];
+
+  return (
+    <NavigationRail
+      items={items}
+      value={pathname}
+      onChange={(path) => router.push(path)}
+      header={
+        <Fab
+          icon={<span className="material-symbols-outlined">edit</span>}
+          onClick={() => router.push("/compose")}
+          ariaLabel="Compose"
+        />
+      }
+    />
+  );
+}`,
+  },
+
+  // ─── RELATED COMPONENTS ─────────────────────────────────────────────────────
+  related: [
+    {
+      slug: "navigation-drawer",
+      reason: "Use for full navigation with labels.",
+    },
+    {
+      slug: "navigation-bar",
+      reason: "Use for mobile bottom navigation.",
+    },
+    {
+      slug: "fab",
+      reason: "Often placed in rail header.",
+    },
+  ],
+};

@@ -42,7 +42,8 @@ export const Fab: React.FC<FabProps> = ({
   children,
   ...props
 }) => {
-  const finalSize = label && size === "md" ? "extended" : size;
+  // Auto-switch to extended when label is provided (unless explicitly using sm or lg)
+  const finalSize = label && (size === "md" || size === undefined) ? "extended" : size;
 
   return (
     <button

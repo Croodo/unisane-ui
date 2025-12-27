@@ -30,8 +30,8 @@ export function AppHeader() {
           </Typography>
         </Link>
 
-        {/* Center Section: Search Bar */}
-        <div className="flex-1 max-w-[720px] px-4u">
+        {/* Center Section: Search Bar (fills remaining width) */}
+        <div className="flex-1 min-w-0 px-4u">
           <div className="relative group w-full transition-transform duration-200 focus-within:scale-[1.01]">
             <div className="absolute inset-y-0 left-0 pl-4u flex items-center pointer-events-none">
               <span className="material-symbols-outlined text-on-surface-variant text-[24px]!">
@@ -40,7 +40,7 @@ export function AppHeader() {
             </div>
             <input
               type="text"
-              className="block w-full pl-12u pr-4u h-14u bg-surface-container-high hover:bg-surface-container-highest focus:bg-surface-container-highest rounded-full text-body-large text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200"
+              className="block w-full pl-12u pr-4u h-14u bg-surface-container hover:bg-surface-container-high focus:bg-surface-container-high rounded-full text-body-large text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200"
               placeholder="Search components"
               aria-label="Search"
             />

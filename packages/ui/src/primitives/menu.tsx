@@ -1,7 +1,7 @@
-import React from "react";
-import { cn } from "@ui/lib/utils";
+import React, { isValidElement, cloneElement } from "react";
+import { cn, Slot } from "@ui/lib/utils";
 import { Text } from "./text";
-import { StateLayer } from "./state-layer";
+import { Ripple } from "../components/ripple";
 
 export interface MenuProps extends React.HTMLAttributes<HTMLDivElement> {
   open?: boolean;
@@ -20,7 +20,7 @@ export const Menu: React.FC<MenuProps> = ({
   return (
     <div
       className={cn(
-        "min-w-[calc(var(--unit)*50)] bg-surface rounded-sm shadow-2 py-1 border border-outline-variant/20 overflow-hidden",
+        "min-w-[calc(var(--unit)*50)] bg-surface rounded-sm shadow-2 py-1u border border-outline-variant/20 overflow-hidden",
         className
       )}
       role="menu"
@@ -37,6 +37,8 @@ export interface MenuItemProps
   disabled?: boolean;
   selected?: boolean;
   icon?: React.ReactNode;
+  href?: string;
+  asChild?: boolean;
 }
 
 export const MenuItem: React.FC<MenuItemProps> = ({
@@ -45,28 +47,61 @@ export const MenuItem: React.FC<MenuItemProps> = ({
   selected = false,
   icon,
   className,
+  href,
+  asChild,
   ...props
 }) => {
+  const itemClasses = cn(
+    "relative w-full text-left px-4u py-3u flex items-center gap-3u cursor-pointer select-none overflow-hidden",
+    "text-on-surface hover:bg-on-surface/8 focus-visible:outline-none focus-visible:bg-on-surface/12",
+    disabled && "opacity-38 cursor-not-allowed hover:bg-transparent",
+    selected && "bg-primary/8 text-primary",
+    className
+  );
+
+  const innerContent = (
+    <>
+      <Ripple disabled={disabled} />
+      {icon && <div className="shrink-0 relative z-10">{icon}</div>}
+      <Text variant="labelLarge" className="flex-1 relative z-10">
+        {asChild ? null : children}
+      </Text>
+    </>
+  );
+
+  // asChild pattern: render user's Link component
+  if (asChild && isValidElement(children)) {
+    return (
+      <Slot className={itemClasses} role="menuitem">
+        {cloneElement(children as React.ReactElement, {}, innerContent)}
+      </Slot>
+    );
+  }
+
+  if (href && !disabled) {
+    return (
+      <a
+        href={href}
+        className={itemClasses}
+        role="menuitem"
+        aria-disabled={disabled}
+        aria-selected={selected}
+      >
+        {innerContent}
+      </a>
+    );
+  }
+
   return (
     <button
-      className={cn(
-        "relative w-full text-left px-4 py-3 flex items-center gap-3 cursor-pointer select-none",
-        "text-on-surface hover:bg-on-surface/8 focus-visible:outline-none focus-visible:bg-on-surface/12",
-        disabled && "opacity-40 cursor-not-allowed hover:bg-transparent",
-        selected && "bg-primary/10 text-primary",
-        className
-      )}
+      className={itemClasses}
       role="menuitem"
       disabled={disabled}
       aria-disabled={disabled}
       aria-selected={selected}
       {...props}
     >
-      <StateLayer />
-      {icon && <div className="shrink-0">{icon}</div>}
-      <Text variant="labelLarge" className="flex-1">
-        {children}
-      </Text>
+      {innerContent}
     </button>
   );
 };
@@ -80,7 +115,7 @@ export const MenuDivider: React.FC<MenuDividerProps> = ({
 }) => {
   return (
     <div
-      className={cn("h-px bg-outline-variant/40 my-1", className)}
+      className={cn("h-px bg-outline-variant/40 my-1u", className)}
       role="separator"
       {...props}
     />
@@ -108,7 +143,7 @@ export const MenuCheckboxItem: React.FC<MenuCheckboxItemProps> = ({
       icon={
         <div
           className={cn(
-            "w-4 h-4 rounded-sm border-2 border-current",
+            "w-4u h-4u rounded-xs border-2 border-current",
             checked && "bg-primary border-primary text-on-primary"
           )}
         >
@@ -153,12 +188,12 @@ export const MenuRadioItem: React.FC<MenuRadioItemProps> = ({
       icon={
         <div
           className={cn(
-            "w-4 h-4 rounded-full border-2 border-current",
+            "w-4u h-4u rounded-full border-2 border-current",
             checked && "bg-primary border-primary"
           )}
         >
           {checked && (
-            <div className="w-2 h-2 rounded-full bg-on-primary m-auto" />
+            <div className="w-2u h-2u rounded-full bg-on-primary m-auto" />
           )}
         </div>
       }

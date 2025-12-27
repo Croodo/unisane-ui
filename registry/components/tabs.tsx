@@ -1,12 +1,13 @@
 "use client";
 
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useId } from "react";
 import { cn } from "@/lib/utils";
 import { Ripple } from "./ripple";
 
 interface TabsContextValue {
   value: string;
   onValueChange: (value: string) => void;
+  baseId: string;
 }
 
 const TabsContext = createContext<TabsContextValue | undefined>(undefined);
@@ -29,6 +30,7 @@ export const Tabs: React.FC<TabsProps> = ({
   const [internalValue, setInternalValue] = useState(defaultValue || "");
   const isControlled = value !== undefined;
   const currentValue = isControlled ? value : internalValue;
+  const baseId = useId();
 
   const handleValueChange = (newValue: string) => {
     if (!isControlled) {
@@ -39,7 +41,7 @@ export const Tabs: React.FC<TabsProps> = ({
 
   return (
     <TabsContext.Provider
-      value={{ value: currentValue, onValueChange: handleValueChange }}
+      value={{ value: currentValue, onValueChange: handleValueChange, baseId }}
     >
       <div className={cn("w-full flex flex-col", className)}>{children}</div>
     </TabsContext.Provider>
@@ -80,11 +82,16 @@ export const TabsTrigger: React.FC<TabsTriggerProps> = ({
   if (!context) throw new Error("TabsTrigger must be used within Tabs");
 
   const isSelected = context.value === value;
+  const triggerId = `${context.baseId}-trigger-${value}`;
+  const panelId = `${context.baseId}-panel-${value}`;
 
   return (
     <button
+      id={triggerId}
       role="tab"
       aria-selected={isSelected}
+      aria-controls={panelId}
+      tabIndex={isSelected ? 0 : -1}
       onClick={() => context.onValueChange(value)}
       className={cn(
         "min-w-fit relative flex items-center justify-center py-4u px-6u min-h-12u gap-2.5u cursor-pointer group transition-all focus-visible:outline-none select-none shrink-0 overflow-hidden",
@@ -130,11 +137,17 @@ export const TabsContent: React.FC<
   const context = useContext(TabsContext);
   if (!context) throw new Error("TabsContent must be used within Tabs");
 
+  const triggerId = `${context.baseId}-trigger-${value}`;
+  const panelId = `${context.baseId}-panel-${value}`;
+
   if (context.value !== value) return null;
 
   return (
     <div
+      id={panelId}
       role="tabpanel"
+      aria-labelledby={triggerId}
+      tabIndex={0}
       className={cn(
         "mt-4u focus-visible:outline-none animate-in fade-in slide-in-from-bottom-1 duration-medium",
         className

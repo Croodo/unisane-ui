@@ -1,3 +1,5 @@
+"use client";
+
 import { ComponentDoc } from "../types";
 import { Button, Card } from "@unisane/ui";
 
@@ -43,7 +45,7 @@ const ButtonHeroVisual = () => (
 export const buttonDoc: ComponentDoc = {
   // ─── BASIC INFO ─────────────────────────────────────────────────────────────
   slug: "button",
-  name: "All buttons",
+  name: "Button",
   description:
     "Buttons help people take action, such as sending an email, sharing a document, or liking a comment.",
   category: "actions",

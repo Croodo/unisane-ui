@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   SidebarProvider,
@@ -12,13 +13,16 @@ import {
   SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuItem,
+  SidebarCollapsibleGroup,
   SidebarBackdrop,
   SidebarInset,
   TopAppBar,
   IconButton,
+  useColorScheme,
 } from "@unisane/ui";
 import { NAV_DATA, getActiveCategoryId } from "@/lib/docs/navigation";
 import { AppHeader } from "./app-header";
+import { ThemeSwitcher } from "./theme-switcher";
 
 interface DocsShellProps {
   children: React.ReactNode;
@@ -33,6 +37,17 @@ function DocsShellContent({ children }: DocsShellProps) {
     toggleMobile,
     isMobile,
   } = useSidebar();
+
+  const { theme, setTheme } = useColorScheme();
+
+  // Toggle between light and dark mode
+  const toggleTheme = () => {
+    if (theme === "dark") {
+      setTheme("light");
+    } else {
+      setTheme("dark");
+    }
+  };
 
   // Get title for mobile top bar
   const title =
@@ -77,6 +92,7 @@ function DocsShellContent({ children }: DocsShellProps) {
 
       {/* Navigation Rail (Desktop only) */}
       <SidebarRail>
+        {/* Navigation Items */}
         <div className="flex flex-col items-center gap-3u w-full flex-1 pt-2u">
           {NAV_DATA.map((item) => (
             <SidebarRailItem
@@ -84,41 +100,81 @@ function DocsShellContent({ children }: DocsShellProps) {
               id={item.id}
               label={item.label}
               icon={item.icon || "circle"}
-              href={item.href}
-            />
+              childIds={item.items?.map((child) => child.id) || []}
+              asChild
+            >
+              <Link href={item.href || "#"} />
+            </SidebarRailItem>
           ))}
+        </div>
+
+        {/* Footer - Theme Controls */}
+        <div className="flex flex-col items-center gap-3u pb-4u">
+          {/* Color Theme Switcher */}
+          <ThemeSwitcher />
+          {/* Light/Dark Mode Toggle */}
+          <IconButton
+            variant="standard"
+            ariaLabel={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            onClick={toggleTheme}
+            className="w-11u! h-11u! border-2 border-outline-variant rounded-full"
+          >
+            <span className="material-symbols-outlined">
+              {theme === "dark" ? "light_mode" : "dark_mode"}
+            </span>
+          </IconButton>
         </div>
       </SidebarRail>
 
       {/* Navigation Drawer */}
       <SidebarDrawer>
         {mobileOpen ? (
-          // Mobile: Show all categories as accordion
+          // Mobile: Show all categories with collapsible accordion groups
           <SidebarContent className="pt-4u pb-20u">
             <SidebarGroupLabel>Unisane UI</SidebarGroupLabel>
             <SidebarMenu>
-              {NAV_DATA.map((category) => (
-                <React.Fragment key={category.id}>
+              {NAV_DATA.map((category) => {
+                const hasChildren = category.items && category.items.length > 0;
+                const isActiveCategory = activeId === category.id;
+
+                if (hasChildren) {
+                  return (
+                    <SidebarCollapsibleGroup
+                      key={category.id}
+                      id={category.id}
+                      label={category.label}
+                      icon={category.icon}
+                      childIds={category.items?.map((child) => child.id) || []}
+                      defaultOpen={isActiveCategory}
+                    >
+                      <SidebarMenu>
+                        {category.items?.map((item) => (
+                          <SidebarMenuItem
+                            key={item.id}
+                            id={item.id}
+                            label={item.label}
+                            asChild
+                          >
+                            <Link href={item.href || "#"} />
+                          </SidebarMenuItem>
+                        ))}
+                      </SidebarMenu>
+                    </SidebarCollapsibleGroup>
+                  );
+                }
+
+                return (
                   <SidebarMenuItem
+                    key={category.id}
                     id={category.id}
                     icon={category.icon}
                     label={category.label}
-                    href={category.href}
-                  />
-                  {category.items && category.items.length > 0 && (
-                    <div className="pl-6u">
-                      {category.items.map((item) => (
-                        <SidebarMenuItem
-                          key={item.id}
-                          id={item.id}
-                          label={item.label}
-                          href={item.href}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </React.Fragment>
-              ))}
+                    asChild
+                  >
+                    <Link href={category.href || "#"} />
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarContent>
         ) : effectiveItem && effectiveItem.items && effectiveItem.items.length > 0 ? (
@@ -132,8 +188,10 @@ function DocsShellContent({ children }: DocsShellProps) {
                   id={item.id}
                   icon={item.icon}
                   label={item.label}
-                  href={item.href}
-                />
+                  asChild
+                >
+                  <Link href={item.href || "#"} />
+                </SidebarMenuItem>
               ))}
             </SidebarMenu>
           </SidebarContent>

@@ -9,14 +9,14 @@ const avatarVariants = cva(
   {
     variants: {
       size: {
-        sm: "w-8 h-8 text-label-small",
-        md: "w-10 h-10 text-body-small",
-        lg: "w-12 h-12 text-body-medium",
-        xl: "w-14 h-14 text-body-large",
+        sm: "w-8u h-8u text-label-small",
+        md: "w-10u h-10u text-body-small",
+        lg: "w-12u h-12u text-body-medium",
+        xl: "w-14u h-14u text-body-large",
       },
       variant: {
         circular: "rounded-full",
-        rounded: "rounded-lg",
+        rounded: "rounded-sm",
         square: "rounded-none",
       },
     },
@@ -42,10 +42,15 @@ export const Avatar: React.FC<AvatarProps> = ({
   variant,
   className,
 }) => {
+  const fallbackChar = fallback?.charAt(0).toUpperCase() || "?";
+  const fallbackLabel = fallback || alt || "Avatar";
+
   return (
     <Surface
       tone="surfaceVariant"
       className={cn(avatarVariants({ size, variant, className }))}
+      role="img"
+      aria-label={src ? alt : fallbackLabel}
     >
       {src ? (
         <img
@@ -54,15 +59,14 @@ export const Avatar: React.FC<AvatarProps> = ({
           className="w-full h-full object-cover"
         />
       ) : (
-        <Text variant="labelLarge" className="text-on-surface-variant">
-          {fallback?.charAt(0).toUpperCase() || "?"}
+        <Text variant="labelLarge" className="text-on-surface-variant" aria-hidden="true">
+          {fallbackChar}
         </Text>
       )}
     </Surface>
   );
 };
 
-// Avatar Group
 export const AvatarGroup: React.FC<{
   children: React.ReactNode;
   max?: number;
@@ -73,14 +77,16 @@ export const AvatarGroup: React.FC<{
   const remainingCount = childrenArray.length - max;
 
   return (
-    <div className={cn("flex -space-x-2", className)}>
+    <div className={cn("flex -space-x-2u", className)} role="group" aria-label="Avatar group">
       {visibleChildren}
       {remainingCount > 0 && (
         <Surface
           tone="surfaceVariant"
-          className="w-10 h-10 rounded-full flex items-center justify-center border-2 border-surface"
+          className="w-10u h-10u rounded-full flex items-center justify-center border-2 border-surface"
+          role="img"
+          aria-label={`${remainingCount} more`}
         >
-          <Text variant="labelSmall" className="text-on-surface-variant">
+          <Text variant="labelSmall" className="text-on-surface-variant" aria-hidden="true">
             +{remainingCount}
           </Text>
         </Surface>

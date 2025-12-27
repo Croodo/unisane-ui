@@ -8,7 +8,7 @@ import { IconButton } from "./icon-button";
 import { Icon } from "@ui/primitives/icon";
 
 const bannerVariants = cva(
-  "relative w-full flex items-start gap-4u p-4u border-b border-outline-variant/30 transition-all",
+  "relative w-full flex items-start gap-4u p-4u border-b border-outline-variant/30 transition-all duration-medium ease-standard",
   {
     variants: {
       variant: {
@@ -49,11 +49,14 @@ export const Banner: React.FC<BannerProps> = ({
 }) => {
   if (!open) return null;
 
+  const role = variant === "error" ? "alert" : variant === "warning" ? "alert" : "status";
+
   return (
     <Surface
       tone="surface"
       className={cn(bannerVariants({ variant, className }))}
-      role="banner"
+      role={role}
+      aria-live={variant === "error" || variant === "warning" ? "assertive" : "polite"}
     >
       {icon && (
         <div className="w-6u h-6u flex items-center justify-center text-primary mt-0.5u shrink-0">

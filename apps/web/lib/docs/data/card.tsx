@@ -1,3 +1,5 @@
+"use client";
+
 import { ComponentDoc } from "../types";
 import { Card, Button } from "@unisane/ui";
 

@@ -1,7 +1,7 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { ThemeProvider } from "@unisane/ui";
+import { ThemeProvider, Toaster } from "@unisane/ui";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -37,6 +37,7 @@ export default function RootLayout({
           }}
         >
           {children}
+          <Toaster position="bottom-right" />
         </ThemeProvider>
       </body>
     </html>

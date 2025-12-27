@@ -17,6 +17,8 @@ export interface SliderProps
   withLabel?: boolean;
   withTicks?: boolean;
   showValue?: boolean;
+  "aria-label"?: string;
+  "aria-labelledby"?: string;
 }
 
 export const Slider: React.FC<SliderProps> = ({
@@ -87,6 +89,10 @@ export const Slider: React.FC<SliderProps> = ({
         onChange={handleChange}
         onFocus={() => setIsHovered(true)}
         onBlur={() => setIsHovered(false)}
+        aria-valuemin={min}
+        aria-valuemax={max}
+        aria-valuenow={val}
+        aria-orientation="horizontal"
         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-30 disabled:cursor-not-allowed"
         {...props}
       />

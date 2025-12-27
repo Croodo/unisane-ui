@@ -31,6 +31,7 @@ export type TopAppBarProps = VariantProps<typeof topAppBarVariants> & {
   actions?: React.ReactNode;
   className?: string;
   scrollBehavior?: "pinned" | "enterAlways" | "exitUntilCollapsed";
+  ariaLabel?: string;
 };
 
 export const TopAppBar: React.FC<TopAppBarProps> = ({
@@ -40,12 +41,16 @@ export const TopAppBar: React.FC<TopAppBarProps> = ({
   navigationIcon,
   actions,
   className,
+  ariaLabel,
 }) => {
   const isTall = variant === "medium" || variant === "large";
   const isCenter = variant === "center";
 
   return (
-    <header className={cn(topAppBarVariants({ variant, scrolled, className }))}>
+    <header
+      className={cn(topAppBarVariants({ variant, scrolled, className }))}
+      aria-label={ariaLabel || title}
+    >
       <div
         className={cn(
           "w-full flex items-center",

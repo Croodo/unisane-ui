@@ -1,10 +1,9 @@
 import React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
-import { Surface } from "@/primitives/surface";
 import { Text } from "@/primitives/text";
 import { IconButton } from "./icon-button";
-import { StateLayer } from "@/primitives/state-layer";
+import { Ripple } from "./ripple";
 
 const paginationVariants = cva("flex items-center gap-2", {
   variants: {
@@ -96,7 +95,7 @@ export const Pagination: React.FC<PaginationProps> = ({
             ) : (
               <button
                 className={cn(
-                  "relative w-10 h-10 rounded-full flex items-center justify-center transition-colors",
+                  "relative w-10u h-10u rounded-full flex items-center justify-center transition-colors overflow-hidden",
                   page === currentPage
                     ? "bg-primary text-on-primary"
                     : "text-on-surface-variant hover:bg-on-surface/10"
@@ -105,8 +104,8 @@ export const Pagination: React.FC<PaginationProps> = ({
                 aria-current={page === currentPage ? "page" : undefined}
                 aria-label={`Page ${page}`}
               >
-                <StateLayer />
-                <Text variant="bodyMedium">{page}</Text>
+                <Ripple />
+                <Text variant="bodyMedium" className="relative z-10">{page}</Text>
               </button>
             )}
           </React.Fragment>

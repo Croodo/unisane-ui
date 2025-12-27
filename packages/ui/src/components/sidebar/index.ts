@@ -16,6 +16,7 @@ export {
   SidebarTrigger,
   SidebarBackdrop,
   SidebarInset,
+  SidebarCollapsibleGroup,
 } from "./sidebar";
 
 export type {
@@ -33,4 +34,5 @@ export type {
   SidebarTriggerProps,
   SidebarBackdropProps,
   SidebarInsetProps,
+  SidebarCollapsibleGroupProps,
 } from "./sidebar";

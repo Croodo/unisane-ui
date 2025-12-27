@@ -1,13 +1,9 @@
 "use client";
 
-import React, { forwardRef } from "react";
-import { cn } from "@ui/lib/utils";
+import React, { forwardRef, cloneElement, isValidElement, useEffect, useRef, useId } from "react";
+import { cn, Slot } from "@ui/lib/utils";
 import { useSidebar } from "./sidebar-context";
 import { Ripple } from "../ripple";
-
-// ============================================================================
-// Sidebar (Root Container)
-// ============================================================================
 
 export interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
@@ -27,10 +23,6 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(
   }
 );
 Sidebar.displayName = "Sidebar";
-
-// ============================================================================
-// SidebarRail
-// ============================================================================
 
 export interface SidebarRailProps extends React.HTMLAttributes<HTMLElement> {
   children?: React.ReactNode;
@@ -64,10 +56,6 @@ export const SidebarRail = forwardRef<HTMLElement, SidebarRailProps>(
 );
 SidebarRail.displayName = "SidebarRail";
 
-// ============================================================================
-// SidebarRailItem
-// ============================================================================
-
 export interface SidebarRailItemProps {
   id: string;
   label: string;
@@ -76,14 +64,17 @@ export interface SidebarRailItemProps {
   badge?: string | number;
   disabled?: boolean;
   href?: string;
+  asChild?: boolean;
+  children?: React.ReactNode;
+  childIds?: string[];
 }
 
 const renderIcon = (icon: React.ReactNode | string, isActive: boolean = false) => {
   if (typeof icon === "string") {
     return (
       <span
-        className="material-symbols-outlined text-[24px]! transition-all duration-short"
-        style={isActive ? { fontVariationSettings: "'FILL' 1" } : undefined}
+        className="material-symbols-outlined text-[26px]! transition-all duration-short"
+        style={isActive ? { fontVariationSettings: "'FILL' 1, 'wght' 500" } : { fontVariationSettings: "'wght' 400" }}
       >
         {icon}
       </span>
@@ -100,9 +91,14 @@ export function SidebarRailItem({
   badge,
   disabled,
   href,
+  asChild,
+  children,
+  childIds = [],
 }: SidebarRailItemProps) {
-  const { activeId, handleClick, handleHover } = useSidebar();
-  const isActive = activeId === id;
+  const { activeId, handleClick, handleHover, hasActiveChild } = useSidebar();
+  const isDirectlyActive = activeId === id;
+  const hasChildActive = childIds.length > 0 && hasActiveChild(id, childIds);
+  const isActive = isDirectlyActive || hasChildActive;
 
   const content = (
     <>
@@ -141,11 +137,11 @@ export function SidebarRailItem({
 
       <span
         className={cn(
-          "text-label-small font-medium transition-colors duration-short",
+          "text-label-medium transition-colors duration-short",
           "text-center px-0.5u max-w-full",
           isActive
-            ? "text-primary font-semibold"
-            : "text-on-surface-variant group-hover:text-on-surface"
+            ? "text-primary font-bold"
+            : "text-on-surface-variant font-semibold group-hover:text-on-surface"
         )}
       >
         {label}
@@ -161,21 +157,35 @@ export function SidebarRailItem({
     disabled && "opacity-38 cursor-not-allowed pointer-events-none"
   );
 
+  const commonProps = {
+    onClick: (e: React.MouseEvent) => {
+      if (disabled) {
+        e.preventDefault();
+        return;
+      }
+      handleClick(id);
+    },
+    onMouseEnter: () => !disabled && handleHover(id),
+    className: commonClasses,
+    "aria-current": isActive ? ("page" as const) : undefined,
+    "aria-disabled": disabled || undefined,
+  };
+
+  if (asChild && children) {
+    return (
+      <Slot {...commonProps}>
+        {isValidElement(children)
+          ? cloneElement(children as React.ReactElement, {}, content)
+          : children}
+      </Slot>
+    );
+  }
+
   if (href) {
     return (
       <a
         href={disabled ? undefined : href}
-        onClick={(e) => {
-          if (disabled) {
-            e.preventDefault();
-            return;
-          }
-          handleClick(id);
-        }}
-        onMouseEnter={() => !disabled && handleHover(id)}
-        className={commonClasses}
-        aria-current={isActive ? "page" : undefined}
-        aria-disabled={disabled || undefined}
+        {...commonProps}
         tabIndex={disabled ? -1 : undefined}
       >
         {content}
@@ -185,20 +195,13 @@ export function SidebarRailItem({
 
   return (
     <button
-      onClick={() => !disabled && handleClick(id)}
-      onMouseEnter={() => !disabled && handleHover(id)}
+      {...commonProps}
       disabled={disabled}
-      className={commonClasses}
-      aria-current={isActive ? "page" : undefined}
     >
       {content}
     </button>
   );
 }
-
-// ============================================================================
-// SidebarDrawer
-// ============================================================================
 
 export interface SidebarDrawerProps extends React.HTMLAttributes<HTMLElement> {
   children?: React.ReactNode;
@@ -215,10 +218,12 @@ export const SidebarDrawer = forwardRef<HTMLElement, SidebarDrawerProps>(
       handleDrawerLeave,
       railWidth,
       drawerWidth,
+      mobileDrawerWidth,
     } = useSidebar();
 
     const isOpen = isMobile ? mobileOpen : isDrawerVisible;
     const isOverlay = isMobile || !expanded;
+    const effectiveWidth = isMobile ? mobileDrawerWidth : drawerWidth;
 
     return (
       <aside
@@ -228,18 +233,14 @@ export const SidebarDrawer = forwardRef<HTMLElement, SidebarDrawerProps>(
           "bg-surface-container text-on-surface",
           "transition-transform duration-emphasized ease-emphasized",
           "overflow-y-auto overflow-x-hidden",
-          // Mobile: full drawer from left, z-60
-          isMobile && "left-0 z-[60]",
-          // Desktop: positioned after rail
+          isMobile && "left-0 z-[60] max-w-[85vw]",
           !isMobile && "z-[30]",
-          // Shadow when overlay
           isOverlay && isOpen && "shadow-3",
-          // Transform for open/close
           isOpen ? "translate-x-0" : "-translate-x-full",
           className
         )}
         style={{
-          width: drawerWidth,
+          width: effectiveWidth,
           left: isMobile ? 0 : railWidth,
         }}
         onMouseEnter={!isMobile ? handleDrawerEnter : undefined}
@@ -253,10 +254,6 @@ export const SidebarDrawer = forwardRef<HTMLElement, SidebarDrawerProps>(
   }
 );
 SidebarDrawer.displayName = "SidebarDrawer";
-
-// ============================================================================
-// SidebarHeader
-// ============================================================================
 
 export interface SidebarHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
@@ -277,10 +274,6 @@ export const SidebarHeader = forwardRef<HTMLDivElement, SidebarHeaderProps>(
 );
 SidebarHeader.displayName = "SidebarHeader";
 
-// ============================================================================
-// SidebarFooter
-// ============================================================================
-
 export interface SidebarFooterProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
 }
@@ -299,10 +292,6 @@ export const SidebarFooter = forwardRef<HTMLDivElement, SidebarFooterProps>(
   }
 );
 SidebarFooter.displayName = "SidebarFooter";
-
-// ============================================================================
-// SidebarContent
-// ============================================================================
 
 export interface SidebarContentProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
@@ -323,10 +312,6 @@ export const SidebarContent = forwardRef<HTMLDivElement, SidebarContentProps>(
 );
 SidebarContent.displayName = "SidebarContent";
 
-// ============================================================================
-// SidebarGroup
-// ============================================================================
-
 export interface SidebarGroupProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
 }
@@ -345,10 +330,6 @@ export const SidebarGroup = forwardRef<HTMLDivElement, SidebarGroupProps>(
   }
 );
 SidebarGroup.displayName = "SidebarGroup";
-
-// ============================================================================
-// SidebarGroupLabel
-// ============================================================================
 
 export interface SidebarGroupLabelProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
@@ -373,10 +354,6 @@ export const SidebarGroupLabel = forwardRef<HTMLDivElement, SidebarGroupLabelPro
 );
 SidebarGroupLabel.displayName = "SidebarGroupLabel";
 
-// ============================================================================
-// SidebarMenu
-// ============================================================================
-
 export interface SidebarMenuProps extends React.HTMLAttributes<HTMLElement> {
   children: React.ReactNode;
 }
@@ -396,10 +373,6 @@ export const SidebarMenu = forwardRef<HTMLElement, SidebarMenuProps>(
 );
 SidebarMenu.displayName = "SidebarMenu";
 
-// ============================================================================
-// SidebarMenuItem
-// ============================================================================
-
 export interface SidebarMenuItemProps {
   id?: string;
   href?: string;
@@ -410,6 +383,7 @@ export interface SidebarMenuItemProps {
   onClick?: () => void;
   children?: React.ReactNode;
   className?: string;
+  asChild?: boolean;
 }
 
 export function SidebarMenuItem({
@@ -422,9 +396,11 @@ export function SidebarMenuItem({
   onClick,
   children,
   className,
+  asChild,
 }: SidebarMenuItemProps) {
   const sidebar = useSidebar();
-  const isActive = active ?? (id ? sidebar.activeId === id : false);
+  const isControlled = active !== undefined;
+  const isActive = isControlled ? active : (id ? sidebar.activeId === id : false);
 
   const handleItemClick = () => {
     if (disabled) return;
@@ -432,14 +408,14 @@ export function SidebarMenuItem({
       sidebar.setActiveId(id);
     }
     onClick?.();
-    // Close mobile menu on selection
     if (sidebar.isMobile) {
       sidebar.setMobileOpen(false);
     }
   };
 
-  const content = (
+  const innerContent = (
     <>
+      <Ripple disabled={disabled} />
       {icon && (
         <span className="shrink-0">
           {typeof icon === "string" ? (
@@ -455,7 +431,6 @@ export function SidebarMenuItem({
         </span>
       )}
       <span className="flex-1 truncate">{label}</span>
-      {children}
     </>
   );
 
@@ -464,42 +439,42 @@ export function SidebarMenuItem({
     "text-body-medium transition-colors duration-short cursor-pointer",
     "relative overflow-hidden select-none",
     isActive
-      ? "bg-secondary-container text-primary font-medium"
-      : "text-on-surface-variant hover:bg-on-surface/8 hover:text-on-surface",
+      ? "bg-secondary-container text-primary font-semibold"
+      : "text-on-surface-variant font-medium hover:bg-on-surface/8 hover:text-on-surface",
     disabled && "opacity-38 cursor-not-allowed pointer-events-none",
     className
   );
 
+  const commonProps = {
+    onClick: handleItemClick,
+    className: itemClasses,
+    "aria-current": isActive ? ("page" as const) : undefined,
+  };
+
+  if (asChild && children) {
+    return (
+      <Slot {...commonProps}>
+        {isValidElement(children)
+          ? cloneElement(children as React.ReactElement, {}, innerContent)
+          : children}
+      </Slot>
+    );
+  }
+
   if (href && !disabled) {
     return (
-      <a
-        href={href}
-        onClick={handleItemClick}
-        className={itemClasses}
-        aria-current={isActive ? "page" : undefined}
-      >
-        <Ripple disabled={disabled} />
-        {content}
+      <a href={href} {...commonProps}>
+        {innerContent}
       </a>
     );
   }
 
   return (
-    <button
-      onClick={handleItemClick}
-      disabled={disabled}
-      className={itemClasses}
-      aria-current={isActive ? "page" : undefined}
-    >
-      <Ripple disabled={disabled} />
-      {content}
+    <button {...commonProps} disabled={disabled}>
+      {innerContent}
     </button>
   );
 }
-
-// ============================================================================
-// SidebarTrigger
-// ============================================================================
 
 export interface SidebarTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children?: React.ReactNode;
@@ -542,41 +517,32 @@ export const SidebarTrigger = forwardRef<HTMLButtonElement, SidebarTriggerProps>
 );
 SidebarTrigger.displayName = "SidebarTrigger";
 
-// ============================================================================
-// SidebarBackdrop
-// ============================================================================
-
 export interface SidebarBackdropProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export function SidebarBackdrop({ className, ...props }: SidebarBackdropProps) {
-  const { isDrawerVisible, expanded, mobileOpen, isMobile, setMobileOpen, handleRailLeave } = useSidebar();
-
-  const shouldShow = mobileOpen || (isDrawerVisible && !expanded);
+  const { isDrawerVisible, expanded, mobileOpen, isMobile, setMobileOpen } = useSidebar();
   const isVisible = mobileOpen || (isDrawerVisible && !expanded);
 
-  if (!shouldShow) return null;
+  if (!isVisible) return null;
 
   return (
     <div
       className={cn(
         "fixed inset-0 bg-scrim/30 transition-opacity duration-medium ease-standard",
         isMobile ? "z-[55]" : "z-[20]",
-        isVisible ? "opacity-100" : "opacity-0 pointer-events-none",
+        "opacity-100",
         className
       )}
       onClick={() => {
-        if (mobileOpen) setMobileOpen(false);
-        handleRailLeave();
+        if (mobileOpen) {
+          setMobileOpen(false);
+        }
       }}
       aria-hidden="true"
       {...props}
     />
   );
 }
-
-// ============================================================================
-// SidebarInset (Main Content Area)
-// ============================================================================
 
 export interface SidebarInsetProps extends React.HTMLAttributes<HTMLElement> {
   children: React.ReactNode;
@@ -593,7 +559,6 @@ export const SidebarInset = forwardRef<HTMLElement, SidebarInsetProps>(
           "flex-1 min-h-screen flex flex-col",
           "bg-surface-container-lowest",
           "transition-[margin] duration-emphasized ease-emphasized",
-          // Mobile: add top margin for top bar
           isMobile && "mt-16u",
           className
         )}
@@ -609,3 +574,107 @@ export const SidebarInset = forwardRef<HTMLElement, SidebarInsetProps>(
   }
 );
 SidebarInset.displayName = "SidebarInset";
+
+export interface SidebarCollapsibleGroupProps extends React.HTMLAttributes<HTMLDivElement> {
+  id: string;
+  label: string;
+  icon?: React.ReactNode | string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+  childIds?: string[];
+}
+
+export function SidebarCollapsibleGroup({
+  id,
+  label,
+  icon,
+  defaultOpen = false,
+  children,
+  className,
+  childIds = [],
+  ...props
+}: SidebarCollapsibleGroupProps) {
+  const { isGroupExpanded, toggleGroup, setGroupExpanded, activeId } = useSidebar();
+  const contentId = useId();
+  const defaultAppliedRef = useRef(false);
+  const hasActiveChild = childIds.length > 0 && activeId !== null && childIds.includes(activeId);
+
+  useEffect(() => {
+    if (!defaultAppliedRef.current && defaultOpen) {
+      setGroupExpanded(id, true);
+      defaultAppliedRef.current = true;
+    }
+  }, [defaultOpen, id, setGroupExpanded]);
+
+  useEffect(() => {
+    if (hasActiveChild) {
+      setGroupExpanded(id, true);
+    }
+  }, [hasActiveChild, id, setGroupExpanded]);
+
+  const isOpen = isGroupExpanded(id, childIds);
+
+  const handleToggle = () => {
+    toggleGroup(id);
+  };
+
+  return (
+    <div className={cn("flex flex-col", className)} {...props}>
+      <button
+        onClick={handleToggle}
+        className={cn(
+          "flex items-center gap-3u px-3u py-2.5u rounded-full w-full",
+          "text-body-medium transition-colors duration-short",
+          "cursor-pointer select-none relative overflow-hidden",
+          hasActiveChild
+            ? "text-primary font-semibold"
+            : "text-on-surface-variant font-medium hover:bg-on-surface/8 hover:text-on-surface"
+        )}
+        aria-expanded={isOpen}
+        aria-controls={contentId}
+      >
+        <Ripple />
+        {icon && (
+          <span className="shrink-0">
+            {typeof icon === "string" ? (
+              <span
+                className="material-symbols-outlined text-[20px]!"
+                style={hasActiveChild ? { fontVariationSettings: "'FILL' 1" } : undefined}
+              >
+                {icon}
+              </span>
+            ) : (
+              icon
+            )}
+          </span>
+        )}
+        <span className="flex-1 text-left truncate">{label}</span>
+        <svg
+          className={cn(
+            "w-5u h-5u transition-transform duration-medium ease-emphasized shrink-0",
+            isOpen && "rotate-180"
+          )}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          aria-hidden="true"
+        >
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+      </button>
+
+      <div
+        id={contentId}
+        role="region"
+        className={cn(
+          "flex flex-col pl-4u transition-all duration-medium ease-emphasized overflow-hidden",
+          isOpen ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
+        )}
+        aria-hidden={!isOpen}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}

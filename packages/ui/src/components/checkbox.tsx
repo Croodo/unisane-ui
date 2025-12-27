@@ -91,12 +91,12 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
               "peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2"
             )}
           >
+            {/* Check icon - visible when checked and not indeterminate */}
             <svg
               className={cn(
-                "absolute inset-0 w-full h-full p-0.5 transition-transform duration-snappy",
-                "opacity-0 scale-50 peer-checked:opacity-100 peer-checked:scale-100",
+                "absolute inset-0 w-full h-full p-0.5 transition-all duration-snappy ease-emphasized",
                 error ? "text-on-error" : "text-on-primary",
-                "peer-indeterminate:hidden"
+                props.checked && !indeterminate ? "opacity-100 scale-100" : "opacity-0 scale-50"
               )}
               viewBox="0 0 24 24"
               fill="none"
@@ -109,12 +109,12 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
               <polyline points="20 6 9 17 4 12" />
             </svg>
 
+            {/* Indeterminate icon - visible only when indeterminate */}
             <svg
               className={cn(
-                "absolute inset-0 w-full h-full p-0.5 transition-transform duration-snappy",
-                "opacity-0 scale-50 rotate-90 peer-indeterminate:opacity-100 peer-indeterminate:scale-100 peer-indeterminate:rotate-0",
+                "absolute inset-0 w-full h-full p-0.5 transition-all duration-snappy ease-emphasized",
                 error ? "text-on-error" : "text-on-primary",
-                props.checked && "hidden"
+                indeterminate ? "opacity-100 scale-100 rotate-0" : "opacity-0 scale-50 rotate-90"
               )}
               viewBox="0 0 24 24"
               fill="none"

@@ -17,7 +17,8 @@ export type ComponentCategory =
   | "navigation"
   | "text-inputs"
   | "data-display"
-  | "layout";
+  | "layout"
+  | "foundations";
 
 export type ComponentStatus = "stable" | "beta" | "experimental" | "deprecated";
 
