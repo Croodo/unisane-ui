@@ -98,49 +98,48 @@ export function ThemeProvider({
   initialDensity,
   storageKey = "unisane-theme",
 }: ThemeProviderProps) {
-  // Config takes precedence over localStorage
-  const configDensity = config?.density || initialDensity;
-  const configTheme = config?.theme;
-  const configRadius = config?.radius;
+  // Config takes precedence - use config values as initial state
+  const configDensity = config?.density || initialDensity || "standard";
+  const configTheme = config?.theme || "system";
+  const configRadius = config?.radius || "standard";
 
-  const [density, setDensityState] = useState<Density>("standard");
-  const [spaceScale, setSpaceScale] = useState(DENSITY_PRESETS.standard.space);
-  const [typeScale, setTypeScale] = useState(DENSITY_PRESETS.standard.type);
-  const [radiusScale, setRadiusScaleState] = useState(DENSITY_PRESETS.standard.radius);
+  // Initialize state directly from config (not hardcoded defaults)
+  const [density, setDensityState] = useState<Density>(configDensity);
+  const [spaceScale, setSpaceScale] = useState(DENSITY_PRESETS[configDensity].space);
+  const [typeScale, setTypeScale] = useState(DENSITY_PRESETS[configDensity].type);
+  const [radiusScale, setRadiusScaleState] = useState(RADIUS_PRESETS[configRadius]);
 
-  const [theme, setThemeState] = useState<Theme>("system");
-  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("light");
+  const [theme, setThemeState] = useState<Theme>(configTheme);
+  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">(
+    configTheme === "dark" ? "dark" : configTheme === "light" ? "light" : "light"
+  );
 
-  const [radiusTheme, setRadiusThemeState] = useState<RadiusTheme>("standard");
+  const [radiusTheme, setRadiusThemeState] = useState<RadiusTheme>(configRadius);
 
-  // Initialize from config (priority) or localStorage (fallback)
+  // Load from localStorage only for values not provided in config
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // Start with defaults
-    let finalTheme: Theme = "system";
-    let finalDensity: Density = "standard";
-    let finalRadiusTheme: RadiusTheme = "standard";
+    // Start with config values (already set as initial state)
+    let finalTheme: Theme = configTheme;
+    let finalDensity: Density = configDensity;
+    let finalRadiusTheme: RadiusTheme = configRadius;
 
-    // Try to load from localStorage first (as fallback)
+    // Only load from localStorage for values NOT explicitly set in config
     const stored = localStorage.getItem(storageKey);
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
-        if (parsed.theme) finalTheme = parsed.theme;
-        if (parsed.density && parsed.density in DENSITY_PRESETS) {
+        // Only use localStorage if config didn't provide these values
+        if (!config?.theme && parsed.theme) finalTheme = parsed.theme;
+        if (!config?.density && !initialDensity && parsed.density && parsed.density in DENSITY_PRESETS) {
           finalDensity = parsed.density as Density;
         }
-        if (parsed.radiusTheme) finalRadiusTheme = parsed.radiusTheme;
+        if (!config?.radius && parsed.radiusTheme) finalRadiusTheme = parsed.radiusTheme;
       } catch (e) {
         console.warn("Failed to parse theme from localStorage", e);
       }
     }
-
-    // Config overrides localStorage (explicit config takes precedence)
-    if (configTheme) finalTheme = configTheme;
-    if (configDensity) finalDensity = configDensity;
-    if (configRadius) finalRadiusTheme = configRadius;
 
     // Apply final values
     setThemeState(finalTheme);
@@ -149,7 +148,7 @@ export function ThemeProvider({
     setTypeScale(DENSITY_PRESETS[finalDensity].type);
     setRadiusThemeState(finalRadiusTheme);
     setRadiusScaleState(RADIUS_PRESETS[finalRadiusTheme]);
-  }, [storageKey, configTheme, configDensity, configRadius]);
+  }, [storageKey, config?.theme, config?.density, config?.radius, initialDensity, configTheme, configDensity, configRadius]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;

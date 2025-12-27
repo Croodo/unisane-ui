@@ -54,7 +54,7 @@ export const NavigationDrawer: React.FC<DrawerProps> = ({
 };
 
 const drawerItemVariants = cva(
-  "flex items-center gap-4u w-full min-h-14u py-3u px-4u rounded-xl text-label-large font-medium transition-all duration-short ease-emphasized cursor-pointer select-none group focus-visible:outline-2 focus-visible:outline-primary relative overflow-hidden shrink-0",
+  "flex items-center gap-3u w-full min-h-14u py-4u px-5u rounded-xl text-label-large font-medium transition-all duration-short ease-emphasized cursor-pointer select-none group focus-visible:outline-2 focus-visible:outline-primary relative overflow-hidden shrink-0 mx-4u",
   {
     variants: {
       active: {

@@ -341,7 +341,7 @@ export const SidebarGroupLabel = forwardRef<HTMLDivElement, SidebarGroupLabelPro
       <div
         ref={ref}
         className={cn(
-          "px-3u py-2u text-label-small font-semibold text-on-surface-variant",
+          "px-4u py-2u text-label-small font-semibold text-on-surface-variant",
           "uppercase tracking-wider",
           className
         )}
@@ -435,7 +435,7 @@ export function SidebarMenuItem({
   );
 
   const itemClasses = cn(
-    "flex items-center gap-3u px-3u py-2u rounded-xl",
+    "flex items-center gap-3u px-4u py-3u rounded-xl",
     "text-body-medium transition-colors duration-short cursor-pointer",
     "relative overflow-hidden select-none",
     isActive
@@ -623,7 +623,7 @@ export function SidebarCollapsibleGroup({
       <button
         onClick={handleToggle}
         className={cn(
-          "flex items-center gap-3u px-3u py-2.5u rounded-xl w-full",
+          "flex items-center gap-3u px-4u py-3u rounded-xl w-full",
           "text-body-medium transition-colors duration-short",
           "cursor-pointer select-none relative overflow-hidden",
           hasActiveChild

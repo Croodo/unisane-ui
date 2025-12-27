@@ -65,7 +65,7 @@ NavigationDrawer.displayName = "NavigationDrawer";
 
 // NavigationDrawerItem
 const navigationDrawerItemVariants = cva(
-  "flex items-center gap-3u w-full min-h-14u py-3u px-4u rounded-xl text-label-large cursor-pointer select-none group relative overflow-hidden shrink-0 outline-none transition-all duration-short mx-auto focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset",
+  "flex items-center gap-3u w-full min-h-14u py-4u px-5u rounded-xl text-label-large cursor-pointer select-none group relative overflow-hidden shrink-0 outline-none transition-all duration-short mx-auto focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset",
   {
     variants: {
       active: {
@@ -156,7 +156,7 @@ export const NavigationDrawerItem = forwardRef<
   // asChild pattern: render user's Link component with merged props
   if (asChild && isValidElement(children)) {
     return (
-      <div className="px-3u w-full">
+      <div className="px-4u w-full">
         <Slot className={itemClasses} {...props}>
           {cloneElement(children as React.ReactElement, {}, innerContent)}
         </Slot>
@@ -166,7 +166,7 @@ export const NavigationDrawerItem = forwardRef<
 
   if (href && !disabled) {
     return (
-      <div className="px-3u w-full">
+      <div className="px-4u w-full">
         <a
           href={href}
           className={itemClasses}
@@ -179,7 +179,7 @@ export const NavigationDrawerItem = forwardRef<
   }
 
   return (
-    <div className="px-3u w-full">
+    <div className="px-4u w-full">
       <button
         ref={ref}
         disabled={disabled ?? false}
