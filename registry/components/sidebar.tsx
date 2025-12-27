@@ -105,7 +105,7 @@ export function SidebarRailItem({
       <div className="relative flex items-center justify-center">
         <div
           className={cn(
-            "w-14u h-8u rounded-full flex items-center justify-center",
+            "w-14u h-8u rounded-xl flex items-center justify-center",
             "transition-all duration-medium ease-emphasized overflow-hidden relative",
             isActive
               ? "bg-secondary-container text-primary"
@@ -435,7 +435,7 @@ export function SidebarMenuItem({
   );
 
   const itemClasses = cn(
-    "flex items-center gap-3u px-3u py-2u rounded-full",
+    "flex items-center gap-3u px-3u py-2u rounded-xl",
     "text-body-medium transition-colors duration-short cursor-pointer",
     "relative overflow-hidden select-none",
     isActive
@@ -623,7 +623,7 @@ export function SidebarCollapsibleGroup({
       <button
         onClick={handleToggle}
         className={cn(
-          "flex items-center gap-3u px-3u py-2.5u rounded-full w-full",
+          "flex items-center gap-3u px-3u py-2.5u rounded-xl w-full",
           "text-body-medium transition-colors duration-short",
           "cursor-pointer select-none relative overflow-hidden",
           hasActiveChild

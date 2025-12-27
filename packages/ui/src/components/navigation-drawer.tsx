@@ -65,7 +65,7 @@ NavigationDrawer.displayName = "NavigationDrawer";
 
 // NavigationDrawerItem
 const navigationDrawerItemVariants = cva(
-  "flex items-center gap-3u w-full min-h-14u py-3u px-4u rounded-full text-label-large cursor-pointer select-none group relative overflow-hidden shrink-0 outline-none transition-all duration-short mx-auto focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset",
+  "flex items-center gap-3u w-full min-h-14u py-3u px-4u rounded-xl text-label-large cursor-pointer select-none group relative overflow-hidden shrink-0 outline-none transition-all duration-short mx-auto focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset",
   {
     variants: {
       active: {

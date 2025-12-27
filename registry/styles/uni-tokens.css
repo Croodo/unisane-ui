@@ -527,12 +527,27 @@
 /* ============================================================
    RADIUS THEME - CSS-only via data attribute
    Usage: <html data-radius="soft">
+
+   Available presets:
+     none     - Completely squared (0px everywhere)
+     minimal  - Very subtle rounding (1-3px)
+     sharp    - Subtle rounding (2-6px)
+     standard - Default M3 (4-12px) [default]
+     soft     - Extra rounded (5-15px)
    ============================================================ */
 
+[data-radius="none"] {
+  --scale-radius: 0;
+}
+
+[data-radius="minimal"] {
+  --scale-radius: 0.25;
+}
+
 [data-radius="sharp"] {
-  --scale-radius: 0.75;
+  --scale-radius: 0.5;
 }
 
 [data-radius="soft"] {
-  --scale-radius: 1.15;
+  --scale-radius: 1.25;
 }

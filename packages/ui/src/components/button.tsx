@@ -6,7 +6,7 @@ import { Ripple } from "./ripple";
 import { cn, Slot } from "@ui/lib/utils";
 
 const buttonVariants = cva(
-  "relative inline-flex items-center justify-center gap-2u rounded-full font-medium transition-all duration-short ease-standard overflow-hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-38 disabled:cursor-not-allowed group whitespace-nowrap leading-none select-none",
+  "relative inline-flex items-center justify-center gap-2u rounded-xl font-medium transition-all duration-short ease-standard overflow-hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-38 disabled:cursor-not-allowed group whitespace-nowrap leading-none select-none",
   {
     variants: {
       variant: {
