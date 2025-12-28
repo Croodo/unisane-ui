@@ -21,13 +21,13 @@ export function ExamplePreview({ example, className }: ExamplePreviewProps) {
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-6u py-4u bg-surface-container-low border-b border-outline-variant/15">
+      <div className="flex items-center justify-between px-6 py-4 bg-surface-container-low border-b border-outline-variant/15">
         <div>
           <h4 className="text-title-small font-semibold text-on-surface">
             {example.title}
           </h4>
           {example.description && (
-            <p className="text-body-small text-on-surface-variant mt-1u">
+            <p className="text-body-small text-on-surface-variant mt-1">
               {example.description}
             </p>
           )}
@@ -35,11 +35,11 @@ export function ExamplePreview({ example, className }: ExamplePreviewProps) {
 
         {/* Tab Buttons */}
         {example.code && (
-          <div className="flex gap-1u bg-surface-container rounded-md p-1u">
+          <div className="flex gap-1 bg-surface-container rounded-md p-1">
             <button
               onClick={() => setActiveTab("preview")}
               className={cn(
-                "px-4u py-2u rounded-sm text-label-medium font-medium transition-colors",
+                "px-4 py-2 rounded-sm text-label-medium font-medium transition-colors",
                 activeTab === "preview"
                   ? "bg-primary text-on-primary"
                   : "text-on-surface-variant hover:bg-on-surface/8"
@@ -50,7 +50,7 @@ export function ExamplePreview({ example, className }: ExamplePreviewProps) {
             <button
               onClick={() => setActiveTab("code")}
               className={cn(
-                "px-4u py-2u rounded-sm text-label-medium font-medium transition-colors",
+                "px-4 py-2 rounded-sm text-label-medium font-medium transition-colors",
                 activeTab === "code"
                   ? "bg-primary text-on-primary"
                   : "text-on-surface-variant hover:bg-on-surface/8"
@@ -65,11 +65,11 @@ export function ExamplePreview({ example, className }: ExamplePreviewProps) {
       {/* Content */}
       <div className="bg-surface">
         {activeTab === "preview" ? (
-          <div className="p-8u flex items-center justify-center min-h-[120px]">
+          <div className="p-8 flex items-center justify-center min-h-[120px]">
             {example.component}
           </div>
         ) : (
-          <div className="p-6u bg-surface-container-high">
+          <div className="p-6 bg-surface-container-high">
             <pre className="overflow-x-auto text-[13px] font-mono text-on-surface-variant leading-relaxed">
               <code>{example.code}</code>
             </pre>
@@ -89,7 +89,7 @@ export function ExampleGrid({ examples, className }: ExampleGridProps) {
   if (!examples.length) return null;
 
   return (
-    <div className={cn("space-y-8u", className)}>
+    <div className={cn("space-y-8", className)}>
       {examples.map((example) => (
         <ExamplePreview key={example.id} example={example} />
       ))}

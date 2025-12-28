@@ -1,53 +1,50 @@
 "use client";
 
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { NavigationDrawer, NavigationDrawerItem, NavigationDrawerHeadline, NavigationDrawerDivider } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const NavigationDrawerHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-secondary-container to-primary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-40px] left-[-40px] w-56 h-56 bg-secondary/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-50px] right-[-30px] w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
-
+  <HeroBackground tone="surface">
     {/* Mock App with Drawer */}
-    <div className="relative bg-surface w-[320px] h-[220px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 z-10 flex">
+    <div className="relative bg-surface w-[320px] h-[220px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 flex">
       {/* Navigation Drawer */}
-      <div className="w-[140px] bg-surface-container border-r border-outline-variant/30 p-3u">
-        <div className="text-label-small text-on-surface-variant mb-3u px-2u">Navigation</div>
-        <div className="space-y-1u">
-          <div className="flex items-center gap-2u px-3u py-2u rounded-full bg-secondary-container">
+      <div className="w-[140px] bg-surface-container border-r border-outline-variant/30 p-3">
+        <div className="text-label-small text-on-surface-variant mb-3 px-2">Navigation</div>
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-full bg-secondary-container">
             <span className="material-symbols-outlined text-primary text-[20px]">home</span>
             <span className="text-label-medium text-primary">Home</span>
           </div>
-          <div className="flex items-center gap-2u px-3u py-2u rounded-full text-on-surface-variant">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-full text-on-surface-variant">
             <span className="material-symbols-outlined text-[20px]">inbox</span>
             <span className="text-label-medium">Inbox</span>
           </div>
-          <div className="flex items-center gap-2u px-3u py-2u rounded-full text-on-surface-variant">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-full text-on-surface-variant">
             <span className="material-symbols-outlined text-[20px]">send</span>
             <span className="text-label-medium">Sent</span>
           </div>
         </div>
       </div>
       {/* Main Content */}
-      <div className="flex-1 p-4u">
-        <div className="space-y-3u">
-          <div className="h-4u bg-surface-container-high rounded-sm w-full" />
-          <div className="h-4u bg-surface-container-high rounded-sm w-3/4" />
-          <div className="h-4u bg-surface-container-high rounded-sm w-1/2" />
+      <div className="flex-1 p-4">
+        <div className="space-y-3">
+          <div className="h-4 bg-surface-container-high rounded-sm w-full" />
+          <div className="h-4 bg-surface-container-high rounded-sm w-3/4" />
+          <div className="h-4 bg-surface-container-high rounded-sm w-1/2" />
         </div>
       </div>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 // ─── EXAMPLES ────────────────────────────────────────────────────────────────
 const NavigationDrawerBasicExample = () => (
   <div className="relative w-full max-w-xs h-[280px] bg-surface-container-low rounded-lg overflow-hidden">
     <NavigationDrawer open modal={false} className="relative w-full h-full">
-      <div className="p-4u">
-        <div className="text-title-medium text-on-surface mb-4u">My App</div>
+      <div className="p-4">
+        <div className="text-title-medium text-on-surface mb-4">My App</div>
       </div>
       <NavigationDrawerHeadline>Main</NavigationDrawerHeadline>
       <NavigationDrawerItem icon="home" active>
@@ -103,12 +100,12 @@ export const navigationDrawerDoc: ComponentDoc = {
         emphasis: "Standard",
         component: (
           <div className="w-32 h-16 bg-surface-container rounded-sm flex">
-            <div className="w-10 border-r border-outline-variant/30 p-1u space-y-1u">
-              <div className="h-2u rounded-sm bg-secondary-container" />
-              <div className="h-2u rounded-sm bg-surface-container-high" />
+            <div className="w-10 border-r border-outline-variant/30 p-1 space-y-1">
+              <div className="h-2 rounded-sm bg-secondary-container" />
+              <div className="h-2 rounded-sm bg-surface-container-high" />
             </div>
-            <div className="flex-1 p-1u">
-              <div className="h-2u bg-surface-container-high rounded-sm" />
+            <div className="flex-1 p-1">
+              <div className="h-2 bg-surface-container-high rounded-sm" />
             </div>
           </div>
         ),
@@ -120,9 +117,9 @@ export const navigationDrawerDoc: ComponentDoc = {
         component: (
           <div className="w-32 h-16 bg-surface-container rounded-sm relative overflow-hidden">
             <div className="absolute inset-0 bg-scrim/30" />
-            <div className="absolute left-0 top-0 bottom-0 w-12 bg-surface rounded-r-xl shadow-2 p-1u space-y-1u z-10">
-              <div className="h-2u rounded-sm bg-secondary-container" />
-              <div className="h-2u rounded-sm bg-surface-container-high" />
+            <div className="absolute left-0 top-0 bottom-0 w-12 bg-surface rounded-r-xl shadow-2 p-1 space-y-1 z-10">
+              <div className="h-2 rounded-sm bg-secondary-container" />
+              <div className="h-2 rounded-sm bg-surface-container-high" />
             </div>
           </div>
         ),

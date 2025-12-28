@@ -1,22 +1,19 @@
 "use client";
 
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { Tooltip, IconButton, Button } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const TooltipHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-secondary-container to-primary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-40px] left-[-40px] w-56 h-56 bg-secondary/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-50px] right-[-30px] w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
-
+  <HeroBackground tone="tertiary">
     {/* Mock Toolbar Card */}
-    <div className="relative bg-surface w-[300px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 z-10">
-      <div className="px-5u py-4u border-b border-outline-variant/20">
+    <div className="relative bg-surface w-[300px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
+      <div className="px-5 py-4 border-b border-outline-variant/20">
         <span className="text-title-medium text-on-surface">Toolbar</span>
       </div>
-      <div className="p-5u">
-        <div className="flex items-center justify-center gap-2u">
+      <div className="p-5">
+        <div className="flex items-center justify-center gap-2">
           <Tooltip label="Undo (Ctrl+Z)">
             <IconButton variant="standard" ariaLabel="Undo" icon={<span className="material-symbols-outlined">undo</span>} />
           </Tooltip>
@@ -35,7 +32,7 @@ const TooltipHeroVisual = () => (
         </div>
       </div>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 export const tooltipDoc: ComponentDoc = {
@@ -143,7 +140,7 @@ export const tooltipDoc: ComponentDoc = {
       {
         title: "Toolbar icons",
         visual: (
-          <div className="flex items-center gap-1u">
+          <div className="flex items-center gap-1">
             <Tooltip label="Bold (Ctrl+B)">
               <IconButton variant="standard" ariaLabel="Bold" icon={<span className="material-symbols-outlined">format_bold</span>} />
             </Tooltip>
@@ -160,7 +157,7 @@ export const tooltipDoc: ComponentDoc = {
       {
         title: "Action buttons",
         visual: (
-          <div className="flex items-center gap-2u">
+          <div className="flex items-center gap-2">
             <Tooltip label="Edit item">
               <IconButton variant="tonal" ariaLabel="Edit" icon={<span className="material-symbols-outlined">edit</span>} />
             </Tooltip>

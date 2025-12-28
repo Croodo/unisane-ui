@@ -43,7 +43,7 @@ export function CliCommand({ command, className }: CliCommandProps) {
             key={pm.id}
             onClick={() => setActiveManager(pm.id)}
             className={cn(
-              "px-4u py-2.5u text-label-medium font-medium transition-colors relative",
+              "px-4 py-2_5 text-label-medium font-medium transition-colors relative",
               activeManager === pm.id
                 ? "text-primary"
                 : "text-on-surface-variant hover:text-on-surface"
@@ -51,14 +51,14 @@ export function CliCommand({ command, className }: CliCommandProps) {
           >
             {pm.label}
             {activeManager === pm.id && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5u bg-primary rounded-t-full" />
+              <div className="absolute bottom-0 left-0 right-0 h-0_5 bg-primary rounded-t-full" />
             )}
           </button>
         ))}
       </div>
 
       {/* Command Display */}
-      <div className="flex items-center justify-between gap-4u p-4u bg-surface-container-low font-mono">
+      <div className="flex items-center justify-between gap-4 p-4 bg-surface-container-low font-mono">
         <code className="text-body-medium text-on-surface overflow-x-auto">
           {getFullCommand(activeManager)}
         </code>

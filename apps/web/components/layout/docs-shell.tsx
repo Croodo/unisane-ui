@@ -23,6 +23,7 @@ import {
 import { NAV_DATA, getActiveCategoryId } from "@/lib/docs/navigation";
 import { AppHeader } from "./app-header";
 import { ThemeSwitcher } from "./theme-switcher";
+import { UnisaneLogo } from "@/components/ui/unisane-logo";
 
 interface DocsShellProps {
   children: React.ReactNode;
@@ -36,7 +37,13 @@ function DocsShellContent({ children }: DocsShellProps) {
     mobileOpen,
     toggleMobile,
     isMobile,
+    isTablet,
+    expanded,
+    toggleExpanded,
   } = useSidebar();
+
+  // Mobile and tablet both use top app bar with hamburger menu
+  const usesTopAppBar = isMobile || isTablet;
 
   const { theme, setTheme } = useColorScheme();
 
@@ -56,12 +63,20 @@ function DocsShellContent({ children }: DocsShellProps) {
       : NAV_DATA.find((c) => c.id === activeId)?.label || "Unisane UI";
 
   return (
-    <div className="flex w-full min-h-screen bg-surface-container isolate">
-      {/* Mobile Top Bar */}
-      {isMobile && (
+    <div className="flex w-full min-h-screen bg-surface-container isolate overflow-x-clip">
+      {/* Top App Bar (Mobile + Tablet) */}
+      {usesTopAppBar && (
         <TopAppBar
           className="fixed top-0 left-0 right-0 z-50"
-          title={title}
+          title={
+            <div className="flex items-center gap-2 text-on-surface">
+              <UnisaneLogo size={24} />
+              <span>
+                <span className="font-bold">Unisane</span>
+                <span className="font-normal text-on-surface-variant ml-1">UI</span>
+              </span>
+            </div>
+          }
           variant="small"
           navigationIcon={
             <IconButton variant="standard" ariaLabel="Open menu" onClick={toggleMobile}>
@@ -92,8 +107,22 @@ function DocsShellContent({ children }: DocsShellProps) {
 
       {/* Navigation Rail (Desktop only) */}
       <SidebarRail>
+        {/* Menu Toggle - for touch devices and manual control */}
+        <div className="flex flex-col items-center pt-3 pb-2 w-full">
+          <IconButton
+            variant="standard"
+            ariaLabel={expanded ? "Close menu" : "Open menu"}
+            onClick={toggleExpanded}
+            className="w-14 h-10"
+          >
+            <span className="material-symbols-outlined">
+              {expanded ? "menu_open" : "menu"}
+            </span>
+          </IconButton>
+        </div>
+
         {/* Navigation Items */}
-        <div className="flex flex-col items-center gap-3u w-full flex-1 pt-2u">
+        <div className="flex flex-col items-center gap-3 w-full flex-1 pt-2">
           {NAV_DATA.map((item) => (
             <SidebarRailItem
               key={item.id}
@@ -109,7 +138,7 @@ function DocsShellContent({ children }: DocsShellProps) {
         </div>
 
         {/* Footer - Theme Controls */}
-        <div className="flex flex-col items-center gap-3u pb-4u">
+        <div className="flex flex-col items-center gap-3 pb-4">
           {/* Color Theme Switcher */}
           <ThemeSwitcher />
           {/* Light/Dark Mode Toggle */}
@@ -117,7 +146,7 @@ function DocsShellContent({ children }: DocsShellProps) {
             variant="standard"
             ariaLabel={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
             onClick={toggleTheme}
-            className="w-11u! h-11u! border-2 border-outline-variant rounded-full"
+            className="w-11! h-11! border-2 border-outline-variant rounded-full"
           >
             <span className="material-symbols-outlined">
               {theme === "dark" ? "light_mode" : "dark_mode"}
@@ -129,8 +158,9 @@ function DocsShellContent({ children }: DocsShellProps) {
       {/* Navigation Drawer */}
       <SidebarDrawer>
         {mobileOpen ? (
-          // Mobile: Show all categories with collapsible accordion groups
-          <SidebarContent className="pt-4u pb-20u">
+          // Mobile/Tablet: Show all categories with collapsible accordion groups
+          // pt-20 clears the TopAppBar (64px), pb-24 provides safe area at bottom
+          <SidebarContent className="pt-20 pb-24">
             <SidebarGroupLabel>Unisane UI</SidebarGroupLabel>
             <SidebarMenu>
               {NAV_DATA.map((category) => {
@@ -178,8 +208,8 @@ function DocsShellContent({ children }: DocsShellProps) {
             </SidebarMenu>
           </SidebarContent>
         ) : effectiveItem && effectiveItem.items && effectiveItem.items.length > 0 ? (
-          // Desktop: Show active category's sub-items
-          <SidebarContent className="pt-4u pb-20u animate-content-enter" key={effectiveItem.id}>
+          // Desktop (hover or expanded): Show active category's sub-items only
+          <SidebarContent className="pt-4 pb-20 animate-content-enter" key={effectiveItem.id}>
             <SidebarGroupLabel>{effectiveItem.label}</SidebarGroupLabel>
             <SidebarMenu>
               {effectiveItem.items.map((item) => (
@@ -196,8 +226,8 @@ function DocsShellContent({ children }: DocsShellProps) {
             </SidebarMenu>
           </SidebarContent>
         ) : (
-          <SidebarContent className="pt-4u animate-content-enter">
-            <p className="text-body-medium text-on-surface-variant px-4u">
+          <SidebarContent className="pt-4 animate-content-enter">
+            <p className="text-body-medium text-on-surface-variant px-4">
               Select a category to view items.
             </p>
           </SidebarContent>
@@ -209,8 +239,8 @@ function DocsShellContent({ children }: DocsShellProps) {
         {/* Desktop Header */}
         <AppHeader />
 
-        {/* Content Container */}
-        <div className="px-6u py-4u md:px-12u md:py-6u container mx-auto max-w-[1600px] @container flex-1">
+        {/* Content Container - uses M3 breakpoints: medium (600px), expanded (840px) */}
+        <div className="px-4 py-4 medium:px-6 expanded:px-12 expanded:py-6 container mx-auto max-w-[1600px] @container flex-1">
           {children}
         </div>
       </SidebarInset>

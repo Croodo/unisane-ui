@@ -60,7 +60,7 @@ export const SkeletonText: React.FC<{
           key={i}
           variant="text"
           width={i === lines - 1 ? "60%" : width}
-          height={16}
+          height="4u"
         />
       ))}
     </div>
@@ -68,9 +68,9 @@ export const SkeletonText: React.FC<{
 };
 
 export const SkeletonAvatar: React.FC<{
-  size?: number;
+  size?: number | string;
   className?: string;
-}> = ({ size = 40, className }) => {
+}> = ({ size = "10u", className }) => {
   return (
     <Skeleton
       variant="circular"
@@ -87,13 +87,13 @@ export const SkeletonCard: React.FC<{
   return (
     <div className={cn("p-4 space-y-4", className)}>
       <div className="flex items-center gap-3">
-        <SkeletonAvatar size={40} />
-        <div className="flex-1">
-          <Skeleton variant="text" width="60%" height={16} />
-          <Skeleton variant="text" width="40%" height={12} />
+        <SkeletonAvatar size="10u" />
+        <div className="flex-1 space-y-2">
+          <Skeleton variant="text" width="60%" height="4u" />
+          <Skeleton variant="text" width="40%" height="3u" />
         </div>
       </div>
-      <Skeleton variant="rectangular" width="100%" height={150} />
+      <Skeleton variant="rectangular" width="100%" height="38u" />
       <SkeletonText lines={2} />
     </div>
   );

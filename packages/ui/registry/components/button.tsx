@@ -1,12 +1,12 @@
 "use client";
 
-import { type ReactNode, type ButtonHTMLAttributes, forwardRef } from "react";
+import { type ReactNode, type ButtonHTMLAttributes, forwardRef, isValidElement, cloneElement } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Ripple } from "./ripple";
-import { cn } from "@/lib/utils";
+import { cn, Slot } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "relative inline-flex items-center justify-center gap-2u rounded-full font-medium transition-all duration-short ease-standard overflow-hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-38 disabled:cursor-not-allowed group whitespace-nowrap leading-none select-none",
+  "relative inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-all duration-short ease-standard overflow-hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-38 disabled:cursor-not-allowed group whitespace-nowrap leading-none select-none",
   {
     variants: {
       variant: {
@@ -17,9 +17,9 @@ const buttonVariants = cva(
         elevated: "bg-surface-container-low text-primary shadow-1",
       },
       size: {
-        sm: "h-8u px-4u text-label-medium",
-        md: "h-10u px-6u text-label-large",
-        lg: "h-12u px-8u text-label-large",
+        sm: "h-8 px-4 text-label-medium",
+        md: "h-10 px-6 text-label-large",
+        lg: "h-12 px-8 text-label-large",
       },
     },
     defaultVariants: {
@@ -38,6 +38,7 @@ export interface ButtonProps
   loading?: boolean;
   icon?: ReactNode;
   trailingIcon?: ReactNode;
+  asChild?: boolean;
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -52,20 +53,16 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       trailingIcon,
       className = "",
       type = "button",
+      asChild = false,
       ...props
     },
     ref
   ) => {
-    const iconSizeClass = "w-4.5u h-4.5u";
+    const iconSizeClass = "w-5 h-5";
+    const buttonClasses = cn(buttonVariants({ variant, size }), className);
 
-    return (
-      <button
-        ref={ref}
-        type={type}
-        className={cn(buttonVariants({ variant, size }), className)}
-        disabled={disabled || loading}
-        {...props}
-      >
+    const innerContent = (
+      <>
         <span className="absolute inset-0 pointer-events-none bg-current opacity-0 transition-opacity duration-snappy group-hover:opacity-hover group-focus-visible:opacity-focus group-active:opacity-pressed" />
         <Ripple disabled={disabled || loading} />
         {loading && (
@@ -105,7 +102,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             loading ? "opacity-0" : "opacity-100"
           )}
         >
-          {children}
+          {asChild ? null : children}
         </span>
 
         {!loading && trailingIcon && (
@@ -115,6 +112,27 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             {trailingIcon}
           </span>
         )}
+      </>
+    );
+
+    // asChild pattern: render user's element (e.g., Next.js Link) with button styles
+    if (asChild && isValidElement(children)) {
+      return (
+        <Slot className={buttonClasses}>
+          {cloneElement(children as React.ReactElement, {}, innerContent)}
+        </Slot>
+      );
+    }
+
+    return (
+      <button
+        ref={ref}
+        type={type}
+        className={buttonClasses}
+        disabled={disabled || loading}
+        {...props}
+      >
+        {innerContent}
       </button>
     );
   }

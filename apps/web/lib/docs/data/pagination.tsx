@@ -1,35 +1,32 @@
 "use client";
 
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { Pagination, Card, IconButton } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const PaginationHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-primary-container to-tertiary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-40px] left-[-40px] w-56 h-56 bg-primary/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-50px] right-[-30px] w-64 h-64 bg-tertiary/20 rounded-full blur-3xl" />
-
+  <HeroBackground tone="surface">
     {/* Mock Pagination */}
-    <div className="relative bg-surface px-4u py-3u rounded-2xl shadow-xl border border-outline-variant/30 z-10">
-      <div className="flex items-center gap-2u">
-        <div className="w-10u h-10u rounded-sm flex items-center justify-center text-on-surface-variant">
+    <div className="relative bg-surface px-4 py-3 rounded-2xl shadow-xl border border-outline-variant/30">
+      <div className="flex items-center gap-2">
+        <div className="w-10 h-10 rounded-sm flex items-center justify-center text-on-surface-variant">
           <span className="material-symbols-outlined">chevron_left</span>
         </div>
-        <div className="flex items-center gap-1u">
-          <div className="w-10u h-10u rounded-sm flex items-center justify-center text-on-surface-variant hover:bg-on-surface/10">1</div>
-          <div className="w-10u h-10u rounded-sm flex items-center justify-center text-on-surface-variant hover:bg-on-surface/10">2</div>
-          <div className="w-10u h-10u rounded-sm flex items-center justify-center bg-primary text-on-primary">3</div>
-          <div className="w-10u h-10u rounded-sm flex items-center justify-center text-on-surface-variant hover:bg-on-surface/10">4</div>
-          <div className="w-10u h-10u rounded-sm flex items-center justify-center text-on-surface-variant">...</div>
-          <div className="w-10u h-10u rounded-sm flex items-center justify-center text-on-surface-variant hover:bg-on-surface/10">12</div>
+        <div className="flex items-center gap-1">
+          <div className="w-10 h-10 rounded-sm flex items-center justify-center text-on-surface-variant hover:bg-on-surface/10">1</div>
+          <div className="w-10 h-10 rounded-sm flex items-center justify-center text-on-surface-variant hover:bg-on-surface/10">2</div>
+          <div className="w-10 h-10 rounded-sm flex items-center justify-center bg-primary text-on-primary">3</div>
+          <div className="w-10 h-10 rounded-sm flex items-center justify-center text-on-surface-variant hover:bg-on-surface/10">4</div>
+          <div className="w-10 h-10 rounded-sm flex items-center justify-center text-on-surface-variant">...</div>
+          <div className="w-10 h-10 rounded-sm flex items-center justify-center text-on-surface-variant hover:bg-on-surface/10">12</div>
         </div>
-        <div className="w-10u h-10u rounded-sm flex items-center justify-center text-on-surface-variant">
+        <div className="w-10 h-10 rounded-sm flex items-center justify-center text-on-surface-variant">
           <span className="material-symbols-outlined">chevron_right</span>
         </div>
       </div>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 export const paginationDoc: ComponentDoc = {
@@ -63,10 +60,10 @@ export const paginationDoc: ComponentDoc = {
       {
         emphasis: "Few pages",
         component: (
-          <div className="flex items-center gap-1u">
-            <div className="w-6u h-6u rounded-xs flex items-center justify-center bg-primary text-on-primary text-[10px]">1</div>
-            <div className="w-6u h-6u rounded-xs flex items-center justify-center text-on-surface-variant text-[10px]">2</div>
-            <div className="w-6u h-6u rounded-xs flex items-center justify-center text-on-surface-variant text-[10px]">3</div>
+          <div className="flex items-center gap-1">
+            <div className="w-6 h-6 rounded-xs flex items-center justify-center bg-primary text-on-primary text-[10px]">1</div>
+            <div className="w-6 h-6 rounded-xs flex items-center justify-center text-on-surface-variant text-[10px]">2</div>
+            <div className="w-6 h-6 rounded-xs flex items-center justify-center text-on-surface-variant text-[10px]">3</div>
           </div>
         ),
         rationale:
@@ -76,12 +73,12 @@ export const paginationDoc: ComponentDoc = {
       {
         emphasis: "Many pages",
         component: (
-          <div className="flex items-center gap-1u">
-            <div className="w-6u h-6u rounded-xs flex items-center justify-center text-on-surface-variant text-[10px]">1</div>
+          <div className="flex items-center gap-1">
+            <div className="w-6 h-6 rounded-xs flex items-center justify-center text-on-surface-variant text-[10px]">1</div>
             <div className="text-[10px] text-on-surface-variant">...</div>
-            <div className="w-6u h-6u rounded-xs flex items-center justify-center bg-primary text-on-primary text-[10px]">5</div>
+            <div className="w-6 h-6 rounded-xs flex items-center justify-center bg-primary text-on-primary text-[10px]">5</div>
             <div className="text-[10px] text-on-surface-variant">...</div>
-            <div className="w-6u h-6u rounded-xs flex items-center justify-center text-on-surface-variant text-[10px]">10</div>
+            <div className="w-6 h-6 rounded-xs flex items-center justify-center text-on-surface-variant text-[10px]">10</div>
           </div>
         ),
         rationale:
@@ -98,7 +95,7 @@ export const paginationDoc: ComponentDoc = {
     items: [
       {
         component: (
-          <div className="w-8u h-8u rounded-sm flex items-center justify-center text-on-surface-variant border border-outline-variant/30">
+          <div className="w-8 h-8 rounded-sm flex items-center justify-center text-on-surface-variant border border-outline-variant/30">
             <span className="material-symbols-outlined text-[16px]">chevron_left</span>
           </div>
         ),
@@ -107,14 +104,14 @@ export const paginationDoc: ComponentDoc = {
       },
       {
         component: (
-          <div className="w-8u h-8u rounded-sm flex items-center justify-center bg-primary text-on-primary text-body-small">3</div>
+          <div className="w-8 h-8 rounded-sm flex items-center justify-center bg-primary text-on-primary text-body-small">3</div>
         ),
         title: "Current",
         subtitle: "Active page",
       },
       {
         component: (
-          <div className="w-8u h-8u rounded-sm flex items-center justify-center text-on-surface-variant border border-outline-variant/30">
+          <div className="w-8 h-8 rounded-sm flex items-center justify-center text-on-surface-variant border border-outline-variant/30">
             <span className="material-symbols-outlined text-[16px]">chevron_right</span>
           </div>
         ),
@@ -133,7 +130,7 @@ export const paginationDoc: ComponentDoc = {
         title: "Below table",
         visual: (
           <Card variant="outlined" padding="md" className="max-w-[320px] mx-auto">
-            <div className="text-label-small text-on-surface-variant mb-3u">Showing 21-30 of 120 items</div>
+            <div className="text-label-small text-on-surface-variant mb-3">Showing 21-30 of 120 items</div>
             <Pagination
               currentPage={3}
               totalPages={12}

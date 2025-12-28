@@ -1,38 +1,53 @@
 "use client";
 
 import { ComponentDoc } from "../types";
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, Button, IconButton } from "@unisane/ui";
+import { HeroBackground } from "../hero-background";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, Button, IconButton } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const DropdownMenuHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-tertiary-container to-primary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-40px] right-[-40px] w-56 h-56 bg-tertiary/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-50px] left-[-30px] w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
-
-    {/* Mock Dropdown Demo */}
-    <div className="relative z-10">
+  <HeroBackground tone="tertiary" align="start" justify="end">
+    {/* Profile Menu Demo */}
+    <div className="relative">
       <div className="relative">
-        <IconButton variant="filled" ariaLabel="Menu" icon={<span className="material-symbols-outlined">more_vert</span>} />
-        {/* Simulated menu */}
-        <div className="absolute top-[calc(100%+4px)] right-0 bg-surface rounded-xl shadow-4 py-2u border border-outline-variant/30 min-w-[160px]">
-          <div className="px-4u py-2u text-body-medium text-on-surface hover:bg-on-surface/8 cursor-pointer flex items-center gap-3u">
-            <span className="material-symbols-outlined text-[20px]">edit</span>
-            Edit
+        {/* Avatar trigger */}
+        <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-on-primary text-title-medium cursor-pointer ring-2 ring-primary/20">
+          JD
+        </div>
+        {/* Simulated profile menu */}
+        <div className="absolute top-[calc(100%+4px)] right-0 bg-surface rounded-lg shadow-4 py-2 border border-outline-variant/20 min-w-[220px]">
+          {/* Profile header */}
+          <div className="px-4 py-3 flex items-center gap-3 border-b border-outline-variant/20 mb-1">
+            <div className="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container text-title-medium">
+              JD
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-body-medium text-on-surface font-medium truncate">John Doe</div>
+              <div className="text-body-small text-on-surface-variant truncate">john@example.com</div>
+            </div>
           </div>
-          <div className="px-4u py-2u text-body-medium text-on-surface hover:bg-on-surface/8 cursor-pointer flex items-center gap-3u">
-            <span className="material-symbols-outlined text-[20px]">content_copy</span>
-            Duplicate
+          {/* Menu items */}
+          <div className="px-3 py-2 text-body-medium text-on-surface hover:bg-on-surface/8 cursor-pointer flex items-center gap-3 rounded-md mx-1">
+            <span className="material-symbols-outlined text-[20px] text-on-surface-variant">person</span>
+            View profile
           </div>
-          <div className="h-px bg-outline-variant/20 my-1u" />
-          <div className="px-4u py-2u text-body-medium text-error hover:bg-error/8 cursor-pointer flex items-center gap-3u">
-            <span className="material-symbols-outlined text-[20px]">delete</span>
-            Delete
+          <div className="px-3 py-2 text-body-medium text-on-surface hover:bg-on-surface/8 cursor-pointer flex items-center gap-3 rounded-md mx-1">
+            <span className="material-symbols-outlined text-[20px] text-on-surface-variant">settings</span>
+            Settings
+          </div>
+          <div className="px-3 py-2 text-body-medium text-on-surface hover:bg-on-surface/8 cursor-pointer flex items-center gap-3 rounded-md mx-1">
+            <span className="material-symbols-outlined text-[20px] text-on-surface-variant">help</span>
+            Help & support
+          </div>
+          <div className="h-px bg-outline-variant/20 my-1" />
+          <div className="px-3 py-2 text-body-medium text-on-surface hover:bg-on-surface/8 cursor-pointer flex items-center gap-3 rounded-md mx-1">
+            <span className="material-symbols-outlined text-[20px] text-on-surface-variant">logout</span>
+            Sign out
           </div>
         </div>
       </div>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 export const dropdownMenuDoc: ComponentDoc = {
@@ -47,7 +62,7 @@ export const dropdownMenuDoc: ComponentDoc = {
 
   // ─── IMPORT INFO ────────────────────────────────────────────────────────────
   importPath: "@unisane/ui",
-  exports: ["DropdownMenu", "DropdownMenuTrigger", "DropdownMenuContent", "DropdownMenuItem", "DropdownMenuSeparator", "DropdownMenuCheckboxItem", "DropdownMenuRadioItem"],
+  exports: ["DropdownMenu", "DropdownMenuTrigger", "DropdownMenuContent", "DropdownMenuItem", "DropdownMenuSeparator", "DropdownMenuCheckboxItem", "DropdownMenuRadioItem", "DropdownMenuSub", "DropdownMenuSubTrigger", "DropdownMenuSubContent"],
 
   // ─── HERO VISUAL ───────────────────────────────────────────────────────────
   heroVisual: <DropdownMenuHeroVisual />,
@@ -66,8 +81,8 @@ export const dropdownMenuDoc: ComponentDoc = {
       {
         emphasis: "Action Item",
         component: (
-          <div className="w-36 bg-surface rounded-sm shadow-2 py-1u border border-outline-variant/30">
-            <div className="px-3u py-2u text-body-small text-on-surface hover:bg-on-surface/8">Edit</div>
+          <div className="w-36 bg-surface rounded-sm shadow-2 py-1 border border-outline-variant/30">
+            <div className="px-3 py-2 text-body-small text-on-surface hover:bg-on-surface/8">Edit</div>
           </div>
         ),
         rationale:
@@ -77,8 +92,8 @@ export const dropdownMenuDoc: ComponentDoc = {
       {
         emphasis: "Checkbox Item",
         component: (
-          <div className="w-36 bg-surface rounded-sm shadow-2 py-1u border border-outline-variant/30">
-            <div className="px-3u py-2u text-body-small text-on-surface flex items-center gap-2u">
+          <div className="w-36 bg-surface rounded-sm shadow-2 py-1 border border-outline-variant/30">
+            <div className="px-3 py-2 text-body-small text-on-surface flex items-center gap-2">
               <span className="material-symbols-outlined text-[16px] text-primary">check_box</span>
               Show Grid
             </div>
@@ -91,10 +106,10 @@ export const dropdownMenuDoc: ComponentDoc = {
       {
         emphasis: "Separator",
         component: (
-          <div className="w-36 bg-surface rounded-sm shadow-2 py-1u border border-outline-variant/30">
-            <div className="px-3u py-1u text-body-small text-on-surface">Action 1</div>
-            <div className="h-px bg-outline-variant/20 my-1u" />
-            <div className="px-3u py-1u text-body-small text-error">Delete</div>
+          <div className="w-36 bg-surface rounded-sm shadow-2 py-1 border border-outline-variant/30">
+            <div className="px-3 py-1 text-body-small text-on-surface">Action 1</div>
+            <div className="h-px bg-outline-variant/20 my-1" />
+            <div className="px-3 py-1 text-body-small text-error">Delete</div>
           </div>
         ),
         rationale:
@@ -182,6 +197,37 @@ export const dropdownMenuDoc: ComponentDoc = {
         ),
         caption: "Button that opens a dropdown menu",
       },
+      {
+        title: "Custom styling with submenu",
+        visual: (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="tonal">
+                File
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="rounded-lg px-2">
+              <DropdownMenuItem className="rounded-md" icon={<span className="material-symbols-outlined text-[20px]">content_copy</span>}>Make a copy</DropdownMenuItem>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="rounded-md" icon={<span className="material-symbols-outlined text-[20px]">add</span>}>
+                  Create
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent className="rounded-lg px-2">
+                  <DropdownMenuItem className="rounded-md" icon={<span className="material-symbols-outlined text-[20px]">description</span>}>Document</DropdownMenuItem>
+                  <DropdownMenuItem className="rounded-md" icon={<span className="material-symbols-outlined text-[20px]">image</span>}>Image</DropdownMenuItem>
+                  <DropdownMenuItem className="rounded-md" icon={<span className="material-symbols-outlined text-[20px]">slideshow</span>}>Slides</DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="rounded-md" selected icon={<span className="material-symbols-outlined text-[20px]">cloud_off</span>}>Offline mode</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="rounded-md" icon={<span className="material-symbols-outlined text-[20px]">share</span>}>Share</DropdownMenuItem>
+              <DropdownMenuItem className="rounded-md" icon={<span className="material-symbols-outlined text-[20px]">download</span>}>Download</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ),
+        caption: "Hover on 'Create' to see the submenu with nested items",
+      },
     ],
   },
 
@@ -211,6 +257,7 @@ export const dropdownMenuDoc: ComponentDoc = {
       props: [
         { name: "children", type: "ReactNode", required: true, description: "Menu items." },
         { name: "align", type: '"start" | "end"', default: '"start"', description: "Alignment relative to trigger." },
+        { name: "className", type: "string", description: "Custom classes for padding, radius, etc." },
       ],
     },
     {
@@ -220,12 +267,38 @@ export const dropdownMenuDoc: ComponentDoc = {
         { name: "children", type: "ReactNode", required: true, description: "Item content." },
         { name: "onClick", type: "() => void", description: "Click handler." },
         { name: "disabled", type: "boolean", description: "Disable the item." },
+        { name: "className", type: "string", description: "Custom classes for padding, styling." },
       ],
     },
     {
       name: "DropdownMenuSeparator",
       description: "Visual divider between menu items.",
       props: [],
+    },
+    {
+      name: "DropdownMenuSub",
+      description: "Container for a submenu.",
+      props: [
+        { name: "children", type: "ReactNode", required: true, description: "SubTrigger and SubContent components." },
+      ],
+    },
+    {
+      name: "DropdownMenuSubTrigger",
+      description: "Menu item that opens a submenu on hover.",
+      props: [
+        { name: "children", type: "ReactNode", required: true, description: "Trigger label." },
+        { name: "icon", type: "ReactNode", description: "Leading icon." },
+        { name: "disabled", type: "boolean", description: "Disable the trigger." },
+        { name: "className", type: "string", description: "Custom classes for styling." },
+      ],
+    },
+    {
+      name: "DropdownMenuSubContent",
+      description: "Container for submenu items.",
+      props: [
+        { name: "children", type: "ReactNode", required: true, description: "Submenu items." },
+        { name: "className", type: "string", description: "Custom classes for padding, radius, etc." },
+      ],
     },
   ],
 
@@ -250,7 +323,7 @@ export const dropdownMenuDoc: ComponentDoc = {
 
   // ─── IMPLEMENTATION ────────────────────────────────────────────────────────
   implementation: {
-    description: "Compose dropdown menus with trigger and content components.",
+    description: "Compose dropdown menus with trigger and content components. Use className for custom styling.",
     code: `import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -263,21 +336,22 @@ export const dropdownMenuDoc: ComponentDoc = {
 function ItemActions({ onEdit, onDuplicate, onDelete }) {
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger>
+      <DropdownMenuTrigger asChild>
         <IconButton
           icon={<span className="material-symbols-outlined">more_vert</span>}
           ariaLabel="Item options"
         />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={onEdit}>
+      {/* px-2 adds horizontal padding, rounded-lg for container */}
+      <DropdownMenuContent align="end" className="rounded-lg px-2">
+        <DropdownMenuItem className="rounded-md" onClick={onEdit}>
           Edit
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={onDuplicate}>
+        <DropdownMenuItem className="rounded-md" onClick={onDuplicate}>
           Duplicate
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={onDelete}>
+        <DropdownMenuItem className="rounded-md" onClick={onDelete}>
           Delete
         </DropdownMenuItem>
       </DropdownMenuContent>

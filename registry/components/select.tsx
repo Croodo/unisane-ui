@@ -142,7 +142,7 @@ export const Select: React.FC<SelectProps> = ({
         onClick={() => !disabled && setIsOpen((prev) => !prev)}
         onKeyDown={handleTriggerKeyDown}
         className={cn(
-          "relative flex items-center w-full transition-colors cursor-pointer select-none group h-14u",
+          "relative flex items-center w-full transition-colors cursor-pointer select-none group h-14",
           variant === "outlined"
             ? "rounded-xs border border-outline-variant bg-surface"
             : "rounded-t-xs border-b border-outline bg-surface-container-low",
@@ -177,11 +177,11 @@ export const Select: React.FC<SelectProps> = ({
           />
         )}
 
-        <div className="relative w-full h-full flex items-center px-4u">
+        <div className="relative w-full h-full flex items-center px-4">
           <span
             className={cn(
               "text-on-surface text-body-small font-bold w-full truncate",
-              variant === "filled" && "pt-5u pb-1u"
+              variant === "filled" && "pt-5 pb-1"
             )}
           >
             {displayLabel}
@@ -192,16 +192,16 @@ export const Select: React.FC<SelectProps> = ({
               htmlFor={triggerId}
               id={labelId}
               className={cn(
-                "absolute pointer-events-none truncate max-w-[calc(100%-calc(var(--unit)*12))] transition-all duration-snappy ease-emphasized origin-left left-4u",
+                "absolute pointer-events-none truncate max-w-[calc(100%-calc(var(--unit)*12))] transition-all duration-snappy ease-emphasized origin-left left-4",
                 !isFloating &&
                   "text-body-medium -translate-y-1/2 top-1/2 text-on-surface-variant",
                 isFloating && [
                   "scale-[0.75] font-black uppercase tracking-widest",
                   variant === "outlined" && [
-                    "top-0 -translate-y-1/2 bg-surface px-1u -ml-1u",
+                    "top-0 -translate-y-1/2 bg-surface px-1 -ml-1",
                     labelClassName ? labelClassName : "bg-surface",
                   ],
-                  variant === "filled" && "top-2u -translate-y-0",
+                  variant === "filled" && "top-2 -translate-y-0",
                   error ? "text-error" : "text-primary",
                 ],
                 !value && isOpen && "text-primary"
@@ -211,7 +211,7 @@ export const Select: React.FC<SelectProps> = ({
             </label>
           )}
 
-          <div className="absolute right-3u text-on-surface-variant">
+          <div className="absolute right-3 text-on-surface-variant">
             <Icon
               symbol="keyboard_arrow_down"
               size={20}
@@ -229,7 +229,7 @@ export const Select: React.FC<SelectProps> = ({
           id={listboxId}
           role="listbox"
           aria-labelledby={label ? labelId : undefined}
-          className="absolute top-[calc(100%+var(--unit))] left-0 w-full bg-surface border border-outline-variant rounded-xs shadow-3 py-1u max-h-[calc(var(--unit)*70)] overflow-y-auto z-[100] animate-in fade-in zoom-in-95 duration-snappy"
+          className="absolute top-[calc(100%+var(--unit))] left-0 w-full bg-surface border border-outline-variant rounded-xs shadow-3 py-1 max-h-[calc(var(--unit)*70)] overflow-y-auto z-[100] animate-in fade-in zoom-in-95 duration-snappy"
         >
           {options.length > 0 ? (
             options.map((option, index) => {
@@ -242,7 +242,7 @@ export const Select: React.FC<SelectProps> = ({
                   onClick={() => handleSelect(option.value, isDisabled)}
                   onMouseEnter={() => setHighlightedIndex(index)}
                   className={cn(
-                    "px-4u h-11u flex items-center text-body-small font-bold cursor-pointer transition-colors",
+                    "px-4 h-11 flex items-center text-body-small font-bold cursor-pointer transition-colors",
                     isHighlighted && !isDisabled && "bg-surface-container-high",
                     value === option.value
                       ? "bg-primary/8 text-primary"
@@ -258,7 +258,7 @@ export const Select: React.FC<SelectProps> = ({
               );
             })
           ) : (
-            <div className="px-4u py-3u text-label-medium text-on-surface-variant font-bold uppercase">
+            <div className="px-4 py-3 text-label-medium text-on-surface-variant font-bold uppercase">
               No Options Available
             </div>
           )}

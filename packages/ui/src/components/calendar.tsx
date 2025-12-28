@@ -142,7 +142,7 @@ export const Calendar: React.FC<CalendarProps> = ({
       role="application"
       aria-label={`Calendar, ${monthNames[currentMonth.getMonth()]} ${currentMonth.getFullYear()}`}
     >
-      <div className="flex items-center justify-between p-4u border-b border-outline-variant">
+      <div className="flex items-center justify-between p-4 border-b border-outline-variant">
         <IconButton
           icon={
             <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
@@ -168,9 +168,9 @@ export const Calendar: React.FC<CalendarProps> = ({
         />
       </div>
 
-      <div className="grid grid-cols-7 gap-1u p-2u" role="row">
+      <div className="grid grid-cols-7 gap-1 p-2" role="row">
         {dayNames.map((day) => (
-          <div key={day} className="text-center py-2u" role="columnheader">
+          <div key={day} className="text-center py-2" role="columnheader">
             <Text variant="labelSmall" className="text-on-surface-variant">
               {day}
             </Text>
@@ -178,7 +178,7 @@ export const Calendar: React.FC<CalendarProps> = ({
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-1u p-2u pb-4u" role="grid" aria-label="Calendar dates">
+      <div className="grid grid-cols-7 gap-1 p-2 pb-4" role="grid" aria-label="Calendar dates">
         {days.map((day, index) => (
           <div key={index} className="aspect-square" role="gridcell">
             {day ? (

@@ -14,11 +14,11 @@ const avatarVariants = cva(
         lg: "w-12 h-12 text-body-medium",
         xl: "w-14 h-14 text-body-large",
       },
-    variant: {
-      circular: "rounded-full",
-      rounded: "rounded-sm",
-      square: "rounded-none",
-    },
+      variant: {
+        circular: "rounded-full",
+        rounded: "rounded-sm",
+        square: "rounded-none",
+      },
     },
     defaultVariants: {
       size: "md",
@@ -42,10 +42,15 @@ export const Avatar: React.FC<AvatarProps> = ({
   variant,
   className,
 }) => {
+  const fallbackChar = fallback?.charAt(0).toUpperCase() || "?";
+  const fallbackLabel = fallback || alt || "Avatar";
+
   return (
     <Surface
       tone="surfaceVariant"
       className={cn(avatarVariants({ size, variant, className }))}
+      role="img"
+      aria-label={src ? alt : fallbackLabel}
     >
       {src ? (
         <img
@@ -54,8 +59,8 @@ export const Avatar: React.FC<AvatarProps> = ({
           className="w-full h-full object-cover"
         />
       ) : (
-        <Text variant="labelLarge" className="text-on-surface-variant">
-          {fallback?.charAt(0).toUpperCase() || "?"}
+        <Text variant="labelLarge" className="text-on-surface-variant" aria-hidden="true">
+          {fallbackChar}
         </Text>
       )}
     </Surface>
@@ -72,14 +77,16 @@ export const AvatarGroup: React.FC<{
   const remainingCount = childrenArray.length - max;
 
   return (
-    <div className={cn("flex -space-x-2", className)}>
+    <div className={cn("flex -space-x-2", className)} role="group" aria-label="Avatar group">
       {visibleChildren}
       {remainingCount > 0 && (
         <Surface
           tone="surfaceVariant"
           className="w-10 h-10 rounded-full flex items-center justify-center border-2 border-surface"
+          role="img"
+          aria-label={`${remainingCount} more`}
         >
-          <Text variant="labelSmall" className="text-on-surface-variant">
+          <Text variant="labelSmall" className="text-on-surface-variant" aria-hidden="true">
             +{remainingCount}
           </Text>
         </Surface>

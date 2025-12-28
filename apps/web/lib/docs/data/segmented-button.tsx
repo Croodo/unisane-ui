@@ -2,32 +2,29 @@
 
 import { useState } from "react";
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { SegmentedButton } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const SegmentedButtonHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-secondary-container to-primary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-40px] left-[-40px] w-56 h-56 bg-secondary/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-50px] right-[-30px] w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
-
+  <HeroBackground tone="primary">
     {/* Mock View Toggle */}
-    <div className="relative bg-surface w-[320px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 z-10 p-6u">
-      <div className="text-title-medium text-on-surface mb-4u">View Options</div>
+    <div className="relative bg-surface w-[320px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 p-6">
+      <div className="text-title-medium text-on-surface mb-4">View Options</div>
       <div className="inline-flex rounded-sm border border-outline-variant overflow-hidden">
-        <div className="px-4u py-2u bg-secondary-container text-on-secondary-container flex items-center gap-2u">
+        <div className="px-4 py-2 bg-secondary-container text-on-secondary-container flex items-center gap-2">
           <span className="material-symbols-outlined text-[18px]">check</span>
           <span className="text-label-medium">Grid</span>
         </div>
-        <div className="px-4u py-2u text-on-surface-variant border-l border-outline-variant">
+        <div className="px-4 py-2 text-on-surface-variant border-l border-outline-variant">
           <span className="text-label-medium">List</span>
         </div>
-        <div className="px-4u py-2u text-on-surface-variant border-l border-outline-variant">
+        <div className="px-4 py-2 text-on-surface-variant border-l border-outline-variant">
           <span className="text-label-medium">Cards</span>
         </div>
       </div>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 // ─── INTERACTIVE EXAMPLES ────────────────────────────────────────────────────

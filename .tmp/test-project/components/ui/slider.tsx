@@ -65,7 +65,7 @@ export const Slider: React.FC<SliderProps> = ({
   return (
     <div
       className={cn(
-        "relative flex items-center h-10u w-full group touch-none select-none",
+        "relative flex items-center h-10 w-full group touch-none select-none",
         className
       )}
       onMouseEnter={() => setIsHovered(true)}
@@ -91,7 +91,7 @@ export const Slider: React.FC<SliderProps> = ({
         {...props}
       />
 
-      <div className="relative w-full h-1u rounded-sm flex items-center">
+      <div className="relative w-full h-1 rounded-sm flex items-center">
         <div
           className={cn(
             "absolute w-full h-full rounded-sm transition-colors",
@@ -112,7 +112,7 @@ export const Slider: React.FC<SliderProps> = ({
             <div
               key={i}
               className={cn(
-                "absolute w-0.5u h-0.5u rounded-full z-10",
+                "absolute w-0_5 h-0_5 rounded-full z-10",
                 tick <= percentage
                   ? "bg-on-primary/60"
                   : "bg-on-surface-variant/40"
@@ -129,7 +129,7 @@ export const Slider: React.FC<SliderProps> = ({
         {!disabled && (
           <div
             className={cn(
-              "absolute w-10u h-10u rounded-full bg-primary transition-opacity duration-medium",
+              "absolute w-10 h-10 rounded-full bg-primary transition-opacity duration-medium",
               isHovered || isPressed ? "opacity-10" : "opacity-0",
               isPressed && "opacity-20"
             )}
@@ -140,23 +140,23 @@ export const Slider: React.FC<SliderProps> = ({
           className={cn(
             "rounded-full transition-all duration-medium ease-emphasized",
             disabled
-              ? "bg-on-surface/38 w-3u h-3u"
-              : "bg-primary w-5u h-5u group-active:scale-125"
+              ? "bg-on-surface/38 w-3 h-3"
+              : "bg-primary w-5 h-5 group-active:scale-125"
           )}
         >
           {shouldShowLabel && !disabled && (
             <div
               className={cn(
-                "absolute bottom-8u left-1/2 -translate-x-1/2 min-w-7u h-7u px-2u",
+                "absolute bottom-8 left-1/2 -translate-x-1/2 min-w-7 h-7 px-2",
                 "flex items-center justify-center bg-inverse-surface text-inverse-on-surface text-label-small font-medium rounded-sm shadow-2",
                 "transition-all duration-medium ease-emphasized origin-bottom",
                 isHovered || isPressed
                   ? "opacity-100 scale-100 translate-y-0"
-                  : "opacity-0 scale-50 translate-y-2u"
+                  : "opacity-0 scale-50 translate-y-2"
               )}
             >
               {val}
-              <div className="absolute -bottom-1u left-1/2 -translate-x-1/2 w-2u h-2u bg-inverse-surface rotate-45 rounded-[calc(var(--uni-sys-u)/4)]" />
+              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-inverse-surface rotate-45 rounded-[calc(var(--uni-sys-u)/4)]" />
             </div>
           )}
         </div>

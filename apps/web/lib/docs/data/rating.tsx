@@ -2,19 +2,16 @@
 
 import { useState } from "react";
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { Rating } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const RatingHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-primary-container to-tertiary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-40px] left-[-40px] w-56 h-56 bg-primary/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-50px] right-[-30px] w-64 h-64 bg-tertiary/20 rounded-full blur-3xl" />
-
+  <HeroBackground tone="tertiary">
     {/* Mock Review Card */}
-    <div className="relative bg-surface w-[280px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 z-10 p-6u">
-      <div className="flex items-center gap-3u mb-4u">
-        <div className="w-12u h-12u rounded-full bg-secondary-container flex items-center justify-center">
+    <div className="relative bg-surface w-[280px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 p-6">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center">
           <span className="text-title-medium text-on-secondary-container">JD</span>
         </div>
         <div>
@@ -22,19 +19,19 @@ const RatingHeroVisual = () => (
           <div className="text-body-small text-on-surface-variant">2 days ago</div>
         </div>
       </div>
-      <div className="flex items-center gap-1u mb-3u">
+      <div className="flex items-center gap-1 mb-3">
         {[1, 2, 3, 4, 5].map((i) => (
           <span key={i} className={`material-symbols-outlined ${i <= 4 ? "text-primary" : "text-outline"}`}>
             star
           </span>
         ))}
-        <span className="text-body-medium text-on-surface-variant ml-2u">4.0</span>
+        <span className="text-body-medium text-on-surface-variant ml-2">4.0</span>
       </div>
       <p className="text-body-medium text-on-surface-variant">
         Great product! Highly recommend.
       </p>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 // ─── INTERACTIVE EXAMPLES ────────────────────────────────────────────────────

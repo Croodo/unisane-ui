@@ -52,7 +52,7 @@ const NavigationBarItem: React.FC<NavigationBarItemProps> = ({
   return (
     <button
       className={cn(
-        "relative flex flex-col items-center justify-center gap-1 h-full min-w-16u px-2 cursor-pointer select-none group focus-visible:outline-none",
+        "relative flex flex-col items-center justify-center gap-1 h-full min-w-16 px-2 cursor-pointer select-none group focus-visible:outline-none",
         className
       )}
       onClick={onClick}

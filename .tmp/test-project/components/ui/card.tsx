@@ -23,9 +23,9 @@ const cardVariants = cva(
       },
       padding: {
         none: "p-0",
-        sm: "p-4u",
-        md: "p-6u",
-        lg: "p-8u",
+        sm: "p-4",
+        md: "p-6",
+        lg: "p-8",
       },
     },
     compoundVariants: [
@@ -86,7 +86,7 @@ const CardHeader = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("p-6u pb-2u flex flex-col gap-1u relative z-10", className)}
+    className={cn("p-6 pb-2 flex flex-col gap-1 relative z-10", className)}
     {...props}
   />
 ));
@@ -99,7 +99,7 @@ const CardContent = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "p-6u pt-4u text-on-surface-variant relative z-10 text-body-small font-medium leading-relaxed",
+      "p-6 pt-4 text-on-surface-variant relative z-10 text-body-small font-medium leading-relaxed",
       className
     )}
     {...props}
@@ -113,7 +113,7 @@ const CardFooter = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("p-6u pt-0 mt-auto flex items-center gap-3u relative z-10", className)}
+    className={cn("p-6 pt-0 mt-auto flex items-center gap-3 relative z-10", className)}
     {...props}
   />
 ));

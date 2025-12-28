@@ -1,44 +1,41 @@
 "use client";
 
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { Switch, Card } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const SwitchHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-tertiary-container to-primary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-40px] left-[-40px] w-56 h-56 bg-tertiary/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-50px] right-[-30px] w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
-
+  <HeroBackground tone="secondary">
     {/* Mock Settings Card */}
-    <div className="relative bg-surface w-[280px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 z-10">
-      <div className="px-5u py-4u border-b border-outline-variant/20">
+    <div className="relative bg-surface w-[280px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
+      <div className="px-5 py-4 border-b border-outline-variant/20">
         <span className="text-title-medium text-on-surface">Quick Settings</span>
       </div>
-      <div className="p-4u space-y-1u">
-        <div className="flex items-center justify-between py-3u px-2u rounded-lg hover:bg-surface-container-low">
-          <div className="flex items-center gap-3u">
+      <div className="p-4 space-y-1">
+        <div className="flex items-center justify-between py-3 px-2 rounded-lg hover:bg-surface-container-low">
+          <div className="flex items-center gap-3">
             <span className="material-symbols-outlined text-on-surface-variant">wifi</span>
             <span className="text-body-medium text-on-surface">Wi-Fi</span>
           </div>
           <Switch defaultChecked readOnly />
         </div>
-        <div className="flex items-center justify-between py-3u px-2u rounded-lg hover:bg-surface-container-low">
-          <div className="flex items-center gap-3u">
+        <div className="flex items-center justify-between py-3 px-2 rounded-lg hover:bg-surface-container-low">
+          <div className="flex items-center gap-3">
             <span className="material-symbols-outlined text-on-surface-variant">bluetooth</span>
             <span className="text-body-medium text-on-surface">Bluetooth</span>
           </div>
           <Switch defaultChecked readOnly />
         </div>
-        <div className="flex items-center justify-between py-3u px-2u rounded-lg hover:bg-surface-container-low">
-          <div className="flex items-center gap-3u">
+        <div className="flex items-center justify-between py-3 px-2 rounded-lg hover:bg-surface-container-low">
+          <div className="flex items-center gap-3">
             <span className="material-symbols-outlined text-on-surface-variant">dark_mode</span>
             <span className="text-body-medium text-on-surface">Dark mode</span>
           </div>
           <Switch />
         </div>
-        <div className="flex items-center justify-between py-3u px-2u rounded-lg hover:bg-surface-container-low">
-          <div className="flex items-center gap-3u">
+        <div className="flex items-center justify-between py-3 px-2 rounded-lg hover:bg-surface-container-low">
+          <div className="flex items-center gap-3">
             <span className="material-symbols-outlined text-on-surface-variant">do_not_disturb_on</span>
             <span className="text-body-medium text-on-surface">Do not disturb</span>
           </div>
@@ -46,7 +43,7 @@ const SwitchHeroVisual = () => (
         </div>
       </div>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 export const switchDoc: ComponentDoc = {
@@ -149,7 +146,7 @@ export const switchDoc: ComponentDoc = {
         visual: (
           <Card variant="outlined" padding="none" className="max-w-[280px] mx-auto overflow-hidden">
             {["Notifications", "Auto-update", "Analytics"].map((item, i) => (
-              <div key={i} className="flex items-center justify-between px-4u py-3u border-b border-outline-variant/20 last:border-0">
+              <div key={i} className="flex items-center justify-between px-4 py-3 border-b border-outline-variant/20 last:border-0">
                 <span className="text-body-medium text-on-surface">{item}</span>
                 <Switch defaultChecked={i === 0} readOnly />
               </div>
@@ -162,8 +159,8 @@ export const switchDoc: ComponentDoc = {
         title: "Form with switches",
         visual: (
           <Card variant="outlined" padding="md" className="max-w-[280px] mx-auto">
-            <div className="text-title-small text-on-surface mb-4u">Privacy</div>
-            <div className="space-y-4u">
+            <div className="text-title-small text-on-surface mb-4">Privacy</div>
+            <div className="space-y-4">
               <Switch label="Share usage data" />
               <Switch label="Personalized ads" />
               <Switch label="Third-party tracking" defaultChecked readOnly />

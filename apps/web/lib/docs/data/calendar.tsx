@@ -2,29 +2,26 @@
 
 import { useState } from "react";
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { Calendar } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const CalendarHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-tertiary-container to-primary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-40px] left-[-40px] w-56 h-56 bg-tertiary/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-50px] right-[-30px] w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
-
+  <HeroBackground tone="secondary">
     {/* Mock Calendar */}
-    <div className="relative bg-surface w-[280px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 z-10">
-      <div className="px-5u py-4u border-b border-outline-variant/20 flex items-center justify-between">
+    <div className="relative bg-surface w-[280px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
+      <div className="px-5 py-4 border-b border-outline-variant/20 flex items-center justify-between">
         <span className="material-symbols-outlined text-on-surface-variant">chevron_left</span>
         <span className="text-title-medium text-on-surface">December 2024</span>
         <span className="material-symbols-outlined text-on-surface-variant">chevron_right</span>
       </div>
-      <div className="p-4u">
-        <div className="grid grid-cols-7 gap-1u mb-2u">
+      <div className="p-4">
+        <div className="grid grid-cols-7 gap-1 mb-2">
           {["S", "M", "T", "W", "T", "F", "S"].map((day, i) => (
-            <div key={i} className="text-label-small text-on-surface-variant text-center py-1u">{day}</div>
+            <div key={i} className="text-label-small text-on-surface-variant text-center py-1">{day}</div>
           ))}
         </div>
-        <div className="grid grid-cols-7 gap-1u">
+        <div className="grid grid-cols-7 gap-1">
           {[...Array(31)].map((_, i) => (
             <div
               key={i}
@@ -40,7 +37,7 @@ const CalendarHeroVisual = () => (
         </div>
       </div>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 // ─── INTERACTIVE EXAMPLES ────────────────────────────────────────────────────
@@ -89,7 +86,7 @@ export const calendarDoc: ComponentDoc = {
           <div className="w-24 h-20 bg-surface-container rounded-sm p-2">
             <div className="grid grid-cols-7 gap-0_5u">
               {[...Array(21)].map((_, i) => (
-                <div key={i} className={`w-2u h-2u rounded-full ${i === 10 ? "bg-primary" : "bg-outline-variant/30"}`} />
+                <div key={i} className={`w-2 h-2 rounded-full ${i === 10 ? "bg-primary" : "bg-outline-variant/30"}`} />
               ))}
             </div>
           </div>
@@ -100,7 +97,7 @@ export const calendarDoc: ComponentDoc = {
       {
         emphasis: "Date Picker",
         component: (
-          <div className="w-32 h-10u bg-surface-container-high rounded-lg px-3u flex items-center justify-between">
+          <div className="w-32 h-10 bg-surface-container-high rounded-lg px-3 flex items-center justify-between">
             <span className="text-body-small text-on-surface">Dec 15, 2024</span>
             <span className="material-symbols-outlined text-on-surface-variant text-[18px]">calendar_today</span>
           </div>

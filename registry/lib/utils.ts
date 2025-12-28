@@ -4,6 +4,11 @@ import { extendTailwindMerge } from "tailwind-merge";
 const twMerge = extendTailwindMerge({
   extend: {
     classGroups: {
+      rounded: [
+        {
+          rounded: ["none", "xs", "sm", "md", "lg", "xl", "2xl", "full"],
+        },
+      ],
       "font-size": [
         {
           text: [

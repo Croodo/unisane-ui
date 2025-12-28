@@ -65,7 +65,7 @@ NavigationDrawer.displayName = "NavigationDrawer";
 
 // NavigationDrawerItem
 const navigationDrawerItemVariants = cva(
-  "flex items-center gap-3u w-full min-h-14u py-4u px-5u rounded-xl text-label-large cursor-pointer select-none group relative overflow-hidden shrink-0 outline-none transition-all duration-short mx-auto focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset",
+  "flex items-center gap-3 w-full min-h-14 py-4 px-5 rounded-xl text-label-large cursor-pointer select-none group relative overflow-hidden shrink-0 outline-none transition-all duration-short mx-auto focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset",
   {
     variants: {
       active: {
@@ -140,7 +140,7 @@ export const NavigationDrawerItem = forwardRef<
       {badge && (
         <span className="relative z-10 ml-auto">
           {typeof badge === "string" || typeof badge === "number" ? (
-            <span className="text-label-small font-medium text-on-surface-variant px-1.5u py-0.5u min-w-5u text-center inline-block">
+            <span className="text-label-small font-medium text-on-surface-variant px-1_5 py-0_5 min-w-5 text-center inline-block">
               {badge}
             </span>
           ) : (
@@ -156,7 +156,7 @@ export const NavigationDrawerItem = forwardRef<
   // asChild pattern: render user's Link component with merged props
   if (asChild && isValidElement(children)) {
     return (
-      <div className="px-4u w-full">
+      <div className="px-4 w-full">
         <Slot className={itemClasses} {...props}>
           {cloneElement(children as React.ReactElement, {}, innerContent)}
         </Slot>
@@ -166,7 +166,7 @@ export const NavigationDrawerItem = forwardRef<
 
   if (href && !disabled) {
     return (
-      <div className="px-4u w-full">
+      <div className="px-4 w-full">
         <a
           href={href}
           className={itemClasses}
@@ -179,7 +179,7 @@ export const NavigationDrawerItem = forwardRef<
   }
 
   return (
-    <div className="px-4u w-full">
+    <div className="px-4 w-full">
       <button
         ref={ref}
         disabled={disabled ?? false}
@@ -204,7 +204,7 @@ export const NavigationDrawerHeadline = ({
 }) => (
   <div
     className={cn(
-      "px-5u pt-4u pb-2u text-title-small font-semibold text-on-surface-variant",
+      "px-5 pt-4 pb-2 text-title-small font-semibold text-on-surface-variant",
       className
     )}
   >
@@ -214,5 +214,5 @@ export const NavigationDrawerHeadline = ({
 
 // NavigationDrawerDivider
 export const NavigationDrawerDivider = ({ className }: { className?: string }) => (
-  <div className={cn("h-px bg-outline-variant/30 my-2u mx-4u", className)} />
+  <div className={cn("h-px bg-outline-variant/30 my-2 mx-4", className)} />
 );

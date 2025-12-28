@@ -1,37 +1,34 @@
 "use client";
 
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { Avatar, AvatarGroup, Card } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const AvatarHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-secondary-container to-primary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-40px] left-[-40px] w-56 h-56 bg-secondary/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-50px] right-[-30px] w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
-
+  <HeroBackground tone="surface">
     {/* Mock Team Card */}
-    <div className="relative bg-surface w-[300px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 z-10">
-      <div className="px-5u py-4u border-b border-outline-variant/20">
+    <div className="relative bg-surface w-[300px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
+      <div className="px-5 py-4 border-b border-outline-variant/20">
         <span className="text-title-medium text-on-surface">Project Team</span>
       </div>
-      <div className="p-4u space-y-4u">
-        <div className="flex items-center gap-3u">
+      <div className="p-4 space-y-4">
+        <div className="flex items-center gap-3">
           <Avatar fallback="JD" size="md" />
           <div>
             <div className="text-body-medium text-on-surface">John Doe</div>
             <div className="text-body-small text-on-surface-variant">Lead Designer</div>
           </div>
         </div>
-        <div className="flex items-center gap-3u">
+        <div className="flex items-center gap-3">
           <Avatar fallback="AS" size="md" />
           <div>
             <div className="text-body-medium text-on-surface">Alice Smith</div>
             <div className="text-body-small text-on-surface-variant">Developer</div>
           </div>
         </div>
-        <div className="pt-2u border-t border-outline-variant/20">
-          <div className="text-label-small text-on-surface-variant mb-2u">Team Members</div>
+        <div className="pt-2 border-t border-outline-variant/20">
+          <div className="text-label-small text-on-surface-variant mb-2">Team Members</div>
           <AvatarGroup max={4}>
             <Avatar fallback="A" size="sm" />
             <Avatar fallback="B" size="sm" />
@@ -43,7 +40,7 @@ const AvatarHeroVisual = () => (
         </div>
       </div>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 export const avatarDoc: ComponentDoc = {
@@ -145,7 +142,7 @@ export const avatarDoc: ComponentDoc = {
               { name: "Bob Smith", role: "Developer", initials: "BS" },
               { name: "Carol White", role: "Manager", initials: "CW" },
             ].map((user) => (
-              <div key={user.name} className="flex items-center gap-3u px-4u py-3u border-b border-outline-variant/20 last:border-0">
+              <div key={user.name} className="flex items-center gap-3 px-4 py-3 border-b border-outline-variant/20 last:border-0">
                 <Avatar fallback={user.initials} size="sm" />
                 <div className="flex-1 min-w-0">
                   <div className="text-body-medium text-on-surface truncate">{user.name}</div>
@@ -161,7 +158,7 @@ export const avatarDoc: ComponentDoc = {
         title: "Avatar group",
         visual: (
           <Card variant="outlined" padding="md" className="max-w-[280px] mx-auto">
-            <div className="text-title-small text-on-surface mb-3u">Shared with</div>
+            <div className="text-title-small text-on-surface mb-3">Shared with</div>
             <AvatarGroup max={4}>
               <Avatar fallback="A" />
               <Avatar fallback="B" />

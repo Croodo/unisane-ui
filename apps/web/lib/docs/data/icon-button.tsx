@@ -1,24 +1,21 @@
 "use client";
 
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { IconButton } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const IconButtonHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-primary-container to-tertiary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-50px] left-[-50px] w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-30px] right-[-30px] w-72 h-72 bg-tertiary/20 rounded-full blur-3xl" />
-
+  <HeroBackground tone="primary">
     {/* Mock App Bar */}
-    <div className="relative bg-surface w-[320px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 z-10">
+    <div className="bg-surface w-[320px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
       {/* Top App Bar */}
-      <div className="h-16u flex items-center justify-between px-4u bg-surface border-b border-outline-variant/20">
+      <div className="h-16 flex items-center justify-between px-4 bg-surface border-b border-outline-variant/20">
         <IconButton variant="standard" ariaLabel="Menu">
           <span className="material-symbols-outlined">menu</span>
         </IconButton>
         <span className="text-title-medium text-on-surface">Photo Gallery</span>
-        <div className="flex gap-1u">
+        <div className="flex gap-1">
           <IconButton variant="standard" ariaLabel="Search">
             <span className="material-symbols-outlined">search</span>
           </IconButton>
@@ -28,11 +25,11 @@ const IconButtonHeroVisual = () => (
         </div>
       </div>
       {/* Content */}
-      <div className="p-4u">
-        <div className="grid grid-cols-3 gap-2u">
+      <div className="p-4">
+        <div className="grid grid-cols-3 gap-2">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div key={i} className="aspect-square bg-surface-container-high rounded-lg relative group">
-              <div className="absolute top-1u right-1u opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <IconButton variant="filled" size="sm" ariaLabel="Favorite">
                   <span className="material-symbols-outlined text-[16px]">favorite</span>
                 </IconButton>
@@ -42,7 +39,7 @@ const IconButtonHeroVisual = () => (
         </div>
       </div>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 export const iconButtonDoc: ComponentDoc = {
@@ -164,7 +161,7 @@ export const iconButtonDoc: ComponentDoc = {
         title: "App bar actions",
         visual: (
           <div className="bg-surface rounded-xl border border-outline-variant/30 overflow-hidden max-w-[320px] mx-auto">
-            <div className="h-14u flex items-center justify-between px-4u">
+            <div className="h-14 flex items-center justify-between px-4">
               <IconButton variant="standard" ariaLabel="Back">
                 <span className="material-symbols-outlined">arrow_back</span>
               </IconButton>
@@ -180,8 +177,8 @@ export const iconButtonDoc: ComponentDoc = {
       {
         title: "Content actions",
         visual: (
-          <div className="flex items-start gap-3u p-4u border border-outline-variant/20 rounded-xl w-full max-w-xs bg-surface">
-            <div className="w-12u h-12u rounded-full bg-primary-container shrink-0" />
+          <div className="flex items-start gap-3 p-4 border border-outline-variant/20 rounded-xl w-full max-w-xs bg-surface">
+            <div className="w-12 h-12 rounded-full bg-primary-container shrink-0" />
             <div className="flex-1 min-w-0">
               <div className="text-title-small text-on-surface">John Doe</div>
               <div className="text-body-small text-on-surface-variant truncate">

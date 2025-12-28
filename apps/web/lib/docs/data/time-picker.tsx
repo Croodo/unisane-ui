@@ -2,33 +2,30 @@
 
 import { useState } from "react";
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { TimePicker, Button } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const TimePickerHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-tertiary-container to-secondary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-40px] left-[-40px] w-56 h-56 bg-tertiary/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-50px] right-[-30px] w-64 h-64 bg-secondary/20 rounded-full blur-3xl" />
-
+  <HeroBackground tone="secondary">
     {/* Mock Time Picker */}
-    <div className="relative bg-surface w-[280px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 z-10 p-6u">
-      <div className="text-label-medium text-on-surface-variant mb-4u">Select time</div>
-      <div className="flex items-center gap-2u justify-center mb-6u">
-        <div className="bg-primary-container text-on-primary-container rounded-lg px-4u py-3u text-display-small">09</div>
+    <div className="relative bg-surface w-[280px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 p-6">
+      <div className="text-label-medium text-on-surface-variant mb-4">Select time</div>
+      <div className="flex items-center gap-2 justify-center mb-6">
+        <div className="bg-primary-container text-on-primary-container rounded-lg px-4 py-3 text-display-small">09</div>
         <span className="text-display-small text-on-surface">:</span>
-        <div className="bg-surface-container-highest text-on-surface rounded-lg px-4u py-3u text-display-small">30</div>
-        <div className="flex flex-col border border-outline rounded-sm overflow-hidden ml-2u">
-          <div className="px-3u py-1u bg-tertiary-container text-on-tertiary-container text-label-small">AM</div>
-          <div className="px-3u py-1u text-on-surface-variant text-label-small border-t border-outline">PM</div>
+        <div className="bg-surface-container-highest text-on-surface rounded-lg px-4 py-3 text-display-small">30</div>
+        <div className="flex flex-col border border-outline rounded-sm overflow-hidden ml-2">
+          <div className="px-3 py-1 bg-tertiary-container text-on-tertiary-container text-label-small">AM</div>
+          <div className="px-3 py-1 text-on-surface-variant text-label-small border-t border-outline">PM</div>
         </div>
       </div>
       <div className="w-40 h-40 mx-auto rounded-full bg-surface-container-highest relative">
-        <div className="absolute top-1/2 left-1/2 w-2u h-2u -translate-x-1/2 -translate-y-1/2 bg-primary rounded-full" />
+        <div className="absolute top-1/2 left-1/2 w-2 h-2 -translate-x-1/2 -translate-y-1/2 bg-primary rounded-full" />
         <div className="absolute top-1/2 left-1/2 h-14 w-0_5u bg-primary origin-bottom -translate-x-1/2 -translate-y-full rotate-[-60deg]" />
       </div>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 // ─── INTERACTIVE EXAMPLES ────────────────────────────────────────────────────
@@ -37,7 +34,7 @@ const TimePickerExample = () => {
   const [time, setTime] = useState("09:30");
 
   return (
-    <div className="flex flex-col gap-3u items-center">
+    <div className="flex flex-col gap-3 items-center">
       <Button variant="tonal" onClick={() => setOpen(true)}>
         Select Time: {time}
       </Button>
@@ -83,7 +80,7 @@ export const timePickerDoc: ComponentDoc = {
         emphasis: "Clock dial",
         component: (
           <div className="w-16 h-16 rounded-full bg-surface-container-highest relative">
-            <div className="absolute top-1/2 left-1/2 w-1u h-1u -translate-x-1/2 -translate-y-1/2 bg-primary rounded-full" />
+            <div className="absolute top-1/2 left-1/2 w-1 h-1 -translate-x-1/2 -translate-y-1/2 bg-primary rounded-full" />
             <div className="absolute top-1/2 left-1/2 h-6 w-0_5u bg-primary origin-bottom -translate-x-1/2 -translate-y-full rotate-45" />
           </div>
         ),
@@ -93,10 +90,10 @@ export const timePickerDoc: ComponentDoc = {
       {
         emphasis: "Keyboard input",
         component: (
-          <div className="flex gap-1u">
-            <div className="w-10u h-8u bg-surface-container-high rounded border border-outline-variant flex items-center justify-center text-body-small">09</div>
+          <div className="flex gap-1">
+            <div className="w-10 h-8 bg-surface-container-high rounded border border-outline-variant flex items-center justify-center text-body-small">09</div>
             <span className="text-body-medium">:</span>
-            <div className="w-10u h-8u bg-surface-container-high rounded border border-outline-variant flex items-center justify-center text-body-small">30</div>
+            <div className="w-10 h-8 bg-surface-container-high rounded border border-outline-variant flex items-center justify-center text-body-small">30</div>
           </div>
         ),
         rationale: "Precise, quick time entry.",

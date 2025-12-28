@@ -1,52 +1,49 @@
 "use client";
 
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { NavigationBar } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const NavigationBarHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-primary-container to-tertiary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-40px] left-[-40px] w-56 h-56 bg-primary/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-50px] right-[-30px] w-64 h-64 bg-tertiary/20 rounded-full blur-3xl" />
-
+  <HeroBackground tone="surface">
     {/* Mock Phone with Nav Bar */}
-    <div className="relative bg-surface w-[280px] h-[200px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 z-10">
+    <div className="relative bg-surface w-[280px] h-[200px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
       {/* Content */}
-      <div className="p-4u space-y-3u">
-        <div className="h-4u bg-surface-container-high rounded-sm w-full" />
-        <div className="h-4u bg-surface-container-high rounded-sm w-3/4" />
-        <div className="h-4u bg-surface-container-high rounded-sm w-1/2" />
+      <div className="p-4 space-y-3">
+        <div className="h-4 bg-surface-container-high rounded-sm w-full" />
+        <div className="h-4 bg-surface-container-high rounded-sm w-3/4" />
+        <div className="h-4 bg-surface-container-high rounded-sm w-1/2" />
       </div>
       {/* Navigation Bar */}
-      <div className="absolute bottom-0 left-0 right-0 h-20u bg-surface-container border-t border-outline-variant/30 flex items-center justify-around px-4u pb-4u">
-        <div className="flex flex-col items-center gap-1u">
-          <div className="w-16u h-8u rounded-sm bg-secondary-container flex items-center justify-center">
+      <div className="absolute bottom-0 left-0 right-0 h-20 bg-surface-container border-t border-outline-variant/30 flex items-center justify-around px-4 pb-4">
+        <div className="flex flex-col items-center gap-1">
+          <div className="w-16 h-8 rounded-sm bg-secondary-container flex items-center justify-center">
             <span className="material-symbols-outlined text-on-secondary-container">home</span>
           </div>
           <span className="text-label-medium text-on-surface">Home</span>
         </div>
-        <div className="flex flex-col items-center gap-1u">
-          <div className="w-16u h-8u flex items-center justify-center">
+        <div className="flex flex-col items-center gap-1">
+          <div className="w-16 h-8 flex items-center justify-center">
             <span className="material-symbols-outlined text-on-surface-variant">search</span>
           </div>
           <span className="text-label-medium text-on-surface-variant">Search</span>
         </div>
-        <div className="flex flex-col items-center gap-1u">
-          <div className="w-16u h-8u flex items-center justify-center">
+        <div className="flex flex-col items-center gap-1">
+          <div className="w-16 h-8 flex items-center justify-center">
             <span className="material-symbols-outlined text-on-surface-variant">person</span>
           </div>
           <span className="text-label-medium text-on-surface-variant">Profile</span>
         </div>
       </div>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 // ─── EXAMPLES ────────────────────────────────────────────────────────────────
 const NavigationBarBasicExample = () => (
-  <div className="w-full max-w-sm relative h-24u bg-surface-container rounded-lg overflow-hidden">
-    <NavigationBar className="relative h-20u">
+  <div className="w-full max-w-sm relative h-24 bg-surface-container rounded-lg overflow-hidden">
+    <NavigationBar className="relative h-20">
       <NavigationBar.Item
         icon={<span className="material-symbols-outlined">home</span>}
         label="Home"
@@ -99,7 +96,7 @@ export const navigationBarDoc: ComponentDoc = {
       {
         emphasis: "3 items",
         component: (
-          <div className="w-32 h-10u bg-surface-container rounded-sm flex items-center justify-around px-2u">
+          <div className="w-32 h-10 bg-surface-container rounded-sm flex items-center justify-around px-2">
             {["home", "search", "person"].map((icon, i) => (
               <div key={icon} className="flex flex-col items-center">
                 <span className={`material-symbols-outlined text-[14px] ${i === 0 ? "text-primary" : "text-on-surface-variant"}`}>{icon}</span>
@@ -113,7 +110,7 @@ export const navigationBarDoc: ComponentDoc = {
       {
         emphasis: "4-5 items",
         component: (
-          <div className="w-32 h-10u bg-surface-container rounded-sm flex items-center justify-around px-1u">
+          <div className="w-32 h-10 bg-surface-container rounded-sm flex items-center justify-around px-1">
             {["home", "search", "add_box", "notifications", "person"].map((icon, i) => (
               <div key={icon} className="flex flex-col items-center">
                 <span className={`material-symbols-outlined text-[12px] ${i === 0 ? "text-primary" : "text-on-surface-variant"}`}>{icon}</span>

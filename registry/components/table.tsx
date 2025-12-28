@@ -55,7 +55,7 @@ export const TableHead: React.FC<React.ThHTMLAttributes<HTMLTableCellElement>> =
   <th
     scope={scope}
     className={cn(
-      "h-11u px-6u text-left align-middle font-black text-label-small uppercase tracking-widest text-on-surface-variant select-none whitespace-nowrap",
+      "h-11 px-6 text-left align-middle font-black text-label-small uppercase tracking-widest text-on-surface-variant select-none whitespace-nowrap",
       className
     )}
     {...props}
@@ -67,7 +67,7 @@ export const TableCell: React.FC<React.TdHTMLAttributes<HTMLTableCellElement>> =
   ...props
 }) => (
   <td
-    className={cn("px-6u py-4u align-middle text-on-surface font-medium tabular-nums", className)}
+    className={cn("px-6 py-4 align-middle text-on-surface font-medium tabular-nums", className)}
     {...props}
   />
 );

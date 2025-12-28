@@ -3,7 +3,7 @@ export {
   useWindowSize,
 } from "./layout/window-size-provider";
 export { ThemeProvider, useTheme, useColorScheme, useDensity } from "./layout/theme-provider";
-export type { Theme, Density, RadiusTheme, ThemeConfig } from "./layout/theme-provider";
+export type { Theme, Density, RadiusTheme, ColorScheme, ContrastLevel, ThemeConfig } from "./layout/theme-provider";
 export { ThemeSwitcher } from "./components/theme-switcher";
 export { Container } from "./layout/container";
 export { AppLayout, AppLayout as Scaffold } from "./layout/app-layout";
@@ -48,6 +48,9 @@ export {
   DropdownMenuCheckboxItem,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
 } from "./components/dropdown-menu";
 export {
   List,

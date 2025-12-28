@@ -5,7 +5,7 @@ import { cn } from "@ui/lib/utils";
 import { cva, type VariantProps } from "class-variance-authority";
 
 const chipVariants = cva(
-  "inline-flex items-center gap-2u h-8u px-3u rounded-sm text-label-small font-medium border transition-all cursor-pointer select-none relative overflow-hidden group focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary leading-none",
+  "inline-flex items-center gap-2 h-8 px-3 rounded-sm text-label-small font-medium border transition-all cursor-pointer select-none relative overflow-hidden group focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary leading-none",
   {
     variants: {
       variant: {
@@ -90,17 +90,17 @@ export const Chip = forwardRef<HTMLDivElement, ChipProps>(
         )}
         
         {icon && !selected && (
-          <span className="w-4u h-4u flex items-center justify-center relative z-10 pointer-events-none" aria-hidden="true">
+          <span className="w-4 h-4 flex items-center justify-center relative z-10 pointer-events-none" aria-hidden="true">
             {icon}
           </span>
         )}
         
-        <span className="relative z-10 truncate leading-none pt-0.5u">{label}</span>
+        <span className="relative z-10 truncate leading-none pt-0_5">{label}</span>
         
         {onDelete && (
           <button
             type="button"
-            className="ml-1u -mr-1u rounded-sm p-0.5 hover:bg-on-surface/10 hover:text-on-surface transition-colors focus-visible:ring-2 focus-visible:ring-primary relative z-10"
+            className="ml-1 -mr-1 rounded-sm p-0.5 hover:bg-on-surface/10 hover:text-on-surface transition-colors focus-visible:ring-2 focus-visible:ring-primary relative z-10"
             onClick={(e) => {
               e.stopPropagation();
               onDelete();

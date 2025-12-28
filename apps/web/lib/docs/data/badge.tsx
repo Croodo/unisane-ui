@@ -1,18 +1,15 @@
 "use client";
 
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { Badge, Card, IconButton } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const BadgeHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-error-container to-primary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-40px] right-[-40px] w-56 h-56 bg-error/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-50px] left-[-30px] w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
-
+  <HeroBackground tone="surface">
     {/* Mock Notification Panel */}
-    <div className="relative bg-surface w-[280px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 z-10">
-      <div className="px-5u py-4u border-b border-outline-variant/20 flex items-center justify-between">
+    <div className="relative bg-surface w-[280px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
+      <div className="px-5 py-4 border-b border-outline-variant/20 flex items-center justify-between">
         <span className="text-title-medium text-on-surface">Dashboard</span>
         <div className="relative">
           <IconButton variant="standard" ariaLabel="Notifications" icon={<span className="material-symbols-outlined">notifications</span>} />
@@ -21,22 +18,22 @@ const BadgeHeroVisual = () => (
           </div>
         </div>
       </div>
-      <div className="p-4u space-y-3u">
-        <div className="flex items-center gap-3u">
+      <div className="p-4 space-y-3">
+        <div className="flex items-center gap-3">
           <Badge color="success">Active</Badge>
           <span className="text-body-small text-on-surface-variant">Server Status</span>
         </div>
-        <div className="flex items-center gap-3u">
+        <div className="flex items-center gap-3">
           <Badge color="error" variant="tonal">5 Critical</Badge>
           <span className="text-body-small text-on-surface-variant">Issues</span>
         </div>
-        <div className="flex items-center gap-3u">
+        <div className="flex items-center gap-3">
           <Badge color="primary" variant="outlined">v2.1.0</Badge>
           <span className="text-body-small text-on-surface-variant">Version</span>
         </div>
       </div>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 export const badgeDoc: ComponentDoc = {
@@ -129,7 +126,7 @@ export const badgeDoc: ComponentDoc = {
         title: "Notification badge",
         visual: (
           <Card variant="outlined" padding="lg" className="max-w-[200px] mx-auto">
-            <div className="flex items-center justify-center gap-6u">
+            <div className="flex items-center justify-center gap-6">
               <div className="relative">
                 <IconButton variant="standard" ariaLabel="Mail" icon={<span className="material-symbols-outlined">mail</span>} />
                 <div className="absolute -top-1 -right-1">
@@ -151,8 +148,8 @@ export const badgeDoc: ComponentDoc = {
         title: "Status labels",
         visual: (
           <Card variant="outlined" padding="md" className="max-w-[280px] mx-auto">
-            <div className="text-title-small text-on-surface mb-4u">Orders</div>
-            <div className="space-y-3u">
+            <div className="text-title-small text-on-surface mb-4">Orders</div>
+            <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-body-medium text-on-surface">Order #1234</span>
                 <Badge color="success" variant="tonal">Delivered</Badge>

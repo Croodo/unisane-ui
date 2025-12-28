@@ -1,45 +1,42 @@
 "use client";
 
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { Select } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const SelectHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-secondary-container to-primary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-40px] left-[-40px] w-56 h-56 bg-secondary/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-50px] right-[-30px] w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
-
+  <HeroBackground tone="secondary">
     {/* Mock Form Card */}
-    <div className="relative bg-surface w-[300px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 z-10">
-      <div className="px-6u py-5u border-b border-outline-variant/20">
+    <div className="relative bg-surface w-[300px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
+      <div className="px-6 py-5 border-b border-outline-variant/20">
         <span className="text-title-medium text-on-surface">Preferences</span>
       </div>
-      <div className="p-6u space-y-5u">
+      <div className="p-6 space-y-5">
         <div>
-          <div className="text-label-medium text-on-surface-variant mb-2u">Language</div>
-          <div className="bg-surface-container-high rounded-lg px-4u py-3u flex items-center justify-between">
+          <div className="text-label-medium text-on-surface-variant mb-2">Language</div>
+          <div className="bg-surface-container-high rounded-lg px-4 py-3 flex items-center justify-between">
             <span className="text-body-medium text-on-surface">English (US)</span>
             <span className="material-symbols-outlined text-on-surface-variant">expand_more</span>
           </div>
         </div>
         <div>
-          <div className="text-label-medium text-on-surface-variant mb-2u">Time zone</div>
-          <div className="bg-surface-container-high rounded-lg px-4u py-3u flex items-center justify-between">
+          <div className="text-label-medium text-on-surface-variant mb-2">Time zone</div>
+          <div className="bg-surface-container-high rounded-lg px-4 py-3 flex items-center justify-between">
             <span className="text-body-medium text-on-surface">Pacific Time (PT)</span>
             <span className="material-symbols-outlined text-on-surface-variant">expand_more</span>
           </div>
         </div>
         <div>
-          <div className="text-label-medium text-on-surface-variant mb-2u">Currency</div>
-          <div className="bg-surface-container-high rounded-lg px-4u py-3u flex items-center justify-between">
+          <div className="text-label-medium text-on-surface-variant mb-2">Currency</div>
+          <div className="bg-surface-container-high rounded-lg px-4 py-3 flex items-center justify-between">
             <span className="text-body-medium text-on-surface">USD ($)</span>
             <span className="material-symbols-outlined text-on-surface-variant">expand_more</span>
           </div>
         </div>
       </div>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 export const selectDoc: ComponentDoc = {
@@ -151,7 +148,7 @@ export const selectDoc: ComponentDoc = {
       {
         title: "Settings form",
         visual: (
-          <div className="space-y-4u w-full max-w-xs">
+          <div className="space-y-4 w-full max-w-xs">
             <Select
               label="Theme"
               variant="filled"
@@ -179,7 +176,7 @@ export const selectDoc: ComponentDoc = {
       {
         title: "Inline filter",
         visual: (
-          <div className="flex items-center gap-3u w-full max-w-xs">
+          <div className="flex items-center gap-3 w-full max-w-xs">
             <span className="text-body-medium text-on-surface-variant shrink-0">Sort by:</span>
             <Select
               variant="filled"

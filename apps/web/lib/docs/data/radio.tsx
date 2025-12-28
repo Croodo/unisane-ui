@@ -1,36 +1,33 @@
 "use client";
 
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { Radio, Card } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const RadioHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-secondary-container to-tertiary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-40px] right-[-40px] w-56 h-56 bg-secondary/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-50px] left-[-30px] w-64 h-64 bg-tertiary/20 rounded-full blur-3xl" />
-
+  <HeroBackground tone="secondary">
     {/* Mock Settings Card */}
-    <div className="relative bg-surface w-[280px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 z-10">
-      <div className="px-5u py-4u border-b border-outline-variant/20">
+    <div className="relative bg-surface w-[280px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
+      <div className="px-5 py-4 border-b border-outline-variant/20">
         <span className="text-title-medium text-on-surface">Select Plan</span>
       </div>
-      <div className="p-4u space-y-1u">
-        <div className="flex items-center justify-between py-2u px-2u rounded-lg hover:bg-surface-container-low">
+      <div className="p-4 space-y-1">
+        <div className="flex items-center justify-between py-2 px-2 rounded-lg hover:bg-surface-container-low">
           <div>
             <div className="text-body-medium text-on-surface">Basic</div>
             <div className="text-body-small text-on-surface-variant">$9/month</div>
           </div>
           <Radio name="plan" />
         </div>
-        <div className="flex items-center justify-between py-2u px-2u rounded-lg bg-primary-container/30">
+        <div className="flex items-center justify-between py-2 px-2 rounded-lg bg-primary-container/30">
           <div>
             <div className="text-body-medium text-on-surface">Pro</div>
             <div className="text-body-small text-on-surface-variant">$29/month</div>
           </div>
           <Radio name="plan" defaultChecked />
         </div>
-        <div className="flex items-center justify-between py-2u px-2u rounded-lg hover:bg-surface-container-low">
+        <div className="flex items-center justify-between py-2 px-2 rounded-lg hover:bg-surface-container-low">
           <div>
             <div className="text-body-medium text-on-surface">Enterprise</div>
             <div className="text-body-small text-on-surface-variant">Custom</div>
@@ -39,7 +36,7 @@ const RadioHeroVisual = () => (
         </div>
       </div>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 export const radioDoc: ComponentDoc = {
@@ -140,7 +137,7 @@ export const radioDoc: ComponentDoc = {
       {
         title: "Vertical radio group",
         visual: (
-          <div className="space-y-3u">
+          <div className="space-y-3">
             <Radio name="shipping" label="Standard (5-7 days)" defaultChecked />
             <Radio name="shipping" label="Express (2-3 days)" />
             <Radio name="shipping" label="Overnight" />
@@ -153,7 +150,7 @@ export const radioDoc: ComponentDoc = {
         visual: (
           <div className="w-full max-w-xs border border-outline-variant/20 rounded-lg overflow-hidden">
             {["Small", "Medium", "Large"].map((size, i) => (
-              <div key={size} className={`flex items-center gap-3u px-4u py-3u border-b border-outline-variant/20 last:border-0 ${i === 1 ? "bg-primary-container/20" : "bg-surface"}`}>
+              <div key={size} className={`flex items-center gap-3 px-4 py-3 border-b border-outline-variant/20 last:border-0 ${i === 1 ? "bg-primary-container/20" : "bg-surface"}`}>
                 <Radio name="size" defaultChecked={i === 1} />
                 <span className="text-body-medium text-on-surface">{size}</span>
               </div>

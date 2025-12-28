@@ -9,10 +9,10 @@ const avatarVariants = cva(
   {
     variants: {
       size: {
-        sm: "w-8u h-8u text-label-small",
-        md: "w-10u h-10u text-body-small",
-        lg: "w-12u h-12u text-body-medium",
-        xl: "w-14u h-14u text-body-large",
+        sm: "w-8 h-8 text-label-small",
+        md: "w-10 h-10 text-body-small",
+        lg: "w-12 h-12 text-body-medium",
+        xl: "w-14 h-14 text-body-large",
       },
       variant: {
         circular: "rounded-full",
@@ -77,12 +77,12 @@ export const AvatarGroup: React.FC<{
   const remainingCount = childrenArray.length - max;
 
   return (
-    <div className={cn("flex -space-x-2u", className)} role="group" aria-label="Avatar group">
+    <div className={cn("flex -space-x-2", className)} role="group" aria-label="Avatar group">
       {visibleChildren}
       {remainingCount > 0 && (
         <Surface
           tone="surfaceVariant"
-          className="w-10u h-10u rounded-full flex items-center justify-center border-2 border-surface"
+          className="w-10 h-10 rounded-full flex items-center justify-center border-2 border-surface"
           role="img"
           aria-label={`${remainingCount} more`}
         >

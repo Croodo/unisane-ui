@@ -1,45 +1,42 @@
 "use client";
 
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Card, Checkbox, Badge } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const TableHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-tertiary-container to-secondary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-40px] right-[-40px] w-56 h-56 bg-tertiary/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-50px] left-[-30px] w-64 h-64 bg-secondary/20 rounded-full blur-3xl" />
-
+  <HeroBackground tone="surface">
     {/* Mock Table */}
-    <div className="relative bg-surface w-[320px] rounded-xl shadow-xl overflow-hidden border border-outline-variant/30 z-10">
+    <div className="relative bg-surface w-[320px] rounded-xl shadow-xl overflow-hidden border border-outline-variant/30">
       <table className="w-full text-body-small">
         <thead className="bg-surface-container-low border-b border-outline-variant/30">
           <tr>
-            <th className="px-4u py-3u text-left text-label-medium text-on-surface-variant font-medium">Name</th>
-            <th className="px-4u py-3u text-left text-label-medium text-on-surface-variant font-medium">Status</th>
-            <th className="px-4u py-3u text-right text-label-medium text-on-surface-variant font-medium">Amount</th>
+            <th className="px-4 py-3 text-left text-label-medium text-on-surface-variant font-medium">Name</th>
+            <th className="px-4 py-3 text-left text-label-medium text-on-surface-variant font-medium">Status</th>
+            <th className="px-4 py-3 text-right text-label-medium text-on-surface-variant font-medium">Amount</th>
           </tr>
         </thead>
         <tbody>
           <tr className="border-b border-outline-variant/15 hover:bg-surface-container-low">
-            <td className="px-4u py-3u text-on-surface">Project Alpha</td>
-            <td className="px-4u py-3u"><span className="text-primary text-label-small font-medium">Active</span></td>
-            <td className="px-4u py-3u text-right text-on-surface tabular-nums">$12,500</td>
+            <td className="px-4 py-3 text-on-surface">Project Alpha</td>
+            <td className="px-4 py-3"><span className="text-primary text-label-small font-medium">Active</span></td>
+            <td className="px-4 py-3 text-right text-on-surface tabular-nums">$12,500</td>
           </tr>
           <tr className="border-b border-outline-variant/15 bg-primary/5">
-            <td className="px-4u py-3u text-on-surface">Project Beta</td>
-            <td className="px-4u py-3u"><span className="text-tertiary text-label-small font-medium">Pending</span></td>
-            <td className="px-4u py-3u text-right text-on-surface tabular-nums">$8,200</td>
+            <td className="px-4 py-3 text-on-surface">Project Beta</td>
+            <td className="px-4 py-3"><span className="text-tertiary text-label-small font-medium">Pending</span></td>
+            <td className="px-4 py-3 text-right text-on-surface tabular-nums">$8,200</td>
           </tr>
           <tr className="hover:bg-surface-container-low">
-            <td className="px-4u py-3u text-on-surface">Project Gamma</td>
-            <td className="px-4u py-3u"><span className="text-on-surface-variant text-label-small font-medium">Draft</span></td>
-            <td className="px-4u py-3u text-right text-on-surface tabular-nums">$4,800</td>
+            <td className="px-4 py-3 text-on-surface">Project Gamma</td>
+            <td className="px-4 py-3"><span className="text-on-surface-variant text-label-small font-medium">Draft</span></td>
+            <td className="px-4 py-3 text-right text-on-surface tabular-nums">$4,800</td>
           </tr>
         </tbody>
       </table>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 export const tableDoc: ComponentDoc = {
@@ -76,10 +73,10 @@ export const tableDoc: ComponentDoc = {
           <div className="w-44 bg-surface rounded-sm border border-outline-variant/30 overflow-hidden">
             <table className="w-full text-[10px]">
               <thead className="bg-surface-container-low border-b border-outline-variant/30">
-                <tr><th className="px-2u py-1u text-left">Col 1</th><th className="px-2u py-1u text-left">Col 2</th></tr>
+                <tr><th className="px-2 py-1 text-left">Col 1</th><th className="px-2 py-1 text-left">Col 2</th></tr>
               </thead>
               <tbody>
-                <tr className="border-b border-outline-variant/15"><td className="px-2u py-1u">A</td><td className="px-2u py-1u">B</td></tr>
+                <tr className="border-b border-outline-variant/15"><td className="px-2 py-1">A</td><td className="px-2 py-1">B</td></tr>
               </tbody>
             </table>
           </div>
@@ -94,11 +91,11 @@ export const tableDoc: ComponentDoc = {
           <div className="w-44 bg-surface rounded-sm border border-outline-variant/30 overflow-hidden">
             <table className="w-full text-[9px]">
               <thead className="bg-surface-container-low border-b border-outline-variant/30">
-                <tr><th className="px-1u py-0.5u text-left">Col 1</th><th className="px-1u py-0.5u text-left">Col 2</th></tr>
+                <tr><th className="px-1 py-0_5 text-left">Col 1</th><th className="px-1 py-0_5 text-left">Col 2</th></tr>
               </thead>
               <tbody>
-                <tr className="border-b border-outline-variant/15"><td className="px-1u py-0.5u">A</td><td className="px-1u py-0.5u">B</td></tr>
-                <tr><td className="px-1u py-0.5u">C</td><td className="px-1u py-0.5u">D</td></tr>
+                <tr className="border-b border-outline-variant/15"><td className="px-1 py-0_5">A</td><td className="px-1 py-0_5">B</td></tr>
+                <tr><td className="px-1 py-0_5">C</td><td className="px-1 py-0_5">D</td></tr>
               </tbody>
             </table>
           </div>
@@ -117,21 +114,21 @@ export const tableDoc: ComponentDoc = {
     items: [
       {
         component: (
-          <div className="w-32 bg-surface-container-low rounded-sm p-2u text-[10px] text-on-surface-variant font-medium">TableHeader</div>
+          <div className="w-32 bg-surface-container-low rounded-sm p-2 text-[10px] text-on-surface-variant font-medium">TableHeader</div>
         ),
         title: "Header",
         subtitle: "Column labels",
       },
       {
         component: (
-          <div className="w-32 bg-surface rounded-sm p-2u text-[10px] text-on-surface border border-outline-variant/30">TableBody</div>
+          <div className="w-32 bg-surface rounded-sm p-2 text-[10px] text-on-surface border border-outline-variant/30">TableBody</div>
         ),
         title: "Body",
         subtitle: "Data rows",
       },
       {
         component: (
-          <div className="w-32 bg-surface rounded-sm p-2u text-[10px] text-on-surface border border-outline-variant/30 hover:bg-surface-container-low">TableRow</div>
+          <div className="w-32 bg-surface rounded-sm p-2 text-[10px] text-on-surface border border-outline-variant/30 hover:bg-surface-container-low">TableRow</div>
         ),
         title: "Row",
         subtitle: "Interactive row",
@@ -180,7 +177,7 @@ export const tableDoc: ComponentDoc = {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-12u"><Checkbox aria-label="Select all" /></TableHead>
+                  <TableHead className="w-12"><Checkbox aria-label="Select all" /></TableHead>
                   <TableHead>Item</TableHead>
                   <TableHead className="text-right">Price</TableHead>
                 </TableRow>

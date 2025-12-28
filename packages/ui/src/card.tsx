@@ -21,7 +21,7 @@ export function LinkCard({
   return (
     <a
       className={cn(
-        "group relative block rounded-md border border-outline-variant/20 px-5u py-4u",
+        "group relative block rounded-md border border-outline-variant/20 px-5 py-4",
         "bg-surface-container transition-colors duration-short ease-standard",
         "hover:border-outline hover:bg-surface-container-high",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
@@ -31,10 +31,10 @@ export function LinkCard({
       rel="noopener noreferrer"
       target="_blank"
     >
-      <h2 className="mb-3u text-title-large font-semibold text-on-surface">
+      <h2 className="mb-3 text-title-large font-semibold text-on-surface">
         {title}{" "}
         <span
-          className="inline-block transition-transform duration-short ease-standard group-hover:translate-x-1u motion-reduce:transform-none"
+          className="inline-block transition-transform duration-short ease-standard group-hover:translate-x-1 motion-reduce:transform-none"
           aria-hidden="true"
         >
           →

@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { Text } from "@/primitives/text";
 import { Ripple } from "./ripple";
 
-const ratingVariants = cva("flex items-center gap-1u", {
+const ratingVariants = cva("flex items-center gap-1", {
   variants: {
     size: {
       sm: "text-label-medium",
@@ -84,7 +84,7 @@ export const Rating: React.FC<RatingProps> = ({
         return (
           <button
             key={index}
-            className="relative p-1u rounded-full hover:bg-on-surface/10 transition-colors overflow-hidden"
+            className="relative p-1 rounded-full hover:bg-on-surface/10 transition-colors overflow-hidden"
             onClick={() => handleStarClick(index + 1)}
             onMouseEnter={() => handleStarMouseEnter(index + 1)}
             onMouseLeave={handleStarMouseLeave}
@@ -99,7 +99,7 @@ export const Rating: React.FC<RatingProps> = ({
               height="24"
               viewBox="0 0 24 24"
               className={cn(
-                "w-6u h-6u relative z-10",
+                "w-6 h-6 relative z-10",
                 fill === "full" && "text-primary",
                 fill === "half" && "text-primary",
                 fill === "empty" && "text-outline"
@@ -132,7 +132,7 @@ export const Rating: React.FC<RatingProps> = ({
       })}
 
       {showValue && (
-        <Text variant="bodyMedium" className="ml-2u text-on-surface-variant">
+        <Text variant="bodyMedium" className="ml-2 text-on-surface-variant">
           {value.toFixed(allowHalf ? 1 : 0)} / {max}
         </Text>
       )}

@@ -1,17 +1,14 @@
 "use client";
 
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { Card, Button } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const CardHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-tertiary-container to-secondary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Shapes */}
-    <div className="absolute top-[-20%] left-[-10%] w-[400px] h-[400px] bg-tertiary/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-10%] right-[-10%] w-[300px] h-[300px] bg-secondary/20 rounded-full blur-3xl" />
-
+  <HeroBackground tone="tertiary">
     {/* Hero Card Example */}
-    <div className="relative z-10 transform transition-transform hover:scale-[1.02] duration-500 ease-out">
+    <div className="transform transition-transform hover:scale-[1.02] duration-500 ease-out">
       <Card variant="elevated" padding="none" className="w-[320px] overflow-hidden shadow-xl">
         <div className="h-44 bg-surface-container-high relative">
           <img
@@ -36,7 +33,7 @@ const CardHeroVisual = () => (
         </div>
       </Card>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 export const cardDoc: ComponentDoc = {

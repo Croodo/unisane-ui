@@ -104,12 +104,12 @@ export const AccordionTrigger: React.FC<AccordionTriggerProps> = ({
     <button
       onClick={() => context?.toggle(value!)}
       className={cn(
-        "w-full h-12u px-4u flex items-center justify-between text-label-medium font-medium transition-all relative overflow-hidden group",
+        "w-full h-12 px-4 flex items-center justify-between text-label-medium font-medium transition-all relative overflow-hidden group",
         isExpanded ? "text-primary" : "text-on-surface hover:bg-on-surface/5"
       )}
     >
       <Ripple />
-      <span className="relative z-10 flex-1 text-left pt-0.5u">
+      <span className="relative z-10 flex-1 text-left pt-0_5">
         {children}
       </span>
       <Icon
@@ -138,7 +138,7 @@ export const AccordionContent: React.FC<AccordionContentProps> = ({
       isExpanded ? "max-h-[calc(var(--uni-sys-u)*250)] opacity-100" : "max-h-0 opacity-0"
     )}
   >
-    <div className="px-4u pb-4u pt-1u text-on-surface-variant text-body-small font-medium leading-relaxed">
+    <div className="px-4 pb-4 pt-1 text-on-surface-variant text-body-small font-medium leading-relaxed">
       {children}
     </div>
   </div>

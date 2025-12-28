@@ -14,9 +14,9 @@ const iconButtonVariants = cva(
         standard: "bg-transparent text-on-surface-variant",
       },
       size: {
-        sm: "w-8u h-8u",
-        md: "w-10u h-10u",
-        lg: "w-12u h-12u",
+        sm: "w-8 h-8",
+        md: "w-10 h-10",
+        lg: "w-12 h-12",
       },
       selected: {
         true: "",
@@ -71,9 +71,9 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
     ref
   ) => {
     const iconSizeClasses = {
-      sm: "w-5u h-5u",
-      md: "w-6u h-6u",
-      lg: "w-7u h-7u",
+      sm: "w-5 h-5",
+      md: "w-6 h-6",
+      lg: "w-7 h-7",
     };
 
     return (

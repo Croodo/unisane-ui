@@ -7,7 +7,7 @@ import { Button } from "./button";
 import { Ripple } from "./ripple";
 
 const snackbarVariants = cva(
-  "fixed bottom-6u left-6u right-6u expanded:left-auto expanded:right-8u expanded:min-w-[calc(var(--unit)*86)] z-[5000] flex justify-center pointer-events-none transition-all duration-medium ease-emphasized",
+  "fixed bottom-6 left-6 right-6 expanded:left-auto expanded:right-8 expanded:min-w-[calc(var(--unit)*86)] z-[5000] flex justify-center pointer-events-none transition-all duration-medium ease-emphasized",
   {
     variants: {
       variant: {
@@ -71,13 +71,13 @@ export const Snackbar: React.FC<SnackbarProps> = ({
     >
       <div
         className={cn(
-        "pointer-events-auto flex items-center gap-4u px-4u py-3u bg-inverse-surface text-inverse-on-surface rounded-sm shadow-4 min-h-12u border border-outline-variant/10",
+        "pointer-events-auto flex items-center gap-4 px-4 py-3 bg-inverse-surface text-inverse-on-surface rounded-sm shadow-4 min-h-12 border border-outline-variant/10",
         "animate-in slide-in-from-bottom-5 fade-in duration-medium ease-emphasized",
         className
       )}
       >
         {icon && (
-          <div className="w-6u h-6u flex items-center justify-center text-inverse-on-surface shrink-0 opacity-90">
+          <div className="w-5 h-5 flex items-center justify-center text-inverse-on-surface shrink-0 opacity-90">
             {icon}
           </div>
         )}
@@ -91,7 +91,7 @@ export const Snackbar: React.FC<SnackbarProps> = ({
             variant="text"
             size="sm"
             onClick={resolvedAction.onClick}
-            className="text-inverse-primary hover:bg-inverse-primary/10 h-8u px-3u font-medium"
+            className="text-inverse-primary hover:bg-inverse-primary/10 h-8 px-3 font-medium"
           >
             {resolvedAction.label}
           </Button>
@@ -100,12 +100,12 @@ export const Snackbar: React.FC<SnackbarProps> = ({
         {withCloseIcon && (
           <button
             onClick={onClose}
-            className="group p-1u rounded-full transition-colors text-inverse-on-surface opacity-50 hover:opacity-100 relative overflow-hidden"
+            className="group p-1 rounded-full transition-colors text-inverse-on-surface opacity-50 hover:opacity-100 relative overflow-hidden"
             aria-label="Close"
           >
             <span className="absolute inset-0 bg-inverse-on-surface opacity-0 transition-opacity group-hover:opacity-hover pointer-events-none" />
             <Ripple />
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="relative z-10">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-5 h-5 relative z-10">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
@@ -121,7 +121,7 @@ export const SnackbarContainer: React.FC<{
 }> = ({ children }) => {
   return (
     <div className="fixed inset-0 pointer-events-none z-50">
-      <div className="absolute bottom-6u left-1/2 -translate-x-1/2 flex flex-col gap-2u pointer-events-auto">
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col gap-2 pointer-events-auto">
         {children}
       </div>
     </div>

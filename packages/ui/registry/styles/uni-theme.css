@@ -1,3 +1,9 @@
+/*
+ * DEPRECATED: This file will be removed in a future version.
+ * Please use the merged file instead:
+ *   @import "@unisane/tokens/unisane.css";
+ */
+
 
 /* ============================================================
    TAILWIND v4 THEME MAPPING
@@ -154,7 +160,46 @@
   --text-label-small--letter-spacing: var(--type-label-small-tracking);
   --text-label-small--font-weight: var(--type-label-small-weight);
 
-  /* Spacing */
+  /* Spacing - Standard Tailwind keys mapped to density-scaled values */
+  /* These override Tailwind defaults so p-4, gap-2, etc. scale with density */
+  --spacing-0: 0px;
+  --spacing-0_5: calc(var(--unit) * 0.5);
+  --spacing-1: calc(var(--unit) * 1);
+  --spacing-1_5: calc(var(--unit) * 1.5);
+  --spacing-2: calc(var(--unit) * 2);
+  --spacing-2_5: calc(var(--unit) * 2.5);
+  --spacing-3: calc(var(--unit) * 3);
+  --spacing-3_5: calc(var(--unit) * 3.5);
+  --spacing-4: calc(var(--unit) * 4);
+  --spacing-5: calc(var(--unit) * 5);
+  --spacing-6: calc(var(--unit) * 6);
+  --spacing-7: calc(var(--unit) * 7);
+  --spacing-8: calc(var(--unit) * 8);
+  --spacing-9: calc(var(--unit) * 9);
+  --spacing-10: calc(var(--unit) * 10);
+  --spacing-11: calc(var(--unit) * 11);
+  --spacing-12: calc(var(--unit) * 12);
+  --spacing-14: calc(var(--unit) * 14);
+  --spacing-16: calc(var(--unit) * 16);
+  --spacing-20: calc(var(--unit) * 20);
+  --spacing-24: calc(var(--unit) * 24);
+  --spacing-28: calc(var(--unit) * 28);
+  --spacing-32: calc(var(--unit) * 32);
+  --spacing-36: calc(var(--unit) * 36);
+  --spacing-38: calc(var(--unit) * 38);
+  --spacing-40: calc(var(--unit) * 40);
+  --spacing-44: calc(var(--unit) * 44);
+  --spacing-48: calc(var(--unit) * 48);
+  --spacing-52: calc(var(--unit) * 52);
+  --spacing-56: calc(var(--unit) * 56);
+  --spacing-60: calc(var(--unit) * 60);
+  --spacing-64: calc(var(--unit) * 64);
+  --spacing-72: calc(var(--unit) * 72);
+  --spacing-80: calc(var(--unit) * 80);
+  --spacing-96: calc(var(--unit) * 96);
+  --spacing-100: calc(var(--unit) * 100);
+
+  /* Legacy unit-based spacing (deprecated - use standard keys above) */
   --spacing-0_5u: var(--space-0_5u);
   --spacing-1u: var(--space-1u);
   --spacing-1_5u: var(--space-1_5u);
@@ -191,6 +236,8 @@
   --spacing-24u: var(--space-24u);
   --spacing-28u: var(--space-28u);
   --spacing-38u: var(--space-38u);
+  --spacing-72u: var(--space-72u);
+  --spacing-100u: var(--space-100u);
 
   /* Layout */
   --spacing-layout-margin: var(--layout-margin);

@@ -24,12 +24,12 @@ export const Radio = forwardRef<HTMLInputElement, RadioProps>(
       <label
         htmlFor={id}
         className={cn(
-          "inline-flex items-center gap-3u cursor-pointer group select-none relative",
+          "inline-flex items-center gap-3 cursor-pointer group select-none relative",
           disabled && "opacity-38 cursor-not-allowed pointer-events-none",
           className
         )}
       >
-        <div className="relative flex items-center justify-center w-10u h-10u">
+        <div className="relative flex items-center justify-center w-10 h-10">
           {/* Ripple Container */}
           <div
             className={cn(
@@ -57,7 +57,7 @@ export const Radio = forwardRef<HTMLInputElement, RadioProps>(
           {/* Radio outer circle */}
           <div
             className={cn(
-              "relative z-10 w-5u h-5u rounded-full border-2 bg-surface",
+              "relative z-10 w-5 h-5 rounded-full border-2 bg-surface",
               "transition-colors duration-snappy ease-emphasized flex items-center justify-center",
               !error &&
                 "border-outline group-hover:border-on-surface peer-checked:border-primary",
@@ -67,7 +67,7 @@ export const Radio = forwardRef<HTMLInputElement, RadioProps>(
             {/* Radio inner dot */}
             <div
               className={cn(
-                "w-2.5u h-2.5u rounded-full transition-transform duration-snappy ease-emphasized scale-0 peer-checked:scale-100",
+                "w-2_5 h-2_5 rounded-full transition-transform duration-snappy ease-emphasized scale-0 peer-checked:scale-100",
                 !error && "bg-primary",
                 error && "bg-error"
               )}
@@ -76,7 +76,7 @@ export const Radio = forwardRef<HTMLInputElement, RadioProps>(
         </div>
 
         {label && (
-          <span className="text-body-small font-medium text-on-surface leading-none pt-0.5u">
+          <span className="text-body-small font-medium text-on-surface leading-none pt-0_5">
             {label}
           </span>
         )}

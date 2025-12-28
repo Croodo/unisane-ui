@@ -44,7 +44,7 @@ export const ListDetailLayout: React.FC<ListDetailLayoutProps> = ({
         className="bg-surface-container-low transition-opacity duration-long ease-standard relative"
       >
         {showDetailMobile && (
-          <div className="medium:hidden absolute top-4u left-4u z-20">
+          <div className="medium:hidden absolute top-4 left-4 z-20">
             <IconButton
               onClick={onBackClick}
               variant="standard"
@@ -137,7 +137,7 @@ export const SupportingPaneLayout: React.FC<SupportingPaneLayoutProps> = ({
       >
         {isOpen ? (
           <div className="flex flex-col h-full">
-            <header className="px-6u py-4u border-b border-outline-variant/10 flex items-center justify-between shrink-0">
+            <header className="px-6 py-4 border-b border-outline-variant/10 flex items-center justify-between shrink-0">
               <div className="font-medium text-primary text-label-medium">
                 {title}
               </div>
@@ -153,13 +153,13 @@ export const SupportingPaneLayout: React.FC<SupportingPaneLayoutProps> = ({
                 className="expanded:hidden"
               />
             </header>
-            <div className="flex-1 overflow-y-auto [scrollbar-gutter:stable] pt-2u">
+            <div className="flex-1 overflow-y-auto [scrollbar-gutter:stable] pt-2">
               {supporting}
             </div>
           </div>
         ) : (
           /* Collapsed Rail State */
-          <div className="hidden expanded:flex flex-col items-center py-6u h-full gap-4u overflow-y-auto no-scrollbar">
+          <div className="hidden expanded:flex flex-col items-center py-6 h-full gap-4 overflow-y-auto no-scrollbar">
             <IconButton
               onClick={handleToggle}
               variant="standard"
@@ -171,8 +171,8 @@ export const SupportingPaneLayout: React.FC<SupportingPaneLayoutProps> = ({
                 </span>
               }
             />
-            <div className="w-[calc(var(--uni-sys-u)/4)] flex-1 bg-outline-variant/30 min-h-10u" />
-            <div className="rotate-90 whitespace-nowrap text-label-small font-medium text-on-surface-variant/50 tracking-wide origin-center mt-12u mb-6u shrink-0">
+            <div className="w-[calc(var(--uni-sys-u)/4)] flex-1 bg-outline-variant/30 min-h-10" />
+            <div className="rotate-90 whitespace-nowrap text-label-small font-medium text-on-surface-variant/50 tracking-wide origin-center mt-12 mb-6 shrink-0">
               {title}
             </div>
           </div>
@@ -206,13 +206,13 @@ export const FeedLayout: React.FC<FeedLayoutProps> = ({
   return (
     <div
       className={cn(
-        "w-full h-full overflow-y-auto bg-surface-container-low p-4u expanded:p-6u scroll-smooth no-scrollbar",
+        "w-full h-full overflow-y-auto bg-surface-container-low p-4 expanded:p-6 scroll-smooth no-scrollbar",
         !isRoot && "rounded-sm border border-outline-variant/30",
         className
       )}
     >
       <div className="max-w-large mx-auto">
-        <div className="grid grid-cols-1 expanded:grid-cols-2 large:grid-cols-3 gap-4u expanded:gap-6u items-start">
+        <div className="grid grid-cols-1 expanded:grid-cols-2 large:grid-cols-3 gap-4 expanded:gap-6 items-start">
           {children}
         </div>
       </div>

@@ -59,11 +59,11 @@ export const FabMenu: React.FC<FabMenuProps> = ({
   return (
     <div
       ref={containerRef}
-      className={cn("relative flex flex-col items-end gap-4u z-50", className)}
+      className={cn("relative flex flex-col items-end gap-4 z-50", className)}
     >
       <div
         className={cn(
-          "flex flex-col items-end gap-3u transition-all duration-medium ease-smooth",
+          "flex flex-col items-end gap-3 transition-all duration-medium ease-smooth",
           isOpen
             ? "opacity-100 translate-y-0 visible"
             : "opacity-0 translate-y-10 invisible pointer-events-none"
@@ -73,8 +73,8 @@ export const FabMenu: React.FC<FabMenuProps> = ({
         aria-hidden={!isOpen}
       >
         {actions.map((action, index) => (
-          <div key={index} className="flex items-center gap-3u group" role="none">
-            <span className="bg-inverse-surface text-inverse-on-surface text-label-small font-medium py-1u px-2u rounded-sm shadow-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap" aria-hidden="true">
+          <div key={index} className="flex items-center gap-3 group" role="none">
+            <span className="bg-inverse-surface text-inverse-on-surface text-label-small font-medium py-1 px-2 rounded-sm shadow-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap" aria-hidden="true">
               {action.label}
             </span>
             <Fab

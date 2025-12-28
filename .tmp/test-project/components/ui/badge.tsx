@@ -19,9 +19,9 @@ const badgeVariants = cva(
         success: "",
       },
       size: {
-        sm: "text-label-small px-1.5u py-0.5u",
-        md: "text-label-small px-2u py-0.5u",
-        lg: "text-body-small px-3u py-1u",
+        sm: "text-label-small px-1_5 py-0_5",
+        md: "text-label-small px-2 py-0_5",
+        lg: "text-body-small px-3 py-1",
       },
     },
     compoundVariants: [

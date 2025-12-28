@@ -71,12 +71,12 @@ const CHROMA_SCALE = {
   30: 0.95,
   40: 1.0,
   50: 1.0,
-  60: 0.95,
-  70: 0.85,
-  80: 0.7,
-  90: 0.5,
-  95: 0.3,
-  99: 0.1,
+  60: 0.9,
+  70: 0.75,
+  80: 0.55,
+  90: 0.35,   // Muted containers (reference: ~21% saturation)
+  95: 0.25,   // Surface containers - subtle tint
+  99: 0.15,   // Surface - subtle blue-gray tint
   100: 0,
 };
 
@@ -284,8 +284,8 @@ function generateUniTokens() {
 /* Theme defaults layer - can be overridden by unlayered app CSS */
 @layer unisane-defaults {
   :root {
-    --hue: ${primaryHue};
-    --chroma: ${primaryChroma};
+    --hue: 210;
+    --chroma: 0.16;
   }
 }
 
@@ -360,7 +360,7 @@ function generateUniTokens() {
      This enables special schemes (monochrome, high-contrast) without
      regenerating the entire palette. Just change the tone mappings! */
 
-  /* Primary tone mapping */
+  /* Primary tone mapping (M3 standard: tone 40) */
   --tone-primary: var(--ref-primary-40);
   --tone-on-primary: var(--ref-primary-100);
   --tone-primary-container: var(--ref-primary-90);
@@ -546,7 +546,7 @@ function generateUniTokens() {
   // Unit spacing (0.5u to 16u, plus larger values)
   const units = [];
   for (let i = 1; i <= 32; i++) units.push(i / 2);
-  units.push(20, 24, 28, 38);
+  units.push(20, 24, 28, 32, 36, 38, 40, 44, 48, 52, 56, 60, 64, 72, 80, 96, 100);
 
   for (const u of units) {
     const key = u.toString().replace(".", "_");
@@ -765,44 +765,44 @@ function generateUniTokens() {
    - high               - Maximum contrast for accessibility (WCAG AAA)
    ============================================================ */
 
-/* Medium contrast - boosted readability */
+/* Medium contrast - boosted readability (darker primary: tone 30) */
 [data-contrast="medium"] {
   --tone-primary: var(--ref-primary-30);
   --tone-on-primary: var(--ref-primary-100);
   --tone-primary-container: var(--ref-primary-95);
-  --tone-on-primary-container: var(--ref-primary-5, var(--ref-primary-10));
+  --tone-on-primary-container: var(--ref-primary-10);
 
   --tone-secondary: var(--ref-secondary-30);
   --tone-on-secondary: var(--ref-secondary-100);
 
-  --tone-on-surface: var(--ref-neutral-5, var(--ref-neutral-10));
+  --tone-on-surface: var(--ref-neutral-10);
   --tone-outline: var(--ref-neutral-variant-40);
 }
 
 .dark[data-contrast="medium"],
 [data-contrast="medium"].dark {
-  --tone-primary: var(--ref-primary-85, var(--ref-primary-80));
+  --tone-primary: var(--ref-primary-80);
   --tone-on-primary: var(--ref-primary-10);
-  --tone-primary-container: var(--ref-primary-25, var(--ref-primary-30));
+  --tone-primary-container: var(--ref-primary-30);
   --tone-on-primary-container: var(--ref-primary-95);
 
-  --tone-secondary: var(--ref-secondary-85, var(--ref-secondary-80));
+  --tone-secondary: var(--ref-secondary-80);
   --tone-on-secondary: var(--ref-secondary-10);
 
   --tone-on-surface: var(--ref-neutral-95);
   --tone-outline: var(--ref-neutral-variant-70);
 }
 
-/* High contrast - maximum accessibility (WCAG AAA) */
+/* High contrast - maximum accessibility, WCAG AAA (darkest primary: tone 20) */
 [data-contrast="high"] {
   --tone-primary: var(--ref-primary-20);
   --tone-on-primary: var(--ref-primary-100);
-  --tone-primary-container: var(--ref-primary-95);
+  --tone-primary-container: var(--ref-primary-99);
   --tone-on-primary-container: var(--ref-primary-0);
 
   --tone-secondary: var(--ref-secondary-20);
   --tone-on-secondary: var(--ref-secondary-100);
-  --tone-secondary-container: var(--ref-secondary-95);
+  --tone-secondary-container: var(--ref-secondary-99);
   --tone-on-secondary-container: var(--ref-secondary-0);
 
   --tone-tertiary: var(--ref-tertiary-20);
@@ -869,14 +869,27 @@ function generateUniTokens() {
 /* ============================================================
    RADIUS THEME - CSS-only via data attribute
    Usage: <html data-radius="soft">
+   Values must match ThemeProvider RADIUS_PRESETS
    ============================================================ */
 
+[data-radius="none"] {
+  --scale-radius: 0;
+}
+
+[data-radius="minimal"] {
+  --scale-radius: 0.25;
+}
+
 [data-radius="sharp"] {
-  --scale-radius: 0.75;
+  --scale-radius: 0.5;
+}
+
+[data-radius="standard"] {
+  --scale-radius: 1.0;
 }
 
 [data-radius="soft"] {
-  --scale-radius: 1.15;
+  --scale-radius: 1.25;
 }
 
 /* ============================================================
@@ -1062,13 +1075,66 @@ function generateTailwindTheme() {
   }
 
   css += `
-  /* Spacing */
+  /* Spacing - Standard Tailwind keys mapped to density-scaled values */
+  /* These override Tailwind defaults so p-4, gap-2, etc. scale with density */
 `;
 
-  // Unit spacing
+  // Standard Tailwind spacing scale mapped to our unit system
+  // Tailwind: 0.5 = 2px, 1 = 4px, 2 = 8px, etc. (0.25rem base)
+  // Our system: 1u = 4px * scale, so p-4 = 4u = 16px * scale
+  const tailwindSpacing = [
+    [0, 0],           // 0 = 0px
+    [0.5, 0.5],       // 0.5 = 2px = 0.5u
+    [1, 1],           // 1 = 4px = 1u
+    [1.5, 1.5],       // 1.5 = 6px = 1.5u
+    [2, 2],           // 2 = 8px = 2u
+    [2.5, 2.5],       // 2.5 = 10px = 2.5u
+    [3, 3],           // 3 = 12px = 3u
+    [3.5, 3.5],       // 3.5 = 14px = 3.5u
+    [4, 4],           // 4 = 16px = 4u
+    [5, 5],           // 5 = 20px = 5u
+    [6, 6],           // 6 = 24px = 6u
+    [7, 7],           // 7 = 28px = 7u
+    [8, 8],           // 8 = 32px = 8u
+    [9, 9],           // 9 = 36px = 9u
+    [10, 10],         // 10 = 40px = 10u
+    [11, 11],         // 11 = 44px = 11u
+    [12, 12],         // 12 = 48px = 12u
+    [14, 14],         // 14 = 56px = 14u
+    [16, 16],         // 16 = 64px = 16u
+    [20, 20],         // 20 = 80px = 20u
+    [24, 24],         // 24 = 96px = 24u
+    [28, 28],         // 28 = 112px = 28u
+    [32, 32],         // 32 = 128px - not in our scale, use calc
+    [36, 36],         // 36 = 144px
+    [38, 38],         // 38 = 152px = 38u (our custom)
+    [40, 40],         // 40 = 160px
+    [44, 44],         // 44 = 176px
+    [48, 48],         // 48 = 192px
+    [52, 52],         // 52 = 208px
+    [56, 56],         // 56 = 224px
+    [60, 60],         // 60 = 240px
+    [64, 64],         // 64 = 256px
+    [72, 72],         // 72 = 288px = 72u (our custom)
+    [80, 80],         // 80 = 320px
+    [96, 96],         // 96 = 384px
+    [100, 100],       // 100 = 400px = 100u (our custom)
+  ];
+
+  for (const [twKey, unitMultiplier] of tailwindSpacing) {
+    if (twKey === 0) {
+      css += `  --spacing-0: 0px;\n`;
+    } else {
+      // Use calc for dynamic scaling with --unit
+      css += `  --spacing-${twKey.toString().replace(".", "_")}: calc(var(--unit) * ${unitMultiplier});\n`;
+    }
+  }
+
+  // Keep legacy *u keys for backwards compatibility during migration
+  css += `\n  /* Legacy unit-based spacing (deprecated - use standard keys above) */\n`;
   const units = [];
   for (let i = 1; i <= 32; i++) units.push(i / 2);
-  units.push(20, 24, 28, 38);
+  units.push(20, 24, 28, 38, 72, 100);
 
   for (const u of units) {
     const key = u.toString().replace(".", "_");

@@ -60,9 +60,12 @@ const textVariants = cva("font-sans text-on-surface", {
   },
 });
 
-export type TextProps = React.HTMLAttributes<HTMLParagraphElement> &
+type TextElement = "p" | "span" | "div" | "label" | "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
+
+export type TextProps = React.HTMLAttributes<HTMLElement> &
   VariantProps<typeof textVariants> & {
-    as?: "p" | "span" | "div" | "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
+    as?: TextElement;
+    htmlFor?: string; // For label elements
   };
 
 export const Text: React.FC<TextProps> = ({
@@ -73,11 +76,13 @@ export const Text: React.FC<TextProps> = ({
   className,
   children,
   as: Component = "p",
+  htmlFor,
   ...props
 }) => {
   return (
     <Component
       className={cn(textVariants({ variant, color, align, weight, className }))}
+      {...(Component === "label" && htmlFor ? { htmlFor } : {})}
       {...props}
     >
       {children}

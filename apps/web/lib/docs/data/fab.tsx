@@ -1,36 +1,33 @@
 "use client";
 
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { Fab, Card } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const FabHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-primary-container to-secondary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-40px] right-[-40px] w-56 h-56 bg-primary/25 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-60px] left-[-40px] w-72 h-72 bg-secondary/20 rounded-full blur-3xl" />
-
+  <HeroBackground tone="primary">
     {/* Mock Email App */}
-    <div className="relative bg-surface w-[300px] h-[380px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 z-10">
+    <div className="bg-surface w-[300px] h-[380px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
       {/* App Bar */}
-      <div className="h-14u flex items-center px-4u bg-surface border-b border-outline-variant/20">
-        <span className="material-symbols-outlined text-on-surface-variant mr-3u">menu</span>
+      <div className="h-14 flex items-center px-4 bg-surface border-b border-outline-variant/20">
+        <span className="material-symbols-outlined text-on-surface-variant mr-3">menu</span>
         <span className="text-title-medium text-on-surface">Inbox</span>
       </div>
       {/* Email List */}
-      <div className="p-2u space-y-1u">
+      <div className="p-2 space-y-1">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="flex items-center gap-3u p-3u rounded-xl hover:bg-surface-container-low">
-            <div className="w-10u h-10u rounded-full bg-primary-container shrink-0" />
+          <div key={i} className="flex items-center gap-3 p-3 rounded-xl hover:bg-surface-container-low">
+            <div className="w-10 h-10 rounded-full bg-primary-container shrink-0" />
             <div className="flex-1 min-w-0">
-              <div className="h-3u w-24 bg-on-surface/10 rounded mb-2u" />
-              <div className="h-2.5u w-full bg-on-surface/5 rounded" />
+              <div className="h-3 w-24 bg-on-surface/10 rounded mb-2" />
+              <div className="h-2_5 w-full bg-on-surface/5 rounded" />
             </div>
           </div>
         ))}
       </div>
       {/* FAB */}
-      <div className="absolute bottom-4u right-4u">
+      <div className="absolute bottom-4 right-4">
         <Fab
           variant="primary"
           size="md"
@@ -39,7 +36,7 @@ const FabHeroVisual = () => (
         />
       </div>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 export const fabDoc: ComponentDoc = {
@@ -186,13 +183,13 @@ export const fabDoc: ComponentDoc = {
         title: "Standard placement",
         visual: (
           <div className="relative bg-surface-container rounded-xl h-48 max-w-[320px] mx-auto border border-outline-variant/30">
-            <div className="absolute bottom-4u right-4u">
+            <div className="absolute bottom-4 right-4">
               <Fab
                 variant="primary"
                 icon={<span className="material-symbols-outlined">add</span>}
               />
             </div>
-            <div className="p-4u text-body-small text-on-surface-variant">
+            <div className="p-4 text-body-small text-on-surface-variant">
               Main content area
             </div>
           </div>
@@ -203,14 +200,14 @@ export const fabDoc: ComponentDoc = {
         title: "Extended FAB",
         visual: (
           <div className="relative bg-surface-container rounded-xl h-48 max-w-[320px] mx-auto border border-outline-variant/30">
-            <div className="absolute bottom-4u right-4u">
+            <div className="absolute bottom-4 right-4">
               <Fab
                 variant="primary"
                 icon={<span className="material-symbols-outlined">edit</span>}
                 label="Compose"
               />
             </div>
-            <div className="p-4u text-body-small text-on-surface-variant">
+            <div className="p-4 text-body-small text-on-surface-variant">
               Content with extended FAB
             </div>
           </div>

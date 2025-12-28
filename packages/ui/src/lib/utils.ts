@@ -5,6 +5,11 @@ import { extendTailwindMerge } from "tailwind-merge";
 const twMerge = extendTailwindMerge({
   extend: {
     classGroups: {
+      rounded: [
+        {
+          rounded: ["none", "xs", "sm", "md", "lg", "xl", "2xl", "full"],
+        },
+      ],
       "font-size": [
         {
           text: [
@@ -146,5 +151,18 @@ export function Slot({ children, ...props }: SlotProps) {
       className: cn(props.className as string | undefined, childProps.className as string | undefined),
     });
   }
+
+  // Development warning for invalid children
+  if (process.env.NODE_ENV !== "production") {
+    const childType = children === null ? "null" :
+                      children === undefined ? "undefined" :
+                      Array.isArray(children) ? "array" :
+                      typeof children;
+    console.warn(
+      `[Slot] Expected a single React element child for asChild pattern, but received: ${childType}. ` +
+      `The Slot will render nothing. Ensure you pass a single element (e.g., <a>, <Link>) as the child.`
+    );
+  }
+
   return null;
 }

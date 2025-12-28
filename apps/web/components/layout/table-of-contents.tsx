@@ -61,23 +61,24 @@ export function TableOfContents({ title, items }: TableOfContentsProps) {
   };
 
   return (
-    <aside className="hidden @4xl:block w-64 shrink-0">
-      <div className="sticky top-8u max-h-[calc(100vh-4rem)] overflow-y-auto">
+    // Show TOC only on large screens to prevent content squeeze
+    <aside className="hidden @5xl:block w-56 shrink-0">
+      <div className="sticky top-8 max-h-[calc(100vh-4rem)] overflow-y-auto">
         <Typography
           variant="labelMedium"
           component="span"
-          className="mb-2u block text-on-surface-variant"
+          className="mb-2 block text-on-surface-variant"
         >
           On this page
         </Typography>
         <Typography
           variant="headlineMedium"
           component="h4"
-          className="mb-6u text-on-surface"
+          className="mb-6 text-on-surface"
         >
           {title}
         </Typography>
-        <nav className="flex flex-col gap-1u">
+        <nav className="flex flex-col gap-1">
           {items.map((item) => {
             const isActive = activeId === item.id;
             return (
@@ -86,7 +87,7 @@ export function TableOfContents({ title, items }: TableOfContentsProps) {
                 href={`#${item.id}`}
                 onClick={(e) => handleClick(e, item.id)}
                 className={cn(
-                  "text-body-medium py-2u px-3u rounded-lg transition-all duration-short",
+                  "text-body-medium py-2 px-3 rounded-lg transition-all duration-short",
                   "text-left block",
                   isActive
                     ? "text-on-surface border border-outline-variant font-medium"

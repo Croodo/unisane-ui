@@ -1,10 +1,9 @@
-import React from "react";
+import React, { isValidElement, cloneElement } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@/lib/utils";
-import { Surface } from "@/primitives/surface";
+import { cn, Slot } from "@/lib/utils";
 import { Text } from "@/primitives/text";
 import { IconButton } from "./icon-button";
-import { StateLayer } from "@/primitives/state-layer";
+import { Ripple } from "./ripple";
 
 const paginationVariants = cva("flex items-center gap-2", {
   variants: {
@@ -22,6 +21,8 @@ export type PaginationProps = VariantProps<typeof paginationVariants> & {
   totalPages: number;
   onPageChange: (page: number) => void;
   className?: string;
+  getPageHref?: (page: number) => string;
+  renderLink?: (page: number, children: React.ReactNode) => React.ReactNode;
 };
 
 export const Pagination: React.FC<PaginationProps> = ({
@@ -29,6 +30,8 @@ export const Pagination: React.FC<PaginationProps> = ({
   totalPages,
   onPageChange,
   className,
+  getPageHref,
+  renderLink,
 }) => {
   const getPageNumbers = () => {
     const pages = [];
@@ -64,6 +67,68 @@ export const Pagination: React.FC<PaginationProps> = ({
 
   const pageNumbers = getPageNumbers();
 
+  const renderPageButton = (page: number) => {
+    const isCurrent = page === currentPage;
+    const buttonClasses = cn(
+      "relative w-10 h-10 rounded-sm flex items-center justify-center transition-colors overflow-hidden",
+      isCurrent
+        ? "bg-primary text-on-primary"
+        : "text-on-surface-variant hover:bg-on-surface/10"
+    );
+
+    const innerContent = (
+      <>
+        <Ripple />
+        <Text variant="bodyMedium" className="relative z-10">{page}</Text>
+      </>
+    );
+
+    // renderLink pattern: render user's custom Link component
+    if (renderLink) {
+      const customLink = renderLink(page, innerContent);
+      if (isValidElement(customLink)) {
+        return (
+          <Slot
+            className={buttonClasses}
+            aria-current={isCurrent ? "page" : undefined}
+            aria-label={`Page ${page}`}
+          >
+            {customLink}
+          </Slot>
+        );
+      }
+    }
+
+    // getPageHref: render as anchor
+    if (getPageHref) {
+      return (
+        <a
+          href={getPageHref(page)}
+          className={buttonClasses}
+          onClick={(e) => {
+            e.preventDefault();
+            onPageChange(page);
+          }}
+          aria-current={isCurrent ? "page" : undefined}
+          aria-label={`Page ${page}`}
+        >
+          {innerContent}
+        </a>
+      );
+    }
+
+    return (
+      <button
+        className={buttonClasses}
+        onClick={() => onPageChange(page)}
+        aria-current={isCurrent ? "page" : undefined}
+        aria-label={`Page ${page}`}
+      >
+        {innerContent}
+      </button>
+    );
+  };
+
   return (
     <nav
       className={cn(paginationVariants({ className }))}
@@ -92,20 +157,7 @@ export const Pagination: React.FC<PaginationProps> = ({
                 ...
               </Text>
             ) : (
-              <button
-                className={cn(
-                  "relative w-10 h-10 rounded-sm flex items-center justify-center transition-colors",
-                  page === currentPage
-                    ? "bg-primary text-on-primary"
-                    : "text-on-surface-variant hover:bg-on-surface/10"
-                )}
-                onClick={() => onPageChange(page as number)}
-                aria-current={page === currentPage ? "page" : undefined}
-                aria-label={`Page ${page}`}
-              >
-                <StateLayer />
-                <Text variant="bodyMedium">{page}</Text>
-              </button>
+              renderPageButton(page as number)
             )}
           </React.Fragment>
         ))}

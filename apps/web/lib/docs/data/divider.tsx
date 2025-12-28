@@ -1,33 +1,30 @@
 "use client";
 
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { Divider, Card, List, ListItem } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const DividerHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-surface-container to-surface-container-high flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-40px] right-[-40px] w-56 h-56 bg-primary/10 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-50px] left-[-30px] w-64 h-64 bg-secondary/10 rounded-full blur-3xl" />
-
+  <HeroBackground tone="surface">
     {/* Mock Card with Dividers */}
-    <div className="relative bg-surface w-[280px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 z-10">
-      <div className="px-5u py-4u">
+    <div className="relative bg-surface w-[280px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
+      <div className="px-5 py-4">
         <div className="text-title-medium text-on-surface">Section One</div>
-        <div className="text-body-small text-on-surface-variant mt-1u">Content for the first section.</div>
+        <div className="text-body-small text-on-surface-variant mt-1">Content for the first section.</div>
       </div>
       <div className="h-px bg-outline-variant w-full" />
-      <div className="px-5u py-4u">
+      <div className="px-5 py-4">
         <div className="text-title-medium text-on-surface">Section Two</div>
-        <div className="text-body-small text-on-surface-variant mt-1u">Content for the second section.</div>
+        <div className="text-body-small text-on-surface-variant mt-1">Content for the second section.</div>
       </div>
-      <div className="h-px bg-outline-variant mx-4u" />
-      <div className="px-5u py-4u">
+      <div className="h-px bg-outline-variant mx-4" />
+      <div className="px-5 py-4">
         <div className="text-title-medium text-on-surface">Section Three</div>
-        <div className="text-body-small text-on-surface-variant mt-1u">Content for the third section.</div>
+        <div className="text-body-small text-on-surface-variant mt-1">Content for the third section.</div>
       </div>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 export const dividerDoc: ComponentDoc = {
@@ -62,9 +59,9 @@ export const dividerDoc: ComponentDoc = {
         emphasis: "Full bleed",
         component: (
           <div className="w-44 bg-surface rounded-sm border border-outline-variant/30 overflow-hidden">
-            <div className="px-3u py-2u text-[10px] text-on-surface">Item 1</div>
+            <div className="px-3 py-2 text-[10px] text-on-surface">Item 1</div>
             <div className="h-px bg-outline-variant w-full" />
-            <div className="px-3u py-2u text-[10px] text-on-surface">Item 2</div>
+            <div className="px-3 py-2 text-[10px] text-on-surface">Item 2</div>
           </div>
         ),
         rationale:
@@ -75,9 +72,9 @@ export const dividerDoc: ComponentDoc = {
         emphasis: "Inset",
         component: (
           <div className="w-44 bg-surface rounded-sm border border-outline-variant/30 overflow-hidden">
-            <div className="px-3u py-2u text-[10px] text-on-surface">Item 1</div>
-            <div className="h-px bg-outline-variant ml-3u" />
-            <div className="px-3u py-2u text-[10px] text-on-surface">Item 2</div>
+            <div className="px-3 py-2 text-[10px] text-on-surface">Item 1</div>
+            <div className="h-px bg-outline-variant ml-3" />
+            <div className="px-3 py-2 text-[10px] text-on-surface">Item 2</div>
           </div>
         ),
         rationale:
@@ -88,9 +85,9 @@ export const dividerDoc: ComponentDoc = {
         emphasis: "Middle",
         component: (
           <div className="w-44 bg-surface rounded-sm border border-outline-variant/30 overflow-hidden">
-            <div className="px-3u py-2u text-[10px] text-on-surface">Item 1</div>
-            <div className="h-px bg-outline-variant mx-3u" />
-            <div className="px-3u py-2u text-[10px] text-on-surface">Item 2</div>
+            <div className="px-3 py-2 text-[10px] text-on-surface">Item 1</div>
+            <div className="h-px bg-outline-variant mx-3" />
+            <div className="px-3 py-2 text-[10px] text-on-surface">Item 2</div>
           </div>
         ),
         rationale:
@@ -107,7 +104,7 @@ export const dividerDoc: ComponentDoc = {
     items: [
       {
         component: (
-          <div className="w-32 flex flex-col items-center gap-2u">
+          <div className="w-32 flex flex-col items-center gap-2">
             <div className="w-full h-px bg-outline-variant" />
             <span className="text-[10px] text-on-surface-variant">Horizontal</span>
           </div>
@@ -117,7 +114,7 @@ export const dividerDoc: ComponentDoc = {
       },
       {
         component: (
-          <div className="h-12u flex items-center gap-2u">
+          <div className="h-12 flex items-center gap-2">
             <div className="h-full w-px bg-outline-variant" />
             <span className="text-[10px] text-on-surface-variant">Vertical</span>
           </div>
@@ -153,7 +150,7 @@ export const dividerDoc: ComponentDoc = {
         visual: (
           <Card variant="outlined" padding="md" className="max-w-[280px] mx-auto">
             <div className="text-body-medium text-on-surface">Section A content</div>
-            <Divider className="my-4u" />
+            <Divider className="my-4" />
             <div className="text-body-medium text-on-surface">Section B content</div>
           </Card>
         ),

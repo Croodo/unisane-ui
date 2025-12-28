@@ -116,14 +116,14 @@ export const TextField = React.forwardRef<
         <div
           className={cn(
             textFieldContainerVariants({ variant, error, disabled }),
-            multiline ? "items-start py-0" : "items-center h-14u"
+            multiline ? "items-start py-0" : "items-center h-14"
           )}
         >
           {leadingIcon && (
             <span
               className={cn(
-                "pl-4u transition-colors shrink-0 flex items-center justify-center",
-                multiline ? "mt-4u" : "h-full",
+                "pl-4 transition-colors shrink-0 flex items-center justify-center",
+                multiline ? "mt-4" : "h-full",
                 error
                   ? "text-error"
                   : isFocused
@@ -131,7 +131,7 @@ export const TextField = React.forwardRef<
                   : "text-on-surface-variant"
               )}
             >
-              <div className="w-5u h-5u flex items-center justify-center">
+              <div className="w-5 h-5 flex items-center justify-center">
                 {leadingIcon}
               </div>
             </span>
@@ -148,8 +148,8 @@ export const TextField = React.forwardRef<
                 onBlur={handleBlur}
                 onChange={handleChange}
                 className={cn(
-                  "w-full h-full bg-transparent px-4u outline-none border-none focus:ring-0 text-on-surface text-body-small font-medium caret-primary placeholder-transparent resize-none py-5u min-h-[calc(var(--uni-sys-u)*30)]",
-                  variant === "filled" ? "pt-7u pb-3u" : ""
+                  "w-full h-full bg-transparent px-4 outline-none border-none focus:ring-0 text-on-surface text-body-small font-medium caret-primary placeholder-transparent resize-none py-5 min-h-[calc(var(--uni-sys-u)*30)]",
+                  variant === "filled" ? "pt-7 pb-3" : ""
                 )}
                 placeholder=" "
                 {...(props as any)}
@@ -165,8 +165,8 @@ export const TextField = React.forwardRef<
                 onBlur={handleBlur}
                 onChange={handleChange}
                 className={cn(
-                  "w-full h-full bg-transparent px-4u outline-none border-none focus:ring-0 text-on-surface text-body-small font-medium caret-primary placeholder-transparent",
-                  variant === "filled" ? "pt-7u pb-1u" : ""
+                  "w-full h-full bg-transparent px-4 outline-none border-none focus:ring-0 text-on-surface text-body-small font-medium caret-primary placeholder-transparent",
+                  variant === "filled" ? "pt-7 pb-1" : ""
                 )}
                 placeholder=" "
                 {...(props as any)}
@@ -175,26 +175,26 @@ export const TextField = React.forwardRef<
             <label
               htmlFor={inputId}
               className={cn(
-                "absolute pointer-events-none truncate max-w-[calc(100%-calc(var(--uni-sys-u)*4))] transition-all duration-medium ease-emphasized origin-left left-4u",
+                "absolute pointer-events-none truncate max-w-[calc(100%-calc(var(--uni-sys-u)*4))] transition-all duration-medium ease-emphasized origin-left left-4",
                 !isFloating && [
                   "text-body-small font-medium text-on-surface-variant",
-                  multiline ? "top-5u" : "top-1/2 -translate-y-1/2",
+                  multiline ? "top-5" : "top-1/2 -translate-y-1/2",
                 ],
                 isFloating && [
                   "text-label-small font-medium",
                   variant === "outlined" && [
-                    "top-0 -translate-y-1/2 px-1u -ml-1u",
+                    "top-0 -translate-y-1/2 px-1 -ml-1",
                     labelBg || "bg-surface", // Changed to match Unisane semantic token usually
                     labelClassName,
                   ],
-                  variant === "filled" && "top-2u translate-y-0",
+                  variant === "filled" && "top-2 translate-y-0",
                   error
                     ? "text-error"
                     : isFocused
                     ? "text-primary"
                     : "text-on-surface-variant",
                 ],
-                leadingIcon && !isFloating && "left-1u"
+                leadingIcon && !isFloating && "left-1"
               )}
             >
               {label}
@@ -203,12 +203,12 @@ export const TextField = React.forwardRef<
           {trailingIcon && (
             <span
               className={cn(
-                "pr-4u transition-colors shrink-0 flex items-center justify-center",
-                multiline ? "mt-4u" : "h-full",
+                "pr-4 transition-colors shrink-0 flex items-center justify-center",
+                multiline ? "mt-4" : "h-full",
                 error ? "text-error" : "text-on-surface-variant"
               )}
             >
-              <div className="w-5u h-5u flex items-center justify-center">
+              <div className="w-5 h-5 flex items-center justify-center">
                 {trailingIcon}
               </div>
             </span>
@@ -217,7 +217,7 @@ export const TextField = React.forwardRef<
         {helperText && (
           <span
             className={cn(
-              "text-label-small mt-1.5u px-4u font-medium",
+              "text-label-small mt-1_5 px-4 font-medium",
               error ? "text-error" : "text-on-surface-variant"
             )}
           >

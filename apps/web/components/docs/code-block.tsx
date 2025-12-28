@@ -22,12 +22,12 @@ export function CodeBlock({ code, language, className }: CodeBlockProps) {
   return (
     <div
       className={cn(
-        "relative group p-6u bg-surface-container-low rounded-lg overflow-x-auto border border-outline-variant/15",
+        "relative group p-6 bg-surface-container-low rounded-lg overflow-x-auto border border-outline-variant/15",
         className
       )}
     >
       {/* Copy Button */}
-      <div className="absolute top-2u right-2u opacity-0 group-hover:opacity-100 transition-opacity duration-short">
+      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-short">
         <IconButton
           variant="standard"
           size="sm"
@@ -42,7 +42,7 @@ export function CodeBlock({ code, language, className }: CodeBlockProps) {
 
       {/* Language Badge */}
       {language && (
-        <span className="absolute top-3u right-12u text-label-small text-on-surface-variant/60 font-mono">
+        <span className="absolute top-3 right-12 text-label-small text-on-surface-variant/60 font-mono">
           {language}
         </span>
       )}

@@ -94,7 +94,7 @@ export const TabsTrigger: React.FC<TabsTriggerProps> = ({
       tabIndex={isSelected ? 0 : -1}
       onClick={() => context.onValueChange(value)}
       className={cn(
-        "min-w-fit relative flex items-center justify-center py-4u px-6u min-h-12u gap-2.5u cursor-pointer group transition-all focus-visible:outline-none select-none shrink-0 overflow-hidden",
+        "min-w-fit relative flex items-center justify-center py-4 px-6 min-h-12 gap-2_5 cursor-pointer group transition-all focus-visible:outline-none select-none shrink-0 overflow-hidden",
         isSelected
           ? "text-primary"
           : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low",
@@ -116,7 +116,7 @@ export const TabsTrigger: React.FC<TabsTriggerProps> = ({
       )}
       <span
         className={cn(
-          "text-label-small z-10 leading-none whitespace-nowrap uppercase tracking-[0.2em] font-black transition-all pt-0.5u",
+          "text-label-small z-10 leading-none whitespace-nowrap uppercase tracking-[0.2em] font-black transition-all pt-0_5",
           isSelected ? "opacity-100" : "opacity-60"
         )}
       >
@@ -149,7 +149,7 @@ export const TabsContent: React.FC<
       aria-labelledby={triggerId}
       tabIndex={0}
       className={cn(
-        "mt-4u focus-visible:outline-none animate-in fade-in slide-in-from-bottom-1 duration-medium",
+        "mt-4 focus-visible:outline-none animate-in fade-in slide-in-from-bottom-1 duration-medium",
         className
       )}
       {...props}

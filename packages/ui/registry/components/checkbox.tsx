@@ -49,15 +49,16 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
       <label
         htmlFor={id}
         className={cn(
-          "inline-flex items-center cursor-pointer select-none gap-3u group relative",
+          "inline-flex items-center cursor-pointer select-none gap-3 group relative",
           disabled && "opacity-38 cursor-not-allowed pointer-events-none",
           className
         )}
       >
-        <div className="relative flex items-center justify-center w-10u h-10u">
+        <div className="relative flex items-center justify-center w-10 h-10">
+          {/* Hover state layer */}
           <div
             className={cn(
-              "absolute inset-0 rounded-sm overflow-hidden transition-colors z-0",
+              "absolute inset-0 rounded-xs overflow-hidden transition-colors z-0",
               "group-hover:bg-on-surface/8",
               error && "group-hover:bg-error/8"
             )}
@@ -69,6 +70,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
             />
           </div>
 
+          {/* Hidden input */}
           <input
             ref={setInputRef}
             type="checkbox"
@@ -78,10 +80,11 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
             {...props}
           />
 
+          {/* Checkbox box - sibling of input, receives peer-checked */}
           <div
             className={cn(
-              "relative z-10 w-4.5u h-4.5u rounded-sm border-2 flex items-center justify-center overflow-hidden bg-surface",
-              "transition-all duration-snappy ease-emphasized",
+              "relative z-10 w-5 h-5 rounded-xs border-2 flex items-center justify-center overflow-hidden bg-surface",
+              "transition-all duration-snappy ease-emphasized pointer-events-none",
               !error && "border-outline group-hover:border-on-surface",
               error && "border-error",
               !error && "peer-checked:bg-primary peer-checked:border-primary",
@@ -90,47 +93,48 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
               error && "peer-indeterminate:bg-error peer-indeterminate:border-error",
               "peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2"
             )}
-          >
-            <svg
-              className={cn(
-                "absolute inset-0 w-full h-full p-0.5 transition-transform duration-snappy",
-                "opacity-0 scale-50 peer-checked:opacity-100 peer-checked:scale-100",
-                error ? "text-on-error" : "text-on-primary",
-                "peer-indeterminate:hidden"
-              )}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
+          />
 
-            <svg
-              className={cn(
-                "absolute inset-0 w-full h-full p-0.5 transition-transform duration-snappy",
-                "opacity-0 scale-50 rotate-90 peer-indeterminate:opacity-100 peer-indeterminate:scale-100 peer-indeterminate:rotate-0",
-                error ? "text-on-error" : "text-on-primary",
-                props.checked && "hidden"
-              )}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-          </div>
+          {/* Check icon - sibling of input, receives peer-checked */}
+          <svg
+            className={cn(
+              "absolute z-20 w-5 h-5 p-0.5 transition-all duration-snappy ease-emphasized pointer-events-none",
+              error ? "text-on-error" : "text-on-primary",
+              "opacity-0 scale-50",
+              !indeterminate && "peer-checked:opacity-100 peer-checked:scale-100"
+            )}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+
+          {/* Indeterminate icon - controlled by prop, not peer */}
+          <svg
+            className={cn(
+              "absolute z-20 w-5 h-5 p-0.5 transition-all duration-snappy ease-emphasized pointer-events-none",
+              error ? "text-on-error" : "text-on-primary",
+              indeterminate ? "opacity-100 scale-100 rotate-0" : "opacity-0 scale-50 rotate-90"
+            )}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
         </div>
 
         {label && (
-          <span className="text-body-small font-medium text-on-surface leading-none pt-0.5u">
+          <span className="text-body-medium font-medium text-on-surface leading-none">
             {label}
           </span>
         )}

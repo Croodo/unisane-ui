@@ -68,7 +68,7 @@ export function ThemeSwitcher() {
     <button
       onClick={cycleTheme}
       aria-label={`Color theme: ${THEME_LABELS[colorTheme]}. Click to change.`}
-      className="w-11u h-11u rounded-full bg-primary border-2 border-outline-variant hover:opacity-90 active:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+      className="w-11 h-11 rounded-full bg-primary border-2 border-outline-variant hover:opacity-90 active:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
     />
   );
 }

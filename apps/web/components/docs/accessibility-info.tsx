@@ -25,12 +25,12 @@ export function AccessibilityInfo({
 
   if (isSimpleFormat && accessibility.screenReader?.length) {
     return (
-      <div className={cn("space-y-4u", className)}>
+      <div className={cn("space-y-4", className)}>
         <p className="text-body-large text-on-surface-variant leading-relaxed">
           {accessibility.screenReader[0]}
         </p>
         {accessibility.screenReader.length > 1 && (
-          <ul className="list-disc pl-6u space-y-2u">
+          <ul className="list-disc pl-6 space-y-2">
             {accessibility.screenReader.slice(1).map((item, index) => (
               <li
                 key={index}
@@ -46,11 +46,11 @@ export function AccessibilityInfo({
   }
 
   return (
-    <div className={cn("space-y-8u", className)}>
+    <div className={cn("space-y-8", className)}>
       {/* Keyboard Navigation */}
       {accessibility.keyboard?.length && (
-        <div className="space-y-4u">
-          <div className="flex items-center gap-2u">
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-[20px]! text-primary">
               keyboard
             </span>
@@ -62,10 +62,10 @@ export function AccessibilityInfo({
             <table className="w-full text-body-small">
               <thead>
                 <tr className="bg-surface-container-low border-b border-outline-variant/30">
-                  <th className="px-6u py-3u text-left text-label-medium font-semibold text-on-surface w-1/3">
+                  <th className="px-6 py-3 text-left text-label-medium font-semibold text-on-surface w-1/3">
                     Key
                   </th>
-                  <th className="px-6u py-3u text-left text-label-medium font-semibold text-on-surface">
+                  <th className="px-6 py-3 text-left text-label-medium font-semibold text-on-surface">
                     Action
                   </th>
                 </tr>
@@ -76,12 +76,12 @@ export function AccessibilityInfo({
                     key={index}
                     className="border-b border-outline-variant/15 last:border-none"
                   >
-                    <td className="px-6u py-3u">
-                      <kbd className="inline-flex items-center gap-1u px-2u py-1u bg-surface-container rounded-sm text-label-medium font-mono font-medium text-on-surface border border-outline-variant/30">
+                    <td className="px-6 py-3">
+                      <kbd className="inline-flex items-center gap-1 px-2 py-1 bg-surface-container rounded-sm text-label-medium font-mono font-medium text-on-surface border border-outline-variant/30">
                         {item.key}
                       </kbd>
                     </td>
-                    <td className="px-6u py-3u text-on-surface-variant font-medium">
+                    <td className="px-6 py-3 text-on-surface-variant font-medium">
                       {item.description}
                     </td>
                   </tr>
@@ -94,8 +94,8 @@ export function AccessibilityInfo({
 
       {/* Screen Reader */}
       {accessibility.screenReader?.length && (
-        <div className="space-y-4u">
-          <div className="flex items-center gap-2u">
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-[20px]! text-primary">
               hearing
             </span>
@@ -103,11 +103,11 @@ export function AccessibilityInfo({
               Screen Reader Support
             </h4>
           </div>
-          <ul className="space-y-2u">
+          <ul className="space-y-2">
             {accessibility.screenReader.map((item, index) => (
               <li
                 key={index}
-                className="flex items-start gap-3u p-3u rounded-md bg-surface-container-low"
+                className="flex items-start gap-3 p-3 rounded-md bg-surface-container-low"
               >
                 <span className="material-symbols-outlined text-[16px]! text-primary shrink-0 mt-0.5">
                   check
@@ -123,8 +123,8 @@ export function AccessibilityInfo({
 
       {/* Focus Management */}
       {accessibility.focus?.length && (
-        <div className="space-y-4u">
-          <div className="flex items-center gap-2u">
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-[20px]! text-primary">
               center_focus_strong
             </span>
@@ -132,11 +132,11 @@ export function AccessibilityInfo({
               Focus Management
             </h4>
           </div>
-          <ul className="space-y-2u">
+          <ul className="space-y-2">
             {accessibility.focus.map((item, index) => (
               <li
                 key={index}
-                className="flex items-start gap-3u p-3u rounded-md bg-surface-container-low"
+                className="flex items-start gap-3 p-3 rounded-md bg-surface-container-low"
               >
                 <span className="material-symbols-outlined text-[16px]! text-primary shrink-0 mt-0.5">
                   check

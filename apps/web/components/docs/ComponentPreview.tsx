@@ -15,13 +15,13 @@ export function ComponentPreview({
   title,
 }: ComponentPreviewProps) {
   return (
-    <div className={cn("my-6u", className)}>
+    <div className={cn("my-6", className)}>
       {title && (
-        <Typography variant="labelMedium" className="mb-2u text-on-surface-variant">
+        <Typography variant="labelMedium" className="mb-2 text-on-surface-variant">
           {title}
         </Typography>
       )}
-      <Surface elevation={0} className="p-6u rounded-lg bg-surface-container border border-outline-variant/50 flex items-center justify-center min-h-[120px]">
+      <Surface elevation={0} className="p-6 rounded-lg bg-surface-container border border-outline-variant/50 flex items-center justify-center min-h-[120px]">
         {children}
       </Surface>
     </div>

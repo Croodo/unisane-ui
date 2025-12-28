@@ -31,12 +31,12 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
       <label
         htmlFor={id}
         className={cn(
-          "inline-flex items-center gap-3u cursor-pointer select-none group relative min-h-8u",
+          "inline-flex items-center gap-3 cursor-pointer select-none group relative min-h-8",
           disabled && "opacity-38 cursor-not-allowed pointer-events-none",
           className
         )}
       >
-        <div className="relative w-13u h-8u shrink-0 group/switch">
+        <div className="relative w-13 h-8 shrink-0 group/switch">
           <input
             ref={ref}
             type="checkbox"
@@ -56,39 +56,33 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
             )}
           />
 
+          {/* Thumb */}
           <div
             className={cn(
-              "absolute top-1/2 -translate-y-1/2 rounded-full transition-all duration-emphasized flex items-center justify-center z-10",
-              "w-4u h-4u",
-              "left-1u bg-outline group-hover:bg-on-surface-variant",
-              "peer-checked:translate-x-5u peer-checked:bg-on-primary peer-checked:w-6u peer-checked:h-6u",
-              "group-active:w-7u group-active:translate-x-0 peer-checked:group-active:translate-x-4u"
+              "absolute top-1/2 -translate-y-1/2 rounded-full transition-all duration-emphasized ease-emphasized flex items-center justify-center z-10",
+              "left-1 bg-outline group-hover:bg-on-surface-variant w-4 h-4",
+              "peer-checked:translate-x-5 peer-checked:bg-on-primary peer-checked:w-6 peer-checked:h-6"
             )}
-          >
-            {icons && (
-              <>
-                <Icon
-                  symbol="check"
-                  size={16}
-                  className={cn(
-                    "w-4u h-4u text-primary absolute transition-opacity duration-snappy",
-                    "opacity-0 group-has-checked/switch:opacity-100"
-                  )}
-                />
-                <Icon
-                  symbol="close"
-                  size={12}
-                  className={cn(
-                    "w-3u h-3u text-surface-container absolute transition-opacity duration-snappy",
-                    "opacity-100 group-has-checked/switch:opacity-0"
-                  )}
-                />
-              </>
-            )}
-          </div>
+          />
+
+          {/* Icons (rendered separately to use peer selectors) */}
+          {icons && (
+            <>
+              <Icon
+                symbol="check"
+                size="xs"
+                className="absolute top-1/2 -translate-y-1/2 left-7 text-primary z-20 transition-opacity duration-snappy ease-standard opacity-0 peer-checked:opacity-100"
+              />
+              <Icon
+                symbol="close"
+                size="xs"
+                className="absolute top-1/2 -translate-y-1/2 left-1.5 text-surface-container z-20 transition-opacity duration-snappy ease-standard opacity-100 peer-checked:opacity-0"
+              />
+            </>
+          )}
         </div>
         {label && (
-          <span className="text-body-small font-medium text-on-surface leading-none pt-0.5u">
+          <span className="text-body-medium font-medium text-on-surface leading-none">
             {label}
           </span>
         )}

@@ -1,17 +1,14 @@
 "use client";
 
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { Alert, Card } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const AlertHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-error-container to-secondary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-40px] right-[-40px] w-56 h-56 bg-error/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-50px] left-[-30px] w-64 h-64 bg-secondary/20 rounded-full blur-3xl" />
-
+  <HeroBackground tone="error">
     {/* Mock Alerts Stack */}
-    <div className="relative w-[300px] space-y-3u z-10">
+    <div className="relative w-[300px] space-y-3">
       <Alert variant="success" title="Success">
         Your changes have been saved successfully.
       </Alert>
@@ -25,7 +22,7 @@ const AlertHeroVisual = () => (
         A new version is available.
       </Alert>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 export const alertDoc: ComponentDoc = {
@@ -135,13 +132,13 @@ export const alertDoc: ComponentDoc = {
         title: "Form validation",
         visual: (
           <Card variant="outlined" padding="md" className="max-w-[280px] mx-auto">
-            <div className="text-title-small text-on-surface mb-3u">Create Account</div>
-            <Alert variant="error" title="Validation Error" className="mb-4u">
+            <div className="text-title-small text-on-surface mb-3">Create Account</div>
+            <Alert variant="error" title="Validation Error" className="mb-4">
               Please correct the errors below.
             </Alert>
-            <div className="space-y-3u">
-              <div className="h-10u bg-error-container/30 border border-error/50 rounded-sm" />
-              <div className="h-10u bg-surface-container-high rounded-sm" />
+            <div className="space-y-3">
+              <div className="h-10 bg-error-container/30 border border-error/50 rounded-sm" />
+              <div className="h-10 bg-surface-container-high rounded-sm" />
             </div>
           </Card>
         ),
@@ -151,8 +148,8 @@ export const alertDoc: ComponentDoc = {
         title: "Status messages",
         visual: (
           <Card variant="outlined" padding="md" className="max-w-[280px] mx-auto">
-            <div className="text-title-small text-on-surface mb-3u">System Status</div>
-            <div className="space-y-2u">
+            <div className="text-title-small text-on-surface mb-3">System Status</div>
+            <div className="space-y-2">
               <Alert variant="success" title="Database">
                 Connected and synced
               </Alert>

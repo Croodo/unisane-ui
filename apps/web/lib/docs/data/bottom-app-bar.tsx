@@ -1,43 +1,40 @@
 "use client";
 
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { BottomAppBar, BottomAppBarAction, Fab } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const BottomAppBarHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-secondary-container to-tertiary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-40px] left-[-40px] w-56 h-56 bg-secondary/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-50px] right-[-30px] w-64 h-64 bg-tertiary/20 rounded-full blur-3xl" />
-
+  <HeroBackground tone="surface">
     {/* Mock App with Bottom Bar */}
-    <div className="relative bg-surface w-[320px] h-[240px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 z-10">
+    <div className="relative bg-surface w-[320px] h-[240px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
       {/* Content */}
-      <div className="p-4u space-y-3u">
-        <div className="h-4u bg-surface-container-high rounded-sm w-full" />
-        <div className="h-4u bg-surface-container-high rounded-sm w-3/4" />
-        <div className="h-4u bg-surface-container-high rounded-sm w-1/2" />
-        <div className="h-4u bg-surface-container-high rounded-sm w-2/3" />
+      <div className="p-4 space-y-3">
+        <div className="h-4 bg-surface-container-high rounded-sm w-full" />
+        <div className="h-4 bg-surface-container-high rounded-sm w-3/4" />
+        <div className="h-4 bg-surface-container-high rounded-sm w-1/2" />
+        <div className="h-4 bg-surface-container-high rounded-sm w-2/3" />
       </div>
       {/* Bottom App Bar */}
-      <div className="absolute bottom-0 left-0 right-0 h-20u bg-surface-container flex items-center px-4u justify-between">
-        <div className="flex gap-4u">
+      <div className="absolute bottom-0 left-0 right-0 h-20 bg-surface-container flex items-center px-4 justify-between">
+        <div className="flex gap-4">
           <span className="material-symbols-outlined text-on-surface-variant">menu</span>
           <span className="material-symbols-outlined text-on-surface-variant">search</span>
           <span className="material-symbols-outlined text-on-surface-variant">delete</span>
         </div>
         {/* FAB */}
-        <div className="absolute left-1/2 -translate-x-1/2 -top-7u w-14u h-14u rounded-2xl bg-primary-container flex items-center justify-center shadow-2">
+        <div className="absolute left-1/2 -translate-x-1/2 -top-7 w-14 h-14 rounded-2xl bg-primary-container flex items-center justify-center shadow-2">
           <span className="material-symbols-outlined text-on-primary-container">add</span>
         </div>
       </div>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 // ─── EXAMPLES ────────────────────────────────────────────────────────────────
 const BottomAppBarBasicExample = () => (
-  <div className="w-full max-w-sm relative h-24u">
+  <div className="w-full max-w-sm relative h-24">
     <BottomAppBar
       fab={
         <Fab
@@ -93,12 +90,12 @@ export const bottomAppBarDoc: ComponentDoc = {
       {
         emphasis: "Bottom App Bar",
         component: (
-          <div className="w-32 h-10u bg-surface-container rounded-sm flex items-center px-2u relative">
-            <div className="flex gap-2u">
+          <div className="w-32 h-10 bg-surface-container rounded-sm flex items-center px-2 relative">
+            <div className="flex gap-2">
               <span className="material-symbols-outlined text-[14px] text-on-surface-variant">menu</span>
               <span className="material-symbols-outlined text-[14px] text-on-surface-variant">search</span>
             </div>
-            <div className="absolute left-1/2 -translate-x-1/2 -top-2u w-6u h-6u rounded-lg bg-primary-container flex items-center justify-center">
+            <div className="absolute left-1/2 -translate-x-1/2 -top-2 w-6 h-6 rounded-lg bg-primary-container flex items-center justify-center">
               <span className="text-[10px]">+</span>
             </div>
           </div>
@@ -109,7 +106,7 @@ export const bottomAppBarDoc: ComponentDoc = {
       {
         emphasis: "Navigation Bar",
         component: (
-          <div className="w-32 h-10u bg-surface-container rounded-sm flex items-center justify-around px-2u">
+          <div className="w-32 h-10 bg-surface-container rounded-sm flex items-center justify-around px-2">
             <div className="flex flex-col items-center">
               <span className="material-symbols-outlined text-[14px] text-primary">home</span>
               <span className="text-[8px] text-primary">Home</span>

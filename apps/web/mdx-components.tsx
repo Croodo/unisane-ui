@@ -10,7 +10,7 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
       <Typography
         variant="displaySmall"
         component="h1"
-        className={cn("mt-4u", className)}
+        className={cn("mt-4", className)}
         {...props}
       />
     ),
@@ -18,7 +18,7 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
       <Typography
         variant="headlineMedium"
         component="h2"
-        className={cn("mt-8u", className)}
+        className={cn("mt-8", className)}
         {...props}
       />
     ),
@@ -26,7 +26,7 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
       <Typography
         variant="titleLarge"
         component="h3"
-        className={cn("mt-6u", className)}
+        className={cn("mt-6", className)}
         {...props}
       />
     ),
@@ -65,7 +65,7 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
     ul: ({ className, ...props }: React.HTMLAttributes<HTMLUListElement>) => (
       <ul
         className={cn(
-          "list-disc pl-6u text-on-surface-variant space-y-2u",
+          "list-disc pl-6 text-on-surface-variant space-y-2",
           className
         )}
         {...props}
@@ -74,7 +74,7 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
     ol: ({ className, ...props }: React.HTMLAttributes<HTMLOListElement>) => (
       <ol
         className={cn(
-          "list-decimal pl-6u text-on-surface-variant space-y-2u",
+          "list-decimal pl-6 text-on-surface-variant space-y-2",
           className
         )}
         {...props}
@@ -84,10 +84,10 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
       <li className={cn("text-[14px] leading-relaxed", className)} {...props} />
     ),
     pre: ({ className, ...props }: React.HTMLAttributes<HTMLPreElement>) => (
-      <div className="my-6u">
+      <div className="my-6">
         <pre
           className={cn(
-            "overflow-x-auto rounded-xs bg-surface-container-low p-4u text-[12px] font-mono text-on-surface-variant border border-outline-variant/30",
+            "overflow-x-auto rounded-xs bg-surface-container-low p-4 text-[12px] font-mono text-on-surface-variant border border-outline-variant/30",
             className
           )}
           {...props}
@@ -102,7 +102,7 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
             "font-mono",
             isBlock
               ? "text-[12px]"
-              : "text-[12px] px-2u py-0.5u rounded-xs bg-surface-variant/40 text-on-surface",
+              : "text-[12px] px-2 py-0_5 rounded-xs bg-surface-variant/40 text-on-surface",
             className
           )}
           {...props}

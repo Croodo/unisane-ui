@@ -6,7 +6,7 @@ import { Ripple } from "./ripple";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "relative inline-flex items-center justify-center gap-2u rounded-xl font-medium transition-all duration-short ease-standard overflow-hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-38 disabled:cursor-not-allowed group whitespace-nowrap leading-none select-none",
+  "relative inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-all duration-short ease-standard overflow-hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-38 disabled:cursor-not-allowed group whitespace-nowrap leading-none select-none",
   {
     variants: {
       variant: {
@@ -17,9 +17,9 @@ const buttonVariants = cva(
         elevated: "bg-surface-container-low text-primary shadow-1",
       },
       size: {
-        sm: "h-8u px-4u text-label-medium",
-        md: "h-10u px-6u text-label-large",
-        lg: "h-12u px-8u text-label-large",
+        sm: "h-8 px-4 text-label-medium",
+        md: "h-10 px-6 text-label-large",
+        lg: "h-12 px-8 text-label-large",
       },
     },
     defaultVariants: {
@@ -56,7 +56,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref
   ) => {
-    const iconSizeClass = "w-4.5u h-4.5u";
+    const iconSizeClass = "w-4_5 h-4_5";
 
     return (
       <button

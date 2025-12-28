@@ -1,50 +1,47 @@
 "use client";
 
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { FabMenu } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const FabMenuHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-primary-container to-secondary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-40px] left-[-40px] w-56 h-56 bg-primary/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-50px] right-[-30px] w-64 h-64 bg-secondary/20 rounded-full blur-3xl" />
-
+  <HeroBackground tone="tertiary">
     {/* Mock FAB Menu */}
-    <div className="relative bg-surface w-[280px] h-[240px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 z-10">
+    <div className="relative bg-surface w-[280px] h-[240px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
       {/* Content */}
-      <div className="p-4u space-y-3u">
-        <div className="h-4u bg-surface-container-high rounded-sm w-full" />
-        <div className="h-4u bg-surface-container-high rounded-sm w-3/4" />
-        <div className="h-4u bg-surface-container-high rounded-sm w-1/2" />
+      <div className="p-4 space-y-3">
+        <div className="h-4 bg-surface-container-high rounded-sm w-full" />
+        <div className="h-4 bg-surface-container-high rounded-sm w-3/4" />
+        <div className="h-4 bg-surface-container-high rounded-sm w-1/2" />
       </div>
       {/* FAB Menu */}
-      <div className="absolute bottom-6u right-6u flex flex-col items-end gap-3u">
+      <div className="absolute bottom-6 right-6 flex flex-col items-end gap-3">
         {/* Mini FABs */}
-        <div className="flex items-center gap-2u">
-          <span className="bg-inverse-surface text-inverse-on-surface text-label-small px-2u py-1u rounded-sm">Edit</span>
-          <div className="w-10u h-10u rounded-xl bg-secondary-container flex items-center justify-center">
+        <div className="flex items-center gap-2">
+          <span className="bg-inverse-surface text-inverse-on-surface text-label-small px-2 py-1 rounded-sm">Edit</span>
+          <div className="w-10 h-10 rounded-xl bg-secondary-container flex items-center justify-center">
             <span className="material-symbols-outlined text-on-secondary-container text-[20px]">edit</span>
           </div>
         </div>
-        <div className="flex items-center gap-2u">
-          <span className="bg-inverse-surface text-inverse-on-surface text-label-small px-2u py-1u rounded-sm">Share</span>
-          <div className="w-10u h-10u rounded-xl bg-secondary-container flex items-center justify-center">
+        <div className="flex items-center gap-2">
+          <span className="bg-inverse-surface text-inverse-on-surface text-label-small px-2 py-1 rounded-sm">Share</span>
+          <div className="w-10 h-10 rounded-xl bg-secondary-container flex items-center justify-center">
             <span className="material-symbols-outlined text-on-secondary-container text-[20px]">share</span>
           </div>
         </div>
         {/* Main FAB */}
-        <div className="w-14u h-14u rounded-2xl bg-tertiary-container flex items-center justify-center shadow-2">
+        <div className="w-14 h-14 rounded-2xl bg-tertiary-container flex items-center justify-center shadow-2">
           <span className="material-symbols-outlined text-on-tertiary-container rotate-45">add</span>
         </div>
       </div>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 // ─── INTERACTIVE EXAMPLES ────────────────────────────────────────────────────
 const FabMenuBasicExample = () => (
-  <div className="h-[200px] relative flex items-end justify-end p-4u">
+  <div className="h-[200px] relative flex items-end justify-end p-4">
     <FabMenu
       actions={[
         {
@@ -98,7 +95,7 @@ export const fabMenuDoc: ComponentDoc = {
       {
         emphasis: "FAB",
         component: (
-          <div className="w-14u h-14u rounded-2xl bg-primary-container flex items-center justify-center">
+          <div className="w-14 h-14 rounded-2xl bg-primary-container flex items-center justify-center">
             <span className="material-symbols-outlined text-on-primary-container">add</span>
           </div>
         ),
@@ -108,11 +105,11 @@ export const fabMenuDoc: ComponentDoc = {
       {
         emphasis: "FAB Menu",
         component: (
-          <div className="flex flex-col items-end gap-2u">
-            <div className="w-10u h-10u rounded-xl bg-secondary-container flex items-center justify-center">
+          <div className="flex flex-col items-end gap-2">
+            <div className="w-10 h-10 rounded-xl bg-secondary-container flex items-center justify-center">
               <span className="material-symbols-outlined text-on-secondary-container text-[18px]">edit</span>
             </div>
-            <div className="w-14u h-14u rounded-2xl bg-primary-container flex items-center justify-center">
+            <div className="w-14 h-14 rounded-2xl bg-primary-container flex items-center justify-center">
               <span className="material-symbols-outlined text-on-primary-container">add</span>
             </div>
           </div>

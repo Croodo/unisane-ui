@@ -6,7 +6,7 @@ export default function PatternsPage() {
       title="Patterns"
       description="Common UI patterns and layouts built with Unisane UI components."
     >
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6u">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <PatternCard
           icon="view_sidebar"
           title="App Layouts"
@@ -50,14 +50,14 @@ function PatternCard({
   return (
     <a
       href={href}
-      className="group block p-6u rounded-3xl bg-surface-container hover:bg-surface-container-high border border-outline-variant transition-all duration-200 hover:shadow-1"
+      className="group block p-6 rounded-3xl bg-surface-container hover:bg-surface-container-high border border-outline-variant transition-all duration-200 hover:shadow-1"
     >
-      <div className="w-12u h-12u rounded-full bg-tertiary-container flex items-center justify-center mb-4u">
+      <div className="w-12 h-12 rounded-full bg-tertiary-container flex items-center justify-center mb-4">
         <span className="material-symbols-outlined text-on-tertiary-container text-[24px]!">
           {icon}
         </span>
       </div>
-      <h3 className="text-title-large text-on-surface mb-2u group-hover:text-primary transition-colors">
+      <h3 className="text-title-large text-on-surface mb-2 group-hover:text-primary transition-colors">
         {title}
       </h3>
       <p className="text-body-medium text-on-surface-variant">{description}</p>

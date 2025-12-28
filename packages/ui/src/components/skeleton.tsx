@@ -54,7 +54,7 @@ export const SkeletonText: React.FC<{
   className?: string;
 }> = ({ lines = 3, width = "100%", className }) => {
   return (
-    <div className={cn("flex flex-col gap-2u", className)}>
+    <div className={cn("flex flex-col gap-2", className)}>
       {Array.from({ length: lines }).map((_, i) => (
         <Skeleton
           key={i}
@@ -85,10 +85,10 @@ export const SkeletonCard: React.FC<{
   className?: string;
 }> = ({ className }) => {
   return (
-    <div className={cn("p-4u space-y-4u", className)}>
-      <div className="flex items-center gap-3u">
+    <div className={cn("p-4 space-y-4", className)}>
+      <div className="flex items-center gap-3">
         <SkeletonAvatar size="10u" />
-        <div className="flex-1 space-y-2u">
+        <div className="flex-1 space-y-2">
           <Skeleton variant="text" width="60%" height="4u" />
           <Skeleton variant="text" width="40%" height="3u" />
         </div>

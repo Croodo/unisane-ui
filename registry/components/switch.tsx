@@ -30,12 +30,12 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
       <label
         htmlFor={id}
         className={cn(
-          "inline-flex items-center gap-3u cursor-pointer select-none group relative min-h-8u",
+          "inline-flex items-center gap-3 cursor-pointer select-none group relative min-h-8",
           disabled && "opacity-38 cursor-not-allowed pointer-events-none",
           className
         )}
       >
-        <div className="relative w-13u h-8u shrink-0 group/switch">
+        <div className="relative w-13 h-8 shrink-0 group/switch">
           <input
             ref={ref}
             type="checkbox"
@@ -59,8 +59,8 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
             className={cn(
               "absolute top-1/2 -translate-y-1/2 rounded-full transition-all duration-emphasized ease-emphasized flex items-center justify-center z-10",
               props.checked
-                ? "translate-x-5u bg-on-primary w-6u h-6u left-1u"
-                : "left-1u bg-outline group-hover:bg-on-surface-variant w-4u h-4u"
+                ? "translate-x-5 bg-on-primary w-6 h-6 left-1"
+                : "left-1 bg-outline group-hover:bg-on-surface-variant w-4 h-4"
             )}
           >
             {icons && (
@@ -73,7 +73,7 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
                   stroke="currentColor"
                   strokeWidth="3"
                   className={cn(
-                    "w-4u h-4u text-primary absolute transition-opacity duration-snappy ease-standard",
+                    "w-4 h-4 text-primary absolute transition-opacity duration-snappy ease-standard",
                     props.checked ? "opacity-100" : "opacity-0"
                   )}
                 >
@@ -87,7 +87,7 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
                   stroke="currentColor"
                   strokeWidth="3"
                   className={cn(
-                    "w-3u h-3u text-surface-container absolute transition-opacity duration-snappy ease-standard",
+                    "w-3 h-3 text-surface-container absolute transition-opacity duration-snappy ease-standard",
                     props.checked ? "opacity-0" : "opacity-100"
                   )}
                 >
@@ -99,7 +99,7 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
           </div>
         </div>
         {label && (
-          <span className="text-body-small font-medium text-on-surface leading-none pt-0.5u">
+          <span className="text-body-small font-medium text-on-surface leading-none pt-0_5">
             {label}
           </span>
         )}

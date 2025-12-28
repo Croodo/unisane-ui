@@ -116,10 +116,10 @@ export function Sheet({
         role="dialog"
         aria-modal="true"
       >
-        <header className="px-6u py-4u border-b border-outline-variant flex items-center justify-between bg-surface shrink-0 z-20">
-          <div className="flex items-center gap-3u">
+        <header className="px-6 py-6 border-b border-outline-variant flex items-center justify-between bg-surface shrink-0 z-20">
+          <div className="flex items-center gap-3">
             {icon && (
-               <div className="w-10u h-10u rounded-sm bg-inverse-surface text-inverse-on-surface flex items-center justify-center shrink-0 transition-all duration-short">
+               <div className="w-10 h-10 rounded-sm bg-inverse-surface text-inverse-on-surface flex items-center justify-center shrink-0 transition-all duration-short">
                   {icon}
                </div>
             )}
@@ -127,15 +127,15 @@ export function Sheet({
               <h2 className="text-title-medium text-on-surface leading-none">
                 {title}
               </h2>
-              <div className="text-on-surface-variant font-medium text-label-small mt-1u flex items-center gap-1.5u">
-                <span className="w-1u h-1u rounded-full bg-primary animate-pulse" />
+              <div className="text-on-surface-variant font-medium text-label-small mt-1 flex items-center gap-1_5">
+                <span className="w-1 h-1 rounded-full bg-primary animate-pulse" />
                 Active Instance
               </div>
             </div>
           </div>
           <button 
             onClick={onClose} 
-            className="w-10u h-10u rounded-sm flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all relative overflow-hidden"
+            className="w-10 h-10 rounded-sm flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all relative overflow-hidden"
             aria-label="Close sheet"
           >
             <Ripple />
@@ -150,12 +150,12 @@ export function Sheet({
         </div>
 
         {(footerLeft || footerRight) && (
-          <footer className="px-6u py-4u border-t border-outline-variant bg-surface-container-low shrink-0 z-20">
-            <div className="flex flex-col medium:flex-row items-center justify-between gap-4u">
+          <footer className="px-6 py-6 border-t border-outline-variant bg-surface-container-low shrink-0 z-20">
+            <div className="flex flex-col medium:flex-row items-center justify-between gap-4">
                <div className="flex-1 min-w-0 w-full medium:w-auto">
                   {footerLeft}
                </div>
-               <div className="flex items-center gap-2u shrink-0 w-full medium:w-auto justify-end">
+               <div className="flex items-center gap-2 shrink-0 w-full medium:w-auto justify-end">
                   {footerRight}
                </div>
             </div>

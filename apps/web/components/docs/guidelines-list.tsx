@@ -40,7 +40,7 @@ export function GuidelinesList({ guidelines, className }: GuidelinesListProps) {
   };
 
   return (
-    <div className={cn("space-y-6u", className)}>
+    <div className={cn("space-y-6", className)}>
       {(["do", "dont", "caution"] as const).map((type) => {
         const items = grouped[type];
         if (!items.length) return null;
@@ -48,8 +48,8 @@ export function GuidelinesList({ guidelines, className }: GuidelinesListProps) {
         const config = GUIDELINE_CONFIG[type];
 
         return (
-          <div key={type} className="space-y-3u">
-            <div className="flex items-center gap-2u">
+          <div key={type} className="space-y-3">
+            <div className="flex items-center gap-2">
               <span
                 className={cn(
                   "material-symbols-outlined text-[20px]!",
@@ -63,12 +63,12 @@ export function GuidelinesList({ guidelines, className }: GuidelinesListProps) {
               </span>
             </div>
 
-            <ul className="space-y-2u">
+            <ul className="space-y-2">
               {items.map((item, index) => (
                 <li
                   key={index}
                   className={cn(
-                    "flex items-start gap-3u p-4u rounded-md border",
+                    "flex items-start gap-3 p-4 rounded-md border",
                     config.className
                   )}
                 >

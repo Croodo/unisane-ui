@@ -4,9 +4,9 @@
   "description": "Default blue theme - professional and trustworthy",
 
   "primary": {
-    "hue": 240,
-    "chroma": 0.13,
-    "comment": "Teal-blue (240°) with moderate chroma - professional, less saturated"
+    "hue": 210,
+    "chroma": 0.16,
+    "comment": "M3-style blue (210°) with good saturation - matches #296197 reference"
   },
 
   "secondary": {
@@ -26,7 +26,7 @@
   "neutral": {
     "strategy": "tinted",
     "tintFromPrimary": 0.02,
-    "comment": "Cool gray with subtle blue tint"
+    "comment": "Very subtle gray with minimal blue tint"
   },
 
   "error": {

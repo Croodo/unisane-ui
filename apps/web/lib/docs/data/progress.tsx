@@ -1,41 +1,38 @@
 "use client";
 
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { Progress, Card } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const ProgressHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-primary-container to-tertiary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-40px] left-[-40px] w-56 h-56 bg-primary/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-50px] right-[-30px] w-64 h-64 bg-tertiary/20 rounded-full blur-3xl" />
-
+  <HeroBackground tone="error">
     {/* Mock Upload Card */}
-    <div className="relative bg-surface w-[300px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 z-10">
-      <div className="px-5u py-4u border-b border-outline-variant/20">
+    <div className="relative bg-surface w-[300px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
+      <div className="px-5 py-4 border-b border-outline-variant/20">
         <span className="text-title-medium text-on-surface">Uploading Files</span>
       </div>
-      <div className="p-5u space-y-5u">
+      <div className="p-5 space-y-5">
         <div>
-          <div className="flex justify-between mb-2u">
+          <div className="flex justify-between mb-2">
             <span className="text-body-small text-on-surface">document.pdf</span>
             <span className="text-body-small text-on-surface-variant">75%</span>
           </div>
           <Progress value={75} />
         </div>
         <div>
-          <div className="flex justify-between mb-2u">
+          <div className="flex justify-between mb-2">
             <span className="text-body-small text-on-surface">image.png</span>
             <span className="text-body-small text-on-surface-variant">Loading...</span>
           </div>
           <Progress indeterminate />
         </div>
-        <div className="flex items-center justify-center pt-2u">
+        <div className="flex items-center justify-center pt-2">
           <Progress variant="circular" value={45} />
         </div>
       </div>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 export const progressDoc: ComponentDoc = {
@@ -141,17 +138,17 @@ export const progressDoc: ComponentDoc = {
         title: "File upload",
         visual: (
           <Card variant="outlined" padding="md" className="max-w-[280px] mx-auto">
-            <div className="text-title-small text-on-surface mb-4u">Uploading</div>
-            <div className="space-y-4u">
+            <div className="text-title-small text-on-surface mb-4">Uploading</div>
+            <div className="space-y-4">
               <div>
-                <div className="flex justify-between text-body-small mb-1u">
+                <div className="flex justify-between text-body-small mb-1">
                   <span className="text-on-surface">file.pdf</span>
                   <span className="text-on-surface-variant">100%</span>
                 </div>
                 <Progress value={100} />
               </div>
               <div>
-                <div className="flex justify-between text-body-small mb-1u">
+                <div className="flex justify-between text-body-small mb-1">
                   <span className="text-on-surface">image.jpg</span>
                   <span className="text-on-surface-variant">45%</span>
                 </div>
@@ -166,7 +163,7 @@ export const progressDoc: ComponentDoc = {
         title: "Loading state",
         visual: (
           <Card variant="outlined" padding="lg" className="max-w-[200px] mx-auto">
-            <div className="flex flex-col items-center gap-4u">
+            <div className="flex flex-col items-center gap-4">
               <Progress variant="circular" indeterminate />
               <span className="text-body-medium text-on-surface-variant">Loading...</span>
             </div>

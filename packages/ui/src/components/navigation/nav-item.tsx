@@ -46,15 +46,15 @@ export const NavItem = forwardRef<HTMLElement, NavItemProps>(
     const Component = as || (href ? 'a' : 'button');
 
     const baseClasses = cn(
-      "group relative flex items-center gap-3u",
+      "group relative flex items-center gap-3",
       "w-full text-left",
       "rounded-sm",
       "transition-all duration-short ease-standard",
       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
       "overflow-hidden select-none",
-      variant === "compact" && "px-3u py-2u min-h-10u",
-      variant === "default" && "px-4u py-2.5u min-h-12u",
-      variant === "comfortable" && "px-5u py-3u min-h-14u",
+      variant === "compact" && "px-3 py-2 min-h-10",
+      variant === "default" && "px-4 py-2_5 min-h-12",
+      variant === "comfortable" && "px-5 py-3 min-h-14",
       active && [
         "bg-secondary-container text-on-secondary-container",
         "font-semibold",
@@ -71,15 +71,15 @@ export const NavItem = forwardRef<HTMLElement, NavItemProps>(
     const badgeElement = badge !== undefined && (
       <span
         className={cn(
-          "absolute top-1u right-1u",
-          "min-w-4u h-4u px-1u",
+          "absolute top-1 right-1",
+          "min-w-4 h-4 px-1",
           "flex items-center justify-center",
           "bg-error text-on-error",
           "text-label-small font-medium leading-none",
           "rounded-full",
           "pointer-events-none z-20",
           "ring-1 ring-surface",
-          typeof badge === "number" && badge < 10 && "min-w-3u h-3u p-1u"
+          typeof badge === "number" && badge < 10 && "min-w-3 h-3 p-1"
         )}
       >
         {badge}
@@ -103,7 +103,7 @@ export const NavItem = forwardRef<HTMLElement, NavItemProps>(
           <span
             className={cn(
               "relative z-10 flex items-center justify-center flex-shrink-0",
-              "w-6u h-6u",
+              "w-6 h-6",
               "transition-transform duration-short",
               active && "scale-110"
             )}

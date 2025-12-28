@@ -1,23 +1,20 @@
 "use client";
 
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { List, ListItem, ListSubheader, Card, Avatar, Checkbox, Switch } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const ListHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-secondary-container to-primary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-40px] left-[-40px] w-56 h-56 bg-secondary/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-50px] right-[-30px] w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
-
+  <HeroBackground tone="surface">
     {/* Mock List */}
-    <div className="relative bg-surface w-[280px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 z-10">
-      <div className="px-4u py-2u border-b border-outline-variant/20">
+    <div className="relative bg-surface w-[280px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
+      <div className="px-4 py-2 border-b border-outline-variant/20">
         <span className="text-label-medium text-on-surface-variant/70">Recent</span>
       </div>
-      <div className="py-2u">
-        <div className="flex items-center gap-4u px-4u py-2u hover:bg-on-surface/8">
-          <div className="w-10u h-10u rounded-full bg-primary-container flex items-center justify-center">
+      <div className="py-2">
+        <div className="flex items-center gap-4 px-4 py-2 hover:bg-on-surface/8">
+          <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center">
             <span className="text-title-small text-on-primary-container">JD</span>
           </div>
           <div className="flex-1">
@@ -25,8 +22,8 @@ const ListHeroVisual = () => (
             <div className="text-label-small text-on-surface-variant">john@example.com</div>
           </div>
         </div>
-        <div className="flex items-center gap-4u px-4u py-2u bg-primary/8">
-          <div className="w-10u h-10u rounded-full bg-tertiary-container flex items-center justify-center">
+        <div className="flex items-center gap-4 px-4 py-2 bg-primary/8">
+          <div className="w-10 h-10 rounded-full bg-tertiary-container flex items-center justify-center">
             <span className="text-title-small text-on-tertiary-container">AS</span>
           </div>
           <div className="flex-1">
@@ -34,8 +31,8 @@ const ListHeroVisual = () => (
             <div className="text-label-small text-on-surface-variant">alice@example.com</div>
           </div>
         </div>
-        <div className="flex items-center gap-4u px-4u py-2u hover:bg-on-surface/8">
-          <div className="w-10u h-10u rounded-full bg-secondary-container flex items-center justify-center">
+        <div className="flex items-center gap-4 px-4 py-2 hover:bg-on-surface/8">
+          <div className="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center">
             <span className="text-title-small text-on-secondary-container">BJ</span>
           </div>
           <div className="flex-1">
@@ -45,7 +42,7 @@ const ListHeroVisual = () => (
         </div>
       </div>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 export const listDoc: ComponentDoc = {
@@ -80,7 +77,7 @@ export const listDoc: ComponentDoc = {
         emphasis: "One-line",
         component: (
           <div className="w-44 bg-surface rounded-sm border border-outline-variant/30">
-            <div className="px-3u py-2u text-body-small text-on-surface">Simple item</div>
+            <div className="px-3 py-2 text-body-small text-on-surface">Simple item</div>
           </div>
         ),
         rationale:
@@ -91,7 +88,7 @@ export const listDoc: ComponentDoc = {
         emphasis: "Two-line",
         component: (
           <div className="w-44 bg-surface rounded-sm border border-outline-variant/30">
-            <div className="px-3u py-2u">
+            <div className="px-3 py-2">
               <div className="text-body-small text-on-surface">Primary text</div>
               <div className="text-label-small text-on-surface-variant">Secondary text</div>
             </div>
@@ -105,7 +102,7 @@ export const listDoc: ComponentDoc = {
         emphasis: "With icons",
         component: (
           <div className="w-44 bg-surface rounded-sm border border-outline-variant/30">
-            <div className="flex items-center gap-3u px-3u py-2u">
+            <div className="flex items-center gap-3 px-3 py-2">
               <span className="material-symbols-outlined text-[20px] text-on-surface-variant">person</span>
               <div className="text-body-small text-on-surface">With leading icon</div>
             </div>

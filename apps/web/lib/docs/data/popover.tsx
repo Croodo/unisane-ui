@@ -1,32 +1,29 @@
 "use client";
 
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { Popover } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const PopoverHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-secondary-container to-tertiary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-40px] left-[-40px] w-56 h-56 bg-secondary/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-50px] right-[-30px] w-64 h-64 bg-tertiary/20 rounded-full blur-3xl" />
-
+  <HeroBackground tone="tertiary">
     {/* Mock Popover Demo */}
-    <div className="relative z-10">
+    <div className="relative">
       <div className="relative">
         <span className="inline-flex items-center justify-center h-10 px-6 rounded-full bg-primary text-on-primary text-label-large font-medium cursor-pointer">More Info</span>
         {/* Simulated popover */}
-        <div className="absolute top-[calc(100%+8px)] left-1/2 -translate-x-1/2 bg-surface rounded-xl shadow-4 p-4u border border-outline-variant/30 min-w-[200px]">
-          <div className="text-title-small text-on-surface mb-2u">Account Details</div>
-          <div className="text-body-small text-on-surface-variant mb-3u">
+        <div className="absolute top-[calc(100%+8px)] left-1/2 -translate-x-1/2 bg-surface rounded-xl shadow-4 p-4 border border-outline-variant/30 min-w-[200px]">
+          <div className="text-title-small text-on-surface mb-2">Account Details</div>
+          <div className="text-body-small text-on-surface-variant mb-3">
             View and manage your account settings here.
           </div>
-          <div className="flex gap-2u">
+          <div className="flex gap-2">
             <span className="text-label-medium text-primary cursor-pointer hover:underline">Learn More</span>
           </div>
         </div>
       </div>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 export const popoverDoc: ComponentDoc = {
@@ -139,7 +136,7 @@ export const popoverDoc: ComponentDoc = {
             trigger={<span className="inline-flex items-center justify-center h-10 px-6 rounded-full bg-secondary-container text-on-secondary-container text-label-large font-medium hover:bg-secondary-container/80 cursor-pointer">View Details</span>}
             content={
               <div className="w-[180px]">
-                <div className="text-title-small text-on-surface mb-2u">Item Details</div>
+                <div className="text-title-small text-on-surface mb-2">Item Details</div>
                 <div className="text-body-small text-on-surface-variant">
                   Additional information about this item appears here.
                 </div>
@@ -156,8 +153,8 @@ export const popoverDoc: ComponentDoc = {
             trigger={<span className="inline-flex items-center justify-center h-10 px-6 rounded-full bg-primary text-on-primary text-label-large font-medium hover:bg-primary/90 cursor-pointer">Share</span>}
             content={
               <div className="w-[160px]">
-                <div className="text-label-medium text-on-surface mb-3u">Share via</div>
-                <div className="space-y-2u">
+                <div className="text-label-medium text-on-surface mb-3">Share via</div>
+                <div className="space-y-2">
                   <div className="text-body-small text-on-surface-variant cursor-pointer hover:text-on-surface">Email</div>
                   <div className="text-body-small text-on-surface-variant cursor-pointer hover:text-on-surface">Copy Link</div>
                   <div className="text-body-small text-on-surface-variant cursor-pointer hover:text-on-surface">Twitter</div>

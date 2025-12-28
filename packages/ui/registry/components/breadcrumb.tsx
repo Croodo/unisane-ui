@@ -1,5 +1,5 @@
-import React from "react";
-import { cn } from "@/lib/utils";
+import React, { isValidElement, cloneElement } from "react";
+import { cn, Slot } from "@/lib/utils";
 import { Icon } from "@/primitives/icon";
 import { IconButton } from "./icon-button";
 
@@ -8,7 +8,7 @@ export const Breadcrumb: React.FC<{
   className?: string;
 }> = ({ children, className }) => (
   <nav aria-label="breadcrumb" className={cn("flex", className)}>
-    <ol className="flex items-center gap-2u flex-wrap">{children}</ol>
+    <ol className="flex items-center gap-2 flex-wrap">{children}</ol>
   </nav>
 );
 
@@ -16,7 +16,7 @@ export const BreadcrumbItem: React.FC<{
   children: React.ReactNode;
   className?: string;
 }> = ({ children, className }) => (
-  <li className={cn("inline-flex items-center gap-2u", className)}>
+  <li className={cn("inline-flex items-center gap-2", className)}>
     {children}
   </li>
 );
@@ -24,18 +24,38 @@ export const BreadcrumbItem: React.FC<{
 export const BreadcrumbLink: React.FC<{
   children: React.ReactNode;
   onClick?: () => void;
+  href?: string;
   className?: string;
-}> = ({ children, onClick, className }) => (
-  <button
-    onClick={onClick}
-    className={cn(
-      "text-label-medium font-medium text-on-surface-variant hover:text-primary transition-colors leading-none pt-0.5u",
-      className
-    )}
-  >
-    {children}
-  </button>
-);
+  asChild?: boolean;
+}> = ({ children, onClick, href, className, asChild }) => {
+  const linkClasses = cn(
+    "text-label-medium font-medium text-on-surface-variant hover:text-primary transition-colors leading-none pt-0_5",
+    className
+  );
+
+  // asChild pattern: render user's Link component
+  if (asChild && isValidElement(children)) {
+    return (
+      <Slot className={linkClasses}>
+        {children}
+      </Slot>
+    );
+  }
+
+  if (href) {
+    return (
+      <a href={href} className={linkClasses}>
+        {children}
+      </a>
+    );
+  }
+
+  return (
+    <button onClick={onClick} className={linkClasses}>
+      {children}
+    </button>
+  );
+};
 
 export const BreadcrumbPage: React.FC<{
   children: React.ReactNode;
@@ -43,7 +63,7 @@ export const BreadcrumbPage: React.FC<{
 }> = ({ children, className }) => (
   <span
     className={cn(
-      "text-label-medium font-medium text-on-surface leading-none pt-0.5u",
+      "text-label-medium font-medium text-on-surface leading-none pt-0_5",
       className
     )}
   >
@@ -60,7 +80,7 @@ export const BreadcrumbEllipsis: React.FC<{
   className?: string;
 }> = ({ onClick, className }) => {
   return (
-    <li className={cn("inline-flex items-center gap-2u", className)}>
+    <li className={cn("inline-flex items-center gap-2", className)}>
       <IconButton
         icon={
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">

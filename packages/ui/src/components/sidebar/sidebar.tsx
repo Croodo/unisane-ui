@@ -30,18 +30,21 @@ export interface SidebarRailProps extends React.HTMLAttributes<HTMLElement> {
 
 export const SidebarRail = forwardRef<HTMLElement, SidebarRailProps>(
   ({ children, className, ...props }, ref) => {
-    const { handleRailLeave, railWidth, isMobile } = useSidebar();
+    const { handleRailLeave, railWidth, isMobile, isTablet, isDrawerVisible } = useSidebar();
 
-    if (isMobile) return null;
+    // Hide rail on mobile and tablet (tablet uses top app bar instead)
+    if (isMobile || isTablet) return null;
 
     return (
       <nav
         ref={ref}
         className={cn(
           "fixed left-0 top-0 h-screen flex flex-col items-center",
-          "bg-surface-container text-on-surface py-3u gap-1u",
-          "border-r border-outline-variant z-[50] shrink-0",
+          "bg-surface-container text-on-surface py-3 gap-1",
+          "z-50 shrink-0",
           "transition-all duration-medium ease-standard",
+          // Only show border when drawer is visible
+          isDrawerVisible && "border-r border-outline-variant",
           className
         )}
         style={{ width: railWidth }}
@@ -73,7 +76,7 @@ const renderIcon = (icon: React.ReactNode | string, isActive: boolean = false) =
   if (typeof icon === "string") {
     return (
       <span
-        className="material-symbols-outlined text-[26px]! transition-all duration-short"
+        className="material-symbols-outlined text-[22px]! transition-all duration-short"
         style={isActive ? { fontVariationSettings: "'FILL' 1, 'wght' 500" } : { fontVariationSettings: "'wght' 400" }}
       >
         {icon}
@@ -105,7 +108,7 @@ export function SidebarRailItem({
       <div className="relative flex items-center justify-center">
         <div
           className={cn(
-            "w-14u h-8u rounded-xl flex items-center justify-center",
+            "w-13 h-7 rounded-xl flex items-center justify-center",
             "transition-all duration-medium ease-emphasized overflow-hidden relative",
             isActive
               ? "bg-secondary-container text-primary"
@@ -113,7 +116,7 @@ export function SidebarRailItem({
           )}
         >
           <Ripple center disabled={disabled} />
-          <span className="z-10 relative">
+          <span className="z-10 relative flex items-center justify-center">
             {isActive && activeIcon
               ? renderIcon(activeIcon, true)
               : renderIcon(icon, isActive)}
@@ -123,11 +126,11 @@ export function SidebarRailItem({
         {badge !== undefined && (
           <span
             className={cn(
-              "absolute -top-0.5u -right-0.5u min-w-3u h-3u px-0.5u",
+              "absolute -top-0_5 -right-0_5 min-w-3 h-3 px-0_5",
               "bg-error text-on-error text-[10px] leading-none",
               "flex items-center justify-center rounded-full font-medium",
               "z-20 pointer-events-none ring-1 ring-surface",
-              typeof badge === "number" && badge < 10 && "min-w-2u h-2u p-0.5u"
+              typeof badge === "number" && badge < 10 && "min-w-2 h-2 p-0_5"
             )}
           >
             {badge}
@@ -137,11 +140,11 @@ export function SidebarRailItem({
 
       <span
         className={cn(
-          "text-label-medium transition-colors duration-short",
-          "text-center px-0.5u max-w-full",
+          "text-label-small transition-colors duration-short",
+          "text-center px-0_5 max-w-full",
           isActive
             ? "text-primary font-bold"
-            : "text-on-surface-variant font-semibold group-hover:text-on-surface"
+            : "text-on-surface-variant font-medium group-hover:text-on-surface"
         )}
       >
         {label}
@@ -150,7 +153,7 @@ export function SidebarRailItem({
   );
 
   const commonClasses = cn(
-    "group flex flex-col items-center gap-0.5u w-full py-1u min-h-12u",
+    "group flex flex-col items-center gap-0_5 w-full py-1 min-h-12",
     "relative select-none cursor-pointer outline-none",
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
     "focus-visible:ring-offset-2 rounded-sm",
@@ -214,6 +217,7 @@ export const SidebarDrawer = forwardRef<HTMLElement, SidebarDrawerProps>(
       expanded,
       mobileOpen,
       isMobile,
+      isTablet,
       handleDrawerEnter,
       handleDrawerLeave,
       railWidth,
@@ -221,30 +225,34 @@ export const SidebarDrawer = forwardRef<HTMLElement, SidebarDrawerProps>(
       mobileDrawerWidth,
     } = useSidebar();
 
-    const isOpen = isMobile ? mobileOpen : isDrawerVisible;
-    const isOverlay = isMobile || !expanded;
-    const effectiveWidth = isMobile ? mobileDrawerWidth : drawerWidth;
+    // Tablet behaves like mobile for drawer (overlay from left edge)
+    const usesOverlayDrawer = isMobile || isTablet;
+    const isOpen = usesOverlayDrawer ? mobileOpen : isDrawerVisible;
+    const isOverlay = usesOverlayDrawer || !expanded;
+    const effectiveWidth = usesOverlayDrawer ? mobileDrawerWidth : drawerWidth;
 
     return (
       <aside
         ref={ref}
         className={cn(
-          "fixed top-0 h-screen flex flex-col",
+          "fixed top-0 flex flex-col",
+          // Use dvh for mobile (accounts for browser chrome), screen for desktop
+          usesOverlayDrawer ? "h-dvh" : "h-screen",
           "bg-surface-container text-on-surface",
           "transition-transform duration-emphasized ease-emphasized",
-          "overflow-y-auto overflow-x-hidden",
-          isMobile && "left-0 z-[60] max-w-[85vw]",
-          !isMobile && "z-[30]",
+          "overflow-hidden", // Let SidebarContent handle scrolling
+          usesOverlayDrawer && "left-0 z-60 max-w-[85vw]",
+          !usesOverlayDrawer && "z-30",
           isOverlay && isOpen && "shadow-3",
           isOpen ? "translate-x-0" : "-translate-x-full",
           className
         )}
         style={{
           width: effectiveWidth,
-          left: isMobile ? 0 : railWidth,
+          left: usesOverlayDrawer ? 0 : railWidth,
         }}
-        onMouseEnter={!isMobile ? handleDrawerEnter : undefined}
-        onMouseLeave={!isMobile ? handleDrawerLeave : undefined}
+        onMouseEnter={!usesOverlayDrawer ? handleDrawerEnter : undefined}
+        onMouseLeave={!usesOverlayDrawer ? handleDrawerLeave : undefined}
         aria-hidden={!isOpen}
         {...props}
       >
@@ -264,7 +272,7 @@ export const SidebarHeader = forwardRef<HTMLDivElement, SidebarHeaderProps>(
     return (
       <div
         ref={ref}
-        className={cn("shrink-0 px-4u pt-4u pb-2u", className)}
+        className={cn("shrink-0 px-4 pt-4 pb-2", className)}
         {...props}
       >
         {children}
@@ -283,7 +291,7 @@ export const SidebarFooter = forwardRef<HTMLDivElement, SidebarFooterProps>(
     return (
       <div
         ref={ref}
-        className={cn("shrink-0 mt-auto px-4u pb-4u pt-2u", className)}
+        className={cn("shrink-0 mt-auto px-4 pb-4 pt-2", className)}
         {...props}
       >
         {children}
@@ -302,7 +310,7 @@ export const SidebarContent = forwardRef<HTMLDivElement, SidebarContentProps>(
     return (
       <div
         ref={ref}
-        className={cn("flex-1 overflow-y-auto px-2u py-2u", className)}
+        className={cn("flex-1 overflow-y-auto px-2 py-2", className)}
         {...props}
       >
         {children}
@@ -321,7 +329,7 @@ export const SidebarGroup = forwardRef<HTMLDivElement, SidebarGroupProps>(
     return (
       <div
         ref={ref}
-        className={cn("flex flex-col gap-1u", className)}
+        className={cn("flex flex-col gap-1", className)}
         {...props}
       >
         {children}
@@ -341,7 +349,7 @@ export const SidebarGroupLabel = forwardRef<HTMLDivElement, SidebarGroupLabelPro
       <div
         ref={ref}
         className={cn(
-          "px-4u py-2u text-label-small font-semibold text-on-surface-variant",
+          "px-4 py-2 text-label-small font-semibold text-on-surface-variant",
           "uppercase tracking-wider",
           className
         )}
@@ -363,7 +371,7 @@ export const SidebarMenu = forwardRef<HTMLElement, SidebarMenuProps>(
     return (
       <nav
         ref={ref}
-        className={cn("flex flex-col gap-0.5u", className)}
+        className={cn("flex flex-col gap-0_5", className)}
         {...props}
       >
         {children}
@@ -435,7 +443,7 @@ export function SidebarMenuItem({
   );
 
   const itemClasses = cn(
-    "flex items-center gap-3u px-4u py-3u rounded-xl",
+    "flex items-center gap-3 px-4 py-3 rounded-xl",
     "text-body-medium transition-colors duration-short cursor-pointer",
     "relative overflow-hidden select-none",
     isActive
@@ -499,7 +507,7 @@ export const SidebarTrigger = forwardRef<HTMLButtonElement, SidebarTriggerProps>
         onClick={handleClick}
         className={cn(
           "inline-flex items-center justify-center",
-          "w-10u h-10u rounded-full",
+          "w-10 h-10 rounded-full",
           "text-on-surface-variant hover:bg-on-surface/8",
           "transition-colors duration-short",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
@@ -520,7 +528,10 @@ SidebarTrigger.displayName = "SidebarTrigger";
 export interface SidebarBackdropProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export function SidebarBackdrop({ className, ...props }: SidebarBackdropProps) {
-  const { isDrawerVisible, expanded, mobileOpen, isMobile, setMobileOpen } = useSidebar();
+  const { isDrawerVisible, expanded, mobileOpen, isMobile, isTablet, setMobileOpen } = useSidebar();
+
+  // Tablet behaves like mobile for backdrop
+  const usesOverlayDrawer = isMobile || isTablet;
   const isVisible = mobileOpen || (isDrawerVisible && !expanded);
 
   if (!isVisible) return null;
@@ -529,7 +540,7 @@ export function SidebarBackdrop({ className, ...props }: SidebarBackdropProps) {
     <div
       className={cn(
         "fixed inset-0 bg-scrim/30 transition-opacity duration-medium ease-standard",
-        isMobile ? "z-[55]" : "z-[20]",
+        usesOverlayDrawer ? "z-55" : "z-20",
         "opacity-100",
         className
       )}
@@ -550,7 +561,10 @@ export interface SidebarInsetProps extends React.HTMLAttributes<HTMLElement> {
 
 export const SidebarInset = forwardRef<HTMLElement, SidebarInsetProps>(
   ({ children, className, style, ...props }, ref) => {
-    const { contentMargin, isMobile } = useSidebar();
+    const { contentMargin, isMobile, isTablet } = useSidebar();
+
+    // Mobile and tablet use top app bar, so need top margin
+    const usesTopAppBar = isMobile || isTablet;
 
     return (
       <main
@@ -559,11 +573,11 @@ export const SidebarInset = forwardRef<HTMLElement, SidebarInsetProps>(
           "flex-1 min-h-screen flex flex-col",
           "bg-surface-container-lowest",
           "transition-[margin] duration-emphasized ease-emphasized",
-          isMobile && "mt-16u",
+          usesTopAppBar && "mt-16",
           className
         )}
         style={{
-          marginLeft: !isMobile ? contentMargin : undefined,
+          marginLeft: !usesTopAppBar ? contentMargin : undefined,
           ...style,
         }}
         {...props}
@@ -623,7 +637,7 @@ export function SidebarCollapsibleGroup({
       <button
         onClick={handleToggle}
         className={cn(
-          "flex items-center gap-3u px-4u py-3u rounded-xl w-full",
+          "flex items-center gap-3 px-4 py-3 rounded-xl w-full",
           "text-body-medium transition-colors duration-short",
           "cursor-pointer select-none relative overflow-hidden",
           hasActiveChild
@@ -651,7 +665,7 @@ export function SidebarCollapsibleGroup({
         <span className="flex-1 text-left truncate">{label}</span>
         <svg
           className={cn(
-            "w-5u h-5u transition-transform duration-medium ease-emphasized shrink-0",
+            "w-5 h-5 transition-transform duration-medium ease-emphasized shrink-0",
             isOpen && "rotate-180"
           )}
           viewBox="0 0 24 24"
@@ -668,12 +682,14 @@ export function SidebarCollapsibleGroup({
         id={contentId}
         role="region"
         className={cn(
-          "flex flex-col pl-4u transition-all duration-medium ease-emphasized overflow-hidden",
-          isOpen ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
+          "grid transition-all duration-medium ease-emphasized",
+          isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
         )}
         aria-hidden={!isOpen}
       >
-        {children}
+        <div className="flex flex-col pl-4 overflow-hidden">
+          {children}
+        </div>
       </div>
     </div>
   );

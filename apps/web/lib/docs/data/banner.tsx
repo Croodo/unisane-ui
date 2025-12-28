@@ -1,24 +1,21 @@
 "use client";
 
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { Card } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const BannerHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-primary-container to-secondary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-40px] left-[-40px] w-56 h-56 bg-primary/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-50px] right-[-30px] w-64 h-64 bg-secondary/20 rounded-full blur-3xl" />
-
+  <HeroBackground tone="error">
     {/* Mock App with Banner */}
-    <div className="relative bg-surface w-[320px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 z-10">
+    <div className="relative bg-surface w-[320px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
       {/* Banner */}
-      <div className="flex items-start gap-3u p-4u border-b border-outline-variant/30 bg-surface">
+      <div className="flex items-start gap-3 p-4 border-b border-outline-variant/30 bg-surface">
         <span className="material-symbols-outlined text-primary mt-0.5">info</span>
         <div className="flex-1">
-          <div className="text-title-small text-on-surface mb-1u">Update Available</div>
+          <div className="text-title-small text-on-surface mb-1">Update Available</div>
           <div className="text-body-small text-on-surface-variant">A new version is ready to install.</div>
-          <div className="flex gap-2u mt-3u">
+          <div className="flex gap-2 mt-3">
             <span className="text-label-medium text-primary font-medium cursor-pointer">Update Now</span>
             <span className="text-label-medium text-primary font-medium cursor-pointer">Later</span>
           </div>
@@ -26,19 +23,19 @@ const BannerHeroVisual = () => (
         <span className="material-symbols-outlined text-on-surface-variant text-[18px] cursor-pointer">close</span>
       </div>
       {/* Content */}
-      <div className="p-5u space-y-3u">
-        <div className="h-4u bg-surface-container-high rounded-sm w-full" />
-        <div className="h-4u bg-surface-container-high rounded-sm w-3/4" />
-        <div className="h-4u bg-surface-container-high rounded-sm w-1/2" />
+      <div className="p-5 space-y-3">
+        <div className="h-4 bg-surface-container-high rounded-sm w-full" />
+        <div className="h-4 bg-surface-container-high rounded-sm w-3/4" />
+        <div className="h-4 bg-surface-container-high rounded-sm w-1/2" />
       </div>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 // ─── PLACEMENT VISUALS ────────────────────────────────────────────────────────
 const BannerDefaultVisual = () => (
   <div className="w-[280px] mx-auto bg-surface rounded-xl overflow-hidden border border-outline-variant/30">
-    <div className="flex items-start gap-3u p-3u border-b border-outline-variant/20">
+    <div className="flex items-start gap-3 p-3 border-b border-outline-variant/20">
       <span className="material-symbols-outlined text-primary text-[20px]">info</span>
       <div className="flex-1 min-w-0">
         <div className="text-body-small text-on-surface-variant">New features are now available.</div>
@@ -50,7 +47,7 @@ const BannerDefaultVisual = () => (
 
 const BannerWarningVisual = () => (
   <div className="w-[280px] mx-auto bg-warning-container/30 rounded-xl overflow-hidden border border-outline-variant/30">
-    <div className="flex items-start gap-3u p-3u">
+    <div className="flex items-start gap-3 p-3">
       <span className="material-symbols-outlined text-on-warning-container text-[20px]">warning</span>
       <div className="flex-1 min-w-0">
         <div className="text-body-small text-on-warning-container font-medium">Your session expires in 5 minutes.</div>
@@ -91,7 +88,7 @@ export const bannerDoc: ComponentDoc = {
       {
         emphasis: "Default",
         component: (
-          <div className="w-40 bg-surface rounded-sm p-2u border border-outline-variant/30">
+          <div className="w-40 bg-surface rounded-sm p-2 border border-outline-variant/30">
             <div className="text-body-small text-on-surface-variant">Info message</div>
           </div>
         ),
@@ -102,7 +99,7 @@ export const bannerDoc: ComponentDoc = {
       {
         emphasis: "Warning",
         component: (
-          <div className="w-40 bg-warning-container/30 rounded-sm p-2u">
+          <div className="w-40 bg-warning-container/30 rounded-sm p-2">
             <div className="text-body-small text-on-warning-container">Warning message</div>
           </div>
         ),
@@ -113,7 +110,7 @@ export const bannerDoc: ComponentDoc = {
       {
         emphasis: "Error",
         component: (
-          <div className="w-40 bg-error-container/30 rounded-sm p-2u">
+          <div className="w-40 bg-error-container/30 rounded-sm p-2">
             <div className="text-body-small text-on-error-container">Error message</div>
           </div>
         ),
@@ -131,7 +128,7 @@ export const bannerDoc: ComponentDoc = {
     items: [
       {
         component: (
-          <div className="w-36 bg-surface rounded-sm p-2u border border-outline-variant/30">
+          <div className="w-36 bg-surface rounded-sm p-2 border border-outline-variant/30">
             <div className="text-body-small text-on-surface-variant">Simple message</div>
           </div>
         ),
@@ -140,8 +137,8 @@ export const bannerDoc: ComponentDoc = {
       },
       {
         component: (
-          <div className="w-36 bg-surface rounded-sm p-2u border border-outline-variant/30">
-            <div className="flex items-center gap-2u">
+          <div className="w-36 bg-surface rounded-sm p-2 border border-outline-variant/30">
+            <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-primary text-[16px]">info</span>
               <div className="text-body-small text-on-surface-variant">With icon</div>
             </div>
@@ -152,7 +149,7 @@ export const bannerDoc: ComponentDoc = {
       },
       {
         component: (
-          <div className="w-36 bg-surface rounded-sm p-2u border border-outline-variant/30">
+          <div className="w-36 bg-surface rounded-sm p-2 border border-outline-variant/30">
             <div className="text-label-small text-on-surface font-medium">Title</div>
             <div className="text-body-small text-on-surface-variant">Message</div>
           </div>

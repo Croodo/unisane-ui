@@ -1,21 +1,18 @@
 "use client";
 
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent, Card } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const AccordionHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-tertiary-container to-secondary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-40px] right-[-40px] w-56 h-56 bg-tertiary/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-50px] left-[-30px] w-64 h-64 bg-secondary/20 rounded-full blur-3xl" />
-
+  <HeroBackground tone="tertiary">
     {/* Mock FAQ Card */}
-    <div className="relative bg-surface w-[300px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 z-10">
-      <div className="px-5u py-4u border-b border-outline-variant/20">
+    <div className="relative bg-surface w-[300px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
+      <div className="px-5 py-4 border-b border-outline-variant/20">
         <span className="text-title-medium text-on-surface">FAQ</span>
       </div>
-      <div className="p-4u">
+      <div className="p-4">
         <Accordion type="single" defaultValue={["item-1"]}>
           <AccordionItem value="item-1">
             <AccordionTrigger>How do I get started?</AccordionTrigger>
@@ -38,7 +35,7 @@ const AccordionHeroVisual = () => (
         </Accordion>
       </div>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 export const accordionDoc: ComponentDoc = {
@@ -157,7 +154,7 @@ export const accordionDoc: ComponentDoc = {
         title: "FAQ section",
         visual: (
           <Card variant="outlined" padding="md" className="max-w-[280px] mx-auto">
-            <div className="text-title-small text-on-surface mb-3u">Frequently Asked</div>
+            <div className="text-title-small text-on-surface mb-3">Frequently Asked</div>
             <Accordion type="single" defaultValue={["faq-1"]}>
               <AccordionItem value="faq-1">
                 <AccordionTrigger>What is included?</AccordionTrigger>
@@ -180,7 +177,7 @@ export const accordionDoc: ComponentDoc = {
         title: "Settings groups",
         visual: (
           <Card variant="outlined" padding="md" className="max-w-[280px] mx-auto">
-            <div className="text-title-small text-on-surface mb-3u">Settings</div>
+            <div className="text-title-small text-on-surface mb-3">Settings</div>
             <Accordion type="multiple" defaultValue={["notifications"]}>
               <AccordionItem value="notifications">
                 <AccordionTrigger>Notifications</AccordionTrigger>

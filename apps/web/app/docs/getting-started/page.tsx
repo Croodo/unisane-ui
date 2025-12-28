@@ -7,7 +7,7 @@ export default function GettingStartedPage() {
       title="Get Started"
       description="Learn how to install and configure Unisane UI in your React project."
     >
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6u">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <QuickLinkCard
           icon="download"
           title="Installation"
@@ -52,14 +52,14 @@ function QuickLinkCard({
     <a href={href} className="group block">
       <Card
         variant="outlined"
-        className="p-6u rounded-3xl bg-surface-container-low hover:bg-surface-container transition-all duration-200 hover:shadow-1"
+        className="p-6 rounded-3xl bg-surface-container-low hover:bg-surface-container transition-all duration-200 hover:shadow-1"
       >
-        <div className="w-12u h-12u rounded-full bg-primary-container flex items-center justify-center mb-4u">
+        <div className="w-12 h-12 rounded-full bg-primary-container flex items-center justify-center mb-4">
           <span className="material-symbols-outlined text-on-primary-container text-[24px]!">
             {icon}
           </span>
         </div>
-        <Typography variant="titleLarge" component="h3" className="mb-2u group-hover:text-primary transition-colors">
+        <Typography variant="titleLarge" component="h3" className="mb-2 group-hover:text-primary transition-colors">
           {title}
         </Typography>
         <Typography variant="bodyMedium" className="text-on-surface-variant">

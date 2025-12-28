@@ -22,7 +22,7 @@ export const ScrollArea: React.FC<ScrollAreaProps> = ({
           orientation === "horizontal" && "overflow-x-auto overflow-y-hidden",
           orientation === "both" && "overflow-auto",
           "scrollbar-thin scrollbar-track-transparent scrollbar-thumb-outline-variant/40",
-          "[&::-webkit-scrollbar]:w-2u [&::-webkit-scrollbar]:h-2u",
+          "[&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:h-2",
           "[&::-webkit-scrollbar-track]:bg-transparent",
           "[&::-webkit-scrollbar-thumb]:bg-outline-variant/40 [&::-webkit-scrollbar-thumb]:rounded-full",
           "[&::-webkit-scrollbar-thumb]:hover:bg-outline-variant/80",

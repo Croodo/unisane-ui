@@ -1,34 +1,31 @@
 "use client";
 
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { TopAppBar, IconButton } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const TopAppBarHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-primary-container to-secondary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-40px] left-[-40px] w-56 h-56 bg-primary/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-50px] right-[-30px] w-64 h-64 bg-secondary/20 rounded-full blur-3xl" />
-
+  <HeroBackground tone="surface">
     {/* Mock App with Top Bar */}
-    <div className="relative bg-surface w-[320px] h-[240px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 z-10">
+    <div className="relative bg-surface w-[320px] h-[240px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
       {/* Top App Bar */}
-      <div className="h-16u px-4u flex items-center justify-between border-b border-outline-variant/30 bg-surface">
+      <div className="h-16 px-4 flex items-center justify-between border-b border-outline-variant/30 bg-surface">
         <span className="material-symbols-outlined text-on-surface">menu</span>
         <span className="text-title-large text-primary">My App</span>
-        <div className="flex gap-2u">
+        <div className="flex gap-2">
           <span className="material-symbols-outlined text-on-surface-variant">search</span>
           <span className="material-symbols-outlined text-on-surface-variant">more_vert</span>
         </div>
       </div>
       {/* Content */}
-      <div className="p-4u space-y-3u">
-        <div className="h-4u bg-surface-container-high rounded-sm w-full" />
-        <div className="h-4u bg-surface-container-high rounded-sm w-3/4" />
-        <div className="h-4u bg-surface-container-high rounded-sm w-1/2" />
+      <div className="p-4 space-y-3">
+        <div className="h-4 bg-surface-container-high rounded-sm w-full" />
+        <div className="h-4 bg-surface-container-high rounded-sm w-3/4" />
+        <div className="h-4 bg-surface-container-high rounded-sm w-1/2" />
       </div>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 // ─── EXAMPLES ────────────────────────────────────────────────────────────────
@@ -116,7 +113,7 @@ export const topAppBarDoc: ComponentDoc = {
       {
         emphasis: "Small",
         component: (
-          <div className="w-32 h-8u bg-surface border border-outline-variant/30 rounded-sm flex items-center px-2u justify-between">
+          <div className="w-32 h-8 bg-surface border border-outline-variant/30 rounded-sm flex items-center px-2 justify-between">
             <span className="material-symbols-outlined text-[14px] text-on-surface">menu</span>
             <span className="text-label-small text-primary">Title</span>
             <span className="material-symbols-outlined text-[14px] text-on-surface-variant">more_vert</span>
@@ -128,7 +125,7 @@ export const topAppBarDoc: ComponentDoc = {
       {
         emphasis: "Center",
         component: (
-          <div className="w-32 h-8u bg-surface border border-outline-variant/30 rounded-sm flex items-center px-2u">
+          <div className="w-32 h-8 bg-surface border border-outline-variant/30 rounded-sm flex items-center px-2">
             <span className="material-symbols-outlined text-[14px] text-on-surface">arrow_back</span>
             <span className="text-label-small text-primary flex-1 text-center">Title</span>
           </div>
@@ -139,7 +136,7 @@ export const topAppBarDoc: ComponentDoc = {
       {
         emphasis: "Medium",
         component: (
-          <div className="w-32 h-12u bg-surface border border-outline-variant/30 rounded-sm flex flex-col p-2u justify-end">
+          <div className="w-32 h-12 bg-surface border border-outline-variant/30 rounded-sm flex flex-col p-2 justify-end">
             <span className="text-label-small text-on-surface">Title</span>
           </div>
         ),
@@ -149,7 +146,7 @@ export const topAppBarDoc: ComponentDoc = {
       {
         emphasis: "Large",
         component: (
-          <div className="w-32 h-16u bg-surface border border-outline-variant/30 rounded-sm flex flex-col p-2u justify-end">
+          <div className="w-32 h-16 bg-surface border border-outline-variant/30 rounded-sm flex flex-col p-2 justify-end">
             <span className="text-body-small text-on-surface">Large Title</span>
           </div>
         ),

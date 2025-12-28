@@ -48,6 +48,7 @@ export const Combobox: React.FC<ComboboxProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const comboboxRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -85,12 +86,14 @@ export const Combobox: React.FC<ComboboxProps> = ({
     if (option.disabled) return;
     onChange?.(option.value);
     setSearchValue("");
+    setIsSearching(false);
     setIsOpen(false);
     setActiveIndex(-1);
   }, [onChange]);
 
   const handleInputChange = (newValue: string) => {
     setSearchValue(newValue);
+    setIsSearching(true);
     setActiveIndex(-1);
     if (!isOpen) setIsOpen(true);
   };
@@ -154,46 +157,65 @@ export const Combobox: React.FC<ComboboxProps> = ({
           as="label"
           htmlFor={inputId}
           variant="labelMedium"
-          className="mb-2u block text-on-surface-variant font-black uppercase tracking-widest opacity-60"
+          className="mb-2 block text-on-surface-variant font-medium"
         >
           {label}
         </Text>
       )}
 
       <Surface
-        tone="surface"
+        tone="surfaceContainerHighest"
         className={cn(
-          "relative w-full rounded-xs border-2 border-outline-variant/30 h-14u transition-all cursor-pointer",
+          "relative w-full rounded-xs border border-outline h-14 transition-all",
           isOpen && "border-primary ring-1 ring-primary/30",
-          disabled && "opacity-38 cursor-not-allowed"
+          disabled && "opacity-38 cursor-not-allowed",
+          !searchable && "cursor-pointer"
         )}
-        onClick={() => !disabled && setIsOpen(!isOpen)}
-        onKeyDown={handleKeyDown}
-        role="combobox"
-        aria-expanded={isOpen}
-        aria-haspopup="listbox"
-        aria-controls={listboxId}
-        aria-activedescendant={activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined}
-        tabIndex={searchable ? -1 : (disabled ? -1 : 0)}
+        onClick={() => {
+          if (!disabled && !searchable) {
+            setIsOpen(!isOpen);
+          }
+        }}
+        onKeyDown={!searchable ? handleKeyDown : undefined}
+        role={!searchable ? "combobox" : undefined}
+        aria-expanded={!searchable ? isOpen : undefined}
+        aria-haspopup={!searchable ? "listbox" : undefined}
+        aria-controls={!searchable ? listboxId : undefined}
+        aria-activedescendant={!searchable && activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined}
+        tabIndex={!searchable && !disabled ? 0 : -1}
       >
-        <Ripple disabled={disabled} />
+        {!searchable && <Ripple disabled={disabled} />}
 
-        <div className="flex items-center gap-2u px-4u h-full">
+        <div className="flex items-center gap-2 px-4 h-full">
           {searchable ? (
             <input
               ref={inputRef}
               id={inputId}
               type="text"
               value={
-                searchValue || (selectedOption ? selectedOption.label : "")
+                isSearching ? searchValue : (selectedOption ? selectedOption.label : "")
               }
               onChange={(e) => handleInputChange(e.target.value)}
               onKeyDown={handleKeyDown}
-              onFocus={() => !disabled && setIsOpen(true)}
+              onFocus={() => {
+                if (!disabled) {
+                  setIsOpen(true);
+                  setIsSearching(true);
+                  setSearchValue("");
+                }
+              }}
+              onBlur={() => {
+                // Reset search state when focus leaves (with small delay for click handling)
+                setTimeout(() => {
+                  if (!comboboxRef.current?.contains(document.activeElement)) {
+                    setIsSearching(false);
+                    setSearchValue("");
+                  }
+                }, 150);
+              }}
               placeholder={placeholder}
               disabled={disabled}
-              className="flex-1 bg-transparent outline-none text-body-large text-on-surface placeholder-on-surface-variant/40"
-              onClick={(e) => e.stopPropagation()}
+              className="flex-1 bg-transparent outline-none text-body-large text-on-surface placeholder:text-on-surface-variant/60 cursor-text"
               role="combobox"
               aria-expanded={isOpen}
               aria-haspopup="listbox"
@@ -214,33 +236,41 @@ export const Combobox: React.FC<ComboboxProps> = ({
             symbol="arrow_drop_down"
             size="sm"
             className={cn(
-              "text-on-surface-variant transition-transform duration-short ease-standard",
+              "text-on-surface-variant transition-transform duration-short ease-standard cursor-pointer",
               isOpen && "rotate-180"
             )}
             aria-hidden="true"
+            onClick={() => {
+              if (!disabled) {
+                setIsOpen(!isOpen);
+                if (searchable && inputRef.current) {
+                  inputRef.current.focus();
+                }
+              }
+            }}
           />
         </div>
       </Surface>
 
       {isOpen && !disabled && (
         <Surface
-          tone="surface"
-          elevation={3}
-          className="absolute top-[calc(100%+var(--unit))] left-0 right-0 rounded-xs border border-outline-variant/30 z-50 max-h-60 overflow-y-auto bg-surface-container-high shadow-4"
+          tone="surfaceContainerLow"
+          elevation={2}
+          className="absolute top-[calc(100%+var(--unit))] left-0 right-0 rounded-lg border border-outline-variant/50 z-50 max-h-60 overflow-y-auto"
           role="listbox"
           id={listboxId}
           aria-label={label || "Options"}
         >
-          <div className="py-2u">
+          <div className="py-1">
             {filteredOptions.length > 0 ? (
               filteredOptions.map((option, index) => (
                 <div
                   key={option.value}
                   id={`${listboxId}-option-${index}`}
                   className={cn(
-                    "relative px-4u py-3u cursor-pointer flex items-center gap-3u transition-colors",
+                    "relative px-4 py-3 cursor-pointer flex items-center gap-3 transition-colors",
                     "hover:bg-on-surface/8",
-                    value === option.value && "bg-primary/10",
+                    value === option.value && "bg-secondary-container",
                     activeIndex === index && "bg-on-surface/8",
                     option.disabled && "opacity-38 cursor-not-allowed"
                   )}
@@ -254,8 +284,8 @@ export const Combobox: React.FC<ComboboxProps> = ({
                   <Text
                     variant="bodyMedium"
                     className={cn(
-                      "font-bold relative z-10",
-                      value === option.value ? "text-primary" : "text-on-surface",
+                      "relative z-10",
+                      value === option.value ? "text-on-secondary-container font-semibold" : "text-on-surface font-medium",
                       option.disabled && "text-on-surface-variant"
                     )}
                   >
@@ -263,12 +293,12 @@ export const Combobox: React.FC<ComboboxProps> = ({
                   </Text>
 
                   {value === option.value && (
-                    <Icon symbol="check" size="xs" className="text-primary ml-auto relative z-10" aria-hidden="true" />
+                    <Icon symbol="check" size="xs" className="text-on-secondary-container ml-auto relative z-10" aria-hidden="true" />
                   )}
                 </div>
               ))
             ) : (
-              <div className="px-4u py-3u" role="option" aria-disabled="true">
+              <div className="px-4 py-3" role="option" aria-disabled="true">
                 <Text variant="bodyMedium" className="text-on-surface-variant italic">
                   No matching records
                 </Text>

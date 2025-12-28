@@ -72,10 +72,10 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
             <div
               className={cn(
                 "z-40 pointer-events-auto",
-                "fixed bottom-6u right-4u large:bottom-6u large:right-6u",
+                "fixed bottom-6 right-4 large:bottom-6 large:right-6",
                 disableScroll
                   ? "absolute"
-                  : "medium:sticky medium:float-right medium:mr-6u medium:mb-6u"
+                  : "medium:sticky medium:float-right medium:mr-6 medium:mb-6"
               )}
             >
               {fab}

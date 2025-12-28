@@ -93,7 +93,7 @@ export const Popover: React.FC<PopoverProps> = ({
           role="dialog"
           aria-modal="false"
           className={cn(
-            "absolute z-modal min-w-[calc(var(--unit)*50)] bg-surface rounded-xs shadow-4 p-4u animate-in fade-in zoom-in-95 duration-short ease-standard border border-outline-variant/30",
+            "absolute z-modal min-w-[calc(var(--unit)*50)] bg-surface rounded-xs shadow-4 p-4 animate-in fade-in zoom-in-95 duration-short ease-standard border border-outline-variant/30",
             side === "bottom" && "top-[calc(100%+(var(--unit)*2))]",
             side === "top" && "bottom-[calc(100%+(var(--unit)*2))]",
             align === "center" && "left-1/2 -translate-x-1/2",

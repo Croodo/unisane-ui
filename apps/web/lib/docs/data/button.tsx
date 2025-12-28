@@ -1,17 +1,14 @@
 "use client";
 
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { Button, Card } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const ButtonHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-primary-container to-secondary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-50px] right-[-50px] w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-50px] left-[-50px] w-80 h-80 bg-secondary/20 rounded-full blur-3xl" />
-
+  <HeroBackground tone="primary">
     {/* Mock Screen */}
-    <div className="relative bg-surface w-[280px] h-[340px] rounded-3xl shadow-xl overflow-hidden flex flex-col border border-outline-variant/30 z-10">
+    <div className="relative bg-surface w-[280px] h-[340px] rounded-3xl shadow-xl overflow-hidden flex flex-col border border-outline-variant/30">
       {/* Mock Image Header */}
       <div className="h-36 bg-surface-container-high relative">
         <div className="absolute inset-0 bg-linear-to-t from-black/20 to-transparent" />
@@ -39,7 +36,7 @@ const ButtonHeroVisual = () => (
         </div>
       </div>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 export const buttonDoc: ComponentDoc = {

@@ -46,10 +46,15 @@
       <html class="dark" data-scheme="neutral" data-contrast="high">
    ============================================================ */
 
+/* Theme defaults layer - can be overridden by unlayered app CSS */
+@layer unisane-defaults {
+  :root {
+    --hue: 240;
+    --chroma: 0.13;
+  }
+}
+
 :root {
-  /* === THEME CONFIG === */
-  --hue: 240;
-  --chroma: 0.13;
 
   /* Derived hues (auto-calculated) */
   --hue-secondary: var(--hue);
@@ -475,7 +480,20 @@
   --space-20u: calc(var(--unit) * 20);
   --space-24u: calc(var(--unit) * 24);
   --space-28u: calc(var(--unit) * 28);
+  --space-32u: calc(var(--unit) * 32);
+  --space-36u: calc(var(--unit) * 36);
   --space-38u: calc(var(--unit) * 38);
+  --space-40u: calc(var(--unit) * 40);
+  --space-44u: calc(var(--unit) * 44);
+  --space-48u: calc(var(--unit) * 48);
+  --space-52u: calc(var(--unit) * 52);
+  --space-56u: calc(var(--unit) * 56);
+  --space-60u: calc(var(--unit) * 60);
+  --space-64u: calc(var(--unit) * 64);
+  --space-72u: calc(var(--unit) * 72);
+  --space-80u: calc(var(--unit) * 80);
+  --space-96u: calc(var(--unit) * 96);
+  --space-100u: calc(var(--unit) * 100);
 
   /* === LAYOUT === */
   --layout-margin: calc(16px * var(--scale-space));
@@ -792,14 +810,27 @@
 /* ============================================================
    RADIUS THEME - CSS-only via data attribute
    Usage: <html data-radius="soft">
+   Values must match ThemeProvider RADIUS_PRESETS
    ============================================================ */
 
+[data-radius="none"] {
+  --scale-radius: 0;
+}
+
+[data-radius="minimal"] {
+  --scale-radius: 0.25;
+}
+
 [data-radius="sharp"] {
-  --scale-radius: 0.75;
+  --scale-radius: 0.5;
+}
+
+[data-radius="standard"] {
+  --scale-radius: 1.0;
 }
 
 [data-radius="soft"] {
-  --scale-radius: 1.15;
+  --scale-radius: 1.25;
 }
 
 /* ============================================================
@@ -1014,7 +1045,46 @@
   --text-label-small--letter-spacing: var(--type-label-small-tracking);
   --text-label-small--font-weight: var(--type-label-small-weight);
 
-  /* Spacing */
+  /* Spacing - Standard Tailwind keys mapped to density-scaled values */
+  /* These override Tailwind defaults so p-4, gap-2, etc. scale with density */
+  --spacing-0: 0px;
+  --spacing-0_5: calc(var(--unit) * 0.5);
+  --spacing-1: calc(var(--unit) * 1);
+  --spacing-1_5: calc(var(--unit) * 1.5);
+  --spacing-2: calc(var(--unit) * 2);
+  --spacing-2_5: calc(var(--unit) * 2.5);
+  --spacing-3: calc(var(--unit) * 3);
+  --spacing-3_5: calc(var(--unit) * 3.5);
+  --spacing-4: calc(var(--unit) * 4);
+  --spacing-5: calc(var(--unit) * 5);
+  --spacing-6: calc(var(--unit) * 6);
+  --spacing-7: calc(var(--unit) * 7);
+  --spacing-8: calc(var(--unit) * 8);
+  --spacing-9: calc(var(--unit) * 9);
+  --spacing-10: calc(var(--unit) * 10);
+  --spacing-11: calc(var(--unit) * 11);
+  --spacing-12: calc(var(--unit) * 12);
+  --spacing-14: calc(var(--unit) * 14);
+  --spacing-16: calc(var(--unit) * 16);
+  --spacing-20: calc(var(--unit) * 20);
+  --spacing-24: calc(var(--unit) * 24);
+  --spacing-28: calc(var(--unit) * 28);
+  --spacing-32: calc(var(--unit) * 32);
+  --spacing-36: calc(var(--unit) * 36);
+  --spacing-38: calc(var(--unit) * 38);
+  --spacing-40: calc(var(--unit) * 40);
+  --spacing-44: calc(var(--unit) * 44);
+  --spacing-48: calc(var(--unit) * 48);
+  --spacing-52: calc(var(--unit) * 52);
+  --spacing-56: calc(var(--unit) * 56);
+  --spacing-60: calc(var(--unit) * 60);
+  --spacing-64: calc(var(--unit) * 64);
+  --spacing-72: calc(var(--unit) * 72);
+  --spacing-80: calc(var(--unit) * 80);
+  --spacing-96: calc(var(--unit) * 96);
+  --spacing-100: calc(var(--unit) * 100);
+
+  /* Legacy unit-based spacing (deprecated - use standard keys above) */
   --spacing-0_5u: var(--space-0_5u);
   --spacing-1u: var(--space-1u);
   --spacing-1_5u: var(--space-1_5u);
@@ -1051,6 +1121,8 @@
   --spacing-24u: var(--space-24u);
   --spacing-28u: var(--space-28u);
   --spacing-38u: var(--space-38u);
+  --spacing-72u: var(--space-72u);
+  --spacing-100u: var(--space-100u);
 
   /* Layout */
   --spacing-layout-margin: var(--layout-margin);

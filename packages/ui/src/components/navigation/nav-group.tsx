@@ -43,7 +43,7 @@ export const NavGroup = forwardRef<HTMLDivElement, NavGroupProps>(
         ref={ref}
         className={cn(
           "flex flex-col",
-          showDivider && "pb-3u mb-3u border-b border-outline-variant/30",
+          showDivider && "pb-3 mb-3 border-b border-outline-variant/30",
           className
         )}
         {...props}
@@ -54,9 +54,9 @@ export const NavGroup = forwardRef<HTMLDivElement, NavGroupProps>(
               "flex items-center justify-between",
               "text-label-small font-semibold uppercase tracking-wide",
               "text-on-surface-variant/60",
-              variant === "compact" && "px-3u py-2u",
-              variant === "default" && "px-4u py-2.5u",
-              variant === "comfortable" && "px-5u py-3u",
+              variant === "compact" && "px-3 py-2",
+              variant === "default" && "px-4 py-2_5",
+              variant === "comfortable" && "px-5 py-3",
 
               collapsible && "cursor-pointer select-none hover:text-on-surface-variant transition-colors"
             )}
@@ -80,7 +80,7 @@ export const NavGroup = forwardRef<HTMLDivElement, NavGroupProps>(
             {collapsible && (
               <svg
                 className={cn(
-                  "w-4u h-4u transition-transform duration-short",
+                  "w-4 h-4 transition-transform duration-short",
                   isOpen && "rotate-180"
                 )}
                 viewBox="0 0 24 24"
@@ -97,9 +97,9 @@ export const NavGroup = forwardRef<HTMLDivElement, NavGroupProps>(
         <div
           className={cn(
             "flex flex-col",
-            variant === "compact" && "gap-0.5u",
-            variant === "default" && "gap-1u",
-            variant === "comfortable" && "gap-1.5u",
+            variant === "compact" && "gap-0_5",
+            variant === "default" && "gap-1",
+            variant === "comfortable" && "gap-1_5",
             collapsible && [
               "transition-all duration-medium ease-emphasized overflow-hidden",
               isOpen ? "max-h-[9999px] opacity-100" : "max-h-0 opacity-0",

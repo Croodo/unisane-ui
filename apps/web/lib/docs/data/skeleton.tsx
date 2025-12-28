@@ -1,24 +1,21 @@
 "use client";
 
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { Skeleton, SkeletonText, SkeletonAvatar, SkeletonCard, Card } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const SkeletonHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-surface-container to-surface-container-high flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-40px] left-[-40px] w-56 h-56 bg-primary/10 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-50px] right-[-30px] w-64 h-64 bg-secondary/10 rounded-full blur-3xl" />
-
+  <HeroBackground tone="surface">
     {/* Mock Loading Card */}
-    <div className="relative bg-surface w-[300px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 z-10">
-      <div className="px-5u py-4u border-b border-outline-variant/20">
+    <div className="relative bg-surface w-[300px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
+      <div className="px-5 py-4 border-b border-outline-variant/20">
         <Skeleton variant="text" width="50%" height="5u" />
       </div>
-      <div className="p-5u space-y-4u">
-        <div className="flex items-center gap-3u">
+      <div className="p-5 space-y-4">
+        <div className="flex items-center gap-3">
           <SkeletonAvatar size="10u" />
-          <div className="flex-1 space-y-2u">
+          <div className="flex-1 space-y-2">
             <Skeleton variant="text" width="60%" height="4u" />
             <Skeleton variant="text" width="40%" height="3u" />
           </div>
@@ -27,7 +24,7 @@ const SkeletonHeroVisual = () => (
         <SkeletonText lines={2} />
       </div>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 export const skeletonDoc: ComponentDoc = {
@@ -130,9 +127,9 @@ export const skeletonDoc: ComponentDoc = {
         visual: (
           <Card variant="outlined" padding="none" className="max-w-[280px] mx-auto overflow-hidden">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="flex items-center gap-3u px-4u py-3u border-b border-outline-variant/20 last:border-0">
+              <div key={i} className="flex items-center gap-3 px-4 py-3 border-b border-outline-variant/20 last:border-0">
                 <SkeletonAvatar size="10u" />
-                <div className="flex-1 space-y-2u">
+                <div className="flex-1 space-y-2">
                   <Skeleton variant="text" width="70%" height="4u" />
                   <Skeleton variant="text" width="50%" height="3u" />
                 </div>

@@ -48,7 +48,7 @@ export interface ToastOptions {
 // ─── STYLING ─────────────────────────────────────────────────────────────────
 
 const toastVariants = cva(
-  "pointer-events-auto flex items-start gap-3u px-4u py-3u rounded-md shadow-4 min-w-72u max-w-100u border transition-all duration-medium ease-emphasized",
+  "pointer-events-auto flex items-start gap-3 px-4 py-3 rounded-md shadow-4 min-w-72 max-w-100 border transition-all duration-medium ease-emphasized",
   {
     variants: {
       variant: {
@@ -66,12 +66,12 @@ const toastVariants = cva(
 );
 
 const positionClasses: Record<ToastPosition, string> = {
-  "bottom-right": "bottom-6u right-6u items-end",
-  "bottom-left": "bottom-6u left-6u items-start",
-  "bottom-center": "bottom-6u left-1/2 -translate-x-1/2 items-center",
-  "top-right": "top-6u right-6u items-end",
-  "top-left": "top-6u left-6u items-start",
-  "top-center": "top-6u left-1/2 -translate-x-1/2 items-center",
+  "bottom-right": "bottom-6 right-6 items-end",
+  "bottom-left": "bottom-6 left-6 items-start",
+  "bottom-center": "bottom-6 left-1/2 -translate-x-1/2 items-center",
+  "top-right": "top-6 right-6 items-end",
+  "top-left": "top-6 left-6 items-start",
+  "top-center": "top-6 left-1/2 -translate-x-1/2 items-center",
 };
 
 // ─── DEFAULT ICONS ───────────────────────────────────────────────────────────
@@ -155,7 +155,7 @@ function ToastItem({ toast, onDismiss }: ToastItemProps) {
       aria-live="polite"
     >
       {displayIcon && (
-        <div className="toast-icon w-5u h-5u flex items-center justify-center shrink-0">
+        <div className="toast-icon w-5 h-5 flex items-center justify-center shrink-0">
           {displayIcon}
         </div>
       )}
@@ -165,13 +165,13 @@ function ToastItem({ toast, onDismiss }: ToastItemProps) {
           {message}
         </p>
         {description && (
-          <p className={cn("text-body-small mt-1u leading-snug", isInverse ? "text-inverse-on-surface/70" : "text-on-surface-variant")}>
+          <p className={cn("text-body-small mt-1 leading-snug", isInverse ? "text-inverse-on-surface/70" : "text-on-surface-variant")}>
             {description}
           </p>
         )}
       </div>
 
-      <div className="flex items-center gap-2u shrink-0">
+      <div className="flex items-center gap-2 shrink-0">
         {action && (
           <Button
             variant="text"
@@ -181,7 +181,7 @@ function ToastItem({ toast, onDismiss }: ToastItemProps) {
               onDismiss(id);
             }}
             className={cn(
-              "h-8u px-3u font-medium",
+              "h-8 px-3 font-medium",
               isInverse ? "text-inverse-primary hover:bg-inverse-primary/10" : ""
             )}
           >
@@ -193,7 +193,7 @@ function ToastItem({ toast, onDismiss }: ToastItemProps) {
           <button
             onClick={() => onDismiss(id)}
             className={cn(
-              "group p-1u rounded-full transition-colors relative overflow-hidden",
+              "group p-1 rounded-full transition-colors relative overflow-hidden",
               isInverse
                 ? "text-inverse-on-surface/50 hover:text-inverse-on-surface"
                 : "text-on-surface-variant hover:text-on-surface"
@@ -243,7 +243,7 @@ function ToasterPortal({ position = "bottom-right", maxToasts = 5 }: ToasterProp
   return createPortal(
     <div
       className={cn(
-        "fixed z-[5000] flex flex-col gap-2u pointer-events-none",
+        "fixed z-[5000] flex flex-col gap-2 pointer-events-none",
         positionClasses[position]
       )}
     >
@@ -385,7 +385,7 @@ export function Toaster({ position = "bottom-right", maxToasts = 5 }: ToasterPro
   return createPortal(
     <div
       className={cn(
-        "fixed z-[5000] flex flex-col gap-2u pointer-events-none",
+        "fixed z-[5000] flex flex-col gap-2 pointer-events-none",
         positionClasses[position]
       )}
     >

@@ -21,13 +21,13 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     <div
       role="search"
       className={cn(
-        "group relative flex items-center w-full h-14u rounded-full bg-surface-container-high hover:bg-surface-container-highest hover:shadow-1 focus-within:bg-surface-container-highest focus-within:shadow-1 transition-all duration-medium ease-standard cursor-text",
+        "group relative flex items-center w-full h-14 rounded-full bg-surface-container-high hover:bg-surface-container-highest hover:shadow-1 focus-within:bg-surface-container-highest focus-within:shadow-1 transition-all duration-medium ease-standard cursor-text",
         className
       )}
     >
       {/* Leading Icon */}
-      <div className="pl-4u pr-2u text-on-surface">
-        {leadingIcon || <Icon symbol="search" className="w-6u h-6u" />}
+      <div className="pl-4 pr-2 text-on-surface">
+        {leadingIcon || <Icon symbol="search" className="w-6 h-6" />}
       </div>
 
       {/* Input */}
@@ -40,7 +40,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 
       {/* Trailing Icon (Avatar or Action) */}
       {trailingIcon && (
-        <div className="pr-4u pl-2u text-on-surface-variant hover:text-on-surface focus-visible:outline-none">
+        <div className="pr-4 pl-2 text-on-surface-variant hover:text-on-surface focus-visible:outline-none">
           {trailingIcon}
         </div>
       )}

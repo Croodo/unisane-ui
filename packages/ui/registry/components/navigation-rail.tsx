@@ -1,5 +1,5 @@
-import React from "react";
-import { cn } from "@/lib/utils";
+import React, { cloneElement, isValidElement } from "react";
+import { cn, Slot } from "@/lib/utils";
 import { Ripple } from "./ripple";
 
 export interface RailItem {
@@ -10,6 +10,8 @@ export interface RailItem {
   badge?: string | number;
   disabled?: boolean;
   href?: string;
+  asChild?: boolean;
+  linkElement?: React.ReactNode;
 }
 
 // Helper to render icon - handles both ReactNode and Material Symbol string
@@ -53,23 +55,23 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
   return (
     <nav
       className={cn(
-        "flex flex-col items-center w-24u h-full bg-surface-container text-on-surface py-3u gap-1u border-r border-outline-variant z-[50] shrink-0 transition-all duration-medium ease-standard",
+        "flex flex-col items-center w-24 h-full bg-surface-container text-on-surface py-3 gap-1 border-r border-outline-variant z-[50] shrink-0 transition-all duration-medium ease-standard",
         className
       )}
       aria-label="Sidebar Navigation"
       onMouseLeave={onMouseLeave}
     >
       {header && (
-        <div className="flex flex-col items-center gap-4u pb-2u w-full">
+        <div className="flex flex-col items-center gap-4 pb-2 w-full">
           {header}
         </div>
       )}
 
       <div
         className={cn(
-          "flex flex-col items-center gap-3u w-full flex-1",
+          "flex flex-col items-center gap-3 w-full flex-1",
           alignment === "center" && "justify-center",
-          alignment === "end" && "justify-end pb-4u"
+          alignment === "end" && "justify-end pb-4"
         )}
       >
         {items.map((item) => {
@@ -80,7 +82,7 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
               <div className="relative flex items-center justify-center">
                 <div
                   className={cn(
-                    "w-14u h-8u rounded-full flex items-center justify-center transition-all duration-medium ease-emphasized overflow-hidden relative",
+                    "w-14 h-8 rounded-full flex items-center justify-center transition-all duration-medium ease-emphasized overflow-hidden relative",
                     isActive
                       ? "bg-secondary-container text-primary"
                       : "text-on-surface-variant bg-transparent hover:bg-on-surface/8"
@@ -95,9 +97,9 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
                 {item.badge !== undefined && (
                   <span
                     className={cn(
-                      "absolute -top-0.5u -right-0.5u min-w-3u h-3u px-0.5u bg-error text-on-error text-[10px] leading-none flex items-center justify-center rounded-full font-medium z-20 pointer-events-none ring-1 ring-surface",
+                      "absolute -top-0_5 -right-0_5 min-w-3 h-3 px-0_5 bg-error text-on-error text-[10px] leading-none flex items-center justify-center rounded-full font-medium z-20 pointer-events-none ring-1 ring-surface",
                       typeof item.badge === "number" && item.badge < 10
-                        ? "min-w-2u h-2u p-0.5u"
+                        ? "min-w-2 h-2 p-0_5"
                         : ""
                     )}
                   >
@@ -108,7 +110,7 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
 
               <span
                 className={cn(
-                  "text-label-medium transition-colors duration-short text-center px-0.5u max-w-full",
+                  "text-label-medium transition-colors duration-short text-center px-0_5 max-w-full",
                   isActive
                     ? "text-primary font-bold"
                     : "text-on-surface-variant font-semibold group-hover:text-on-surface"
@@ -120,28 +122,41 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
           );
 
           const commonClasses = cn(
-            "group flex flex-col items-center gap-0.5u w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-sm py-1u min-h-12u relative select-none cursor-pointer outline-none",
+            "group flex flex-col items-center gap-0_5 w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-sm py-1 min-h-12 relative select-none cursor-pointer outline-none",
             item.disabled && "opacity-38 cursor-not-allowed pointer-events-none"
           );
+
+          const commonProps = {
+            onClick: (e: React.MouseEvent) => {
+              if (item.disabled) {
+                e.preventDefault();
+                return;
+              }
+              onChange(item.value);
+            },
+            onMouseEnter: () => !item.disabled && onItemHover && onItemHover(item.value),
+            className: commonClasses,
+            "aria-current": isActive ? ("page" as const) : undefined,
+            "aria-disabled": item.disabled || undefined,
+          };
+
+          // asChild pattern: render user's Link component with merged props
+          if (item.asChild && item.linkElement) {
+            return (
+              <Slot key={item.value} {...commonProps}>
+                {isValidElement(item.linkElement)
+                  ? cloneElement(item.linkElement as React.ReactElement, {}, content)
+                  : item.linkElement}
+              </Slot>
+            );
+          }
 
           if (item.href) {
             return (
               <a
                 key={item.value}
                 href={item.disabled ? undefined : item.href}
-                onClick={(e) => {
-                  if (item.disabled) {
-                    e.preventDefault();
-                    return;
-                  }
-                  onChange(item.value);
-                }}
-                onMouseEnter={() =>
-                  !item.disabled && onItemHover && onItemHover(item.value)
-                }
-                className={commonClasses}
-                aria-current={isActive ? "page" : undefined}
-                aria-disabled={item.disabled || undefined}
+                {...commonProps}
                 tabIndex={item.disabled ? -1 : undefined}
               >
                 {content}
@@ -167,7 +182,7 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
       </div>
 
       {footer && (
-        <div className="flex flex-col items-center gap-4u pt-2u w-full mt-auto mb-4u">
+        <div className="flex flex-col items-center gap-4 pt-2 w-full mt-auto mb-4">
           {footer}
         </div>
       )}

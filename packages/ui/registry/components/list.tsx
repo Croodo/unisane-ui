@@ -1,6 +1,6 @@
-import React from "react";
+import React, { isValidElement, cloneElement } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@/lib/utils";
+import { cn, Slot } from "@/lib/utils";
 import { Typography } from "./typography";
 import { Ripple } from "./ripple";
 
@@ -11,7 +11,7 @@ export const List: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
 }) => {
   return (
     <div
-      className={cn("py-2u flex flex-col bg-surface", className)}
+      className={cn("py-2 flex flex-col bg-surface", className)}
       role="list"
       {...props}
     >
@@ -26,7 +26,7 @@ export const ListSubheader: React.FC<{
 }> = ({ children, className }) => (
   <div
     className={cn(
-      "px-4u py-2u text-label-medium font-medium text-on-surface-variant/70",
+      "px-4 py-2 text-label-medium font-medium text-on-surface-variant/70",
       className
     )}
   >
@@ -35,7 +35,7 @@ export const ListSubheader: React.FC<{
 );
 
 const listItemVariants = cva(
-  "relative flex items-center px-4u py-2u gap-4u text-left transition-all duration-snappy ease-emphasized group overflow-hidden select-none",
+  "relative flex items-center px-4 py-2 gap-4 text-left transition-all duration-snappy ease-emphasized group overflow-hidden select-none",
   {
     variants: {
       active: {
@@ -63,6 +63,8 @@ export interface ListItemProps
   leadingIcon?: React.ReactNode;
   trailingIcon?: React.ReactNode;
   onClick?: () => void;
+  href?: string;
+  asChild?: boolean;
 }
 
 export const ListItem: React.FC<ListItemProps> = ({
@@ -76,37 +78,20 @@ export const ListItem: React.FC<ListItemProps> = ({
   className,
   onClick,
   children,
+  href,
+  asChild,
   ...props
 }) => {
-  const isInteractive = !!onClick && !disabled;
+  const isInteractive = (!!onClick || !!href || asChild) && !disabled;
+  const itemClasses = cn(listItemVariants({ active, disabled, className }));
 
-  if (!headline) {
-    return (
-      <div
-        className={cn(listItemVariants({ active, disabled, className }))}
-        onClick={isInteractive ? onClick : undefined}
-        role={isInteractive ? "button" : "listitem"}
-        tabIndex={isInteractive ? 0 : undefined}
-        {...props}
-      >
-        {isInteractive && <Ripple />}
-        {children}
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className={cn(listItemVariants({ active, disabled, className }))}
-      onClick={isInteractive ? onClick : undefined}
-      role={isInteractive ? "button" : "listitem"}
-      tabIndex={isInteractive ? 0 : undefined}
-      {...props}
-    >
+  // Build content for headline-based items
+  const headlineContent = headline ? (
+    <>
       {isInteractive && <Ripple />}
 
       {leadingIcon && (
-        <div className="text-inherit flex items-center justify-center shrink-0 w-6u h-6u relative z-10">
+        <div className="text-inherit flex items-center justify-center shrink-0 w-6 h-6 relative z-10">
           {leadingIcon}
         </div>
       )}
@@ -121,7 +106,7 @@ export const ListItem: React.FC<ListItemProps> = ({
         {supportingText && (
           <Typography
             variant="labelSmall"
-            className="text-on-surface-variant leading-none mt-1.5u opacity-60 truncate"
+            className="text-on-surface-variant leading-none mt-1_5 opacity-60 truncate"
           >
             {supportingText}
           </Typography>
@@ -129,7 +114,7 @@ export const ListItem: React.FC<ListItemProps> = ({
       </div>
 
       {(trailingSupportingText || trailingIcon) && (
-        <div className="flex items-center gap-2u shrink-0 text-on-surface-variant relative z-10">
+        <div className="flex items-center gap-2 shrink-0 text-on-surface-variant relative z-10">
           {trailingSupportingText && (
             <Typography
               variant="labelSmall"
@@ -139,12 +124,58 @@ export const ListItem: React.FC<ListItemProps> = ({
             </Typography>
           )}
           {trailingIcon && (
-            <div className="w-5u h-5u flex items-center justify-center">
+            <div className="w-5 h-5 flex items-center justify-center">
               {trailingIcon}
             </div>
           )}
         </div>
       )}
+    </>
+  ) : (
+    <>
+      {isInteractive && <Ripple />}
+      {children}
+    </>
+  );
+
+  // asChild pattern: render user's Link component
+  if (asChild && children && isValidElement(children)) {
+    return (
+      <Slot className={itemClasses} role="listitem">
+        {cloneElement(children as React.ReactElement, {}, headlineContent)}
+      </Slot>
+    );
+  }
+
+  if (href && !disabled) {
+    return (
+      <a
+        href={href}
+        className={itemClasses}
+        role="listitem"
+      >
+        {headlineContent}
+      </a>
+    );
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (isInteractive && (e.key === "Enter" || e.key === " ")) {
+      e.preventDefault();
+      onClick?.();
+    }
+  };
+
+  return (
+    <div
+      className={itemClasses}
+      onClick={isInteractive ? onClick : undefined}
+      onKeyDown={isInteractive ? handleKeyDown : undefined}
+      role={isInteractive ? "button" : "listitem"}
+      tabIndex={isInteractive ? 0 : undefined}
+      {...props}
+    >
+      {headlineContent}
     </div>
   );
 };

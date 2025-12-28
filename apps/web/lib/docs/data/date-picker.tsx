@@ -2,44 +2,41 @@
 
 import { useState } from "react";
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { DatePicker } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const DatePickerHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-primary-container to-tertiary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-40px] left-[-40px] w-56 h-56 bg-primary/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-50px] right-[-30px] w-64 h-64 bg-tertiary/20 rounded-full blur-3xl" />
-
+  <HeroBackground tone="secondary">
     {/* Mock Date Picker */}
-    <div className="relative bg-surface w-[300px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 z-10 p-6u">
-      <div className="text-label-medium text-on-surface-variant mb-2u">Date</div>
-      <div className="bg-surface border-2 border-outline-variant rounded-lg px-4u py-3u flex items-center justify-between">
+    <div className="relative bg-surface w-[300px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 p-6">
+      <div className="text-label-medium text-on-surface-variant mb-2">Date</div>
+      <div className="bg-surface border-2 border-outline-variant rounded-lg px-4 py-3 flex items-center justify-between">
         <span className="text-body-medium text-on-surface">December 15, 2024</span>
         <span className="material-symbols-outlined text-on-surface-variant">calendar_today</span>
       </div>
       {/* Mock Calendar Dropdown */}
-      <div className="mt-2u bg-surface-container rounded-xl shadow-2 p-4u">
-        <div className="flex items-center justify-between mb-3u">
+      <div className="mt-2 bg-surface-container rounded-xl shadow-2 p-4">
+        <div className="flex items-center justify-between mb-3">
           <span className="text-title-small text-on-surface">December 2024</span>
-          <div className="flex gap-2u">
+          <div className="flex gap-2">
             <span className="material-symbols-outlined text-on-surface-variant text-[20px]">chevron_left</span>
             <span className="material-symbols-outlined text-on-surface-variant text-[20px]">chevron_right</span>
           </div>
         </div>
-        <div className="grid grid-cols-7 gap-1u">
+        <div className="grid grid-cols-7 gap-1">
           {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
-            <div key={i} className="text-center text-label-small text-on-surface-variant py-1u">{d}</div>
+            <div key={i} className="text-center text-label-small text-on-surface-variant py-1">{d}</div>
           ))}
           {[...Array(15)].map((_, i) => (
-            <div key={i} className={`text-center text-body-small py-1u rounded-full ${i === 14 ? "bg-primary text-on-primary" : "text-on-surface"}`}>
+            <div key={i} className={`text-center text-body-small py-1 rounded-full ${i === 14 ? "bg-primary text-on-primary" : "text-on-surface"}`}>
               {i + 1}
             </div>
           ))}
         </div>
       </div>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 // ─── INTERACTIVE EXAMPLES ────────────────────────────────────────────────────
@@ -88,7 +85,7 @@ export const datePickerDoc: ComponentDoc = {
       {
         emphasis: "Date Picker",
         component: (
-          <div className="w-32 h-10u bg-surface border border-outline-variant rounded-lg px-3u flex items-center justify-between">
+          <div className="w-32 h-10 bg-surface border border-outline-variant rounded-lg px-3 flex items-center justify-between">
             <span className="text-body-small text-on-surface">Dec 15</span>
             <span className="material-symbols-outlined text-on-surface-variant text-[16px]">calendar_today</span>
           </div>
@@ -102,7 +99,7 @@ export const datePickerDoc: ComponentDoc = {
           <div className="w-24 h-16 bg-surface-container rounded-sm p-2">
             <div className="grid grid-cols-7 gap-0_5u">
               {[...Array(14)].map((_, i) => (
-                <div key={i} className={`w-2u h-2u rounded-full ${i === 7 ? "bg-primary" : "bg-outline-variant/30"}`} />
+                <div key={i} className={`w-2 h-2 rounded-full ${i === 7 ? "bg-primary" : "bg-outline-variant/30"}`} />
               ))}
             </div>
           </div>

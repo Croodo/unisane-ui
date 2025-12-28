@@ -8,14 +8,17 @@ export type { NavigationItem };
 export type NavItem = NavigationItem;
 export type NavCategory = NavigationItem;
 
-// Generate component navigation items from registry (sorted alphabetically)
-const componentNavItems: NavItem[] = COMPONENT_REGISTRY
-  .map((c) => ({
+// Generate component navigation items from registry (already sorted alphabetically in data)
+const componentNavItems: NavItem[] = [
+  // Overview link as first item
+  { id: "components-overview", label: "Overview", href: "/docs/components" },
+  // Individual components
+  ...COMPONENT_REGISTRY.map((c) => ({
     id: c.slug,
     label: c.name,
     href: `/docs/components/${c.slug}`,
-  }))
-  .sort((a, b) => a.label.localeCompare(b.label));
+  })),
+];
 
 export const NAV_DATA: NavigationItem[] = [
   {

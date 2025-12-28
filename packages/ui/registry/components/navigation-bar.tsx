@@ -1,6 +1,6 @@
-import React from "react";
+import React, { isValidElement, cloneElement } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@/lib/utils";
+import { cn, Slot } from "@/lib/utils";
 import { Ripple } from "./ripple";
 
 const navigationBarVariants = cva(
@@ -40,6 +40,9 @@ export interface NavigationBarItemProps {
   active?: boolean;
   onClick?: () => void;
   className?: string;
+  href?: string;
+  asChild?: boolean;
+  children?: React.ReactNode;
 }
 
 const NavigationBarItem: React.FC<NavigationBarItemProps> = ({
@@ -48,16 +51,17 @@ const NavigationBarItem: React.FC<NavigationBarItemProps> = ({
   active,
   onClick,
   className,
+  href,
+  asChild,
+  children,
 }) => {
-  return (
-    <button
-      className={cn(
-        "relative flex flex-col items-center justify-center gap-1 h-full min-w-16u px-2 cursor-pointer select-none group focus-visible:outline-none",
-        className
-      )}
-      onClick={onClick}
-      aria-pressed={active}
-    >
+  const itemClasses = cn(
+    "relative flex flex-col items-center justify-center gap-1 h-full min-w-16 px-2 cursor-pointer select-none group focus-visible:outline-none",
+    className
+  );
+
+  const innerContent = (
+    <>
       <div className="relative h-8 w-16 mb-1">
         <div
           className={cn(
@@ -84,6 +88,29 @@ const NavigationBarItem: React.FC<NavigationBarItemProps> = ({
       >
         {label}
       </span>
+    </>
+  );
+
+  // asChild pattern: render user's Link component
+  if (asChild && children && isValidElement(children)) {
+    return (
+      <Slot className={itemClasses} aria-pressed={active}>
+        {cloneElement(children as React.ReactElement, {}, innerContent)}
+      </Slot>
+    );
+  }
+
+  if (href) {
+    return (
+      <a href={href} className={itemClasses} aria-current={active ? "page" : undefined}>
+        {innerContent}
+      </a>
+    );
+  }
+
+  return (
+    <button className={itemClasses} onClick={onClick} aria-pressed={active}>
+      {innerContent}
     </button>
   );
 };

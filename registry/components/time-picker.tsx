@@ -72,22 +72,22 @@ export const TimePicker: React.FC<TimePickerProps> = ({
 
   return (
     <Dialog open={open} onClose={onClose} title="" contentClassName="p-0 gap-0">
-      <div className="flex flex-col items-center w-full pb-4u">
+      <div className="flex flex-col items-center w-full pb-4">
         {/* Header Label */}
-        <div className="w-full px-6u pt-6u pb-4u">
+        <div className="w-full px-6 pt-6 pb-4">
           <span className="text-label-medium font-medium text-on-surface-variant">
             {inputType === "dial" ? "Select time" : "Enter time"}
           </span>
         </div>
 
         {/* Display / Inputs */}
-        <div className="flex items-center gap-2u justify-center w-full px-6u mb-6u">
+        <div className="flex items-center gap-2 justify-center w-full px-6 mb-6">
           {inputType === "dial" ? (
             <>
               {/* Interactive Large Display */}
               <div
                 className={cn(
-                  "rounded-sm px-4u py-3u h-20u min-w-24u flex items-center justify-center text-display-large cursor-pointer transition-colors border-2",
+                  "rounded-sm px-4 py-3 h-20 min-w-24 flex items-center justify-center text-display-large cursor-pointer transition-colors border-2",
                   dialMode === "hour"
                     ? "bg-primary-container text-on-primary-container border-transparent"
                     : "bg-surface-container-highest text-on-surface border-transparent hover:bg-surface-container-highest/80"
@@ -100,13 +100,13 @@ export const TimePicker: React.FC<TimePickerProps> = ({
                 {hours.toString().padStart(2, "0")}
               </div>
 
-              <span className="text-display-large text-on-surface mb-2u" aria-hidden="true">
+              <span className="text-display-large text-on-surface mb-2" aria-hidden="true">
                 :
               </span>
 
               <div
                 className={cn(
-                  "rounded-sm px-4u py-3u h-20u min-w-24u flex items-center justify-center text-display-large cursor-pointer transition-colors border-2",
+                  "rounded-sm px-4 py-3 h-20 min-w-24 flex items-center justify-center text-display-large cursor-pointer transition-colors border-2",
                   dialMode === "minute"
                     ? "bg-primary-container text-on-primary-container border-transparent"
                     : "bg-surface-container-highest text-on-surface border-transparent hover:bg-surface-container-highest/80"
@@ -120,10 +120,10 @@ export const TimePicker: React.FC<TimePickerProps> = ({
               </div>
             </>
           ) : (
-            <div className="flex gap-2u items-center">
+            <div className="flex gap-2 items-center">
               <TextField
                 variant="outlined"
-                className="w-24u"
+                className="w-24"
                 label="Hour"
                 type="number"
                 min={1}
@@ -134,7 +134,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
               <span className="text-display-large">:</span>
               <TextField
                 variant="outlined"
-                className="w-24u"
+                className="w-24"
                 label="Minute"
                 type="number"
                 min={0}
@@ -146,13 +146,13 @@ export const TimePicker: React.FC<TimePickerProps> = ({
           )}
 
           {/* AM/PM Column */}
-          <div className="flex flex-col ml-3u border border-outline rounded-sm overflow-hidden bg-surface shrink-0 h-20u" role="radiogroup" aria-label="AM/PM">
+          <div className="flex flex-col ml-3 border border-outline rounded-sm overflow-hidden bg-surface shrink-0 h-20" role="radiogroup" aria-label="AM/PM">
             <button
               onClick={() => setPeriod("AM")}
               role="radio"
               aria-checked={period === "AM"}
               className={cn(
-                "flex-1 px-4u text-label-medium font-medium transition-colors hover:bg-surface-variant/20 border-b border-outline",
+                "flex-1 px-4 text-label-medium font-medium transition-colors hover:bg-surface-variant/20 border-b border-outline",
                 period === "AM"
                   ? "bg-tertiary-container text-on-tertiary-container"
                   : "text-on-surface-variant"
@@ -165,7 +165,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
               role="radio"
               aria-checked={period === "PM"}
               className={cn(
-                "flex-1 px-4u text-label-medium font-medium transition-colors hover:bg-surface-variant/20",
+                "flex-1 px-4 text-label-medium font-medium transition-colors hover:bg-surface-variant/20",
                 period === "PM"
                   ? "bg-tertiary-container text-on-tertiary-container"
                   : "text-on-surface-variant"
@@ -178,7 +178,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
 
         {/* Clock Face (Only in Dial Mode) */}
         {inputType === "dial" && (
-          <div className="relative flex justify-center w-full mb-4u animate-in fade-in zoom-in-95 duration-emphasized">
+          <div className="relative flex justify-center w-full mb-4 animate-in fade-in zoom-in-95 duration-emphasized">
             <div
               className="w-[calc(var(--unit)*64)] h-[calc(var(--unit)*64)] rounded-full bg-surface-container-highest relative cursor-pointer touch-none select-none shrink-0"
               onClick={handleClockClick}
@@ -186,7 +186,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
               aria-label={dialMode === "hour" ? "Select hour" : "Select minute"}
             >
               {/* Center Dot */}
-              <div className="absolute top-1/2 left-1/2 w-2u h-2u -translate-x-1/2 -translate-y-1/2 bg-primary rounded-full z-20" />
+              <div className="absolute top-1/2 left-1/2 w-2 h-2 -translate-x-1/2 -translate-y-1/2 bg-primary rounded-full z-20" />
 
               {/* Hand */}
               <div
@@ -195,9 +195,9 @@ export const TimePicker: React.FC<TimePickerProps> = ({
                   transform: `translate(-50%, -100%) rotate(${getRotation()}deg)`,
                 }}
               >
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2u h-2u rounded-full bg-primary border-2 border-surface -mt-1u" />
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-primary border-2 border-surface -mt-1" />
                 {/* Hand Selection Circle */}
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-12u h-12u rounded-full bg-primary -mt-6u opacity-20" />
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-primary -mt-6 opacity-20" />
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1_5u h-1_5u rounded-full bg-primary -mt-[calc(var(--unit)*0.75)] border border-surface" />
               </div>
 
@@ -216,7 +216,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
                     role="option"
                     aria-selected={isSelected}
                     className={cn(
-                      "absolute w-8u h-8u -ml-4u -mt-4u flex items-center justify-center rounded-full text-body-medium transition-colors z-0",
+                      "absolute w-8 h-8 -ml-4 -mt-4 flex items-center justify-center rounded-full text-body-medium transition-colors z-0",
                       isSelected ? "text-on-primary font-medium" : "text-on-surface"
                     )}
                     style={{ left: `${x}%`, top: `${y}%` }}
@@ -230,7 +230,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
         )}
 
         {/* Footer Actions */}
-        <div className="flex justify-between items-center w-full px-4u mt-2u">
+        <div className="flex justify-between items-center w-full px-4 mt-2">
           <IconButton
             variant="standard"
             ariaLabel={
@@ -246,7 +246,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
               />
             }
           />
-          <div className="flex gap-2u">
+          <div className="flex gap-2">
             <Button variant="text" onClick={onClose}>
               Cancel
             </Button>

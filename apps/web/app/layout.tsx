@@ -1,4 +1,5 @@
 import "./globals.css";
+import "material-symbols/outlined.css";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { ThemeProvider, Toaster } from "@unisane/ui";
@@ -21,21 +22,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning className={inter.variable}>
-      <head>
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
-        />
-      </head>
+    <html
+      lang="en"
+      className={inter.variable}
+      data-scheme="monochrome"
+      data-density="standard"
+      data-radius="standard"
+    >
       <body>
-        <ThemeProvider
-          config={{
-            density: "standard",
-            theme: "light",
-            radius: "standard",
-          }}
-        >
+        <ThemeProvider>
           {children}
           <Toaster position="bottom-right" />
         </ThemeProvider>

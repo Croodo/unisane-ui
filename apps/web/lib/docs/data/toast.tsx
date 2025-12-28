@@ -1,37 +1,34 @@
 "use client";
 
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { Button, toast, Toaster } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const ToastHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-surface-container to-surface-container-high flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-40px] right-[-40px] w-56 h-56 bg-primary/10 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-50px] left-[-30px] w-64 h-64 bg-secondary/10 rounded-full blur-3xl" />
-
+  <HeroBackground tone="error">
     {/* Mock App Interface */}
-    <div className="relative bg-surface w-[320px] h-[220px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 z-10">
+    <div className="relative bg-surface w-[320px] h-[220px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
       {/* App Bar */}
-      <div className="h-14u flex items-center px-4u bg-surface border-b border-outline-variant/20">
+      <div className="h-14 flex items-center px-4 bg-surface border-b border-outline-variant/20">
         <span className="text-title-medium text-on-surface">Dashboard</span>
       </div>
       {/* Content */}
-      <div className="p-4u text-body-medium text-on-surface-variant">
+      <div className="p-4 text-body-medium text-on-surface-variant">
         Your content here...
       </div>
       {/* Stacked Toasts */}
-      <div className="absolute bottom-4u right-4u flex flex-col gap-2u">
-        <div className="bg-surface rounded-md px-4u py-3u flex items-center gap-3u shadow-4 border border-outline-variant/30">
+      <div className="absolute bottom-4 right-4 flex flex-col gap-2">
+        <div className="bg-surface rounded-md px-4 py-3 flex items-center gap-3 shadow-4 border border-outline-variant/30">
           <span className="material-symbols-outlined text-primary text-[20px]">check_circle</span>
           <span className="text-body-medium text-on-surface">Changes saved</span>
         </div>
-        <div className="bg-inverse-surface rounded-md px-4u py-3u flex items-center gap-3u shadow-4">
+        <div className="bg-inverse-surface rounded-md px-4 py-3 flex items-center gap-3 shadow-4">
           <span className="text-body-medium text-inverse-on-surface">New message received</span>
         </div>
       </div>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 // ─── INTERACTIVE EXAMPLES ────────────────────────────────────────────────────
@@ -140,7 +137,7 @@ export const toastDoc: ComponentDoc = {
       {
         emphasis: "Default",
         component: (
-          <div className="bg-inverse-surface rounded-md px-3u py-2u">
+          <div className="bg-inverse-surface rounded-md px-3 py-2">
             <span className="text-body-small text-inverse-on-surface">Message</span>
           </div>
         ),
@@ -150,7 +147,7 @@ export const toastDoc: ComponentDoc = {
       {
         emphasis: "Success",
         component: (
-          <div className="bg-surface rounded-md px-3u py-2u flex items-center gap-2u border border-outline-variant/30">
+          <div className="bg-surface rounded-md px-3 py-2 flex items-center gap-2 border border-outline-variant/30">
             <span className="material-symbols-outlined text-primary text-[18px]">check_circle</span>
             <span className="text-body-small text-on-surface">Success</span>
           </div>
@@ -161,7 +158,7 @@ export const toastDoc: ComponentDoc = {
       {
         emphasis: "Error",
         component: (
-          <div className="bg-error-container rounded-md px-3u py-2u flex items-center gap-2u">
+          <div className="bg-error-container rounded-md px-3 py-2 flex items-center gap-2">
             <span className="material-symbols-outlined text-on-error-container text-[18px]">error</span>
             <span className="text-body-small text-on-error-container">Error</span>
           </div>
@@ -172,7 +169,7 @@ export const toastDoc: ComponentDoc = {
       {
         emphasis: "Warning",
         component: (
-          <div className="bg-surface rounded-md px-3u py-2u flex items-center gap-2u border border-outline-variant/30">
+          <div className="bg-surface rounded-md px-3 py-2 flex items-center gap-2 border border-outline-variant/30">
             <span className="material-symbols-outlined text-tertiary text-[18px]">warning</span>
             <span className="text-body-small text-on-surface">Warning</span>
           </div>

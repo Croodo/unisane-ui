@@ -49,12 +49,12 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
       <label
         htmlFor={id}
         className={cn(
-          "inline-flex items-center cursor-pointer select-none gap-3u group relative",
+          "inline-flex items-center cursor-pointer select-none gap-3 group relative",
           disabled && "opacity-38 cursor-not-allowed pointer-events-none",
           className
         )}
       >
-        <div className="relative flex items-center justify-center w-10u h-10u">
+        <div className="relative flex items-center justify-center w-10 h-10">
           {/* Ripple Container - Centered */}
           <div
             className={cn(
@@ -82,7 +82,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
           {/* Checkbox box */}
           <div
             className={cn(
-              "relative z-10 w-4.5u h-4.5u rounded-sm border-2 flex items-center justify-center overflow-hidden bg-surface",
+              "relative z-10 w-4_5 h-4_5 rounded-sm border-2 flex items-center justify-center overflow-hidden bg-surface",
               "transition-all duration-snappy ease-emphasized",
               // Default Border
               !error && "border-outline group-hover:border-on-surface",
@@ -143,7 +143,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
         </div>
 
         {label && (
-          <span className="text-body-small font-medium text-on-surface leading-none pt-0.5u">
+          <span className="text-body-small font-medium text-on-surface leading-none pt-0_5">
             {label}
           </span>
         )}

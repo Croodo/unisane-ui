@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Ripple } from './ripple';
 import { cn } from "@/lib/utils";
+import { useScrollLock } from "@/hooks/use-scroll-lock";
 
 export type SheetSize = 'sm' | 'md' | 'lg' | 'xl' | 'full';
 
@@ -32,8 +33,11 @@ export function Sheet({
   const [isVisible, setIsVisible] = useState(false);
   const timerRef = useRef<number | null>(null);
 
-  const OPEN_DURATION = 600; 
-  const CLOSE_DURATION = 250; 
+  const OPEN_DURATION = 600;
+  const CLOSE_DURATION = 250;
+
+  // Lock body scroll while preventing layout shift
+  useScrollLock(open);
 
   useEffect(() => {
     if (open) {
@@ -44,18 +48,33 @@ export function Sheet({
           setIsVisible(true);
         });
       });
-      document.body.style.overflow = 'hidden';
     } else {
       setIsVisible(false);
       timerRef.current = window.setTimeout(() => {
         setShouldRender(false);
-        document.body.style.overflow = '';
       }, CLOSE_DURATION);
     }
     return () => {
       if (timerRef.current) window.clearTimeout(timerRef.current);
     };
   }, [open]);
+
+  // Handle Escape key
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && open) {
+        event.preventDefault();
+        onClose();
+      }
+    };
+
+    if (open) {
+      document.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open, onClose]);
 
   if (!shouldRender) return null;
   if (typeof document === "undefined") return null;
@@ -97,10 +116,10 @@ export function Sheet({
         role="dialog"
         aria-modal="true"
       >
-        <header className="px-6u py-4u border-b border-outline-variant flex items-center justify-between bg-surface shrink-0 z-20">
-          <div className="flex items-center gap-3u">
+        <header className="px-6 py-4 border-b border-outline-variant flex items-center justify-between bg-surface shrink-0 z-20">
+          <div className="flex items-center gap-3">
             {icon && (
-               <div className="w-10u h-10u rounded-sm bg-inverse-surface text-inverse-on-surface flex items-center justify-center shrink-0 transition-all duration-short">
+               <div className="w-10 h-10 rounded-sm bg-inverse-surface text-inverse-on-surface flex items-center justify-center shrink-0 transition-all duration-short">
                   {icon}
                </div>
             )}
@@ -108,15 +127,15 @@ export function Sheet({
               <h2 className="text-title-medium text-on-surface leading-none">
                 {title}
               </h2>
-              <div className="text-on-surface-variant font-medium text-label-small mt-1u flex items-center gap-1.5u">
-                <span className="w-1u h-1u rounded-full bg-primary animate-pulse" />
+              <div className="text-on-surface-variant font-medium text-label-small mt-1 flex items-center gap-1_5">
+                <span className="w-1 h-1 rounded-full bg-primary animate-pulse" />
                 Active Instance
               </div>
             </div>
           </div>
           <button 
             onClick={onClose} 
-            className="w-10u h-10u rounded-sm flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all relative overflow-hidden"
+            className="w-10 h-10 rounded-sm flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all relative overflow-hidden"
             aria-label="Close sheet"
           >
             <Ripple />
@@ -131,12 +150,12 @@ export function Sheet({
         </div>
 
         {(footerLeft || footerRight) && (
-          <footer className="px-6u py-4u border-t border-outline-variant bg-surface-container-low shrink-0 z-20">
-            <div className="flex flex-col medium:flex-row items-center justify-between gap-4u">
+          <footer className="px-6 py-4 border-t border-outline-variant bg-surface-container-low shrink-0 z-20">
+            <div className="flex flex-col medium:flex-row items-center justify-between gap-4">
                <div className="flex-1 min-w-0 w-full medium:w-auto">
                   {footerLeft}
                </div>
-               <div className="flex items-center gap-2u shrink-0 w-full medium:w-auto justify-end">
+               <div className="flex items-center gap-2 shrink-0 w-full medium:w-auto justify-end">
                   {footerRight}
                </div>
             </div>

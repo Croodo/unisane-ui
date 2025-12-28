@@ -80,28 +80,34 @@ export const TimePicker: React.FC<TimePickerProps> = ({
             <>
               <div
                 className={cn(
-                  "rounded-sm px-4 py-3 h-20u min-w-24u flex items-center justify-center text-display-large cursor-pointer transition-colors border-2",
+                  "rounded-sm px-4 py-3 h-20 min-w-24 flex items-center justify-center text-display-large cursor-pointer transition-colors border-2",
                   dialMode === "hour"
                     ? "bg-primary-container text-on-primary-container border-transparent"
                     : "bg-surface-container-highest text-on-surface border-transparent hover:bg-surface-container-highest/80"
                 )}
                 onClick={() => setDialMode("hour")}
+                role="button"
+                aria-label={`Hours: ${hours}`}
+                aria-pressed={dialMode === "hour"}
               >
                 {hours.toString().padStart(2, "0")}
               </div>
 
-              <span className="text-display-large text-on-surface mb-2">
+              <span className="text-display-large text-on-surface mb-2" aria-hidden="true">
                 :
               </span>
 
               <div
                 className={cn(
-                  "rounded-sm px-4 py-3 h-20u min-w-24u flex items-center justify-center text-display-large cursor-pointer transition-colors border-2",
+                  "rounded-sm px-4 py-3 h-20 min-w-24 flex items-center justify-center text-display-large cursor-pointer transition-colors border-2",
                   dialMode === "minute"
                     ? "bg-primary-container text-on-primary-container border-transparent"
                     : "bg-surface-container-highest text-on-surface border-transparent hover:bg-surface-container-highest/80"
                 )}
                 onClick={() => setDialMode("minute")}
+                role="button"
+                aria-label={`Minutes: ${minutes}`}
+                aria-pressed={dialMode === "minute"}
               >
                 {minutes.toString().padStart(2, "0")}
               </div>
@@ -110,7 +116,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
             <div className="flex gap-2 items-center">
               <TextField
                 variant="outlined"
-                className="w-24u"
+                className="w-24"
                 label="Hour"
                 type="number"
                 min={1}
@@ -121,7 +127,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
               <span className="text-display-large">:</span>
               <TextField
                 variant="outlined"
-                className="w-24u"
+                className="w-24"
                 label="Minute"
                 type="number"
                 min={0}
@@ -132,9 +138,11 @@ export const TimePicker: React.FC<TimePickerProps> = ({
             </div>
           )}
 
-          <div className="flex flex-col ml-3 border border-outline rounded-sm overflow-hidden bg-surface shrink-0 h-20u">
+          <div className="flex flex-col ml-3 border border-outline rounded-sm overflow-hidden bg-surface shrink-0 h-20" role="radiogroup" aria-label="AM/PM">
             <button
               onClick={() => setPeriod("AM")}
+              role="radio"
+              aria-checked={period === "AM"}
               className={cn(
                 "flex-1 px-4 text-label-medium font-medium transition-colors hover:bg-surface-variant/20 border-b border-outline",
                 period === "AM"
@@ -146,6 +154,8 @@ export const TimePicker: React.FC<TimePickerProps> = ({
             </button>
             <button
               onClick={() => setPeriod("PM")}
+              role="radio"
+              aria-checked={period === "PM"}
               className={cn(
                 "flex-1 px-4 text-label-medium font-medium transition-colors hover:bg-surface-variant/20",
                 period === "PM"
@@ -163,6 +173,8 @@ export const TimePicker: React.FC<TimePickerProps> = ({
             <div
               className="w-[calc(var(--unit)*64)] h-[calc(var(--unit)*64)] rounded-full bg-surface-container-highest relative cursor-pointer touch-none select-none shrink-0"
               onClick={handleClockClick}
+              role="listbox"
+              aria-label={dialMode === "hour" ? "Select hour" : "Select minute"}
             >
               <div className="absolute top-1/2 left-1/2 w-2 h-2 -translate-x-1/2 -translate-y-1/2 bg-primary rounded-full z-20" />
 
@@ -180,14 +192,16 @@ export const TimePicker: React.FC<TimePickerProps> = ({
               {[12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((num) => {
                 const angle = num * 30 - 90;
                 const rad = angle * (Math.PI / 180);
-                const x = 50 + 42 * Math.cos(rad); // %
-                const y = 50 + 42 * Math.sin(rad); // %
+                const x = 50 + 42 * Math.cos(rad);
+                const y = 50 + 42 * Math.sin(rad);
 
                 const isSelected = dialMode === "hour" && hours === num;
 
                 return (
                   <div
                     key={num}
+                    role="option"
+                    aria-selected={isSelected}
                     className={cn(
                       "absolute w-8 h-8 -ml-4 -mt-4 flex items-center justify-center rounded-full text-body-medium transition-colors z-0",
                       isSelected ? "text-on-primary font-medium" : "text-on-surface"

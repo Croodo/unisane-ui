@@ -1,35 +1,32 @@
 "use client";
 
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { Tabs, TabsList, TabsTrigger, TabsContent, Card } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const TabsHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-primary-container to-tertiary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-50px] right-[-50px] w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-40px] left-[-40px] w-56 h-56 bg-tertiary/20 rounded-full blur-3xl" />
-
+  <HeroBackground tone="surface">
     {/* Mock App with Tabs */}
-    <div className="relative bg-surface w-[320px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 z-10">
+    <div className="relative bg-surface w-[320px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
       {/* Tab Bar */}
       <div className="flex border-b border-outline-variant/20">
-        <div className="flex-1 py-4u text-center relative">
+        <div className="flex-1 py-4 text-center relative">
           <span className="text-label-large text-primary font-medium">Overview</span>
           <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
         </div>
-        <div className="flex-1 py-4u text-center">
+        <div className="flex-1 py-4 text-center">
           <span className="text-label-large text-on-surface-variant">Details</span>
         </div>
-        <div className="flex-1 py-4u text-center">
+        <div className="flex-1 py-4 text-center">
           <span className="text-label-large text-on-surface-variant">Activity</span>
         </div>
       </div>
       {/* Content */}
-      <div className="p-5u">
-        <div className="space-y-3u">
-          <div className="flex items-center gap-3u">
-            <div className="w-10u h-10u rounded-full bg-primary-container flex items-center justify-center">
+      <div className="p-5">
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center">
               <span className="material-symbols-outlined text-primary">person</span>
             </div>
             <div>
@@ -37,7 +34,7 @@ const TabsHeroVisual = () => (
               <div className="text-body-small text-on-surface-variant">Premium Member</div>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-3u pt-2u">
+          <div className="grid grid-cols-3 gap-3 pt-2">
             <div className="text-center">
               <div className="text-headline-small text-on-surface">128</div>
               <div className="text-label-small text-on-surface-variant">Posts</div>
@@ -54,7 +51,7 @@ const TabsHeroVisual = () => (
         </div>
       </div>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 export const tabsDoc: ComponentDoc = {
@@ -89,11 +86,11 @@ export const tabsDoc: ComponentDoc = {
         emphasis: "Primary",
         component: (
           <div className="flex bg-surface rounded-lg overflow-hidden">
-            <div className="px-4u py-2u relative">
+            <div className="px-4 py-2 relative">
               <span className="text-label-medium text-primary">Tab 1</span>
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
             </div>
-            <div className="px-4u py-2u">
+            <div className="px-4 py-2">
               <span className="text-label-medium text-on-surface-variant">Tab 2</span>
             </div>
           </div>
@@ -105,11 +102,11 @@ export const tabsDoc: ComponentDoc = {
       {
         emphasis: "Secondary",
         component: (
-          <div className="flex bg-surface-container rounded-full p-1u">
-            <div className="px-4u py-2u bg-surface rounded-full shadow-sm">
+          <div className="flex bg-surface-container rounded-full p-1">
+            <div className="px-4 py-2 bg-surface rounded-full shadow-sm">
               <span className="text-label-medium text-on-surface">Tab 1</span>
             </div>
-            <div className="px-4u py-2u">
+            <div className="px-4 py-2">
               <span className="text-label-medium text-on-surface-variant">Tab 2</span>
             </div>
           </div>
@@ -122,12 +119,12 @@ export const tabsDoc: ComponentDoc = {
         emphasis: "With Icons",
         component: (
           <div className="flex bg-surface rounded-lg overflow-hidden">
-            <div className="px-4u py-2u flex items-center gap-2u relative">
+            <div className="px-4 py-2 flex items-center gap-2 relative">
               <span className="material-symbols-outlined text-primary text-[18px]">home</span>
               <span className="text-label-medium text-primary">Home</span>
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
             </div>
-            <div className="px-4u py-2u flex items-center gap-2u">
+            <div className="px-4 py-2 flex items-center gap-2">
               <span className="material-symbols-outlined text-on-surface-variant text-[18px]">settings</span>
               <span className="text-label-medium text-on-surface-variant">Settings</span>
             </div>
@@ -141,11 +138,11 @@ export const tabsDoc: ComponentDoc = {
         emphasis: "Icon Only",
         component: (
           <div className="flex bg-surface rounded-lg overflow-hidden">
-            <div className="px-4u py-2u relative">
+            <div className="px-4 py-2 relative">
               <span className="material-symbols-outlined text-primary">grid_view</span>
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
             </div>
-            <div className="px-4u py-2u">
+            <div className="px-4 py-2">
               <span className="material-symbols-outlined text-on-surface-variant">list</span>
             </div>
           </div>
@@ -167,18 +164,18 @@ export const tabsDoc: ComponentDoc = {
         visual: (
           <Card variant="outlined" padding="none" className="max-w-[320px] mx-auto overflow-hidden">
             <div className="flex border-b border-outline-variant/20">
-              <div className="flex-1 py-3u text-center relative">
+              <div className="flex-1 py-3 text-center relative">
                 <span className="text-label-medium text-primary">Posts</span>
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
               </div>
-              <div className="flex-1 py-3u text-center">
+              <div className="flex-1 py-3 text-center">
                 <span className="text-label-medium text-on-surface-variant">Media</span>
               </div>
-              <div className="flex-1 py-3u text-center">
+              <div className="flex-1 py-3 text-center">
                 <span className="text-label-medium text-on-surface-variant">Likes</span>
               </div>
             </div>
-            <div className="p-4u text-body-medium text-on-surface-variant text-center">
+            <div className="p-4 text-body-medium text-on-surface-variant text-center">
               Tab content goes here
             </div>
           </Card>
@@ -191,13 +188,13 @@ export const tabsDoc: ComponentDoc = {
           <Card variant="outlined" padding="none" className="max-w-[280px] mx-auto overflow-hidden">
             <div className="flex overflow-x-auto border-b border-outline-variant/20">
               {["All", "Photos", "Videos", "Documents", "Links"].map((tab, i) => (
-                <div key={tab} className={`px-4u py-3u shrink-0 relative ${i === 0 ? "" : ""}`}>
+                <div key={tab} className={`px-4 py-3 shrink-0 relative ${i === 0 ? "" : ""}`}>
                   <span className={`text-label-medium ${i === 0 ? "text-primary" : "text-on-surface-variant"}`}>{tab}</span>
                   {i === 0 && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />}
                 </div>
               ))}
             </div>
-            <div className="p-4u text-body-medium text-on-surface-variant text-center">
+            <div className="p-4 text-body-medium text-on-surface-variant text-center">
               Scrollable when space is limited
             </div>
           </Card>

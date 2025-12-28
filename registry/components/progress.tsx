@@ -9,8 +9,8 @@ const progressVariants = cva(
   {
     variants: {
       variant: {
-        linear: "h-1u",
-        circular: "w-16u h-16u",
+        linear: "h-1",
+        circular: "w-16 h-16",
       },
       indeterminate: {
         true: "",
@@ -67,7 +67,7 @@ export const Progress: React.FC<ProgressProps> = ({
 
     return (
       <div
-        className={cn("relative w-16u h-16u", className)}
+        className={cn("relative w-16 h-16", className)}
         role="progressbar"
         aria-valuemin={0}
         aria-valuemax={100}

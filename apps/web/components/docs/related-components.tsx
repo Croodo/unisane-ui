@@ -17,7 +17,7 @@ export function RelatedComponents({
   if (!related.length) return null;
 
   return (
-    <div className={cn("grid grid-cols-1 @lg:grid-cols-2 @2xl:grid-cols-3 gap-4u", className)}>
+    <div className={cn("grid grid-cols-1 @lg:grid-cols-2 @2xl:grid-cols-3 gap-4", className)}>
       {related.map((item) => {
         const component = getComponentBySlug(item.slug);
         if (!component) return null;
@@ -28,10 +28,10 @@ export function RelatedComponents({
             href={`/docs/components/${item.slug}`}
             className="group block"
           >
-            <div className="p-6u rounded-lg bg-surface-container-low border border-outline-variant/15 hover:bg-surface-container hover:border-outline-variant/30 transition-all">
-              <div className="flex items-center gap-3u mb-3u">
+            <div className="p-6 rounded-lg bg-surface-container-low border border-outline-variant/15 hover:bg-surface-container hover:border-outline-variant/30 transition-all">
+              <div className="flex items-center gap-3 mb-3">
                 {component.icon && (
-                  <div className="w-10u h-10u rounded-md bg-primary-container flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-md bg-primary-container flex items-center justify-center">
                     <span className="material-symbols-outlined text-[20px] text-on-primary-container">
                       {component.icon}
                     </span>

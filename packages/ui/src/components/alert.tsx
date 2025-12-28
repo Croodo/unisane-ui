@@ -5,7 +5,7 @@ import { Icon } from "@ui/primitives/icon";
 import { Typography } from "./typography";
 
 const alertVariants = cva(
-  "relative w-full rounded-sm p-5u flex items-start gap-4u border-l-4",
+  "relative w-full rounded-sm p-4 flex items-start gap-3 border-l-4",
   {
     variants: {
       variant: {
@@ -44,15 +44,15 @@ export const Alert: React.FC<AlertProps> = ({
 
   const iconNode =
     typeof icon === "string" || !icon ? (
-      <Icon symbol={(icon as string) || defaultIcons[variant || "info"]} size={22} className="opacity-80" />
+      <Icon symbol={(icon as string) || defaultIcons[variant || "info"]} size="sm" className="opacity-80" />
     ) : (
       icon
     );
 
   return (
     <div className={cn(alertVariants({ variant, className }))} role="alert" {...props}>
-      <div className="shrink-0 pt-0.5u">{iconNode}</div>
-      <div className="flex-1 flex flex-col gap-1u">
+      <div className="shrink-0 w-5 h-5 flex items-center justify-center">{iconNode}</div>
+      <div className="flex-1 flex flex-col gap-1">
         {title && (
           <Typography
             variant="labelMedium"

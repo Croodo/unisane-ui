@@ -8,7 +8,7 @@ import { IconButton } from "./icon-button";
 import { Icon } from '@/components/ui/icon';
 
 const bannerVariants = cva(
-  "relative w-full flex items-start gap-4u p-4u border-b border-outline-variant/30 transition-all",
+  "relative w-full flex items-start gap-4 p-4 border-b border-outline-variant/30 transition-all",
   {
     variants: {
       variant: {
@@ -57,7 +57,7 @@ export const Banner: React.FC<BannerProps> = ({
     >
       {/* Icon */}
       {icon && (
-        <div className="w-6u h-6u flex items-center justify-center text-primary mt-0.5u shrink-0">
+        <div className="w-6 h-6 flex items-center justify-center text-primary mt-0_5 shrink-0">
           {icon}
         </div>
       )}
@@ -65,7 +65,7 @@ export const Banner: React.FC<BannerProps> = ({
       {/* Content */}
       <div className="flex-1 min-w-0">
         {title && (
-          <Text variant="titleSmall" className="text-on-surface mb-1u">
+          <Text variant="titleSmall" className="text-on-surface mb-1">
             {title}
           </Text>
         )}
@@ -75,7 +75,7 @@ export const Banner: React.FC<BannerProps> = ({
 
         {/* Actions */}
         {actions && actions.length > 0 && (
-          <div className="flex gap-2u mt-4u">
+          <div className="flex gap-2 mt-4">
             {actions.map((action, index) => (
               <Button
                 key={index}
@@ -95,7 +95,7 @@ export const Banner: React.FC<BannerProps> = ({
       <IconButton
         icon={<Icon symbol="close" size="sm" />}
         onClick={onClose}
-        className="text-on-surface-variant hover:bg-on-surface/10 ml-2u shrink-0"
+        className="text-on-surface-variant hover:bg-on-surface/10 ml-2 shrink-0"
         ariaLabel="Close banner"
       />
     </Surface>

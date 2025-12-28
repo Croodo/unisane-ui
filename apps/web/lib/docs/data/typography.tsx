@@ -1,18 +1,15 @@
 "use client";
 
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { Typography } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const TypographyHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-tertiary-container to-primary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-40px] left-[-40px] w-56 h-56 bg-tertiary/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-50px] right-[-30px] w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
-
+  <HeroBackground tone="surface">
     {/* Mock Typography Scale */}
-    <div className="relative bg-surface w-[320px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 z-10 p-6u">
-      <div className="space-y-4u">
+    <div className="relative bg-surface w-[320px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 p-6">
+      <div className="space-y-4">
         <div className="text-display-small text-on-surface">Display</div>
         <div className="text-headline-medium text-on-surface">Headline</div>
         <div className="text-title-large text-on-surface">Title Large</div>
@@ -21,12 +18,12 @@ const TypographyHeroVisual = () => (
         <div className="text-label-medium text-on-surface-variant">LABEL TEXT</div>
       </div>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 // ─── EXAMPLES ────────────────────────────────────────────────────────────────
 const TypographyScaleExample = () => (
-  <div className="space-y-4u w-full max-w-sm">
+  <div className="space-y-4 w-full max-w-sm">
     <Typography variant="displaySmall">Display Small</Typography>
     <Typography variant="headlineMedium">Headline Medium</Typography>
     <Typography variant="titleLarge">Title Large</Typography>

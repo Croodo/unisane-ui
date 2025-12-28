@@ -12,7 +12,7 @@ export function PlacementExamples({ placement, className }: PlacementExamplesPro
   return (
     <div
       className={cn(
-        "grid grid-cols-1 @xl:grid-cols-2 gap-6u",
+        "grid grid-cols-1 @xl:grid-cols-2 gap-6",
         className
       )}
     >
@@ -22,18 +22,18 @@ export function PlacementExamples({ placement, className }: PlacementExamplesPro
           className="bg-surface-container-low rounded-xl overflow-visible border border-outline-variant/15 flex flex-col"
         >
           {/* Title */}
-          <h3 className="text-title-small font-medium text-on-surface px-5u pt-5u pb-4u border-b border-outline-variant/10">
+          <h3 className="text-title-small font-medium text-on-surface px-5 pt-5 pb-4 border-b border-outline-variant/10">
             {example.title}
           </h3>
 
           {/* Visual - with overflow room for dropdowns/popovers */}
-          <div className="flex items-center justify-center p-5u min-h-[180px] overflow-visible">
+          <div className="flex items-center justify-center p-5 min-h-[180px] overflow-visible">
             {example.visual}
           </div>
 
           {/* Caption */}
           {example.caption && (
-            <p className="px-5u pb-5u text-center text-body-small text-on-surface-variant">
+            <p className="px-5 pb-5 text-center text-body-small text-on-surface-variant">
               {example.caption}
             </p>
           )}

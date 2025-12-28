@@ -55,7 +55,7 @@ export const Popover: React.FC<PopoverProps> = ({
       {isOpen && (
         <div
           className={cn(
-            "absolute z-modal min-w-[calc(var(--uni-sys-u)*50)] bg-surface rounded-sm shadow-4 p-4u animate-in fade-in zoom-in-95 duration-short ease-standard border border-outline-variant/30",
+            "absolute z-modal min-w-[calc(var(--uni-sys-u)*50)] bg-surface rounded-sm shadow-4 p-4 animate-in fade-in zoom-in-95 duration-short ease-standard border border-outline-variant/30",
             side === "bottom" && "top-[calc(100%+(var(--uni-sys-u)*2))]",
             side === "top" && "bottom-[calc(100%+(var(--uni-sys-u)*2))]",
             align === "center" && "left-1/2 -translate-x-1/2",

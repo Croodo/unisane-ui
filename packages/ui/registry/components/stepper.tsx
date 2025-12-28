@@ -3,7 +3,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 import { Icon } from "@/primitives/icon";
 import { Text } from "@/primitives/text";
-import { StateLayer } from "@/primitives/state-layer";
+import { Ripple } from "./ripple";
 
 interface Step {
   label: string;
@@ -42,7 +42,7 @@ export const Stepper: React.FC<StepperProps> = ({
             {!isLast && (
               <div
                 className={cn(
-                  "absolute top-4u left-1/2 w-full h-0_5u transition-colors duration-medium z-0",
+                  "absolute top-4 left-1/2 w-full h-0_5u transition-colors duration-medium z-0",
                   isCompleted ? "bg-primary" : "bg-outline-variant/30"
                 )}
               />
@@ -50,7 +50,7 @@ export const Stepper: React.FC<StepperProps> = ({
 
             <div
               className={cn(
-                "w-8u h-8u rounded-sm flex items-center justify-center text-label-small font-medium border-2 z-10 transition-all duration-emphasized",
+                "w-8 h-8 rounded-sm flex items-center justify-center text-label-small font-medium border-2 z-10 transition-all duration-emphasized",
                 isActive && "bg-primary border-primary text-on-primary scale-110",
                 isCompleted && "bg-primary border-primary text-on-primary",
                 !isActive &&
@@ -65,7 +65,7 @@ export const Stepper: React.FC<StepperProps> = ({
               )}
             </div>
 
-            <div className="mt-4u text-center px-2u max-w-[calc(var(--unit)*30)]">
+            <div className="mt-4 text-center px-2 max-w-[calc(var(--unit)*30)]">
               <span
                 className={cn(
                   "block text-label-small font-medium transition-colors",
@@ -88,7 +88,7 @@ export const Stepper: React.FC<StepperProps> = ({
 };
 
 const stepVariants = cva(
-  "relative flex items-center gap-3 cursor-pointer select-none",
+  "relative flex items-center gap-3 cursor-pointer select-none overflow-hidden rounded-sm",
   {
     variants: {
       orientation: {
@@ -130,15 +130,26 @@ export const Step: React.FC<StepProps> = ({
   onClick,
   className,
 }) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if ((e.key === "Enter" || e.key === " ") && onClick) {
+      e.preventDefault();
+      onClick();
+    }
+  };
+
   return (
     <div
       className={cn(stepVariants({ orientation, active, completed, className }))}
       onClick={onClick}
+      onKeyDown={handleKeyDown}
+      role="button"
+      tabIndex={onClick ? 0 : undefined}
+      aria-current={active ? "step" : undefined}
     >
-      <StateLayer />
+      <Ripple />
       <div
         className={cn(
-          "w-8 h-8 rounded-sm flex items-center justify-center transition-colors",
+          "w-8 h-8 rounded-sm flex items-center justify-center transition-colors duration-medium ease-standard",
           active
             ? "bg-primary text-on-primary"
             : completed

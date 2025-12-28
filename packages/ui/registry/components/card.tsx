@@ -23,9 +23,9 @@ const cardVariants = cva(
       },
       padding: {
         none: "p-0",
-        sm: "p-4u",
-        md: "p-6u",
-        lg: "p-8u",
+        sm: "p-4",
+        md: "p-6",
+        lg: "p-8",
       },
     },
     compoundVariants: [
@@ -50,17 +50,29 @@ export interface CardProps
 }
 
 const CardRoot = React.forwardRef<HTMLDivElement, CardProps>(
-  ({ className, variant, padding, interactive, onClick, children, ...props }, ref) => {
+  ({ className, variant, padding, interactive, onClick, onKeyDown, children, ...props }, ref) => {
     const isInteractive = interactive || !!onClick;
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (isInteractive && (e.key === "Enter" || e.key === " ")) {
+        e.preventDefault();
+        onClick?.(e as unknown as React.MouseEvent<HTMLDivElement>);
+      }
+      onKeyDown?.(e);
+    };
 
     return (
       <div
         ref={ref}
         className={cn(
           cardVariants({ variant, padding, interactive: isInteractive }),
+          isInteractive && "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
           className
         )}
         onClick={onClick}
+        onKeyDown={isInteractive ? handleKeyDown : onKeyDown}
+        role={isInteractive ? "button" : undefined}
+        tabIndex={isInteractive ? 0 : undefined}
         {...props}
       >
         {isInteractive && (
@@ -86,7 +98,7 @@ const CardHeader = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("p-6u pb-2u flex flex-col gap-1u relative z-10", className)}
+    className={cn("px-6 pt-6 pb-4 flex flex-col gap-1 relative z-10", className)}
     {...props}
   />
 ));
@@ -99,7 +111,7 @@ const CardContent = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "p-6u pt-4u text-on-surface-variant relative z-10 text-body-small font-medium leading-relaxed",
+      "px-6 py-4 text-on-surface-variant relative z-10 text-body-medium font-medium leading-relaxed",
       className
     )}
     {...props}
@@ -113,7 +125,7 @@ const CardFooter = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("p-6u pt-0 mt-auto flex items-center gap-3u relative z-10", className)}
+    className={cn("px-6 pt-4 pb-6 mt-auto flex items-center gap-3 relative z-10", className)}
     {...props}
   />
 ));
@@ -122,10 +134,11 @@ CardFooter.displayName = "CardFooter";
 const CardMedia = React.forwardRef<
   HTMLImageElement,
   React.ImgHTMLAttributes<HTMLImageElement>
->(({ className, ...props }, ref) => (
+>(({ className, alt, ...props }, ref) => (
   <img
     ref={ref}
     className={cn("w-full object-cover relative z-10", className)}
+    alt={alt || ""}
     {...props}
   />
 ));

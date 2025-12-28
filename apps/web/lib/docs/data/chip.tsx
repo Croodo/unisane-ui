@@ -1,37 +1,34 @@
 "use client";
 
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { Chip, Card } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const ChipHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-tertiary-container to-primary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-40px] left-[-40px] w-56 h-56 bg-tertiary/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-50px] right-[-30px] w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
-
+  <HeroBackground tone="surface">
     {/* Mock Filter Card */}
-    <div className="relative bg-surface w-[300px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 z-10">
-      <div className="px-5u py-4u border-b border-outline-variant/20">
+    <div className="relative bg-surface w-[300px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
+      <div className="px-5 py-4 border-b border-outline-variant/20">
         <span className="text-title-medium text-on-surface">Filter Products</span>
       </div>
-      <div className="p-4u">
-        <div className="text-label-small text-on-surface-variant mb-3u">Categories</div>
-        <div className="flex flex-wrap gap-2u">
+      <div className="p-4">
+        <div className="text-label-small text-on-surface-variant mb-3">Categories</div>
+        <div className="flex flex-wrap gap-2">
           <Chip variant="filter" label="Electronics" selected />
           <Chip variant="filter" label="Clothing" selected />
           <Chip variant="filter" label="Home" />
           <Chip variant="filter" label="Sports" />
         </div>
-        <div className="text-label-small text-on-surface-variant mt-4u mb-3u">Price Range</div>
-        <div className="flex flex-wrap gap-2u">
+        <div className="text-label-small text-on-surface-variant mt-4 mb-3">Price Range</div>
+        <div className="flex flex-wrap gap-2">
           <Chip variant="filter" label="Under $50" selected />
           <Chip variant="filter" label="$50-$100" />
           <Chip variant="filter" label="$100+" />
         </div>
       </div>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 export const chipDoc: ComponentDoc = {
@@ -132,7 +129,7 @@ export const chipDoc: ComponentDoc = {
       {
         title: "Filter bar",
         visual: (
-          <div className="flex flex-wrap gap-2u">
+          <div className="flex flex-wrap gap-2">
             <Chip variant="filter" label="All" selected />
             <Chip variant="filter" label="Active" />
             <Chip variant="filter" label="Completed" />
@@ -144,7 +141,7 @@ export const chipDoc: ComponentDoc = {
       {
         title: "Tag input",
         visual: (
-          <div className="flex flex-wrap gap-2u p-3u border border-outline-variant/30 rounded-lg min-h-12 w-full max-w-xs bg-surface-container-lowest">
+          <div className="flex flex-wrap gap-2 p-3 border border-outline-variant/30 rounded-lg min-h-12 w-full max-w-xs bg-surface-container-lowest">
             <Chip variant="input" label="alice@mail.com" onDelete={() => {}} />
             <Chip variant="input" label="bob@mail.com" onDelete={() => {}} />
           </div>

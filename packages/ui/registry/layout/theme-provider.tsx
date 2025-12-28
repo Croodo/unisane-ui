@@ -1,10 +1,10 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
 
 export type Density = "compact" | "standard" | "comfortable" | "dense";
 export type Theme = "light" | "dark" | "system";
-export type RadiusTheme = "sharp" | "standard" | "soft";
+export type RadiusTheme = "none" | "minimal" | "sharp" | "standard" | "soft";
 
 interface ThemeContextType {
   spaceScale: number;
@@ -70,10 +70,13 @@ const DENSITY_PRESETS: Record<
 };
 
 // Synced with CSS in uni-tokens.css [data-radius="..."] selectors
+// Scale affects all radius tokens: rounded-xs (4px), rounded-sm (8px), rounded-md (12px), etc.
 const RADIUS_PRESETS: Record<RadiusTheme, number> = {
-  sharp: 0.75,
-  standard: 1.0,
-  soft: 1.15,
+  none: 0,        // All corners squared (0px)
+  minimal: 0.25,  // Very subtle: xs=1px, sm=2px, md=3px
+  sharp: 0.5,     // Subtle rounding: xs=2px, sm=4px, md=6px
+  standard: 1.0,  // Default M3: xs=4px, sm=8px, md=12px
+  soft: 1.25,     // Extra rounded: xs=5px, sm=10px, md=15px
 };
 
 export interface ThemeConfig {
@@ -95,47 +98,57 @@ export function ThemeProvider({
   initialDensity,
   storageKey = "unisane-theme",
 }: ThemeProviderProps) {
+  // Config takes precedence - use config values as initial state
   const configDensity = config?.density || initialDensity || "standard";
   const configTheme = config?.theme || "system";
   const configRadius = config?.radius || "standard";
 
+  // Initialize state directly from config (not hardcoded defaults)
   const [density, setDensityState] = useState<Density>(configDensity);
-  const [spaceScale, setSpaceScale] = useState(
-    DENSITY_PRESETS[configDensity].space
-  );
-  const [typeScale, setTypeScale] = useState(
-    DENSITY_PRESETS[configDensity].type
-  );
-  const [radiusScale, setRadiusScaleState] = useState(
-    DENSITY_PRESETS[configDensity].radius
-  );
+  const [spaceScale, setSpaceScale] = useState(DENSITY_PRESETS[configDensity].space);
+  const [typeScale, setTypeScale] = useState(DENSITY_PRESETS[configDensity].type);
+  const [radiusScale, setRadiusScaleState] = useState(RADIUS_PRESETS[configRadius]);
 
   const [theme, setThemeState] = useState<Theme>(configTheme);
-  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("light");
+  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">(
+    configTheme === "dark" ? "dark" : configTheme === "light" ? "light" : "light"
+  );
 
-  const [radiusTheme, setRadiusThemeState] =
-    useState<RadiusTheme>(configRadius);
+  const [radiusTheme, setRadiusThemeState] = useState<RadiusTheme>(configRadius);
 
+  // Load from localStorage only for values not provided in config
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    // Start with config values (already set as initial state)
+    let finalTheme: Theme = configTheme;
+    let finalDensity: Density = configDensity;
+    let finalRadiusTheme: RadiusTheme = configRadius;
+
+    // Only load from localStorage for values NOT explicitly set in config
     const stored = localStorage.getItem(storageKey);
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
-        if (parsed.theme) setThemeState(parsed.theme);
-        if (parsed.density && parsed.density in DENSITY_PRESETS) {
-          const density = parsed.density as Density;
-          setDensityState(density);
-          setSpaceScale(DENSITY_PRESETS[density].space);
-          setTypeScale(DENSITY_PRESETS[density].type);
+        // Only use localStorage if config didn't provide these values
+        if (!config?.theme && parsed.theme) finalTheme = parsed.theme;
+        if (!config?.density && !initialDensity && parsed.density && parsed.density in DENSITY_PRESETS) {
+          finalDensity = parsed.density as Density;
         }
-        if (parsed.radiusTheme) setRadiusThemeState(parsed.radiusTheme);
+        if (!config?.radius && parsed.radiusTheme) finalRadiusTheme = parsed.radiusTheme;
       } catch (e) {
         console.warn("Failed to parse theme from localStorage", e);
       }
     }
-  }, [storageKey]);
+
+    // Apply final values
+    setThemeState(finalTheme);
+    setDensityState(finalDensity);
+    setSpaceScale(DENSITY_PRESETS[finalDensity].space);
+    setTypeScale(DENSITY_PRESETS[finalDensity].type);
+    setRadiusThemeState(finalRadiusTheme);
+    setRadiusScaleState(RADIUS_PRESETS[finalRadiusTheme]);
+  }, [storageKey, config?.theme, config?.density, config?.radius, initialDensity, configTheme, configDensity, configRadius]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -187,20 +200,20 @@ export function ThemeProvider({
     );
   }, [theme, density, radiusTheme, storageKey]);
 
-  const setDensity = (d: Density) => {
+  const setDensity = useCallback((d: Density) => {
     setDensityState(d);
     setSpaceScale(DENSITY_PRESETS[d].space);
     setTypeScale(DENSITY_PRESETS[d].type);
-  };
+  }, []);
 
-  const setTheme = (t: Theme) => {
+  const setTheme = useCallback((t: Theme) => {
     setThemeState(t);
-  };
+  }, []);
 
-  const setRadiusTheme = (r: RadiusTheme) => {
+  const setRadiusTheme = useCallback((r: RadiusTheme) => {
     setRadiusThemeState(r);
     setRadiusScaleState(RADIUS_PRESETS[r]);
-  };
+  }, []);
 
   const value = useMemo(
     () => ({
@@ -218,7 +231,7 @@ export function ThemeProvider({
       radiusTheme,
       setRadiusTheme,
     }),
-    [spaceScale, typeScale, radiusScale, density, theme, resolvedTheme, radiusTheme]
+    [spaceScale, typeScale, radiusScale, density, setDensity, theme, setTheme, resolvedTheme, radiusTheme, setRadiusTheme]
   );
 
   return (

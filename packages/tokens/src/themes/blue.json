@@ -1,5 +1,5 @@
 {
   "name": "Blue",
-  "primary": { "hue": 240, "chroma": 0.13 },
-  "description": "Teal-blue - professional, low saturation with high contrast"
+  "primary": { "hue": 210, "chroma": 0.16 },
+  "description": "M3-style blue - matches #296197 reference with muted containers"
 }

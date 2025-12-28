@@ -105,37 +105,86 @@ async function detectDependencies(filePath) {
   }
 }
 
-// Scan a directory for components
+// Scan a directory for components (including subdirectories)
 async function scanDirectory(dir, folder) {
   const components = {};
 
   try {
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+
+    for (const entry of entries) {
+      const entryPath = path.join(dir, entry.name);
+
+      if (entry.isDirectory()) {
+        // Recursively scan subdirectories (e.g., components/navigation/, components/sidebar/)
+        const subComponents = await scanSubdirectory(entryPath, folder, entry.name);
+        Object.assign(components, subComponents);
+        continue;
+      }
+
+      if (!entry.name.endsWith(".tsx") && !entry.name.endsWith(".ts")) continue;
+      if (entry.name === "index.ts" || entry.name === "index.tsx") continue;
+
+      const key = fileToKey(entry.name);
+      const name = fileToName(entry.name);
+      const registryDeps = await detectDependencies(entryPath);
+
+      components[key] = {
+        name,
+        type: getComponentType(folder),
+        description: `${name} component`,
+        files: [`${folder}/${entry.name}`],
+        dependencies: [],
+        registryDependencies: registryDeps,
+      };
+    }
+  } catch (error) {
+    console.warn(`⚠️  Could not scan ${dir}: ${error.message}`);
+  }
+
+  return components;
+}
+
+// Scan a subdirectory and collect all files under a single component key
+async function scanSubdirectory(dir, parentFolder, subfolderName) {
+  const components = {};
+
+  try {
     const files = await fs.readdir(dir);
+    const componentFiles = [];
+    const allDeps = new Set();
 
     for (const file of files) {
       if (!file.endsWith(".tsx") && !file.endsWith(".ts")) continue;
-      if (file === "index.ts" || file === "index.tsx") continue;
 
       const filePath = path.join(dir, file);
       const stat = await fs.stat(filePath);
 
       if (stat.isFile()) {
-        const key = fileToKey(file);
-        const name = fileToName(file);
-        const registryDeps = await detectDependencies(filePath);
-
-        components[key] = {
-          name,
-          type: getComponentType(folder),
-          description: `${name} component`,
-          files: [`${folder}/${file}`],
-          dependencies: [],
-          registryDependencies: registryDeps,
-        };
+        componentFiles.push(`${parentFolder}/${subfolderName}/${file}`);
+        const deps = await detectDependencies(filePath);
+        deps.forEach(d => allDeps.add(d));
       }
     }
+
+    if (componentFiles.length > 0) {
+      const key = fileToKey(subfolderName);
+      const name = fileToName(subfolderName);
+
+      // Remove self-references from dependencies
+      allDeps.delete(key);
+
+      components[key] = {
+        name,
+        type: getComponentType(parentFolder),
+        description: `${name} component`,
+        files: componentFiles,
+        dependencies: [],
+        registryDependencies: Array.from(allDeps),
+      };
+    }
   } catch (error) {
-    console.warn(`⚠️  Could not scan ${dir}: ${error.message}`);
+    console.warn(`⚠️  Could not scan subdirectory ${dir}: ${error.message}`);
   }
 
   return components;

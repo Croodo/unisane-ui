@@ -1,40 +1,37 @@
 "use client";
 
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { SearchBar, IconButton } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const SearchBarHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-secondary-container to-primary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-40px] left-[-40px] w-56 h-56 bg-secondary/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-50px] right-[-30px] w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
-
+  <HeroBackground tone="tertiary">
     {/* Mock Search Interface */}
-    <div className="relative bg-surface w-[320px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 z-10 p-6u">
+    <div className="relative bg-surface w-[320px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 p-6">
       {/* Search Bar */}
-      <div className="bg-surface-container-high rounded-sm h-14u flex items-center px-4u gap-3u mb-4u border border-outline-variant/30">
+      <div className="bg-surface-container-high rounded-sm h-14 flex items-center px-4 gap-3 mb-4 border border-outline-variant/30">
         <span className="material-symbols-outlined text-on-surface">search</span>
         <span className="text-body-medium text-on-surface-variant flex-1">Search products...</span>
         <span className="material-symbols-outlined text-on-surface-variant">mic</span>
       </div>
       {/* Search suggestions */}
-      <div className="space-y-2u">
-        <div className="flex items-center gap-3u py-2u">
+      <div className="space-y-2">
+        <div className="flex items-center gap-3 py-2">
           <span className="material-symbols-outlined text-on-surface-variant text-[20px]">history</span>
           <span className="text-body-medium text-on-surface">Recent search 1</span>
         </div>
-        <div className="flex items-center gap-3u py-2u">
+        <div className="flex items-center gap-3 py-2">
           <span className="material-symbols-outlined text-on-surface-variant text-[20px]">history</span>
           <span className="text-body-medium text-on-surface">Recent search 2</span>
         </div>
-        <div className="flex items-center gap-3u py-2u">
+        <div className="flex items-center gap-3 py-2">
           <span className="material-symbols-outlined text-on-surface-variant text-[20px]">trending_up</span>
           <span className="text-body-medium text-on-surface">Trending topic</span>
         </div>
       </div>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 // ─── EXAMPLES ────────────────────────────────────────────────────────────────
@@ -91,7 +88,7 @@ export const searchBarDoc: ComponentDoc = {
       {
         emphasis: "Basic",
         component: (
-          <div className="w-36 h-10u bg-surface-container-high rounded-sm flex items-center px-3u gap-2u">
+          <div className="w-36 h-10 bg-surface-container-high rounded-sm flex items-center px-3 gap-2">
             <span className="material-symbols-outlined text-on-surface text-[18px]">search</span>
             <span className="text-body-small text-on-surface-variant">Search</span>
           </div>
@@ -102,7 +99,7 @@ export const searchBarDoc: ComponentDoc = {
       {
         emphasis: "With voice",
         component: (
-          <div className="w-36 h-10u bg-surface-container-high rounded-sm flex items-center px-3u gap-2u">
+          <div className="w-36 h-10 bg-surface-container-high rounded-sm flex items-center px-3 gap-2">
             <span className="material-symbols-outlined text-on-surface text-[18px]">search</span>
             <span className="text-body-small text-on-surface-variant flex-1">Search</span>
             <span className="material-symbols-outlined text-on-surface-variant text-[18px]">mic</span>

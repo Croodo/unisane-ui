@@ -144,7 +144,7 @@ export const Carousel: React.FC<CarouselProps> = ({
             }
             onClick={prevSlide}
             ariaLabel="Previous slide"
-            className="absolute left-4u top-1/2 -translate-y-1/2 bg-surface/80 backdrop-blur-sm"
+            className="absolute left-4 top-1/2 -translate-y-1/2 bg-surface/80 backdrop-blur-sm"
           />
           <IconButton
             icon={
@@ -159,14 +159,14 @@ export const Carousel: React.FC<CarouselProps> = ({
             }
             onClick={nextSlide}
             ariaLabel="Next slide"
-            className="absolute right-4u top-1/2 -translate-y-1/2 bg-surface/80 backdrop-blur-sm"
+            className="absolute right-4 top-1/2 -translate-y-1/2 bg-surface/80 backdrop-blur-sm"
           />
         </>
       )}
 
       {showIndicators && childrenArray.length > 1 && (
         <div
-          className="absolute bottom-4u left-1/2 -translate-x-1/2 flex gap-2u"
+          className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2"
           role="tablist"
           aria-label="Carousel navigation"
         >
@@ -174,7 +174,7 @@ export const Carousel: React.FC<CarouselProps> = ({
             <button
               key={index}
               className={cn(
-                "relative w-2u h-2u rounded-full transition-colors duration-short ease-standard overflow-hidden",
+                "relative w-2 h-2 rounded-full transition-colors duration-short ease-standard overflow-hidden",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
                 index === currentIndex
                   ? "bg-primary"

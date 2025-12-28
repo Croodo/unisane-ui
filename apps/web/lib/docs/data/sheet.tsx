@@ -2,40 +2,37 @@
 
 import { useState } from "react";
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { Sheet, Button } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const SheetHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-primary-container to-tertiary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-40px] left-[-40px] w-56 h-56 bg-primary/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-50px] right-[-30px] w-64 h-64 bg-tertiary/20 rounded-full blur-3xl" />
-
+  <HeroBackground tone="tertiary">
     {/* Mock App with Sheet */}
-    <div className="relative bg-surface w-[320px] h-[200px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 z-10 flex">
+    <div className="bg-surface w-[320px] h-[200px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 flex">
       {/* Main Content */}
-      <div className="flex-1 p-4u">
-        <div className="text-title-small text-on-surface mb-3u">Dashboard</div>
-        <div className="space-y-2u">
-          <div className="h-4u bg-surface-container-high rounded-sm w-full" />
-          <div className="h-4u bg-surface-container-high rounded-sm w-3/4" />
-          <div className="h-4u bg-surface-container-high rounded-sm w-1/2" />
+      <div className="flex-1 p-4">
+        <div className="text-title-small text-on-surface mb-3">Dashboard</div>
+        <div className="space-y-2">
+          <div className="h-4 bg-surface-container-high rounded-sm w-full" />
+          <div className="h-4 bg-surface-container-high rounded-sm w-3/4" />
+          <div className="h-4 bg-surface-container-high rounded-sm w-1/2" />
         </div>
       </div>
       {/* Sheet Panel */}
       <div className="w-[140px] bg-surface border-l border-outline-variant/20 shadow-3">
-        <div className="p-3u border-b border-outline-variant/20 flex items-center justify-between">
+        <div className="p-3 border-b border-outline-variant/20 flex items-center justify-between">
           <span className="text-title-small text-on-surface">Details</span>
           <span className="material-symbols-outlined text-on-surface-variant text-[18px]">close</span>
         </div>
-        <div className="p-3u space-y-3u">
-          <div className="h-3u bg-surface-container-high rounded-sm w-full" />
-          <div className="h-3u bg-surface-container-high rounded-sm w-3/4" />
-          <div className="h-8u bg-primary/20 rounded-sm w-full" />
+        <div className="p-3 space-y-3">
+          <div className="h-3 bg-surface-container-high rounded-sm w-full" />
+          <div className="h-3 bg-surface-container-high rounded-sm w-3/4" />
+          <div className="h-8 bg-primary/20 rounded-sm w-full" />
         </div>
       </div>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 // ─── INTERACTIVE PLACEMENT EXAMPLES ────────────────────────────────────────────
@@ -52,12 +49,12 @@ const SheetBasicExample = () => {
         title="Details"
         size="sm"
       >
-        <div className="p-6u space-y-4u">
+        <div className="p-6 space-y-4">
           <div className="text-body-medium text-on-surface">
             This is a basic sheet with a header and content area.
           </div>
-          <div className="h-3u bg-surface-container-high rounded-sm w-full" />
-          <div className="h-3u bg-surface-container-high rounded-sm w-3/4" />
+          <div className="h-3 bg-surface-container-high rounded-sm w-full" />
+          <div className="h-3 bg-surface-container-high rounded-sm w-3/4" />
         </div>
       </Sheet>
     </>
@@ -77,20 +74,20 @@ const SheetWithFooterExample = () => {
         title="Edit Item"
         size="md"
         footerRight={
-          <div className="flex gap-2u">
+          <div className="flex gap-2">
             <Button variant="text" onClick={() => setOpen(false)}>Cancel</Button>
             <Button variant="filled" onClick={() => setOpen(false)}>Save</Button>
           </div>
         }
       >
-        <div className="p-6u space-y-4u">
+        <div className="p-6 space-y-4">
           <div className="text-body-medium text-on-surface">
             Edit the item details below. Changes will be saved when you click Save.
           </div>
-          <div className="space-y-3u">
-            <div className="h-10u bg-surface-container-high rounded-lg w-full" />
-            <div className="h-10u bg-surface-container-high rounded-lg w-full" />
-            <div className="h-20u bg-surface-container-high rounded-lg w-full" />
+          <div className="space-y-3">
+            <div className="h-10 bg-surface-container-high rounded-lg w-full" />
+            <div className="h-10 bg-surface-container-high rounded-lg w-full" />
+            <div className="h-20 bg-surface-container-high rounded-lg w-full" />
           </div>
         </div>
       </Sheet>
@@ -131,8 +128,8 @@ export const sheetDoc: ComponentDoc = {
         component: (
           <div className="w-32 h-20 bg-surface-container rounded-sm relative overflow-hidden">
             <div className="absolute right-0 top-0 bottom-0 w-12 bg-surface shadow-2 p-1">
-              <div className="h-1u bg-surface-container-high rounded-full w-full mb-1" />
-              <div className="h-1u bg-surface-container-high rounded-full w-3/4" />
+              <div className="h-1 bg-surface-container-high rounded-full w-full mb-1" />
+              <div className="h-1 bg-surface-container-high rounded-full w-3/4" />
             </div>
           </div>
         ),
@@ -145,8 +142,8 @@ export const sheetDoc: ComponentDoc = {
         component: (
           <div className="w-32 h-20 bg-surface-container rounded-sm relative overflow-hidden">
             <div className="absolute right-0 top-0 bottom-0 w-16 bg-surface shadow-2 p-1">
-              <div className="h-1u bg-surface-container-high rounded-full w-full mb-1" />
-              <div className="h-1u bg-surface-container-high rounded-full w-3/4" />
+              <div className="h-1 bg-surface-container-high rounded-full w-full mb-1" />
+              <div className="h-1 bg-surface-container-high rounded-full w-3/4" />
             </div>
           </div>
         ),
@@ -159,8 +156,8 @@ export const sheetDoc: ComponentDoc = {
         component: (
           <div className="w-32 h-20 bg-surface-container rounded-sm relative overflow-hidden">
             <div className="absolute right-0 top-0 bottom-0 w-20 bg-surface shadow-2 p-1">
-              <div className="h-1u bg-surface-container-high rounded-full w-full mb-1" />
-              <div className="h-1u bg-surface-container-high rounded-full w-3/4" />
+              <div className="h-1 bg-surface-container-high rounded-full w-full mb-1" />
+              <div className="h-1 bg-surface-container-high rounded-full w-3/4" />
             </div>
           </div>
         ),
@@ -180,7 +177,7 @@ export const sheetDoc: ComponentDoc = {
         component: (
           <div className="w-24 h-16 bg-surface-container rounded-sm relative overflow-hidden">
             <div className="absolute right-0 top-0 bottom-0 w-10 bg-surface shadow-2 p-1">
-              <div className="h-1u bg-on-surface/10 rounded-full w-full mb-1" />
+              <div className="h-1 bg-on-surface/10 rounded-full w-full mb-1" />
             </div>
           </div>
         ),
@@ -191,9 +188,9 @@ export const sheetDoc: ComponentDoc = {
         component: (
           <div className="w-24 h-16 bg-surface-container rounded-sm relative overflow-hidden">
             <div className="absolute right-0 top-0 bottom-0 w-10 bg-surface shadow-2 p-1 flex flex-col">
-              <div className="h-2u border-b border-outline-variant/20" />
+              <div className="h-2 border-b border-outline-variant/20" />
               <div className="flex-1" />
-              <div className="h-2u border-t border-outline-variant/20" />
+              <div className="h-2 border-t border-outline-variant/20" />
             </div>
           </div>
         ),

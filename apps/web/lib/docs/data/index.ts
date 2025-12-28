@@ -112,9 +112,69 @@ const DETAILED_DOCS: Record<string, ComponentDoc> = {
 };
 
 // ─── BASIC COMPONENT REGISTRY ─────────────────────────────────────────────────
-// This contains all components (with or without detailed docs)
+// Sorted alphabetically by name for consistent navigation (prev/next)
 export const COMPONENT_REGISTRY: ComponentListItem[] = [
-  // Actions
+  {
+    slug: "accordion",
+    name: "Accordion",
+    description:
+      "Accordions display collapsible content panels for presenting information in a limited amount of space.",
+    category: "containment",
+    status: "stable",
+    icon: "expand_more",
+  },
+  {
+    slug: "alert",
+    name: "Alert",
+    description: "Alerts display brief messages with different severity levels.",
+    category: "communication",
+    status: "stable",
+    icon: "error",
+  },
+  {
+    slug: "avatar",
+    name: "Avatar",
+    description: "Avatars display user profile images, initials, or icons.",
+    category: "data-display",
+    status: "stable",
+    icon: "account_circle",
+  },
+  {
+    slug: "badge",
+    name: "Badge",
+    description:
+      "Badges convey dynamic information, such as counts or status indicators.",
+    category: "communication",
+    status: "stable",
+    icon: "new_releases",
+  },
+  {
+    slug: "banner",
+    name: "Banner",
+    description:
+      "Banners display important, succinct messages with optional actions.",
+    category: "communication",
+    status: "stable",
+    icon: "campaign",
+  },
+  {
+    slug: "bottom-app-bar",
+    name: "Bottom App Bar",
+    description:
+      "Bottom app bars display navigation and key actions at the bottom of mobile screens.",
+    category: "navigation",
+    status: "stable",
+    icon: "call_to_action",
+  },
+  {
+    slug: "breadcrumb",
+    name: "Breadcrumb",
+    description:
+      "Breadcrumbs indicate the current page's location within a navigational hierarchy.",
+    category: "navigation",
+    status: "stable",
+    icon: "chevron_right",
+  },
   {
     slug: "button",
     name: "Button",
@@ -125,13 +185,99 @@ export const COMPONENT_REGISTRY: ComponentListItem[] = [
     icon: "smart_button",
   },
   {
-    slug: "icon-button",
-    name: "Icon Button",
-    description:
-      "Icon buttons display actions in a compact form, often used in toolbars and app bars.",
-    category: "actions",
+    slug: "calendar",
+    name: "Calendar",
+    description: "Calendars display dates for scheduling and viewing events.",
+    category: "data-display",
     status: "stable",
-    icon: "touch_app",
+    icon: "calendar_month",
+  },
+  {
+    slug: "canonical-layouts",
+    name: "Canonical Layouts",
+    description:
+      "Pre-built responsive layouts following Material Design 3 patterns.",
+    category: "layout",
+    status: "stable",
+    icon: "grid_view",
+  },
+  {
+    slug: "card",
+    name: "Card",
+    description: "Cards contain content and actions about a single subject.",
+    category: "containment",
+    status: "stable",
+    icon: "dashboard",
+  },
+  {
+    slug: "carousel",
+    name: "Carousel",
+    description:
+      "Carousels display a collection of items that can be scrolled horizontally.",
+    category: "data-display",
+    status: "stable",
+    icon: "view_carousel",
+  },
+  {
+    slug: "checkbox",
+    name: "Checkbox",
+    description:
+      "Checkboxes let users select one or more items from a list, or turn an item on or off.",
+    category: "selection",
+    status: "stable",
+    icon: "check_box",
+  },
+  {
+    slug: "chip",
+    name: "Chip",
+    description:
+      "Chips help people enter information, make selections, filter content, or trigger actions.",
+    category: "selection",
+    status: "stable",
+    icon: "label",
+  },
+  {
+    slug: "combobox",
+    name: "Combobox",
+    description:
+      "Comboboxes combine a text input with a listbox, allowing users to filter a list of options.",
+    category: "text-inputs",
+    status: "stable",
+    icon: "search",
+  },
+  {
+    slug: "date-picker",
+    name: "Date Picker",
+    description:
+      "Date pickers let users select dates or date ranges from a calendar.",
+    category: "text-inputs",
+    status: "stable",
+    icon: "calendar_today",
+  },
+  {
+    slug: "dialog",
+    name: "Dialog",
+    description:
+      "Dialogs provide important prompts in a user flow, requiring user input or confirmation.",
+    category: "containment",
+    status: "stable",
+    icon: "chat_bubble",
+  },
+  {
+    slug: "divider",
+    name: "Divider",
+    description: "Dividers separate content into clear groups or sections.",
+    category: "layout",
+    status: "stable",
+    icon: "horizontal_rule",
+  },
+  {
+    slug: "dropdown-menu",
+    name: "Dropdown Menu",
+    description: "Dropdown menus display a list of choices on a temporary surface.",
+    category: "containment",
+    status: "stable",
+    icon: "menu",
   },
   {
     slug: "fab",
@@ -152,258 +298,21 @@ export const COMPONENT_REGISTRY: ComponentListItem[] = [
     icon: "more_vert",
   },
   {
-    slug: "segmented-button",
-    name: "Segmented Button",
+    slug: "icon-button",
+    name: "Icon Button",
     description:
-      "Segmented buttons help people select options, switch views, or sort elements.",
+      "Icon buttons display actions in a compact form, often used in toolbars and app bars.",
     category: "actions",
     status: "stable",
-    icon: "view_column",
-  },
-
-  // Containment
-  {
-    slug: "card",
-    name: "Card",
-    description: "Cards contain content and actions about a single subject.",
-    category: "containment",
-    status: "stable",
-    icon: "dashboard",
+    icon: "touch_app",
   },
   {
-    slug: "dialog",
-    name: "Dialog",
-    description:
-      "Dialogs provide important prompts in a user flow, requiring user input or confirmation.",
-    category: "containment",
+    slug: "list",
+    name: "List",
+    description: "Lists are continuous, vertical indexes of text or images.",
+    category: "data-display",
     status: "stable",
-    icon: "chat_bubble",
-  },
-  {
-    slug: "sheet",
-    name: "Sheet",
-    description:
-      "Sheets are surfaces containing supplementary content anchored to the edge of the screen.",
-    category: "containment",
-    status: "stable",
-    icon: "view_sidebar",
-  },
-  {
-    slug: "accordion",
-    name: "Accordion",
-    description:
-      "Accordions display collapsible content panels for presenting information in a limited amount of space.",
-    category: "containment",
-    status: "stable",
-    icon: "expand_more",
-  },
-  {
-    slug: "popover",
-    name: "Popover",
-    description:
-      "Popovers display rich content in a portal that appears above other content.",
-    category: "containment",
-    status: "stable",
-    icon: "info",
-  },
-  {
-    slug: "tooltip",
-    name: "Tooltip",
-    description:
-      "Tooltips display informative text when users hover over, focus on, or tap an element.",
-    category: "containment",
-    status: "stable",
-    icon: "help",
-  },
-  {
-    slug: "dropdown-menu",
-    name: "Dropdown Menu",
-    description: "Dropdown menus display a list of choices on a temporary surface.",
-    category: "containment",
-    status: "stable",
-    icon: "menu",
-  },
-
-  // Communication
-  {
-    slug: "alert",
-    name: "Alert",
-    description: "Alerts display brief messages with different severity levels.",
-    category: "communication",
-    status: "stable",
-    icon: "error",
-  },
-  {
-    slug: "banner",
-    name: "Banner",
-    description:
-      "Banners display important, succinct messages with optional actions.",
-    category: "communication",
-    status: "stable",
-    icon: "campaign",
-  },
-  {
-    slug: "toast",
-    name: "Toast",
-    description:
-      "Toasts display brief, temporary notifications that stack and auto-dismiss.",
-    category: "communication",
-    status: "stable",
-    icon: "notifications",
-  },
-  {
-    slug: "badge",
-    name: "Badge",
-    description:
-      "Badges convey dynamic information, such as counts or status indicators.",
-    category: "communication",
-    status: "stable",
-    icon: "new_releases",
-  },
-  {
-    slug: "progress",
-    name: "Progress",
-    description:
-      "Progress indicators express an unspecified wait time or display the length of a process.",
-    category: "communication",
-    status: "stable",
-    icon: "autorenew",
-  },
-  {
-    slug: "skeleton",
-    name: "Skeleton",
-    description:
-      "Skeleton loaders provide a placeholder preview of content before it loads.",
-    category: "communication",
-    status: "stable",
-    icon: "rectangle",
-  },
-
-  // Selection
-  {
-    slug: "checkbox",
-    name: "Checkbox",
-    description:
-      "Checkboxes let users select one or more items from a list, or turn an item on or off.",
-    category: "selection",
-    status: "stable",
-    icon: "check_box",
-  },
-  {
-    slug: "radio",
-    name: "Radio",
-    description:
-      "Radio buttons let users select one option from a set of mutually exclusive choices.",
-    category: "selection",
-    status: "stable",
-    icon: "radio_button_checked",
-  },
-  {
-    slug: "switch",
-    name: "Switch",
-    description: "Switches toggle the state of a single item on or off.",
-    category: "selection",
-    status: "stable",
-    icon: "toggle_on",
-  },
-  {
-    slug: "chip",
-    name: "Chip",
-    description:
-      "Chips help people enter information, make selections, filter content, or trigger actions.",
-    category: "selection",
-    status: "stable",
-    icon: "label",
-  },
-  {
-    slug: "slider",
-    name: "Slider",
-    description: "Sliders let users make selections from a range of values.",
-    category: "selection",
-    status: "stable",
-    icon: "tune",
-  },
-  {
-    slug: "rating",
-    name: "Rating",
-    description:
-      "Ratings let users provide feedback on content using a star-based scale.",
-    category: "selection",
-    status: "stable",
-    icon: "star",
-  },
-
-  // Text Inputs
-  {
-    slug: "text-field",
-    name: "Text Field",
-    description: "Text fields let users enter and edit text.",
-    category: "text-inputs",
-    status: "stable",
-    icon: "edit",
-  },
-  {
-    slug: "select",
-    name: "Select",
-    description:
-      "Select components let users choose a single value from a list of options.",
-    category: "text-inputs",
-    status: "stable",
-    icon: "arrow_drop_down",
-  },
-  {
-    slug: "combobox",
-    name: "Combobox",
-    description:
-      "Comboboxes combine a text input with a listbox, allowing users to filter a list of options.",
-    category: "text-inputs",
-    status: "stable",
-    icon: "search",
-  },
-  {
-    slug: "search-bar",
-    name: "Search Bar",
-    description: "Search bars let users enter a query to search for content.",
-    category: "text-inputs",
-    status: "stable",
-    icon: "search",
-  },
-  {
-    slug: "date-picker",
-    name: "Date Picker",
-    description:
-      "Date pickers let users select dates or date ranges from a calendar.",
-    category: "text-inputs",
-    status: "stable",
-    icon: "calendar_today",
-  },
-  {
-    slug: "time-picker",
-    name: "Time Picker",
-    description: "Time pickers let users select times using a clock or input.",
-    category: "text-inputs",
-    status: "stable",
-    icon: "schedule",
-  },
-
-  // Navigation
-  {
-    slug: "navigation-rail",
-    name: "Navigation Rail",
-    description:
-      "Navigation rails provide access to primary destinations in an app on tablet and desktop screens.",
-    category: "navigation",
-    status: "stable",
-    icon: "view_sidebar",
-  },
-  {
-    slug: "navigation-drawer",
-    name: "Navigation Drawer",
-    description:
-      "Navigation drawers provide access to destinations and app functionality.",
-    category: "navigation",
-    status: "stable",
-    icon: "menu_open",
+    icon: "list",
   },
   {
     slug: "navigation-bar",
@@ -415,40 +324,22 @@ export const COMPONENT_REGISTRY: ComponentListItem[] = [
     icon: "bottom_navigation",
   },
   {
-    slug: "top-app-bar",
-    name: "Top App Bar",
+    slug: "navigation-drawer",
+    name: "Navigation Drawer",
     description:
-      "Top app bars display information and actions at the top of a screen.",
+      "Navigation drawers provide access to destinations and app functionality.",
     category: "navigation",
     status: "stable",
-    icon: "web_asset",
+    icon: "menu_open",
   },
   {
-    slug: "bottom-app-bar",
-    name: "Bottom App Bar",
+    slug: "navigation-rail",
+    name: "Navigation Rail",
     description:
-      "Bottom app bars display navigation and key actions at the bottom of mobile screens.",
+      "Navigation rails provide access to primary destinations in an app on tablet and desktop screens.",
     category: "navigation",
     status: "stable",
-    icon: "call_to_action",
-  },
-  {
-    slug: "tabs",
-    name: "Tabs",
-    description:
-      "Tabs organize content across different screens, data sets, or interactions.",
-    category: "navigation",
-    status: "stable",
-    icon: "tab",
-  },
-  {
-    slug: "breadcrumb",
-    name: "Breadcrumb",
-    description:
-      "Breadcrumbs indicate the current page's location within a navigational hierarchy.",
-    category: "navigation",
-    status: "stable",
-    icon: "chevron_right",
+    icon: "view_sidebar",
   },
   {
     slug: "pagination",
@@ -457,77 +348,6 @@ export const COMPONENT_REGISTRY: ComponentListItem[] = [
     category: "navigation",
     status: "stable",
     icon: "last_page",
-  },
-  {
-    slug: "stepper",
-    name: "Stepper",
-    description:
-      "Steppers display progress through a sequence of logical and numbered steps.",
-    category: "navigation",
-    status: "stable",
-    icon: "format_list_numbered",
-  },
-
-  // Data Display
-  {
-    slug: "table",
-    name: "Table",
-    description: "Tables display sets of data organized in rows and columns.",
-    category: "data-display",
-    status: "stable",
-    icon: "table_chart",
-  },
-  {
-    slug: "list",
-    name: "List",
-    description: "Lists are continuous, vertical indexes of text or images.",
-    category: "data-display",
-    status: "stable",
-    icon: "list",
-  },
-  {
-    slug: "avatar",
-    name: "Avatar",
-    description: "Avatars display user profile images, initials, or icons.",
-    category: "data-display",
-    status: "stable",
-    icon: "account_circle",
-  },
-  {
-    slug: "carousel",
-    name: "Carousel",
-    description:
-      "Carousels display a collection of items that can be scrolled horizontally.",
-    category: "data-display",
-    status: "stable",
-    icon: "view_carousel",
-  },
-  {
-    slug: "calendar",
-    name: "Calendar",
-    description: "Calendars display dates for scheduling and viewing events.",
-    category: "data-display",
-    status: "stable",
-    icon: "calendar_month",
-  },
-
-  // Layout
-  {
-    slug: "divider",
-    name: "Divider",
-    description: "Dividers separate content into clear groups or sections.",
-    category: "layout",
-    status: "stable",
-    icon: "horizontal_rule",
-  },
-  {
-    slug: "scroll-area",
-    name: "Scroll Area",
-    description:
-      "Scroll areas provide a scrollable container with custom scrollbars.",
-    category: "layout",
-    status: "stable",
-    icon: "unfold_more",
   },
   {
     slug: "pane-group",
@@ -539,16 +359,179 @@ export const COMPONENT_REGISTRY: ComponentListItem[] = [
     icon: "view_column",
   },
   {
-    slug: "canonical-layouts",
-    name: "Canonical Layouts",
+    slug: "popover",
+    name: "Popover",
     description:
-      "Pre-built responsive layouts following Material Design 3 patterns.",
+      "Popovers display rich content in a portal that appears above other content.",
+    category: "containment",
+    status: "stable",
+    icon: "info",
+  },
+  {
+    slug: "progress",
+    name: "Progress",
+    description:
+      "Progress indicators express an unspecified wait time or display the length of a process.",
+    category: "communication",
+    status: "stable",
+    icon: "autorenew",
+  },
+  {
+    slug: "radio",
+    name: "Radio",
+    description:
+      "Radio buttons let users select one option from a set of mutually exclusive choices.",
+    category: "selection",
+    status: "stable",
+    icon: "radio_button_checked",
+  },
+  {
+    slug: "rating",
+    name: "Rating",
+    description:
+      "Ratings let users provide feedback on content using a star-based scale.",
+    category: "selection",
+    status: "stable",
+    icon: "star",
+  },
+  {
+    slug: "scroll-area",
+    name: "Scroll Area",
+    description:
+      "Scroll areas provide a scrollable container with custom scrollbars.",
     category: "layout",
     status: "stable",
-    icon: "grid_view",
+    icon: "unfold_more",
   },
-
-  // Foundations
+  {
+    slug: "search-bar",
+    name: "Search Bar",
+    description: "Search bars let users enter a query to search for content.",
+    category: "text-inputs",
+    status: "stable",
+    icon: "search",
+  },
+  {
+    slug: "segmented-button",
+    name: "Segmented Button",
+    description:
+      "Segmented buttons help people select options, switch views, or sort elements.",
+    category: "actions",
+    status: "stable",
+    icon: "view_column",
+  },
+  {
+    slug: "select",
+    name: "Select",
+    description:
+      "Select components let users choose a single value from a list of options.",
+    category: "text-inputs",
+    status: "stable",
+    icon: "arrow_drop_down",
+  },
+  {
+    slug: "sheet",
+    name: "Sheet",
+    description:
+      "Sheets are surfaces containing supplementary content anchored to the edge of the screen.",
+    category: "containment",
+    status: "stable",
+    icon: "view_sidebar",
+  },
+  {
+    slug: "skeleton",
+    name: "Skeleton",
+    description:
+      "Skeleton loaders provide a placeholder preview of content before it loads.",
+    category: "communication",
+    status: "stable",
+    icon: "rectangle",
+  },
+  {
+    slug: "slider",
+    name: "Slider",
+    description: "Sliders let users make selections from a range of values.",
+    category: "selection",
+    status: "stable",
+    icon: "tune",
+  },
+  {
+    slug: "stepper",
+    name: "Stepper",
+    description:
+      "Steppers display progress through a sequence of logical and numbered steps.",
+    category: "navigation",
+    status: "stable",
+    icon: "format_list_numbered",
+  },
+  {
+    slug: "switch",
+    name: "Switch",
+    description: "Switches toggle the state of a single item on or off.",
+    category: "selection",
+    status: "stable",
+    icon: "toggle_on",
+  },
+  {
+    slug: "table",
+    name: "Table",
+    description: "Tables display sets of data organized in rows and columns.",
+    category: "data-display",
+    status: "stable",
+    icon: "table_chart",
+  },
+  {
+    slug: "tabs",
+    name: "Tabs",
+    description:
+      "Tabs organize content across different screens, data sets, or interactions.",
+    category: "navigation",
+    status: "stable",
+    icon: "tab",
+  },
+  {
+    slug: "text-field",
+    name: "Text Field",
+    description: "Text fields let users enter and edit text.",
+    category: "text-inputs",
+    status: "stable",
+    icon: "edit",
+  },
+  {
+    slug: "time-picker",
+    name: "Time Picker",
+    description: "Time pickers let users select times using a clock or input.",
+    category: "text-inputs",
+    status: "stable",
+    icon: "schedule",
+  },
+  {
+    slug: "toast",
+    name: "Toast",
+    description:
+      "Toasts display brief, temporary notifications that stack and auto-dismiss.",
+    category: "communication",
+    status: "stable",
+    icon: "notifications",
+  },
+  {
+    slug: "tooltip",
+    name: "Tooltip",
+    description:
+      "Tooltips display informative text when users hover over, focus on, or tap an element.",
+    category: "containment",
+    status: "stable",
+    icon: "help",
+  },
+  {
+    slug: "top-app-bar",
+    name: "Top App Bar",
+    description:
+      "Top app bars display information and actions at the top of a screen.",
+    category: "navigation",
+    status: "stable",
+    icon: "web_asset",
+  },
   {
     slug: "typography",
     name: "Typography",

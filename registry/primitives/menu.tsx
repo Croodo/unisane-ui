@@ -1,11 +1,10 @@
 import React from "react";
 import { cn } from "@/lib/utils";
-import { Text } from "./text";
+import { Typography } from "../components/typography";
 import { Ripple } from "../components/ripple";
 
 export interface MenuProps extends React.HTMLAttributes<HTMLDivElement> {
   open?: boolean;
-  className?: string;
   children: React.ReactNode;
 }
 
@@ -20,7 +19,7 @@ export const Menu: React.FC<MenuProps> = ({
   return (
     <div
       className={cn(
-        "min-w-[calc(var(--unit)*50)] bg-surface rounded-sm shadow-2 py-1u border border-outline-variant/20 overflow-hidden",
+        "min-w-[calc(var(--unit)*50)] bg-surface rounded-sm shadow-2 py-2 border border-outline-variant/20 overflow-hidden",
         className
       )}
       role="menu"
@@ -37,6 +36,7 @@ export interface MenuItemProps
   disabled?: boolean;
   selected?: boolean;
   icon?: React.ReactNode;
+  trailingIcon?: React.ReactNode;
 }
 
 export const MenuItem: React.FC<MenuItemProps> = ({
@@ -44,16 +44,18 @@ export const MenuItem: React.FC<MenuItemProps> = ({
   disabled = false,
   selected = false,
   icon,
+  trailingIcon,
   className,
   ...props
 }) => {
   return (
     <button
       className={cn(
-        "relative w-full text-left px-4u py-3u flex items-center gap-3u cursor-pointer select-none overflow-hidden",
-        "text-on-surface hover:bg-on-surface/8 focus-visible:outline-none focus-visible:bg-on-surface/12",
+        "relative w-full text-left px-3 py-2 flex items-center gap-3 cursor-pointer select-none overflow-hidden",
+        "text-on-surface transition-colors duration-short ease-standard",
+        "hover:bg-on-surface/8 focus-visible:bg-on-surface/12 focus-visible:outline-none",
         disabled && "opacity-38 cursor-not-allowed hover:bg-transparent",
-        selected && "bg-primary/8 text-primary",
+        selected && "bg-secondary-container text-on-secondary-container",
         className
       )}
       role="menuitem"
@@ -63,10 +65,11 @@ export const MenuItem: React.FC<MenuItemProps> = ({
       {...props}
     >
       <Ripple disabled={disabled} />
-      {icon && <div className="shrink-0 relative z-10">{icon}</div>}
-      <Text variant="labelLarge" className="flex-1 relative z-10">
+      {icon && <div className="shrink-0 relative z-10 flex items-center justify-center w-6 h-6">{icon}</div>}
+      <Typography variant="bodyMedium" className="flex-1 relative z-10">
         {children}
-      </Text>
+      </Typography>
+      {trailingIcon && <div className="shrink-0 relative z-10 text-on-surface-variant flex items-center justify-center">{trailingIcon}</div>}
     </button>
   );
 };
@@ -80,7 +83,7 @@ export const MenuDivider: React.FC<MenuDividerProps> = ({
 }) => {
   return (
     <div
-      className={cn("h-px bg-outline-variant/40 my-1u", className)}
+      className={cn("h-px bg-outline-variant/40 my-1", className)}
       role="separator"
       {...props}
     />
@@ -108,7 +111,7 @@ export const MenuCheckboxItem: React.FC<MenuCheckboxItemProps> = ({
       icon={
         <div
           className={cn(
-            "w-4u h-4u rounded-xs border-2 border-current",
+            "w-4 h-4 rounded-xs border-2 border-current",
             checked && "bg-primary border-primary text-on-primary"
           )}
         >
@@ -153,12 +156,12 @@ export const MenuRadioItem: React.FC<MenuRadioItemProps> = ({
       icon={
         <div
           className={cn(
-            "w-4u h-4u rounded-full border-2 border-current",
+            "w-4 h-4 rounded-full border-2 border-current",
             checked && "bg-primary border-primary"
           )}
         >
           {checked && (
-            <div className="w-2u h-2u rounded-full bg-on-primary m-auto" />
+            <div className="w-2 h-2 rounded-full bg-on-primary m-auto" />
           )}
         </div>
       }

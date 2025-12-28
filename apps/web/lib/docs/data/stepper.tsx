@@ -1,50 +1,47 @@
 "use client";
 
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { Stepper, Card, Button } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const StepperHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-secondary-container to-primary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-40px] right-[-40px] w-56 h-56 bg-secondary/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-50px] left-[-30px] w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
-
+  <HeroBackground tone="tertiary">
     {/* Mock Stepper */}
-    <div className="relative bg-surface w-[340px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 z-10 p-6u">
+    <div className="relative bg-surface w-[340px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 p-6">
       <div className="flex items-start gap-0 w-full">
         {/* Step 1 - Completed */}
         <div className="flex flex-col items-center relative flex-1">
-          <div className="absolute top-4u left-1/2 w-full h-0.5u bg-primary z-0" />
-          <div className="w-8u h-8u rounded-sm flex items-center justify-center text-label-small font-medium bg-primary border-2 border-primary text-on-primary z-10">
+          <div className="absolute top-4 left-1/2 w-full h-0_5 bg-primary z-0" />
+          <div className="w-8 h-8 rounded-sm flex items-center justify-center text-label-small font-medium bg-primary border-2 border-primary text-on-primary z-10">
             <span className="material-symbols-outlined text-[18px]">check</span>
           </div>
-          <div className="mt-3u text-center">
+          <div className="mt-3 text-center">
             <span className="text-label-small font-medium text-on-surface-variant">Details</span>
           </div>
         </div>
         {/* Step 2 - Active */}
         <div className="flex flex-col items-center relative flex-1">
-          <div className="absolute top-4u left-1/2 w-full h-0.5u bg-outline-variant/30 z-0" />
-          <div className="w-8u h-8u rounded-sm flex items-center justify-center text-label-small font-medium bg-primary border-2 border-primary text-on-primary z-10 scale-110">
+          <div className="absolute top-4 left-1/2 w-full h-0_5 bg-outline-variant/30 z-0" />
+          <div className="w-8 h-8 rounded-sm flex items-center justify-center text-label-small font-medium bg-primary border-2 border-primary text-on-primary z-10 scale-110">
             2
           </div>
-          <div className="mt-3u text-center">
+          <div className="mt-3 text-center">
             <span className="text-label-small font-medium text-on-surface">Payment</span>
           </div>
         </div>
         {/* Step 3 - Pending */}
         <div className="flex flex-col items-center relative flex-none">
-          <div className="w-8u h-8u rounded-sm flex items-center justify-center text-label-small font-medium bg-surface border-2 border-outline-variant text-on-surface-variant z-10">
+          <div className="w-8 h-8 rounded-sm flex items-center justify-center text-label-small font-medium bg-surface border-2 border-outline-variant text-on-surface-variant z-10">
             3
           </div>
-          <div className="mt-3u text-center">
+          <div className="mt-3 text-center">
             <span className="text-label-small font-medium text-on-surface-variant">Confirm</span>
           </div>
         </div>
       </div>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 export const stepperDoc: ComponentDoc = {
@@ -78,7 +75,7 @@ export const stepperDoc: ComponentDoc = {
       {
         emphasis: "Completed",
         component: (
-          <div className="w-8u h-8u rounded-sm flex items-center justify-center bg-primary text-on-primary">
+          <div className="w-8 h-8 rounded-sm flex items-center justify-center bg-primary text-on-primary">
             <span className="material-symbols-outlined text-[18px]">check</span>
           </div>
         ),
@@ -89,7 +86,7 @@ export const stepperDoc: ComponentDoc = {
       {
         emphasis: "Active",
         component: (
-          <div className="w-8u h-8u rounded-sm flex items-center justify-center bg-primary border-2 border-primary text-on-primary scale-110 text-label-small font-medium">
+          <div className="w-8 h-8 rounded-sm flex items-center justify-center bg-primary border-2 border-primary text-on-primary scale-110 text-label-small font-medium">
             2
           </div>
         ),
@@ -100,7 +97,7 @@ export const stepperDoc: ComponentDoc = {
       {
         emphasis: "Pending",
         component: (
-          <div className="w-8u h-8u rounded-sm flex items-center justify-center bg-surface border-2 border-outline-variant text-on-surface-variant text-label-small font-medium">
+          <div className="w-8 h-8 rounded-sm flex items-center justify-center bg-surface border-2 border-outline-variant text-on-surface-variant text-label-small font-medium">
             3
           </div>
         ),
@@ -118,12 +115,12 @@ export const stepperDoc: ComponentDoc = {
     items: [
       {
         component: (
-          <div className="flex items-center gap-2u">
-            <div className="w-6u h-6u rounded-xs flex items-center justify-center bg-primary text-on-primary text-[10px]">1</div>
-            <div className="w-8u h-0.5u bg-primary" />
-            <div className="w-6u h-6u rounded-xs flex items-center justify-center bg-primary text-on-primary text-[10px]">2</div>
-            <div className="w-8u h-0.5u bg-outline-variant/30" />
-            <div className="w-6u h-6u rounded-xs flex items-center justify-center border border-outline-variant text-on-surface-variant text-[10px]">3</div>
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-xs flex items-center justify-center bg-primary text-on-primary text-[10px]">1</div>
+            <div className="w-8 h-0_5 bg-primary" />
+            <div className="w-6 h-6 rounded-xs flex items-center justify-center bg-primary text-on-primary text-[10px]">2</div>
+            <div className="w-8 h-0_5 bg-outline-variant/30" />
+            <div className="w-6 h-6 rounded-xs flex items-center justify-center border border-outline-variant text-on-surface-variant text-[10px]">3</div>
           </div>
         ),
         title: "Horizontal",
@@ -131,10 +128,10 @@ export const stepperDoc: ComponentDoc = {
       },
       {
         component: (
-          <div className="flex flex-col items-center gap-1u">
-            <div className="w-6u h-6u rounded-xs flex items-center justify-center bg-primary text-on-primary text-[10px]">1</div>
-            <div className="w-0.5u h-4u bg-primary" />
-            <div className="w-6u h-6u rounded-xs flex items-center justify-center bg-primary text-on-primary text-[10px]">2</div>
+          <div className="flex flex-col items-center gap-1">
+            <div className="w-6 h-6 rounded-xs flex items-center justify-center bg-primary text-on-primary text-[10px]">1</div>
+            <div className="w-0_5 h-4 bg-primary" />
+            <div className="w-6 h-6 rounded-xs flex items-center justify-center bg-primary text-on-primary text-[10px]">2</div>
           </div>
         ),
         title: "Vertical",

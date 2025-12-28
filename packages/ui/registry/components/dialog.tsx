@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { Text } from "@/primitives/text";
 import { Surface } from "@/primitives/surface";
 import { Ripple } from "./ripple";
+import { useScrollLock } from "@/hooks/use-scroll-lock";
 
 export interface DialogProps {
   open: boolean;
@@ -44,6 +45,9 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(
       }
     };
 
+    // Lock body scroll while preventing layout shift
+    useScrollLock(open);
+
     useEffect(() => {
       if (open) {
         const dialogNode = dialogRef.current;
@@ -64,8 +68,6 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(
         };
 
         const timer = setTimeout(focusFirstElement, 0);
-
-        document.body.style.overflow = "hidden";
 
         const handleKeyDown = (e: KeyboardEvent) => {
           if (e.key === "Escape") {
@@ -102,7 +104,6 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(
 
         return () => {
           clearTimeout(timer);
-          document.body.style.overflow = "";
           document.removeEventListener("keydown", handleKeyDown);
           previousActiveElement.current?.focus();
         };
@@ -113,7 +114,7 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(
 
     return (
       <div
-        className="fixed inset-0 z-modal flex items-center justify-center p-6u medium:p-10u"
+        className="fixed inset-0 z-modal flex items-center justify-center p-6 medium:p-10"
         role="presentation"
       >
         <div
@@ -138,10 +139,10 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(
             className
           )}
         >
-          <div className="px-8u py-6u border-b border-outline-variant/10 flex items-center justify-between bg-surface-container-low/50 shrink-0">
-             <div className="flex items-center gap-4u text-left">
+          <div className="px-6 py-6 border-b border-outline-variant/10 flex items-center justify-between bg-surface-container-low/50 shrink-0">
+             <div className="flex items-center gap-4 text-left">
                 {icon && <div className="text-primary flex items-center justify-center shrink-0" aria-hidden="true">{icon}</div>}
-                <div className="flex flex-col gap-1u">
+                <div className="flex flex-col gap-1">
                   {title && (
                     <Text
                       variant="titleMedium"
@@ -155,7 +156,7 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(
               </div>
               <button
                 onClick={onClose}
-                className="w-10u h-10u rounded-full flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-variant transition-all relative overflow-hidden shrink-0"
+                className="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-variant transition-all relative overflow-hidden shrink-0"
                 aria-label="Close dialog"
               >
                   <Ripple />
@@ -166,7 +167,7 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(
           </div>
 
           <div className={cn("flex-1 overflow-y-auto max-h-[75vh]", contentClassName)}>
-               <div className="text-on-surface p-8u text-left">
+               <div className="text-on-surface p-6 text-left">
                   <Text
                     variant="bodyMedium"
                     id={descId}
@@ -180,7 +181,7 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(
 
             {actions && (
               <div
-                className="flex flex-col medium:flex-row justify-end gap-3u w-full p-6u border-t border-outline-variant/10 bg-surface-container-low/30"
+                className="flex flex-col medium:flex-row justify-end gap-3 w-full p-6 border-t border-outline-variant/10 bg-surface-container-low/30"
               >
                 {actions}
               </div>

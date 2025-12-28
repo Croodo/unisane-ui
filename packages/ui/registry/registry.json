@@ -52,6 +52,16 @@
       "dependencies": [],
       "registryDependencies": []
     },
+    "use-scroll-lock": {
+      "name": "UseScrollLock",
+      "type": "hooks:ui",
+      "description": "UseScrollLock hook",
+      "files": [
+        "hooks/use-scroll-lock.ts"
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
     "focus-ring": {
       "name": "FocusRing",
       "type": "primitives:ui",
@@ -82,10 +92,7 @@
         "primitives/menu.tsx"
       ],
       "dependencies": [],
-      "registryDependencies": [
-        "text",
-        "state-layer"
-      ]
+      "registryDependencies": []
     },
     "state-layer": {
       "name": "StateLayer",
@@ -242,7 +249,7 @@
       "dependencies": [],
       "registryDependencies": [
         "surface",
-        "state-layer"
+        "ripple"
       ]
     },
     "breadcrumb": {
@@ -281,8 +288,8 @@
       "registryDependencies": [
         "surface",
         "text",
-        "state-layer",
-        "icon-button"
+        "icon-button",
+        "ripple"
       ]
     },
     "canonical-layouts": {
@@ -318,9 +325,8 @@
       ],
       "dependencies": [],
       "registryDependencies": [
-        "surface",
-        "state-layer",
-        "icon-button"
+        "icon-button",
+        "ripple"
       ]
     },
     "checkbox": {
@@ -360,7 +366,7 @@
         "surface",
         "text",
         "icon",
-        "state-layer"
+        "ripple"
       ]
     },
     "date-picker": {
@@ -466,6 +472,23 @@
         "ripple"
       ]
     },
+    "navigation": {
+      "name": "Navigation",
+      "type": "components:ui",
+      "description": "Navigation component",
+      "files": [
+        "components/navigation/index.ts",
+        "components/navigation/nav-group.tsx",
+        "components/navigation/nav-item.tsx",
+        "components/navigation/nav.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "nav",
+        "nav-item",
+        "nav-group"
+      ]
+    },
     "navigation-bar": {
       "name": "NavigationBar",
       "type": "components:ui",
@@ -511,10 +534,9 @@
       ],
       "dependencies": [],
       "registryDependencies": [
-        "surface",
         "text",
-        "state-layer",
-        "icon-button"
+        "icon-button",
+        "ripple"
       ]
     },
     "pane-group": {
@@ -568,9 +590,8 @@
       ],
       "dependencies": [],
       "registryDependencies": [
-        "surface",
         "text",
-        "state-layer"
+        "ripple"
       ]
     },
     "ripple": {
@@ -655,6 +676,20 @@
         "ripple"
       ]
     },
+    "sidebar": {
+      "name": "Sidebar",
+      "type": "components:ui",
+      "description": "Sidebar component",
+      "files": [
+        "components/sidebar/index.ts",
+        "components/sidebar/sidebar-context.tsx",
+        "components/sidebar/sidebar.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "sidebar-context"
+      ]
+    },
     "skeleton": {
       "name": "Skeleton",
       "type": "components:ui",
@@ -675,19 +710,6 @@
       "dependencies": [],
       "registryDependencies": []
     },
-    "snackbar": {
-      "name": "Snackbar",
-      "type": "components:ui",
-      "description": "Snackbar component",
-      "files": [
-        "components/snackbar.tsx"
-      ],
-      "dependencies": [],
-      "registryDependencies": [
-        "button",
-        "ripple"
-      ]
-    },
     "stepper": {
       "name": "Stepper",
       "type": "components:ui",
@@ -699,7 +721,7 @@
       "registryDependencies": [
         "icon",
         "text",
-        "state-layer"
+        "ripple"
       ]
     },
     "switch": {
@@ -770,6 +792,20 @@
         "button",
         "icon-button",
         "text-field"
+      ]
+    },
+    "toast": {
+      "name": "Toast",
+      "type": "components:ui",
+      "description": "Toast component",
+      "files": [
+        "components/toast.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "icon",
+        "button",
+        "ripple"
       ]
     },
     "tooltip": {

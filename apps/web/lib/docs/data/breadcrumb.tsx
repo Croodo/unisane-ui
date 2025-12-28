@@ -1,18 +1,15 @@
 "use client";
 
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator, BreadcrumbEllipsis, Card } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const BreadcrumbHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-tertiary-container to-secondary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-40px] left-[-40px] w-56 h-56 bg-tertiary/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-50px] right-[-30px] w-64 h-64 bg-secondary/20 rounded-full blur-3xl" />
-
+  <HeroBackground tone="surface">
     {/* Mock Breadcrumb */}
-    <div className="relative bg-surface px-5u py-3u rounded-2xl shadow-xl border border-outline-variant/30 z-10">
-      <div className="flex items-center gap-2u">
+    <div className="relative bg-surface px-5 py-3 rounded-2xl shadow-xl border border-outline-variant/30">
+      <div className="flex items-center gap-2">
         <span className="text-label-medium font-medium text-on-surface-variant hover:text-primary transition-colors cursor-pointer">Home</span>
         <span className="material-symbols-outlined text-[14px] text-outline">chevron_right</span>
         <span className="text-label-medium font-medium text-on-surface-variant hover:text-primary transition-colors cursor-pointer">Products</span>
@@ -22,7 +19,7 @@ const BreadcrumbHeroVisual = () => (
         <span className="text-label-medium font-medium text-on-surface">Headphones</span>
       </div>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 export const breadcrumbDoc: ComponentDoc = {
@@ -74,8 +71,8 @@ export const breadcrumbDoc: ComponentDoc = {
       {
         emphasis: "Ellipsis",
         component: (
-          <div className="flex items-center gap-1u">
-            <div className="w-6u h-6u rounded-xs flex items-center justify-center text-on-surface-variant hover:bg-on-surface/10 cursor-pointer">
+          <div className="flex items-center gap-1">
+            <div className="w-6 h-6 rounded-xs flex items-center justify-center text-on-surface-variant hover:bg-on-surface/10 cursor-pointer">
               <span className="text-[12px]">•••</span>
             </div>
             <span className="material-symbols-outlined text-[12px] text-outline">chevron_right</span>
@@ -95,7 +92,7 @@ export const breadcrumbDoc: ComponentDoc = {
     items: [
       {
         component: (
-          <div className="flex items-center gap-2u">
+          <div className="flex items-center gap-2">
             <span className="text-label-small text-on-surface-variant">Home</span>
             <span className="material-symbols-outlined text-[12px] text-outline">chevron_right</span>
             <span className="text-label-small text-on-surface">Page</span>
@@ -106,7 +103,7 @@ export const breadcrumbDoc: ComponentDoc = {
       },
       {
         component: (
-          <div className="flex items-center gap-2u">
+          <div className="flex items-center gap-2">
             <span className="text-label-small text-on-surface-variant">Home</span>
             <span className="material-symbols-outlined text-[12px] text-outline">chevron_right</span>
             <span className="text-[10px] text-on-surface-variant">•••</span>

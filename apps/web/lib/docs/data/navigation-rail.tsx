@@ -2,47 +2,44 @@
 
 import { useState } from "react";
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { NavigationRail, Fab } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const NavigationRailHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-tertiary-container to-secondary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-40px] left-[-40px] w-56 h-56 bg-tertiary/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-50px] right-[-30px] w-64 h-64 bg-secondary/20 rounded-full blur-3xl" />
-
+  <HeroBackground tone="surface">
     {/* Mock App with Rail */}
-    <div className="relative bg-surface w-[320px] h-[220px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 z-10 flex">
+    <div className="relative bg-surface w-[320px] h-[220px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 flex">
       {/* Navigation Rail */}
-      <div className="w-20u bg-surface-container border-r border-outline-variant/30 flex flex-col items-center py-4u gap-6u">
+      <div className="w-20 bg-surface-container border-r border-outline-variant/30 flex flex-col items-center py-4 gap-6">
         {/* FAB */}
-        <div className="w-14u h-14u rounded-2xl bg-primary-container flex items-center justify-center mb-2u">
+        <div className="w-14 h-14 rounded-2xl bg-primary-container flex items-center justify-center mb-2">
           <span className="material-symbols-outlined text-on-primary-container">edit</span>
         </div>
         {/* Nav Items */}
-        <div className="flex flex-col items-center gap-1u">
-          <div className="w-14u h-8u rounded-full bg-secondary-container flex items-center justify-center">
+        <div className="flex flex-col items-center gap-1">
+          <div className="w-14 h-8 rounded-full bg-secondary-container flex items-center justify-center">
             <span className="material-symbols-outlined text-primary text-[22px]">inbox</span>
           </div>
           <span className="text-label-medium text-primary">Inbox</span>
         </div>
-        <div className="flex flex-col items-center gap-1u">
-          <div className="w-14u h-8u flex items-center justify-center">
+        <div className="flex flex-col items-center gap-1">
+          <div className="w-14 h-8 flex items-center justify-center">
             <span className="material-symbols-outlined text-on-surface-variant text-[22px]">send</span>
           </div>
           <span className="text-label-medium text-on-surface-variant">Sent</span>
         </div>
       </div>
       {/* Main Content */}
-      <div className="flex-1 p-4u">
-        <div className="space-y-3u">
-          <div className="h-4u bg-surface-container-high rounded-sm w-full" />
-          <div className="h-4u bg-surface-container-high rounded-sm w-3/4" />
-          <div className="h-4u bg-surface-container-high rounded-sm w-1/2" />
+      <div className="flex-1 p-4">
+        <div className="space-y-3">
+          <div className="h-4 bg-surface-container-high rounded-sm w-full" />
+          <div className="h-4 bg-surface-container-high rounded-sm w-3/4" />
+          <div className="h-4 bg-surface-container-high rounded-sm w-1/2" />
         </div>
       </div>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 // ─── INTERACTIVE EXAMPLES ────────────────────────────────────────────────────
@@ -70,7 +67,7 @@ const NavigationRailBasicExample = () => {
         }
         className="h-full"
       />
-      <div className="flex-1 p-4u">
+      <div className="flex-1 p-4">
         <div className="text-body-medium text-on-surface-variant">
           Selected: <span className="text-on-surface font-medium">{active}</span>
         </div>
@@ -110,10 +107,10 @@ export const navigationRailDoc: ComponentDoc = {
       {
         emphasis: "Navigation Rail",
         component: (
-          <div className="w-10 h-20 bg-surface-container rounded-sm flex flex-col items-center py-2u gap-2u border-r border-outline-variant">
-            <div className="w-6u h-4u rounded-full bg-secondary-container" />
-            <div className="w-6u h-4u rounded-full bg-surface-container-high" />
-            <div className="w-6u h-4u rounded-full bg-surface-container-high" />
+          <div className="w-10 h-20 bg-surface-container rounded-sm flex flex-col items-center py-2 gap-2 border-r border-outline-variant">
+            <div className="w-6 h-4 rounded-full bg-secondary-container" />
+            <div className="w-6 h-4 rounded-full bg-surface-container-high" />
+            <div className="w-6 h-4 rounded-full bg-surface-container-high" />
           </div>
         ),
         rationale: "Compact vertical navigation for larger screens.",
@@ -122,9 +119,9 @@ export const navigationRailDoc: ComponentDoc = {
       {
         emphasis: "Navigation Drawer",
         component: (
-          <div className="w-20 h-16 bg-surface-container rounded-sm p-2u border-r border-outline-variant">
-            <div className="h-3u rounded-sm bg-secondary-container mb-2u" />
-            <div className="h-3u rounded-sm bg-surface-container-high" />
+          <div className="w-20 h-16 bg-surface-container rounded-sm p-2 border-r border-outline-variant">
+            <div className="h-3 rounded-sm bg-secondary-container mb-2" />
+            <div className="h-3 rounded-sm bg-surface-container-high" />
           </div>
         ),
         rationale: "Full navigation with labels always visible.",
@@ -133,10 +130,10 @@ export const navigationRailDoc: ComponentDoc = {
       {
         emphasis: "Navigation Bar",
         component: (
-          <div className="w-32 h-8u bg-surface-container rounded-sm flex items-center justify-around px-2u">
-            <div className="w-4u h-4u rounded-full bg-secondary-container" />
-            <div className="w-4u h-4u rounded-full bg-surface-container-high" />
-            <div className="w-4u h-4u rounded-full bg-surface-container-high" />
+          <div className="w-32 h-8 bg-surface-container rounded-sm flex items-center justify-around px-2">
+            <div className="w-4 h-4 rounded-full bg-secondary-container" />
+            <div className="w-4 h-4 rounded-full bg-surface-container-high" />
+            <div className="w-4 h-4 rounded-full bg-surface-container-high" />
           </div>
         ),
         rationale: "Bottom navigation for mobile screens.",

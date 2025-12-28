@@ -187,7 +187,7 @@ export default function ComponentPage({ params }: ComponentPageProps) {
       )}
 
       {/* ─── NAVIGATION ─────────────────────────────────────────────────────────── */}
-      <PageNavigation previous={previous} next={next} className="mt-16u pt-8u border-t border-outline-variant/15" />
+      <PageNavigation previous={previous} next={next} className="pt-8 border-t border-outline-variant/15" />
     </DocLayout>
   );
 }

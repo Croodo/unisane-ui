@@ -3,9 +3,8 @@
 import React, { useState } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
-import { Surface } from "@/primitives/surface";
 import { Text } from "@/primitives/text";
-import { StateLayer } from "@/primitives/state-layer";
+import { Ripple } from "./ripple";
 
 const ratingVariants = cva("flex items-center gap-1", {
   variants: {
@@ -73,27 +72,34 @@ export const Rating: React.FC<RatingProps> = ({
   };
 
   return (
-    <div className={cn(ratingVariants({ size, disabled, className }))}>
+    <div
+      className={cn(ratingVariants({ size, disabled, className }))}
+      role="radiogroup"
+      aria-label={`Rating: ${value} out of ${max} stars`}
+    >
       {Array.from({ length: max }, (_, index) => {
         const fill = getStarFill(index);
+        const isSelected = value === index + 1;
 
         return (
           <button
             key={index}
-            className="relative p-1 rounded-sm hover:bg-on-surface/10 transition-colors"
+            className="relative p-1 rounded-full hover:bg-on-surface/10 transition-colors overflow-hidden"
             onClick={() => handleStarClick(index + 1)}
             onMouseEnter={() => handleStarMouseEnter(index + 1)}
             onMouseLeave={handleStarMouseLeave}
             disabled={disabled}
+            role="radio"
+            aria-checked={isSelected}
             aria-label={`Rate ${index + 1} out of ${max} stars`}
           >
-            <StateLayer />
+            <Ripple disabled={disabled} />
             <svg
               width="24"
               height="24"
               viewBox="0 0 24 24"
               className={cn(
-                "w-6 h-6",
+                "w-6 h-6 relative z-10",
                 fill === "full" && "text-primary",
                 fill === "half" && "text-primary",
                 fill === "empty" && "text-outline"

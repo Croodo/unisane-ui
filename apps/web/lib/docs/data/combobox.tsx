@@ -2,32 +2,29 @@
 
 import { useState } from "react";
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { Combobox } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const ComboboxHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-primary-container to-secondary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-40px] left-[-40px] w-56 h-56 bg-primary/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-50px] right-[-30px] w-64 h-64 bg-secondary/20 rounded-full blur-3xl" />
-
+  <HeroBackground tone="secondary">
     {/* Mock Combobox */}
-    <div className="relative bg-surface w-[300px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 z-10 p-6u">
-      <div className="text-label-medium text-on-surface-variant mb-2u">Select Country</div>
-      <div className="bg-surface-container-high rounded-lg px-4u py-3u flex items-center justify-between border-2 border-primary">
+    <div className="relative bg-surface w-[300px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 p-6">
+      <div className="text-label-medium text-on-surface-variant mb-2">Select Country</div>
+      <div className="bg-surface-container-high rounded-lg px-4 py-3 flex items-center justify-between border-2 border-primary">
         <span className="text-body-medium text-on-surface">Uni</span>
         <span className="material-symbols-outlined text-on-surface-variant rotate-180">arrow_drop_down</span>
       </div>
-      <div className="mt-2u bg-surface-container-high rounded-lg shadow-2 overflow-hidden">
-        <div className="px-4u py-3u bg-primary/10 text-primary font-medium flex items-center justify-between">
+      <div className="mt-2 bg-surface-container-high rounded-lg shadow-2 overflow-hidden">
+        <div className="px-4 py-3 bg-primary/10 text-primary font-medium flex items-center justify-between">
           United States
           <span className="material-symbols-outlined text-primary text-[18px]">check</span>
         </div>
-        <div className="px-4u py-3u text-on-surface hover:bg-on-surface/5">United Kingdom</div>
-        <div className="px-4u py-3u text-on-surface hover:bg-on-surface/5">United Arab Emirates</div>
+        <div className="px-4 py-3 text-on-surface hover:bg-on-surface/5">United Kingdom</div>
+        <div className="px-4 py-3 text-on-surface hover:bg-on-surface/5">United Arab Emirates</div>
       </div>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 // ─── INTERACTIVE EXAMPLES ────────────────────────────────────────────────────
@@ -106,7 +103,7 @@ export const comboboxDoc: ComponentDoc = {
       {
         emphasis: "Combobox",
         component: (
-          <div className="w-36 h-10u bg-surface-container-high rounded-lg px-3u flex items-center gap-2u border border-outline-variant">
+          <div className="w-36 h-10 bg-surface-container-high rounded-lg px-3 flex items-center gap-2 border border-outline-variant">
             <span className="material-symbols-outlined text-on-surface-variant text-[18px]">search</span>
             <span className="text-body-small text-on-surface-variant">Search...</span>
           </div>
@@ -117,7 +114,7 @@ export const comboboxDoc: ComponentDoc = {
       {
         emphasis: "Select",
         component: (
-          <div className="w-36 h-10u bg-surface-container-high rounded-lg px-3u flex items-center justify-between">
+          <div className="w-36 h-10 bg-surface-container-high rounded-lg px-3 flex items-center justify-between">
             <span className="text-body-small text-on-surface">Option 1</span>
             <span className="material-symbols-outlined text-on-surface-variant text-[18px]">expand_more</span>
           </div>

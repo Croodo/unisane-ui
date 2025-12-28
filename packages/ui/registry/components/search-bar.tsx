@@ -19,8 +19,9 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 }) => {
   return (
     <div
+      role="search"
       className={cn(
-        "group relative flex items-center w-full h-14 rounded-sm bg-surface-container-high border border-outline-variant/30 hover:bg-surface-container-highest focus-within:bg-surface-container-highest transition-all duration-medium cursor-text",
+        "group relative flex items-center w-full h-14 rounded-sm bg-surface-container-high border border-outline-variant/30 hover:bg-surface-container-highest focus-within:bg-surface-container-highest transition-all duration-medium ease-standard cursor-text",
         className
       )}
     >
@@ -29,7 +30,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
       </div>
 
       <input
-        type="text"
+        type="search"
         className="flex-1 h-full bg-transparent border-none outline-none text-on-surface placeholder:text-on-surface-variant text-body-medium"
         placeholder={placeholder}
         {...props}

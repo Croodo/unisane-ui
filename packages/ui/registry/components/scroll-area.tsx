@@ -25,7 +25,6 @@ export const ScrollArea: React.FC<ScrollAreaProps> = ({
           "[&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:h-2",
           "[&::-webkit-scrollbar-track]:bg-transparent",
           "[&::-webkit-scrollbar-thumb]:bg-outline-variant/40 [&::-webkit-scrollbar-thumb]:rounded-full",
-          "[&::-webkit-scrollbar-thumb]:border-2 [&::-webkit-scrollbar-thumb]:border-transparent [&::-webkit-scrollbar-thumb]:bg-clip-content",
           "[&::-webkit-scrollbar-thumb]:hover:bg-outline-variant/80",
 
           scrollbarClassName

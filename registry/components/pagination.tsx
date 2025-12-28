@@ -95,7 +95,7 @@ export const Pagination: React.FC<PaginationProps> = ({
             ) : (
               <button
                 className={cn(
-                  "relative w-10u h-10u rounded-full flex items-center justify-center transition-colors overflow-hidden",
+                  "relative w-10 h-10 rounded-full flex items-center justify-center transition-colors overflow-hidden",
                   page === currentPage
                     ? "bg-primary text-on-primary"
                     : "text-on-surface-variant hover:bg-on-surface/10"

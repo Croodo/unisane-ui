@@ -8,7 +8,7 @@ export const Breadcrumb: React.FC<{
   className?: string;
 }> = ({ children, className }) => (
   <nav aria-label="breadcrumb" className={cn("flex", className)}>
-    <ol className="flex items-center gap-2u flex-wrap">{children}</ol>
+    <ol className="flex items-center gap-2 flex-wrap">{children}</ol>
   </nav>
 );
 
@@ -16,7 +16,7 @@ export const BreadcrumbItem: React.FC<{
   children: React.ReactNode;
   className?: string;
 }> = ({ children, className }) => (
-  <li className={cn("inline-flex items-center gap-2u", className)}>
+  <li className={cn("inline-flex items-center gap-2", className)}>
     {children}
   </li>
 );
@@ -29,7 +29,7 @@ export const BreadcrumbLink: React.FC<{
   <button
     onClick={onClick}
     className={cn(
-      "text-label-small font-black uppercase tracking-[0.2em] text-on-surface-variant hover:text-primary transition-colors leading-none pt-0.5u",
+      "text-label-small font-black uppercase tracking-[0.2em] text-on-surface-variant hover:text-primary transition-colors leading-none pt-0_5",
       className
     )}
   >
@@ -43,7 +43,7 @@ export const BreadcrumbPage: React.FC<{
 }> = ({ children, className }) => (
   <span
     className={cn(
-      "text-label-small font-black uppercase tracking-[0.2em] text-on-surface leading-none pt-0.5u",
+      "text-label-small font-black uppercase tracking-[0.2em] text-on-surface leading-none pt-0_5",
       className
     )}
   >
@@ -60,7 +60,7 @@ export const BreadcrumbEllipsis: React.FC<{
   className?: string;
 }> = ({ onClick, className }) => {
   return (
-    <li className={cn("inline-flex items-center gap-2u", className)}>
+    <li className={cn("inline-flex items-center gap-2", className)}>
       <IconButton
         icon={
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">

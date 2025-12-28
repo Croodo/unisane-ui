@@ -10,9 +10,9 @@ const themeSwitcherVariants = cva(
   {
     variants: {
       size: {
-        sm: "h-8u",
-        md: "h-10u",
-        lg: "h-12u",
+        sm: "h-8",
+        md: "h-10",
+        lg: "h-12",
       },
     },
     defaultVariants: {
@@ -22,7 +22,7 @@ const themeSwitcherVariants = cva(
 );
 
 const themeButtonVariants = cva(
-  "flex items-center justify-center gap-2u px-4u transition-colors duration-snappy relative",
+  "flex items-center justify-center gap-2 px-4 transition-colors duration-snappy relative",
   {
     variants: {
       active: {

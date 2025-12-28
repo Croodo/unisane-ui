@@ -5,7 +5,7 @@ import { Surface } from "@ui/primitives/surface";
 import { Ripple } from "./ripple";
 
 const bottomAppBarVariants = cva(
-  "fixed bottom-0 left-0 right-0 h-20u flex items-center justify-between px-4u z-20",
+  "fixed bottom-0 left-0 right-0 h-20 flex items-center justify-between px-4 z-20",
   {
     variants: {
       variant: {
@@ -37,17 +37,17 @@ export const BottomAppBar: React.FC<BottomAppBarProps> = ({
       role="toolbar"
       aria-label="Bottom navigation"
     >
-      <div className="flex items-center gap-2u flex-1">{children}</div>
+      <div className="flex items-center gap-2 flex-1">{children}</div>
 
       {fab && (
-        <div className="absolute left-1/2 -translate-x-1/2 -top-8u">{fab}</div>
+        <div className="absolute left-1/2 -translate-x-1/2 -top-8">{fab}</div>
       )}
     </Surface>
   );
 };
 
 const bottomAppBarActionVariants = cva(
-  "relative flex items-center justify-center w-12u h-12u rounded-full cursor-pointer select-none transition-colors duration-short overflow-hidden",
+  "relative flex items-center justify-center w-12 h-12 rounded-full cursor-pointer select-none transition-colors duration-short overflow-hidden",
   {
     variants: {
       active: {
@@ -86,7 +86,7 @@ export const BottomAppBarAction: React.FC<BottomAppBarActionProps> = ({
       aria-pressed={active}
     >
       <Ripple />
-      <div className="w-6u h-6u flex items-center justify-center relative z-10">{icon}</div>
+      <div className="w-5 h-5 flex items-center justify-center relative z-10">{icon}</div>
     </button>
   );
 };

@@ -1,37 +1,34 @@
 "use client";
 
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { Carousel, CarouselSlide } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const CarouselHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-secondary-container to-tertiary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-40px] left-[-40px] w-56 h-56 bg-secondary/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-50px] right-[-30px] w-64 h-64 bg-tertiary/20 rounded-full blur-3xl" />
-
+  <HeroBackground tone="tertiary">
     {/* Mock Carousel */}
-    <div className="relative bg-surface w-[320px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 z-10">
+    <div className="relative bg-surface w-[320px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
       <div className="h-[180px] bg-surface-container-high relative">
         <div className="absolute inset-0 flex items-center justify-center">
           <span className="material-symbols-outlined text-on-surface-variant text-[48px]">image</span>
         </div>
         {/* Navigation Arrows */}
-        <button className="absolute left-3u top-1/2 -translate-y-1/2 w-10u h-10u rounded-full bg-surface/80 flex items-center justify-center">
+        <button className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-surface/80 flex items-center justify-center">
           <span className="material-symbols-outlined text-on-surface">chevron_left</span>
         </button>
-        <button className="absolute right-3u top-1/2 -translate-y-1/2 w-10u h-10u rounded-full bg-surface/80 flex items-center justify-center">
+        <button className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-surface/80 flex items-center justify-center">
           <span className="material-symbols-outlined text-on-surface">chevron_right</span>
         </button>
         {/* Indicators */}
-        <div className="absolute bottom-3u left-1/2 -translate-x-1/2 flex gap-2u">
-          <div className="w-2u h-2u rounded-full bg-primary" />
-          <div className="w-2u h-2u rounded-full bg-on-surface-variant/50" />
-          <div className="w-2u h-2u rounded-full bg-on-surface-variant/50" />
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2">
+          <div className="w-2 h-2 rounded-full bg-primary" />
+          <div className="w-2 h-2 rounded-full bg-on-surface-variant/50" />
+          <div className="w-2 h-2 rounded-full bg-on-surface-variant/50" />
         </div>
       </div>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 // ─── INTERACTIVE EXAMPLES ────────────────────────────────────────────────────
@@ -89,11 +86,11 @@ export const carouselDoc: ComponentDoc = {
         emphasis: "With Controls",
         component: (
           <div className="w-32 h-16 bg-surface-container rounded-sm relative flex items-center justify-center">
-            <div className="w-4u h-4u rounded-full bg-surface absolute left-1u flex items-center justify-center">
+            <div className="w-4 h-4 rounded-full bg-surface absolute left-1 flex items-center justify-center">
               <span className="text-[8px]">&lt;</span>
             </div>
-            <div className="w-8u h-8u bg-primary/20 rounded-sm" />
-            <div className="w-4u h-4u rounded-full bg-surface absolute right-1u flex items-center justify-center">
+            <div className="w-8 h-8 bg-primary/20 rounded-sm" />
+            <div className="w-4 h-4 rounded-full bg-surface absolute right-1 flex items-center justify-center">
               <span className="text-[8px]">&gt;</span>
             </div>
           </div>
@@ -105,7 +102,7 @@ export const carouselDoc: ComponentDoc = {
         emphasis: "Auto-play",
         component: (
           <div className="w-32 h-16 bg-surface-container rounded-sm relative flex items-center justify-center">
-            <div className="w-8u h-8u bg-secondary/20 rounded-sm animate-pulse" />
+            <div className="w-8 h-8 bg-secondary/20 rounded-sm animate-pulse" />
           </div>
         ),
         rationale: "For passive viewing experiences.",

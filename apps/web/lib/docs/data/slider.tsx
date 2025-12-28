@@ -1,44 +1,41 @@
 "use client";
 
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { Slider, Card } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const SliderHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-primary-container to-secondary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-40px] left-[-40px] w-56 h-56 bg-primary/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-50px] right-[-30px] w-64 h-64 bg-secondary/20 rounded-full blur-3xl" />
-
+  <HeroBackground tone="secondary">
     {/* Mock Settings Card */}
-    <div className="relative bg-surface w-[300px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 z-10">
-      <div className="px-5u py-4u border-b border-outline-variant/20">
+    <div className="relative bg-surface w-[300px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
+      <div className="px-5 py-4 border-b border-outline-variant/20">
         <span className="text-title-medium text-on-surface">Settings</span>
       </div>
-      <div className="p-5u space-y-6u">
+      <div className="p-5 space-y-6">
         <div>
-          <div className="flex justify-between mb-3u">
+          <div className="flex justify-between mb-3">
             <span className="text-body-small text-on-surface">Volume</span>
             <span className="text-body-small text-on-surface-variant">75%</span>
           </div>
           <Slider defaultValue={75} />
         </div>
         <div>
-          <div className="flex justify-between mb-3u">
+          <div className="flex justify-between mb-3">
             <span className="text-body-small text-on-surface">Brightness</span>
             <span className="text-body-small text-on-surface-variant">50%</span>
           </div>
           <Slider defaultValue={50} />
         </div>
         <div>
-          <div className="flex justify-between mb-3u">
+          <div className="flex justify-between mb-3">
             <span className="text-body-small text-on-surface">Speed</span>
           </div>
           <Slider defaultValue={30} withLabel />
         </div>
       </div>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 export const sliderDoc: ComponentDoc = {
@@ -148,24 +145,24 @@ export const sliderDoc: ComponentDoc = {
         title: "Settings panel",
         visual: (
           <Card variant="outlined" padding="md" className="max-w-[280px] mx-auto">
-            <div className="text-title-small text-on-surface mb-4u">Audio Settings</div>
-            <div className="space-y-5u">
+            <div className="text-title-small text-on-surface mb-4">Audio Settings</div>
+            <div className="space-y-5">
               <div>
-                <div className="flex justify-between text-body-small mb-2u">
+                <div className="flex justify-between text-body-small mb-2">
                   <span className="text-on-surface">Master Volume</span>
                   <span className="text-on-surface-variant">80%</span>
                 </div>
                 <Slider defaultValue={80} />
               </div>
               <div>
-                <div className="flex justify-between text-body-small mb-2u">
+                <div className="flex justify-between text-body-small mb-2">
                   <span className="text-on-surface">Music</span>
                   <span className="text-on-surface-variant">60%</span>
                 </div>
                 <Slider defaultValue={60} />
               </div>
               <div>
-                <div className="flex justify-between text-body-small mb-2u">
+                <div className="flex justify-between text-body-small mb-2">
                   <span className="text-on-surface">Effects</span>
                   <span className="text-on-surface-variant">40%</span>
                 </div>
@@ -180,7 +177,7 @@ export const sliderDoc: ComponentDoc = {
         title: "Media player",
         visual: (
           <Card variant="outlined" padding="lg" className="max-w-[280px] mx-auto">
-            <div className="flex flex-col items-center gap-4u">
+            <div className="flex flex-col items-center gap-4">
               <div className="text-body-small text-on-surface-variant">Now Playing</div>
               <div className="w-full">
                 <Slider defaultValue={35} />

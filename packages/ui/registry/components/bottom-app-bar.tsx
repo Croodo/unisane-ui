@@ -2,7 +2,7 @@ import React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 import { Surface } from "@/primitives/surface";
-import { StateLayer } from "@/primitives/state-layer";
+import { Ripple } from "./ripple";
 
 const bottomAppBarVariants = cva(
   "fixed bottom-0 left-0 right-0 h-20 flex items-center justify-between px-4 z-20",
@@ -34,6 +34,8 @@ export const BottomAppBar: React.FC<BottomAppBarProps> = ({
       tone="surface"
       elevation={3}
       className={cn(bottomAppBarVariants({ className }))}
+      role="toolbar"
+      aria-label="Bottom navigation"
     >
       <div className="flex items-center gap-2 flex-1">{children}</div>
 
@@ -45,7 +47,7 @@ export const BottomAppBar: React.FC<BottomAppBarProps> = ({
 };
 
 const bottomAppBarActionVariants = cva(
-  "relative flex items-center justify-center w-12 h-12 rounded-sm cursor-pointer select-none",
+  "relative flex items-center justify-center w-12 h-12 rounded-full cursor-pointer select-none transition-colors duration-short overflow-hidden",
   {
     variants: {
       active: {
@@ -83,8 +85,8 @@ export const BottomAppBarAction: React.FC<BottomAppBarActionProps> = ({
       aria-label={label}
       aria-pressed={active}
     >
-      <StateLayer />
-      <div className="w-6 h-6 flex items-center justify-center">{icon}</div>
+      <Ripple />
+      <div className="w-6 h-6 flex items-center justify-center relative z-10">{icon}</div>
     </button>
   );
 };

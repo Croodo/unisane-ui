@@ -87,7 +87,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
               {/* Interactive Large Display */}
               <div
                 className={cn(
-                  "rounded-sm px-4 py-3 h-20u min-w-24u flex items-center justify-center text-display-large leading-display-large cursor-pointer transition-colors border-2",
+                  "rounded-sm px-4 py-3 h-20 min-w-24 flex items-center justify-center text-display-large leading-display-large cursor-pointer transition-colors border-2",
                   dialMode === "hour"
                     ? "bg-primary-container text-on-primary-container border-transparent"
                     : "bg-surface-container-highest text-on-surface border-transparent hover:bg-surface-container-highest/80"
@@ -103,7 +103,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
 
               <div
                 className={cn(
-                  "rounded-sm px-4 py-3 h-20u min-w-24u flex items-center justify-center text-display-large leading-display-large cursor-pointer transition-colors border-2",
+                  "rounded-sm px-4 py-3 h-20 min-w-24 flex items-center justify-center text-display-large leading-display-large cursor-pointer transition-colors border-2",
                   dialMode === "minute"
                     ? "bg-primary-container text-on-primary-container border-transparent"
                     : "bg-surface-container-highest text-on-surface border-transparent hover:bg-surface-container-highest/80"
@@ -117,7 +117,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
             <div className="flex gap-2 items-center">
               <TextField
                 variant="outlined"
-                className="w-24u"
+                className="w-24"
                 label="Hour"
                 type="number"
                 min={1}
@@ -128,7 +128,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
               <span className="text-display-large">:</span>
               <TextField
                 variant="outlined"
-                className="w-24u"
+                className="w-24"
                 label="Minute"
                 type="number"
                 min={0}
@@ -140,7 +140,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
           )}
 
           {/* AM/PM Column */}
-          <div className="flex flex-col ml-3 border border-outline rounded-sm overflow-hidden bg-surface shrink-0 h-20u">
+          <div className="flex flex-col ml-3 border border-outline rounded-sm overflow-hidden bg-surface shrink-0 h-20">
             <button
               onClick={() => setPeriod("AM")}
               className={cn(

@@ -1,21 +1,18 @@
 "use client";
 
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { TextField, Card } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const TextFieldHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-primary-container to-secondary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-50px] right-[-50px] w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-40px] left-[-40px] w-56 h-56 bg-secondary/20 rounded-full blur-3xl" />
-
+  <HeroBackground tone="secondary">
     {/* Mock Login Form */}
-    <div className="relative bg-surface w-[300px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 z-10">
-      <div className="px-6u py-5u border-b border-outline-variant/20 text-center">
+    <div className="relative bg-surface w-[300px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
+      <div className="px-6 py-5 border-b border-outline-variant/20 text-center">
         <span className="text-headline-small text-on-surface">Welcome back</span>
       </div>
-      <div className="p-6u space-y-4u">
+      <div className="p-6 space-y-4">
         <TextField
           label="Email"
           placeholder="you@example.com"
@@ -27,14 +24,14 @@ const TextFieldHeroVisual = () => (
           placeholder="Enter password"
           leadingIcon={<span className="material-symbols-outlined">lock</span>}
         />
-        <div className="pt-2u">
-          <button className="w-full bg-primary text-on-primary py-3u rounded-full text-label-large font-medium">
+        <div className="pt-2">
+          <button className="w-full bg-primary text-on-primary py-3 rounded-full text-label-large font-medium">
             Sign in
           </button>
         </div>
       </div>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 export const textFieldDoc: ComponentDoc = {
@@ -142,8 +139,8 @@ export const textFieldDoc: ComponentDoc = {
         title: "Contact form",
         visual: (
           <Card variant="outlined" padding="md" className="max-w-[280px] mx-auto">
-            <div className="text-title-small text-on-surface mb-4u">Contact Us</div>
-            <div className="space-y-4u">
+            <div className="text-title-small text-on-surface mb-4">Contact Us</div>
+            <div className="space-y-4">
               <TextField label="Name" placeholder="Your name" />
               <TextField label="Email" placeholder="you@example.com" />
               <TextField label="Message" placeholder="How can we help?" multiline rows={3} />
@@ -156,15 +153,15 @@ export const textFieldDoc: ComponentDoc = {
         title: "Inline with button",
         visual: (
           <Card variant="outlined" padding="md" className="max-w-[300px] mx-auto">
-            <div className="text-title-small text-on-surface mb-3u">Subscribe</div>
-            <div className="flex gap-2u">
+            <div className="text-title-small text-on-surface mb-3">Subscribe</div>
+            <div className="flex gap-2">
               <TextField
                 label="Email"
                 placeholder="Enter email"
                 leadingIcon={<span className="material-symbols-outlined">mail</span>}
                 className="flex-1"
               />
-              <button className="bg-primary text-on-primary px-4u rounded-full text-label-medium shrink-0">
+              <button className="bg-primary text-on-primary px-4 rounded-full text-label-medium shrink-0">
                 Join
               </button>
             </div>

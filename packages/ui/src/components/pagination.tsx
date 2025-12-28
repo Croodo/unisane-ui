@@ -70,7 +70,7 @@ export const Pagination: React.FC<PaginationProps> = ({
   const renderPageButton = (page: number) => {
     const isCurrent = page === currentPage;
     const buttonClasses = cn(
-      "relative w-10u h-10u rounded-sm flex items-center justify-center transition-colors overflow-hidden",
+      "relative w-12 h-12 rounded-sm flex items-center justify-center transition-colors overflow-hidden",
       isCurrent
         ? "bg-primary text-on-primary"
         : "text-on-surface-variant hover:bg-on-surface/10"

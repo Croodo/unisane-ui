@@ -1,45 +1,42 @@
 "use client";
 
 import { ComponentDoc } from "../types";
+import { HeroBackground } from "../hero-background";
 import { ScrollArea } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const ScrollAreaHeroVisual = () => (
-  <div className="relative w-full h-full bg-linear-to-br from-primary-container to-secondary-container flex items-center justify-center p-8 overflow-hidden isolate">
-    {/* Decorative Circles */}
-    <div className="absolute top-[-40px] left-[-40px] w-56 h-56 bg-primary/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-[-50px] right-[-30px] w-64 h-64 bg-secondary/20 rounded-full blur-3xl" />
-
+  <HeroBackground tone="tertiary">
     {/* Mock Scrollable Content */}
-    <div className="relative bg-surface w-[280px] h-[200px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 z-10">
-      <div className="p-4u h-full relative">
-        <div className="space-y-3u">
+    <div className="relative bg-surface w-[280px] h-[200px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
+      <div className="p-4 h-full relative">
+        <div className="space-y-3">
           {[...Array(8)].map((_, i) => (
-            <div key={i} className="flex items-center gap-3u">
-              <div className="w-10u h-10u rounded-full bg-surface-container-high shrink-0" />
-              <div className="flex-1 space-y-1u">
-                <div className="h-3u bg-surface-container-high rounded-sm w-2/3" />
-                <div className="h-2u bg-surface-container-high rounded-sm w-1/2" />
+            <div key={i} className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-surface-container-high shrink-0" />
+              <div className="flex-1 space-y-1">
+                <div className="h-3 bg-surface-container-high rounded-sm w-2/3" />
+                <div className="h-2 bg-surface-container-high rounded-sm w-1/2" />
               </div>
             </div>
           ))}
         </div>
         {/* Scrollbar indicator */}
-        <div className="absolute right-1u top-4u bottom-4u w-2u bg-outline-variant/20 rounded-full">
+        <div className="absolute right-1 top-4 bottom-4 w-2 bg-outline-variant/20 rounded-full">
           <div className="w-full h-1/3 bg-outline-variant/60 rounded-full" />
         </div>
       </div>
     </div>
-  </div>
+  </HeroBackground>
 );
 
 // ─── EXAMPLES ────────────────────────────────────────────────────────────────
 const ScrollAreaVerticalExample = () => (
   <ScrollArea className="h-[200px] w-full max-w-xs rounded-lg border border-outline-variant/30">
-    <div className="p-4u space-y-4u">
+    <div className="p-4 space-y-4">
       {[...Array(10)].map((_, i) => (
-        <div key={i} className="flex items-center gap-3u p-3u bg-surface-container rounded-lg">
-          <div className="w-10u h-10u rounded-full bg-primary-container flex items-center justify-center">
+        <div key={i} className="flex items-center gap-3 p-3 bg-surface-container rounded-lg">
+          <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center">
             <span className="text-label-medium text-on-primary-container">{i + 1}</span>
           </div>
           <div>
@@ -54,11 +51,11 @@ const ScrollAreaVerticalExample = () => (
 
 const ScrollAreaHorizontalExample = () => (
   <ScrollArea orientation="horizontal" className="w-full max-w-xs">
-    <div className="flex gap-4u p-4u">
+    <div className="flex gap-4 p-4">
       {[...Array(8)].map((_, i) => (
         <div
           key={i}
-          className="w-32 h-24u shrink-0 rounded-lg bg-surface-container flex items-center justify-center border border-outline-variant/30"
+          className="w-32 h-24 shrink-0 rounded-lg bg-surface-container flex items-center justify-center border border-outline-variant/30"
         >
           <span className="text-title-medium text-on-surface">Card {i + 1}</span>
         </div>
@@ -99,7 +96,7 @@ export const scrollAreaDoc: ComponentDoc = {
         emphasis: "Vertical",
         component: (
           <div className="w-20 h-16 bg-surface-container rounded-sm relative overflow-hidden">
-            <div className="absolute right-1u top-1u bottom-1u w-1u bg-outline-variant/20 rounded-full">
+            <div className="absolute right-1 top-1 bottom-1 w-1 bg-outline-variant/20 rounded-full">
               <div className="w-full h-1/3 bg-outline-variant/60 rounded-full" />
             </div>
           </div>
@@ -111,7 +108,7 @@ export const scrollAreaDoc: ComponentDoc = {
         emphasis: "Horizontal",
         component: (
           <div className="w-20 h-12 bg-surface-container rounded-sm relative overflow-hidden">
-            <div className="absolute left-1u right-1u bottom-1u h-1u bg-outline-variant/20 rounded-full">
+            <div className="absolute left-1 right-1 bottom-1 h-1 bg-outline-variant/20 rounded-full">
               <div className="h-full w-1/3 bg-outline-variant/60 rounded-full" />
             </div>
           </div>
@@ -123,10 +120,10 @@ export const scrollAreaDoc: ComponentDoc = {
         emphasis: "Both",
         component: (
           <div className="w-20 h-16 bg-surface-container rounded-sm relative overflow-hidden">
-            <div className="absolute right-1u top-1u bottom-3u w-1u bg-outline-variant/20 rounded-full">
+            <div className="absolute right-1 top-1 bottom-3 w-1 bg-outline-variant/20 rounded-full">
               <div className="w-full h-1/3 bg-outline-variant/60 rounded-full" />
             </div>
-            <div className="absolute left-1u right-3u bottom-1u h-1u bg-outline-variant/20 rounded-full">
+            <div className="absolute left-1 right-3 bottom-1 h-1 bg-outline-variant/20 rounded-full">
               <div className="h-full w-1/3 bg-outline-variant/60 rounded-full" />
             </div>
           </div>

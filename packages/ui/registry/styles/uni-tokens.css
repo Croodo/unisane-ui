@@ -1,3 +1,9 @@
+/*
+ * DEPRECATED: This file will be removed in a future version.
+ * Please use the merged file instead:
+ *   @import "@unisane/tokens/unisane.css";
+ */
+
 /* ============================================================
    Unisane UI Design Tokens
    Generated from "Blue" theme using OKLCH color science
@@ -46,10 +52,15 @@
       <html class="dark" data-scheme="neutral" data-contrast="high">
    ============================================================ */
 
+/* Theme defaults layer - can be overridden by unlayered app CSS */
+@layer unisane-defaults {
+  :root {
+    --hue: 240;
+    --chroma: 0.13;
+  }
+}
+
 :root {
-  /* === THEME CONFIG === */
-  --hue: 240;
-  --chroma: 0.13;
 
   /* Derived hues (auto-calculated) */
   --hue-secondary: var(--hue);
@@ -475,7 +486,20 @@
   --space-20u: calc(var(--unit) * 20);
   --space-24u: calc(var(--unit) * 24);
   --space-28u: calc(var(--unit) * 28);
+  --space-32u: calc(var(--unit) * 32);
+  --space-36u: calc(var(--unit) * 36);
   --space-38u: calc(var(--unit) * 38);
+  --space-40u: calc(var(--unit) * 40);
+  --space-44u: calc(var(--unit) * 44);
+  --space-48u: calc(var(--unit) * 48);
+  --space-52u: calc(var(--unit) * 52);
+  --space-56u: calc(var(--unit) * 56);
+  --space-60u: calc(var(--unit) * 60);
+  --space-64u: calc(var(--unit) * 64);
+  --space-72u: calc(var(--unit) * 72);
+  --space-80u: calc(var(--unit) * 80);
+  --space-96u: calc(var(--unit) * 96);
+  --space-100u: calc(var(--unit) * 100);
 
   /* === LAYOUT === */
   --layout-margin: calc(16px * var(--scale-space));
@@ -792,14 +816,27 @@
 /* ============================================================
    RADIUS THEME - CSS-only via data attribute
    Usage: <html data-radius="soft">
+   Values must match ThemeProvider RADIUS_PRESETS
    ============================================================ */
 
+[data-radius="none"] {
+  --scale-radius: 0;
+}
+
+[data-radius="minimal"] {
+  --scale-radius: 0.25;
+}
+
 [data-radius="sharp"] {
-  --scale-radius: 0.75;
+  --scale-radius: 0.5;
+}
+
+[data-radius="standard"] {
+  --scale-radius: 1.0;
 }
 
 [data-radius="soft"] {
-  --scale-radius: 1.15;
+  --scale-radius: 1.25;
 }
 
 /* ============================================================

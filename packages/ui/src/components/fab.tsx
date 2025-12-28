@@ -4,7 +4,7 @@ import { cn } from "@ui/lib/utils";
 import { Ripple } from "./ripple";
 
 const fabVariants = cva(
-  "inline-flex items-center justify-center gap-2u transition-all duration-medium cursor-pointer overflow-hidden relative group shrink-0 z-30 select-none",
+  "inline-flex items-center justify-center gap-2 transition-all duration-medium cursor-pointer overflow-hidden relative group shrink-0 z-30 select-none",
   {
     variants: {
       variant: {
@@ -14,10 +14,10 @@ const fabVariants = cva(
         tertiary: "bg-tertiary-container text-on-tertiary-container shadow-3 hover:shadow-4",
       },
       size: {
-        sm: "w-10u h-10u rounded-md",
-        md: "w-14u h-14u rounded-lg",
-        lg: "w-24u h-24u rounded-xl",
-        extended: "h-14u px-6u rounded-lg w-auto min-w-20u",
+        sm: "w-10 h-10 rounded-lg",
+        md: "w-14 h-14 rounded-lg",
+        lg: "w-24 h-24 rounded-lg",
+        extended: "h-14 px-6 rounded-lg w-auto min-w-20",
       },
     },
     defaultVariants: {
@@ -51,21 +51,21 @@ export const Fab: React.FC<FabProps> = ({
       {...props}
     >
       <Ripple disabled={props.disabled} />
-      <div className="relative z-10 flex items-center justify-center gap-3u pointer-events-none">
+      <div className="relative z-10 flex items-center justify-center gap-3 pointer-events-none">
         {icon && (
           <span
             className={cn(
               "flex items-center justify-center transition-transform",
               finalSize === "lg"
-                ? "[&>svg]:w-9u [&>svg]:h-9u"
-                : "[&>svg]:w-6u [&>svg]:h-6u"
+                ? "[&>svg]:w-9 [&>svg]:h-9"
+                : "[&>svg]:w-6 [&>svg]:h-6"
             )}
           >
             {icon}
           </span>
         )}
         {label && (
-          <span className="text-label-large font-medium leading-none pt-0.5u">
+          <span className="text-label-large font-medium leading-none">
             {label}
           </span>
         )}
