@@ -9,7 +9,7 @@ import { SegmentedButton } from "@unisane/ui";
 const SegmentedButtonHeroVisual = () => (
   <HeroBackground tone="primary">
     {/* Mock View Toggle */}
-    <div className="relative bg-surface w-[320px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 p-6">
+    <div className="relative bg-surface w-80 rounded-xl shadow-xl overflow-hidden border border-outline-variant/30 p-6">
       <div className="text-title-medium text-on-surface mb-4">View Options</div>
       <div className="inline-flex rounded-sm border border-outline-variant overflow-hidden">
         <div className="px-4 py-2 bg-secondary-container text-on-secondary-container flex items-center gap-2">

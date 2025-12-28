@@ -8,7 +8,7 @@ import { FabMenu } from "@unisane/ui";
 const FabMenuHeroVisual = () => (
   <HeroBackground tone="tertiary">
     {/* Mock FAB Menu */}
-    <div className="relative bg-surface w-[280px] h-[240px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
+    <div className="relative bg-surface w-72 h-60 rounded-xl shadow-xl overflow-hidden border border-outline-variant/30">
       {/* Content */}
       <div className="p-4 space-y-3">
         <div className="h-4 bg-surface-container-high rounded-sm w-full" />
@@ -31,7 +31,7 @@ const FabMenuHeroVisual = () => (
           </div>
         </div>
         {/* Main FAB */}
-        <div className="w-14 h-14 rounded-2xl bg-tertiary-container flex items-center justify-center shadow-2">
+        <div className="w-14 h-14 rounded-lg bg-tertiary-container flex items-center justify-center shadow-2">
           <span className="material-symbols-outlined text-on-tertiary-container rotate-45">add</span>
         </div>
       </div>
@@ -41,7 +41,7 @@ const FabMenuHeroVisual = () => (
 
 // ─── INTERACTIVE EXAMPLES ────────────────────────────────────────────────────
 const FabMenuBasicExample = () => (
-  <div className="h-[200px] relative flex items-end justify-end p-4">
+  <div className="h-52 relative flex items-end justify-end p-4">
     <FabMenu
       actions={[
         {
@@ -95,7 +95,7 @@ export const fabMenuDoc: ComponentDoc = {
       {
         emphasis: "FAB",
         component: (
-          <div className="w-14 h-14 rounded-2xl bg-primary-container flex items-center justify-center">
+          <div className="w-14 h-14 rounded-lg bg-primary-container flex items-center justify-center">
             <span className="material-symbols-outlined text-on-primary-container">add</span>
           </div>
         ),
@@ -109,7 +109,7 @@ export const fabMenuDoc: ComponentDoc = {
             <div className="w-10 h-10 rounded-xl bg-secondary-container flex items-center justify-center">
               <span className="material-symbols-outlined text-on-secondary-container text-[18px]">edit</span>
             </div>
-            <div className="w-14 h-14 rounded-2xl bg-primary-container flex items-center justify-center">
+            <div className="w-14 h-14 rounded-lg bg-primary-container flex items-center justify-center">
               <span className="material-symbols-outlined text-on-primary-container">add</span>
             </div>
           </div>

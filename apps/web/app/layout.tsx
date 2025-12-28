@@ -27,8 +27,8 @@ export default function RootLayout({
       className={inter.variable}
       suppressHydrationWarning
       data-density="standard"
-      data-radius="standard"
-      data-scheme="tonal"
+      data-radius="minimal"
+      data-scheme="monochrome"
       data-contrast="standard"
       data-theme="blue"
       data-theme-mode="system"

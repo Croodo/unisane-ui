@@ -8,7 +8,7 @@ import { Skeleton, SkeletonText, SkeletonAvatar, SkeletonCard, Card } from "@uni
 const SkeletonHeroVisual = () => (
   <HeroBackground tone="surface">
     {/* Mock Loading Card */}
-    <div className="relative bg-surface w-[300px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
+    <div className="relative bg-surface w-80 rounded-xl shadow-xl overflow-hidden border border-outline-variant/30">
       <div className="px-5 py-4 border-b border-outline-variant/20">
         <Skeleton variant="text" width="50%" height="5u" />
       </div>
@@ -125,7 +125,7 @@ export const skeletonDoc: ComponentDoc = {
       {
         title: "List loading",
         visual: (
-          <Card variant="outlined" padding="none" className="max-w-[280px] mx-auto overflow-hidden">
+          <Card variant="outlined" padding="none" className="max-w-72 mx-auto overflow-hidden">
             {[1, 2, 3].map((i) => (
               <div key={i} className="flex items-center gap-3 px-4 py-3 border-b border-outline-variant/20 last:border-0">
                 <SkeletonAvatar size="10u" />
@@ -142,7 +142,7 @@ export const skeletonDoc: ComponentDoc = {
       {
         title: "Card loading",
         visual: (
-          <Card variant="outlined" padding="md" className="max-w-[280px] mx-auto">
+          <Card variant="outlined" padding="md" className="max-w-72 mx-auto">
             <SkeletonCard />
           </Card>
         ),

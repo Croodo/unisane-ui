@@ -8,7 +8,7 @@ import { NavigationBar } from "@unisane/ui";
 const NavigationBarHeroVisual = () => (
   <HeroBackground tone="surface">
     {/* Mock Phone with Nav Bar */}
-    <div className="relative bg-surface w-[280px] h-[200px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
+    <div className="relative bg-surface w-72 h-52 rounded-xl shadow-xl overflow-hidden border border-outline-variant/30">
       {/* Content */}
       <div className="p-4 space-y-3">
         <div className="h-4 bg-surface-container-high rounded-sm w-full" />

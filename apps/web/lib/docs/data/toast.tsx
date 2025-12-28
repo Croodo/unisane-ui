@@ -8,7 +8,7 @@ import { Button, toast, Toaster } from "@unisane/ui";
 const ToastHeroVisual = () => (
   <HeroBackground tone="error">
     {/* Mock App Interface */}
-    <div className="relative bg-surface w-[320px] h-[220px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
+    <div className="relative bg-surface w-80 h-56 rounded-xl shadow-xl overflow-hidden border border-outline-variant/30">
       {/* App Bar */}
       <div className="h-14 flex items-center px-4 bg-surface border-b border-outline-variant/20">
         <span className="text-title-medium text-on-surface">Dashboard</span>

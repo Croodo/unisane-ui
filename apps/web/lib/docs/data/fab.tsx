@@ -8,7 +8,7 @@ import { Fab, Card } from "@unisane/ui";
 const FabHeroVisual = () => (
   <HeroBackground tone="primary">
     {/* Mock Email App */}
-    <div className="bg-surface w-[300px] h-[380px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
+    <div className="bg-surface w-80 h-96 rounded-xl shadow-xl overflow-hidden border border-outline-variant/30">
       {/* App Bar */}
       <div className="h-14 flex items-center px-4 bg-surface border-b border-outline-variant/20">
         <span className="material-symbols-outlined text-on-surface-variant mr-3">menu</span>
@@ -21,7 +21,7 @@ const FabHeroVisual = () => (
             <div className="w-10 h-10 rounded-full bg-primary-container shrink-0" />
             <div className="flex-1 min-w-0">
               <div className="h-3 w-24 bg-on-surface/10 rounded mb-2" />
-              <div className="h-2_5 w-full bg-on-surface/5 rounded" />
+              <div className="h-2.5 w-full bg-on-surface/5 rounded" />
             </div>
           </div>
         ))}
@@ -182,7 +182,7 @@ export const fabDoc: ComponentDoc = {
       {
         title: "Standard placement",
         visual: (
-          <div className="relative bg-surface-container rounded-xl h-48 max-w-[320px] mx-auto border border-outline-variant/30">
+          <div className="relative bg-surface-container rounded-xl h-48 max-w-80 mx-auto border border-outline-variant/30">
             <div className="absolute bottom-4 right-4">
               <Fab
                 variant="primary"
@@ -199,7 +199,7 @@ export const fabDoc: ComponentDoc = {
       {
         title: "Extended FAB",
         visual: (
-          <div className="relative bg-surface-container rounded-xl h-48 max-w-[320px] mx-auto border border-outline-variant/30">
+          <div className="relative bg-surface-container rounded-xl h-48 max-w-80 mx-auto border border-outline-variant/30">
             <div className="absolute bottom-4 right-4">
               <Fab
                 variant="primary"

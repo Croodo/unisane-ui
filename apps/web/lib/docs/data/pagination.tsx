@@ -8,7 +8,7 @@ import { Pagination, Card, IconButton } from "@unisane/ui";
 const PaginationHeroVisual = () => (
   <HeroBackground tone="surface">
     {/* Mock Pagination */}
-    <div className="relative bg-surface px-4 py-3 rounded-2xl shadow-xl border border-outline-variant/30">
+    <div className="relative bg-surface px-4 py-3 rounded-lg shadow-xl border border-outline-variant/30">
       <div className="flex items-center gap-2">
         <div className="w-10 h-10 rounded-sm flex items-center justify-center text-on-surface-variant">
           <span className="material-symbols-outlined">chevron_left</span>
@@ -129,7 +129,7 @@ export const paginationDoc: ComponentDoc = {
       {
         title: "Below table",
         visual: (
-          <Card variant="outlined" padding="md" className="max-w-[320px] mx-auto">
+          <Card variant="outlined" padding="md" className="max-w-80 mx-auto">
             <div className="text-label-small text-on-surface-variant mb-3">Showing 21-30 of 120 items</div>
             <Pagination
               currentPage={3}
@@ -143,7 +143,7 @@ export const paginationDoc: ComponentDoc = {
       {
         title: "Centered layout",
         visual: (
-          <Card variant="outlined" padding="md" className="max-w-[320px] mx-auto">
+          <Card variant="outlined" padding="md" className="max-w-80 mx-auto">
             <div className="flex justify-center">
               <Pagination
                 currentPage={1}

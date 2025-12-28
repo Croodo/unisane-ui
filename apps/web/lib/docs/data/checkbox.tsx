@@ -8,7 +8,7 @@ import { Checkbox, Card } from "@unisane/ui";
 const CheckboxHeroVisual = () => (
   <HeroBackground tone="secondary">
     {/* Mock Settings Card */}
-    <div className="relative bg-surface w-[280px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
+    <div className="relative bg-surface w-72 rounded-xl shadow-xl overflow-hidden border border-outline-variant/30">
       <div className="px-5 py-4 border-b border-outline-variant/20">
         <span className="text-title-medium text-on-surface">Notification Settings</span>
       </div>

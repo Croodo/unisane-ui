@@ -19,7 +19,7 @@ export function VariantsTable({ variants, className }: VariantsTableProps) {
             <code className="text-primary font-mono text-title-small font-semibold">
               {variant.name}
             </code>
-            <code className="text-on-surface-variant font-mono text-body-small bg-surface-variant/40 px-2 py-0_5 rounded-xs">
+            <code className="text-on-surface-variant font-mono text-body-small bg-surface-variant/40 px-2 py-0.5 rounded-xs">
               {variant.type}
             </code>
             <span className="text-body-small text-on-surface-variant">

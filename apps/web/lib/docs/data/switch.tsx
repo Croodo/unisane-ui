@@ -8,7 +8,7 @@ import { Switch, Card } from "@unisane/ui";
 const SwitchHeroVisual = () => (
   <HeroBackground tone="secondary">
     {/* Mock Settings Card */}
-    <div className="relative bg-surface w-[280px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
+    <div className="relative bg-surface w-72 rounded-xl shadow-xl overflow-hidden border border-outline-variant/30">
       <div className="px-5 py-4 border-b border-outline-variant/20">
         <span className="text-title-medium text-on-surface">Quick Settings</span>
       </div>
@@ -144,7 +144,7 @@ export const switchDoc: ComponentDoc = {
       {
         title: "Settings list",
         visual: (
-          <Card variant="outlined" padding="none" className="max-w-[280px] mx-auto overflow-hidden">
+          <Card variant="outlined" padding="none" className="max-w-72 mx-auto overflow-hidden">
             {["Notifications", "Auto-update", "Analytics"].map((item, i) => (
               <div key={i} className="flex items-center justify-between px-4 py-3 border-b border-outline-variant/20 last:border-0">
                 <span className="text-body-medium text-on-surface">{item}</span>
@@ -158,7 +158,7 @@ export const switchDoc: ComponentDoc = {
       {
         title: "Form with switches",
         visual: (
-          <Card variant="outlined" padding="md" className="max-w-[280px] mx-auto">
+          <Card variant="outlined" padding="md" className="max-w-72 mx-auto">
             <div className="text-title-small text-on-surface mb-4">Privacy</div>
             <div className="space-y-4">
               <Switch label="Share usage data" />

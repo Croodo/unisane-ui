@@ -52,7 +52,7 @@ function QuickLinkCard({
     <a href={href} className="group block">
       <Card
         variant="outlined"
-        className="p-6 rounded-3xl bg-surface-container-low hover:bg-surface-container transition-all duration-200 hover:shadow-1"
+        className="p-6 rounded-xl bg-surface-container-low hover:bg-surface-container transition-all duration-200 hover:shadow-1"
       >
         <div className="w-12 h-12 rounded-full bg-primary-container flex items-center justify-center mb-4">
           <span className="material-symbols-outlined text-on-primary-container text-[24px]!">

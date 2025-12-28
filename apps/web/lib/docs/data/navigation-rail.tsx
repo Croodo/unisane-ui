@@ -9,11 +9,11 @@ import { NavigationRail, Fab } from "@unisane/ui";
 const NavigationRailHeroVisual = () => (
   <HeroBackground tone="surface">
     {/* Mock App with Rail */}
-    <div className="relative bg-surface w-[320px] h-[220px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 flex">
+    <div className="relative bg-surface w-80 h-56 rounded-xl shadow-xl overflow-hidden border border-outline-variant/30 flex">
       {/* Navigation Rail */}
       <div className="w-20 bg-surface-container border-r border-outline-variant/30 flex flex-col items-center py-4 gap-6">
         {/* FAB */}
-        <div className="w-14 h-14 rounded-2xl bg-primary-container flex items-center justify-center mb-2">
+        <div className="w-14 h-14 rounded-lg bg-primary-container flex items-center justify-center mb-2">
           <span className="material-symbols-outlined text-on-primary-container">edit</span>
         </div>
         {/* Nav Items */}
@@ -47,7 +47,7 @@ const NavigationRailBasicExample = () => {
   const [active, setActive] = useState("inbox");
 
   return (
-    <div className="h-[280px] w-full max-w-xs flex bg-surface-container-low rounded-lg overflow-hidden">
+    <div className="h-72 w-full max-w-xs flex bg-surface-container-low rounded-lg overflow-hidden">
       <NavigationRail
         items={[
           { value: "inbox", label: "Inbox", icon: "inbox", activeIcon: "inbox", badge: 3 },

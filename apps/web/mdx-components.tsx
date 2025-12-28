@@ -102,7 +102,7 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
             "font-mono",
             isBlock
               ? "text-[12px]"
-              : "text-[12px] px-2 py-0_5 rounded-xs bg-surface-variant/40 text-on-surface",
+              : "text-body-small px-2 py-0.5 rounded-xs bg-surface-variant/40 text-on-surface",
             className
           )}
           {...props}

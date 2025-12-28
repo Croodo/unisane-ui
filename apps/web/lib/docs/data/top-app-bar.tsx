@@ -8,7 +8,7 @@ import { TopAppBar, IconButton } from "@unisane/ui";
 const TopAppBarHeroVisual = () => (
   <HeroBackground tone="surface">
     {/* Mock App with Top Bar */}
-    <div className="relative bg-surface w-[320px] h-[240px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
+    <div className="relative bg-surface w-80 h-60 rounded-xl shadow-xl overflow-hidden border border-outline-variant/30">
       {/* Top App Bar */}
       <div className="h-16 px-4 flex items-center justify-between border-b border-outline-variant/30 bg-surface">
         <span className="material-symbols-outlined text-on-surface">menu</span>

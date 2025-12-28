@@ -8,11 +8,11 @@ import { Stepper, Card, Button } from "@unisane/ui";
 const StepperHeroVisual = () => (
   <HeroBackground tone="tertiary">
     {/* Mock Stepper */}
-    <div className="relative bg-surface w-[340px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 p-6">
+    <div className="relative bg-surface w-80 rounded-xl shadow-xl overflow-hidden border border-outline-variant/30 p-6">
       <div className="flex items-start gap-0 w-full">
         {/* Step 1 - Completed */}
         <div className="flex flex-col items-center relative flex-1">
-          <div className="absolute top-4 left-1/2 w-full h-0_5 bg-primary z-0" />
+          <div className="absolute top-4 left-1/2 w-full h-0.5 bg-primary z-0" />
           <div className="w-8 h-8 rounded-sm flex items-center justify-center text-label-small font-medium bg-primary border-2 border-primary text-on-primary z-10">
             <span className="material-symbols-outlined text-[18px]">check</span>
           </div>
@@ -22,7 +22,7 @@ const StepperHeroVisual = () => (
         </div>
         {/* Step 2 - Active */}
         <div className="flex flex-col items-center relative flex-1">
-          <div className="absolute top-4 left-1/2 w-full h-0_5 bg-outline-variant/30 z-0" />
+          <div className="absolute top-4 left-1/2 w-full h-0.5 bg-outline-variant/30 z-0" />
           <div className="w-8 h-8 rounded-sm flex items-center justify-center text-label-small font-medium bg-primary border-2 border-primary text-on-primary z-10 scale-110">
             2
           </div>
@@ -117,9 +117,9 @@ export const stepperDoc: ComponentDoc = {
         component: (
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-xs flex items-center justify-center bg-primary text-on-primary text-[10px]">1</div>
-            <div className="w-8 h-0_5 bg-primary" />
+            <div className="w-8 h-0.5 bg-primary" />
             <div className="w-6 h-6 rounded-xs flex items-center justify-center bg-primary text-on-primary text-[10px]">2</div>
-            <div className="w-8 h-0_5 bg-outline-variant/30" />
+            <div className="w-8 h-0.5 bg-outline-variant/30" />
             <div className="w-6 h-6 rounded-xs flex items-center justify-center border border-outline-variant text-on-surface-variant text-[10px]">3</div>
           </div>
         ),
@@ -130,7 +130,7 @@ export const stepperDoc: ComponentDoc = {
         component: (
           <div className="flex flex-col items-center gap-1">
             <div className="w-6 h-6 rounded-xs flex items-center justify-center bg-primary text-on-primary text-[10px]">1</div>
-            <div className="w-0_5 h-4 bg-primary" />
+            <div className="w-0.5 h-4 bg-primary" />
             <div className="w-6 h-6 rounded-xs flex items-center justify-center bg-primary text-on-primary text-[10px]">2</div>
           </div>
         ),
@@ -148,7 +148,7 @@ export const stepperDoc: ComponentDoc = {
       {
         title: "Checkout flow",
         visual: (
-          <Card variant="outlined" padding="lg" className="max-w-[320px] mx-auto">
+          <Card variant="outlined" padding="lg" className="max-w-80 mx-auto">
             <Stepper
               steps={[
                 { label: "Cart" },
@@ -164,7 +164,7 @@ export const stepperDoc: ComponentDoc = {
       {
         title: "With descriptions",
         visual: (
-          <Card variant="outlined" padding="lg" className="max-w-[320px] mx-auto">
+          <Card variant="outlined" padding="lg" className="max-w-80 mx-auto">
             <Stepper
               steps={[
                 { label: "Account", description: "Create login" },

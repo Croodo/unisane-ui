@@ -8,7 +8,7 @@ import { Card } from "@unisane/ui";
 const BannerHeroVisual = () => (
   <HeroBackground tone="error">
     {/* Mock App with Banner */}
-    <div className="relative bg-surface w-[320px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
+    <div className="relative bg-surface w-80 rounded-xl shadow-xl overflow-hidden border border-outline-variant/30">
       {/* Banner */}
       <div className="flex items-start gap-3 p-4 border-b border-outline-variant/30 bg-surface">
         <span className="material-symbols-outlined text-primary mt-0.5">info</span>
@@ -34,7 +34,7 @@ const BannerHeroVisual = () => (
 
 // ─── PLACEMENT VISUALS ────────────────────────────────────────────────────────
 const BannerDefaultVisual = () => (
-  <div className="w-[280px] mx-auto bg-surface rounded-xl overflow-hidden border border-outline-variant/30">
+  <div className="w-72 mx-auto bg-surface rounded-xl overflow-hidden border border-outline-variant/30">
     <div className="flex items-start gap-3 p-3 border-b border-outline-variant/20">
       <span className="material-symbols-outlined text-primary text-[20px]">info</span>
       <div className="flex-1 min-w-0">
@@ -46,7 +46,7 @@ const BannerDefaultVisual = () => (
 );
 
 const BannerWarningVisual = () => (
-  <div className="w-[280px] mx-auto bg-warning-container/30 rounded-xl overflow-hidden border border-outline-variant/30">
+  <div className="w-72 mx-auto bg-warning-container/30 rounded-xl overflow-hidden border border-outline-variant/30">
     <div className="flex items-start gap-3 p-3">
       <span className="material-symbols-outlined text-on-warning-container text-[20px]">warning</span>
       <div className="flex-1 min-w-0">

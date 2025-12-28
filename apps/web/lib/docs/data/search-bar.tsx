@@ -8,7 +8,7 @@ import { SearchBar, IconButton } from "@unisane/ui";
 const SearchBarHeroVisual = () => (
   <HeroBackground tone="tertiary">
     {/* Mock Search Interface */}
-    <div className="relative bg-surface w-[320px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 p-6">
+    <div className="relative bg-surface w-80 rounded-xl shadow-xl overflow-hidden border border-outline-variant/30 p-6">
       {/* Search Bar */}
       <div className="bg-surface-container-high rounded-sm h-14 flex items-center px-4 gap-3 mb-4 border border-outline-variant/30">
         <span className="material-symbols-outlined text-on-surface">search</span>

@@ -8,7 +8,7 @@ import { IconButton } from "@unisane/ui";
 const IconButtonHeroVisual = () => (
   <HeroBackground tone="primary">
     {/* Mock App Bar */}
-    <div className="bg-surface w-[320px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
+    <div className="bg-surface w-80 rounded-xl shadow-xl overflow-hidden border border-outline-variant/30">
       {/* Top App Bar */}
       <div className="h-16 flex items-center justify-between px-4 bg-surface border-b border-outline-variant/20">
         <IconButton variant="standard" ariaLabel="Menu">
@@ -160,7 +160,7 @@ export const iconButtonDoc: ComponentDoc = {
       {
         title: "App bar actions",
         visual: (
-          <div className="bg-surface rounded-xl border border-outline-variant/30 overflow-hidden max-w-[320px] mx-auto">
+          <div className="bg-surface rounded-xl border border-outline-variant/30 overflow-hidden max-w-80 mx-auto">
             <div className="h-14 flex items-center justify-between px-4">
               <IconButton variant="standard" ariaLabel="Back">
                 <span className="material-symbols-outlined">arrow_back</span>

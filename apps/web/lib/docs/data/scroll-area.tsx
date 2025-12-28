@@ -8,7 +8,7 @@ import { ScrollArea } from "@unisane/ui";
 const ScrollAreaHeroVisual = () => (
   <HeroBackground tone="tertiary">
     {/* Mock Scrollable Content */}
-    <div className="relative bg-surface w-[280px] h-[200px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
+    <div className="relative bg-surface w-72 h-52 rounded-xl shadow-xl overflow-hidden border border-outline-variant/30">
       <div className="p-4 h-full relative">
         <div className="space-y-3">
           {[...Array(8)].map((_, i) => (
@@ -32,7 +32,7 @@ const ScrollAreaHeroVisual = () => (
 
 // ─── EXAMPLES ────────────────────────────────────────────────────────────────
 const ScrollAreaVerticalExample = () => (
-  <ScrollArea className="h-[200px] w-full max-w-xs rounded-lg border border-outline-variant/30">
+  <ScrollArea className="h-52 w-full max-w-xs rounded-lg border border-outline-variant/30">
     <div className="p-4 space-y-4">
       {[...Array(10)].map((_, i) => (
         <div key={i} className="flex items-center gap-3 p-3 bg-surface-container rounded-lg">
@@ -201,7 +201,7 @@ export const scrollAreaDoc: ComponentDoc = {
 
 function ChatMessages({ messages }) {
   return (
-    <ScrollArea className="h-[400px]">
+    <ScrollArea className="h-96">
       <div className="p-4 space-y-4">
         {messages.map((message) => (
           <div key={message.id} className="p-3 bg-surface-container rounded-lg">

@@ -8,7 +8,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent, Card } from "@unisane/ui";
 const TabsHeroVisual = () => (
   <HeroBackground tone="surface">
     {/* Mock App with Tabs */}
-    <div className="relative bg-surface w-[320px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
+    <div className="relative bg-surface w-80 rounded-xl shadow-xl overflow-hidden border border-outline-variant/30">
       {/* Tab Bar */}
       <div className="flex border-b border-outline-variant/20">
         <div className="flex-1 py-4 text-center relative">
@@ -162,7 +162,7 @@ export const tabsDoc: ComponentDoc = {
       {
         title: "Full width tabs",
         visual: (
-          <Card variant="outlined" padding="none" className="max-w-[320px] mx-auto overflow-hidden">
+          <Card variant="outlined" padding="none" className="max-w-80 mx-auto overflow-hidden">
             <div className="flex border-b border-outline-variant/20">
               <div className="flex-1 py-3 text-center relative">
                 <span className="text-label-medium text-primary">Posts</span>
@@ -185,7 +185,7 @@ export const tabsDoc: ComponentDoc = {
       {
         title: "Scrollable tabs",
         visual: (
-          <Card variant="outlined" padding="none" className="max-w-[280px] mx-auto overflow-hidden">
+          <Card variant="outlined" padding="none" className="max-w-72 mx-auto overflow-hidden">
             <div className="flex overflow-x-auto border-b border-outline-variant/20">
               {["All", "Photos", "Videos", "Documents", "Links"].map((tab, i) => (
                 <div key={tab} className={`px-4 py-3 shrink-0 relative ${i === 0 ? "" : ""}`}>

@@ -9,7 +9,7 @@ import { Combobox } from "@unisane/ui";
 const ComboboxHeroVisual = () => (
   <HeroBackground tone="secondary">
     {/* Mock Combobox */}
-    <div className="relative bg-surface w-[300px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 p-6">
+    <div className="relative bg-surface w-80 rounded-xl shadow-xl overflow-hidden border border-outline-variant/30 p-6">
       <div className="text-label-medium text-on-surface-variant mb-2">Select Country</div>
       <div className="bg-surface-container-high rounded-lg px-4 py-3 flex items-center justify-between border-2 border-primary">
         <span className="text-body-medium text-on-surface">Uni</span>

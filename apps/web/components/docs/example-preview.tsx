@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { ExampleDef } from "@/lib/docs/types";
 import { cn } from "@unisane/ui/lib/utils";
-import { Surface } from "@unisane/ui";
+import { SegmentedButton } from "@unisane/ui";
 
 interface ExamplePreviewProps {
   example: ExampleDef;
@@ -35,30 +35,15 @@ export function ExamplePreview({ example, className }: ExamplePreviewProps) {
 
         {/* Tab Buttons */}
         {example.code && (
-          <div className="flex gap-1 bg-surface-container rounded-md p-1">
-            <button
-              onClick={() => setActiveTab("preview")}
-              className={cn(
-                "px-4 py-2 rounded-sm text-label-medium font-medium transition-colors",
-                activeTab === "preview"
-                  ? "bg-primary text-on-primary"
-                  : "text-on-surface-variant hover:bg-on-surface/8"
-              )}
-            >
-              Preview
-            </button>
-            <button
-              onClick={() => setActiveTab("code")}
-              className={cn(
-                "px-4 py-2 rounded-sm text-label-medium font-medium transition-colors",
-                activeTab === "code"
-                  ? "bg-primary text-on-primary"
-                  : "text-on-surface-variant hover:bg-on-surface/8"
-              )}
-            >
-              Code
-            </button>
-          </div>
+          <SegmentedButton
+            options={[
+              { value: "preview", label: "Preview" },
+              { value: "code", label: "Code" },
+            ]}
+            value={activeTab}
+            onChange={(value) => setActiveTab(value as "preview" | "code")}
+            density="high"
+          />
         )}
       </div>
 
@@ -70,7 +55,7 @@ export function ExamplePreview({ example, className }: ExamplePreviewProps) {
           </div>
         ) : (
           <div className="p-6 bg-surface-container-high">
-            <pre className="overflow-x-auto text-[13px] font-mono text-on-surface-variant leading-relaxed">
+            <pre className="overflow-x-auto text-body-small font-mono text-on-surface-variant leading-relaxed">
               <code>{example.code}</code>
             </pre>
           </div>

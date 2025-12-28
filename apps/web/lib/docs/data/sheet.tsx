@@ -9,7 +9,7 @@ import { Sheet, Button } from "@unisane/ui";
 const SheetHeroVisual = () => (
   <HeroBackground tone="tertiary">
     {/* Mock App with Sheet */}
-    <div className="bg-surface w-[320px] h-[200px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 flex">
+    <div className="bg-surface w-80 h-52 rounded-xl shadow-xl overflow-hidden border border-outline-variant/30 flex">
       {/* Main Content */}
       <div className="flex-1 p-4">
         <div className="text-title-small text-on-surface mb-3">Dashboard</div>
@@ -20,7 +20,7 @@ const SheetHeroVisual = () => (
         </div>
       </div>
       {/* Sheet Panel */}
-      <div className="w-[140px] bg-surface border-l border-outline-variant/20 shadow-3">
+      <div className="w-36 bg-surface border-l border-outline-variant/20 shadow-3">
         <div className="p-3 border-b border-outline-variant/20 flex items-center justify-between">
           <span className="text-title-small text-on-surface">Details</span>
           <span className="material-symbols-outlined text-on-surface-variant text-[18px]">close</span>

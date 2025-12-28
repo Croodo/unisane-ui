@@ -8,7 +8,7 @@ import { Progress, Card } from "@unisane/ui";
 const ProgressHeroVisual = () => (
   <HeroBackground tone="error">
     {/* Mock Upload Card */}
-    <div className="relative bg-surface w-[300px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
+    <div className="relative bg-surface w-80 rounded-xl shadow-xl overflow-hidden border border-outline-variant/30">
       <div className="px-5 py-4 border-b border-outline-variant/20">
         <span className="text-title-medium text-on-surface">Uploading Files</span>
       </div>
@@ -137,7 +137,7 @@ export const progressDoc: ComponentDoc = {
       {
         title: "File upload",
         visual: (
-          <Card variant="outlined" padding="md" className="max-w-[280px] mx-auto">
+          <Card variant="outlined" padding="md" className="max-w-72 mx-auto">
             <div className="text-title-small text-on-surface mb-4">Uploading</div>
             <div className="space-y-4">
               <div>
@@ -162,7 +162,7 @@ export const progressDoc: ComponentDoc = {
       {
         title: "Loading state",
         visual: (
-          <Card variant="outlined" padding="lg" className="max-w-[200px] mx-auto">
+          <Card variant="outlined" padding="lg" className="max-w-52 mx-auto">
             <div className="flex flex-col items-center gap-4">
               <Progress variant="circular" indeterminate />
               <span className="text-body-medium text-on-surface-variant">Loading...</span>

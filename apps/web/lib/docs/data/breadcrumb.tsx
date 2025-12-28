@@ -8,7 +8,7 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbS
 const BreadcrumbHeroVisual = () => (
   <HeroBackground tone="surface">
     {/* Mock Breadcrumb */}
-    <div className="relative bg-surface px-5 py-3 rounded-2xl shadow-xl border border-outline-variant/30">
+    <div className="relative bg-surface px-5 py-3 rounded-lg shadow-xl border border-outline-variant/30">
       <div className="flex items-center gap-2">
         <span className="text-label-medium font-medium text-on-surface-variant hover:text-primary transition-colors cursor-pointer">Home</span>
         <span className="material-symbols-outlined text-[14px] text-outline">chevron_right</span>
@@ -125,7 +125,7 @@ export const breadcrumbDoc: ComponentDoc = {
       {
         title: "Standard breadcrumb",
         visual: (
-          <Card variant="outlined" padding="md" className="max-w-[320px] mx-auto">
+          <Card variant="outlined" padding="md" className="max-w-80 mx-auto">
             <Breadcrumb>
               <BreadcrumbItem>
                 <BreadcrumbLink href="/">Home</BreadcrumbLink>
@@ -146,7 +146,7 @@ export const breadcrumbDoc: ComponentDoc = {
       {
         title: "With ellipsis",
         visual: (
-          <Card variant="outlined" padding="md" className="max-w-[320px] mx-auto">
+          <Card variant="outlined" padding="md" className="max-w-80 mx-auto">
             <Breadcrumb>
               <BreadcrumbItem>
                 <BreadcrumbLink href="/">Home</BreadcrumbLink>

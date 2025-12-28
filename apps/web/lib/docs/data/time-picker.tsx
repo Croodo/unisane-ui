@@ -9,7 +9,7 @@ import { TimePicker, Button } from "@unisane/ui";
 const TimePickerHeroVisual = () => (
   <HeroBackground tone="secondary">
     {/* Mock Time Picker */}
-    <div className="relative bg-surface w-[280px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 p-6">
+    <div className="relative bg-surface w-72 rounded-xl shadow-xl overflow-hidden border border-outline-variant/30 p-6">
       <div className="text-label-medium text-on-surface-variant mb-4">Select time</div>
       <div className="flex items-center gap-2 justify-center mb-6">
         <div className="bg-primary-container text-on-primary-container rounded-lg px-4 py-3 text-display-small">09</div>
@@ -22,7 +22,7 @@ const TimePickerHeroVisual = () => (
       </div>
       <div className="w-40 h-40 mx-auto rounded-full bg-surface-container-highest relative">
         <div className="absolute top-1/2 left-1/2 w-2 h-2 -translate-x-1/2 -translate-y-1/2 bg-primary rounded-full" />
-        <div className="absolute top-1/2 left-1/2 h-14 w-0_5u bg-primary origin-bottom -translate-x-1/2 -translate-y-full rotate-[-60deg]" />
+        <div className="absolute top-1/2 left-1/2 h-14 w-0.5u bg-primary origin-bottom -translate-x-1/2 -translate-y-full rotate-[-60deg]" />
       </div>
     </div>
   </HeroBackground>
@@ -81,7 +81,7 @@ export const timePickerDoc: ComponentDoc = {
         component: (
           <div className="w-16 h-16 rounded-full bg-surface-container-highest relative">
             <div className="absolute top-1/2 left-1/2 w-1 h-1 -translate-x-1/2 -translate-y-1/2 bg-primary rounded-full" />
-            <div className="absolute top-1/2 left-1/2 h-6 w-0_5u bg-primary origin-bottom -translate-x-1/2 -translate-y-full rotate-45" />
+            <div className="absolute top-1/2 left-1/2 h-6 w-0.5u bg-primary origin-bottom -translate-x-1/2 -translate-y-full rotate-45" />
           </div>
         ),
         rationale: "Visual, intuitive time selection.",

@@ -9,7 +9,7 @@ import { Rating } from "@unisane/ui";
 const RatingHeroVisual = () => (
   <HeroBackground tone="tertiary">
     {/* Mock Review Card */}
-    <div className="relative bg-surface w-[280px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 p-6">
+    <div className="relative bg-surface w-72 rounded-xl shadow-xl overflow-hidden border border-outline-variant/30 p-6">
       <div className="flex items-center gap-3 mb-4">
         <div className="w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center">
           <span className="text-title-medium text-on-secondary-container">JD</span>

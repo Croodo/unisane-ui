@@ -8,7 +8,7 @@ import { Chip, Card } from "@unisane/ui";
 const ChipHeroVisual = () => (
   <HeroBackground tone="surface">
     {/* Mock Filter Card */}
-    <div className="relative bg-surface w-[300px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
+    <div className="relative bg-surface w-80 rounded-xl shadow-xl overflow-hidden border border-outline-variant/30">
       <div className="px-5 py-4 border-b border-outline-variant/20">
         <span className="text-title-medium text-on-surface">Filter Products</span>
       </div>

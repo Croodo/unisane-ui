@@ -8,7 +8,7 @@ import { Avatar, AvatarGroup, Card } from "@unisane/ui";
 const AvatarHeroVisual = () => (
   <HeroBackground tone="surface">
     {/* Mock Team Card */}
-    <div className="relative bg-surface w-[300px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
+    <div className="relative bg-surface w-80 rounded-xl shadow-xl overflow-hidden border border-outline-variant/30">
       <div className="px-5 py-4 border-b border-outline-variant/20">
         <span className="text-title-medium text-on-surface">Project Team</span>
       </div>
@@ -136,7 +136,7 @@ export const avatarDoc: ComponentDoc = {
       {
         title: "User list",
         visual: (
-          <Card variant="outlined" padding="none" className="max-w-[280px] mx-auto overflow-hidden">
+          <Card variant="outlined" padding="none" className="max-w-72 mx-auto overflow-hidden">
             {[
               { name: "Alice Johnson", role: "Designer", initials: "AJ" },
               { name: "Bob Smith", role: "Developer", initials: "BS" },
@@ -157,7 +157,7 @@ export const avatarDoc: ComponentDoc = {
       {
         title: "Avatar group",
         visual: (
-          <Card variant="outlined" padding="md" className="max-w-[280px] mx-auto">
+          <Card variant="outlined" padding="md" className="max-w-72 mx-auto">
             <div className="text-title-small text-on-surface mb-3">Shared with</div>
             <AvatarGroup max={4}>
               <Avatar fallback="A" />

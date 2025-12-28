@@ -8,9 +8,9 @@ import { NavigationDrawer, NavigationDrawerItem, NavigationDrawerHeadline, Navig
 const NavigationDrawerHeroVisual = () => (
   <HeroBackground tone="surface">
     {/* Mock App with Drawer */}
-    <div className="relative bg-surface w-[320px] h-[220px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 flex">
+    <div className="relative bg-surface w-80 h-56 rounded-xl shadow-xl overflow-hidden border border-outline-variant/30 flex">
       {/* Navigation Drawer */}
-      <div className="w-[140px] bg-surface-container border-r border-outline-variant/30 p-3">
+      <div className="w-36 bg-surface-container border-r border-outline-variant/30 p-3">
         <div className="text-label-small text-on-surface-variant mb-3 px-2">Navigation</div>
         <div className="space-y-1">
           <div className="flex items-center gap-2 px-3 py-2 rounded-full bg-secondary-container">
@@ -41,7 +41,7 @@ const NavigationDrawerHeroVisual = () => (
 
 // ─── EXAMPLES ────────────────────────────────────────────────────────────────
 const NavigationDrawerBasicExample = () => (
-  <div className="relative w-full max-w-xs h-[280px] bg-surface-container-low rounded-lg overflow-hidden">
+  <div className="relative w-full max-w-xs h-72 bg-surface-container-low rounded-lg overflow-hidden">
     <NavigationDrawer open modal={false} className="relative w-full h-full">
       <div className="p-4">
         <div className="text-title-medium text-on-surface mb-4">My App</div>

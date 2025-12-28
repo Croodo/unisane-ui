@@ -9,7 +9,7 @@ import { Calendar } from "@unisane/ui";
 const CalendarHeroVisual = () => (
   <HeroBackground tone="secondary">
     {/* Mock Calendar */}
-    <div className="relative bg-surface w-[280px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
+    <div className="relative bg-surface w-72 rounded-xl shadow-xl overflow-hidden border border-outline-variant/30">
       <div className="px-5 py-4 border-b border-outline-variant/20 flex items-center justify-between">
         <span className="material-symbols-outlined text-on-surface-variant">chevron_left</span>
         <span className="text-title-medium text-on-surface">December 2024</span>

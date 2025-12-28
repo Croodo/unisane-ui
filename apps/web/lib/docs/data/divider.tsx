@@ -8,7 +8,7 @@ import { Divider, Card, List, ListItem } from "@unisane/ui";
 const DividerHeroVisual = () => (
   <HeroBackground tone="surface">
     {/* Mock Card with Dividers */}
-    <div className="relative bg-surface w-[280px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
+    <div className="relative bg-surface w-72 rounded-xl shadow-xl overflow-hidden border border-outline-variant/30">
       <div className="px-5 py-4">
         <div className="text-title-medium text-on-surface">Section One</div>
         <div className="text-body-small text-on-surface-variant mt-1">Content for the first section.</div>
@@ -133,7 +133,7 @@ export const dividerDoc: ComponentDoc = {
       {
         title: "In lists",
         visual: (
-          <Card variant="outlined" padding="none" className="max-w-[280px] mx-auto overflow-hidden">
+          <Card variant="outlined" padding="none" className="max-w-72 mx-auto overflow-hidden">
             <List>
               <ListItem headline="First item" />
               <Divider variant="inset" />
@@ -148,7 +148,7 @@ export const dividerDoc: ComponentDoc = {
       {
         title: "Between sections",
         visual: (
-          <Card variant="outlined" padding="md" className="max-w-[280px] mx-auto">
+          <Card variant="outlined" padding="md" className="max-w-72 mx-auto">
             <div className="text-body-medium text-on-surface">Section A content</div>
             <Divider className="my-4" />
             <div className="text-body-medium text-on-surface">Section B content</div>

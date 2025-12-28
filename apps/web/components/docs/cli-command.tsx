@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { cn } from "@unisane/ui/lib/utils";
-import { IconButton } from "@unisane/ui";
+import { IconButton, Tabs, TabsList, TabsTrigger } from "@unisane/ui";
 
 type PackageManager = "pnpm" | "npm" | "yarn" | "bun";
 
@@ -37,25 +37,15 @@ export function CliCommand({ command, className }: CliCommandProps) {
   return (
     <div className={cn("rounded-lg overflow-hidden border border-outline-variant/15", className)}>
       {/* Package Manager Tabs */}
-      <div className="flex bg-surface-container-low border-b border-outline-variant/15">
-        {PACKAGE_MANAGERS.map((pm) => (
-          <button
-            key={pm.id}
-            onClick={() => setActiveManager(pm.id)}
-            className={cn(
-              "px-4 py-2_5 text-label-medium font-medium transition-colors relative",
-              activeManager === pm.id
-                ? "text-primary"
-                : "text-on-surface-variant hover:text-on-surface"
-            )}
-          >
-            {pm.label}
-            {activeManager === pm.id && (
-              <div className="absolute bottom-0 left-0 right-0 h-0_5 bg-primary rounded-t-full" />
-            )}
-          </button>
-        ))}
-      </div>
+      <Tabs value={activeManager} onValueChange={(value) => setActiveManager(value as PackageManager)}>
+        <TabsList className="bg-surface-container-low">
+          {PACKAGE_MANAGERS.map((pm) => (
+            <TabsTrigger key={pm.id} value={pm.id} className="text-label-medium">
+              {pm.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
 
       {/* Command Display */}
       <div className="flex items-center justify-between gap-4 p-4 bg-surface-container-low font-mono">

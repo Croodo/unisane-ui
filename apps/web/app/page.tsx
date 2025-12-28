@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Button, Card } from "@unisane/ui";
 
 export default function HomePage() {
   return (
@@ -15,7 +16,7 @@ export default function HomePage() {
               <div className="absolute bottom-0 right-0 w-8 h-8 bg-error rounded-br-lg rounded-tl-lg mix-blend-multiply dark:mix-blend-screen opacity-90" />
             </div>
 
-            <h1 className="text-display-large md:text-[72px] leading-tight font-normal text-on-surface mb-6 tracking-tight">
+            <h1 className="text-display-large md:text-display-large leading-tight font-normal text-on-surface mb-6 tracking-tight">
               <span className="font-medium">Unisane</span>{" "}
               <span className="text-on-surface-variant">UI</span>
             </h1>
@@ -26,21 +27,21 @@ export default function HomePage() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                href="/docs/getting-started"
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-primary text-on-primary text-label-large font-medium hover:shadow-1 transition-all duration-200"
+              <Button
+                asChild
+                variant="filled"
+                size="lg"
+                trailingIcon={
+                  <span className="material-symbols-outlined !text-[20px]">
+                    arrow_forward
+                  </span>
+                }
               >
-                Get Started
-                <span className="material-symbols-outlined !text-[20px]">
-                  arrow_forward
-                </span>
-              </Link>
-              <Link
-                href="/docs/components"
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-surface-container-high text-on-surface text-label-large font-medium hover:bg-surface-container-highest transition-all duration-200"
-              >
-                Browse Components
-              </Link>
+                <Link href="/docs/getting-started">Get Started</Link>
+              </Button>
+              <Button asChild variant="tonal" size="lg">
+                <Link href="/docs/components">Browse Components</Link>
+              </Button>
             </div>
           </div>
         </div>
@@ -69,7 +70,7 @@ export default function HomePage() {
 
       {/* CTA Section */}
       <div className="max-w-7xl mx-auto px-6 py-24">
-        <div className="bg-surface-container-low rounded-[2rem] p-12 text-center">
+        <Card className="p-12 text-center">
           <h2 className="text-headline-large text-on-surface mb-4">
             Ready to build something beautiful?
           </h2>
@@ -77,10 +78,10 @@ export default function HomePage() {
             Start with our CLI to add components to your project, or explore the
             full documentation.
           </p>
-          <code className="inline-block bg-surface-container px-6 py-3 rounded-xl text-body-large text-on-surface font-mono">
+          <code className="inline-block bg-surface-container px-6 py-3 rounded-lg text-body-large text-on-surface font-mono">
             npx @unisane/cli init
           </code>
-        </div>
+        </Card>
       </div>
     </div>
   );
@@ -96,14 +97,14 @@ function FeatureCard({
   description: string;
 }) {
   return (
-    <div className="p-8 rounded-3xl bg-surface-container">
-      <div className="w-14 h-14 rounded-2xl bg-primary-container flex items-center justify-center mb-6">
+    <Card className="p-8">
+      <div className="w-14 h-14 rounded-xl bg-primary-container flex items-center justify-center mb-6">
         <span className="material-symbols-outlined text-on-primary-container !text-[28px]">
           {icon}
         </span>
       </div>
       <h3 className="text-title-large text-on-surface mb-3">{title}</h3>
       <p className="text-body-medium text-on-surface-variant">{description}</p>
-    </div>
+    </Card>
   );
 }

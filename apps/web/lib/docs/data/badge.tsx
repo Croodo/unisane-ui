@@ -8,7 +8,7 @@ import { Badge, Card, IconButton } from "@unisane/ui";
 const BadgeHeroVisual = () => (
   <HeroBackground tone="surface">
     {/* Mock Notification Panel */}
-    <div className="relative bg-surface w-[280px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
+    <div className="relative bg-surface w-72 rounded-xl shadow-xl overflow-hidden border border-outline-variant/30">
       <div className="px-5 py-4 border-b border-outline-variant/20 flex items-center justify-between">
         <span className="text-title-medium text-on-surface">Dashboard</span>
         <div className="relative">
@@ -125,7 +125,7 @@ export const badgeDoc: ComponentDoc = {
       {
         title: "Notification badge",
         visual: (
-          <Card variant="outlined" padding="lg" className="max-w-[200px] mx-auto">
+          <Card variant="outlined" padding="lg" className="max-w-52 mx-auto">
             <div className="flex items-center justify-center gap-6">
               <div className="relative">
                 <IconButton variant="standard" ariaLabel="Mail" icon={<span className="material-symbols-outlined">mail</span>} />
@@ -147,7 +147,7 @@ export const badgeDoc: ComponentDoc = {
       {
         title: "Status labels",
         visual: (
-          <Card variant="outlined" padding="md" className="max-w-[280px] mx-auto">
+          <Card variant="outlined" padding="md" className="max-w-72 mx-auto">
             <div className="text-title-small text-on-surface mb-4">Orders</div>
             <div className="space-y-3">
               <div className="flex items-center justify-between">

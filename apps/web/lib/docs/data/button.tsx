@@ -8,7 +8,7 @@ import { Button, Card } from "@unisane/ui";
 const ButtonHeroVisual = () => (
   <HeroBackground tone="primary">
     {/* Mock Screen */}
-    <div className="relative bg-surface w-[280px] h-[340px] rounded-3xl shadow-xl overflow-hidden flex flex-col border border-outline-variant/30">
+    <div className="relative bg-surface w-72 h-80 rounded-xl shadow-xl overflow-hidden flex flex-col border border-outline-variant/30">
       {/* Mock Image Header */}
       <div className="h-36 bg-surface-container-high relative">
         <div className="absolute inset-0 bg-linear-to-t from-black/20 to-transparent" />
@@ -145,7 +145,7 @@ export const buttonDoc: ComponentDoc = {
       {
         title: "Dialog placement",
         visual: (
-          <div className="bg-surface rounded-3xl p-6 shadow-sm max-w-[320px] mx-auto border border-outline-variant/30">
+          <div className="bg-surface rounded-xl p-6 shadow-sm max-w-80 mx-auto border border-outline-variant/30">
             <div className="mb-4">
               <h4 className="text-title-large text-on-surface">Discard draft?</h4>
               <p className="text-body-medium text-on-surface-variant mt-2">
@@ -167,7 +167,7 @@ export const buttonDoc: ComponentDoc = {
       {
         title: "Card placement",
         visual: (
-          <Card variant="elevated" padding="none" className="max-w-[320px] mx-auto overflow-hidden">
+          <Card variant="elevated" padding="none" className="max-w-80 mx-auto overflow-hidden">
             <div className="h-28 bg-surface-container-high w-full" />
             <div className="p-4">
               <div className="h-5 bg-outline-variant/30 rounded w-3/4 mb-3" />

@@ -9,7 +9,7 @@ import { DatePicker } from "@unisane/ui";
 const DatePickerHeroVisual = () => (
   <HeroBackground tone="secondary">
     {/* Mock Date Picker */}
-    <div className="relative bg-surface w-[300px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 p-6">
+    <div className="relative bg-surface w-80 rounded-xl shadow-xl overflow-hidden border border-outline-variant/30 p-6">
       <div className="text-label-medium text-on-surface-variant mb-2">Date</div>
       <div className="bg-surface border-2 border-outline-variant rounded-lg px-4 py-3 flex items-center justify-between">
         <span className="text-body-medium text-on-surface">December 15, 2024</span>

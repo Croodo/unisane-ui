@@ -8,7 +8,7 @@ import { BottomAppBar, BottomAppBarAction, Fab } from "@unisane/ui";
 const BottomAppBarHeroVisual = () => (
   <HeroBackground tone="surface">
     {/* Mock App with Bottom Bar */}
-    <div className="relative bg-surface w-[320px] h-[240px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
+    <div className="relative bg-surface w-80 h-60 rounded-xl shadow-xl overflow-hidden border border-outline-variant/30">
       {/* Content */}
       <div className="p-4 space-y-3">
         <div className="h-4 bg-surface-container-high rounded-sm w-full" />
@@ -24,7 +24,7 @@ const BottomAppBarHeroVisual = () => (
           <span className="material-symbols-outlined text-on-surface-variant">delete</span>
         </div>
         {/* FAB */}
-        <div className="absolute left-1/2 -translate-x-1/2 -top-7 w-14 h-14 rounded-2xl bg-primary-container flex items-center justify-center shadow-2">
+        <div className="absolute left-1/2 -translate-x-1/2 -top-7 w-14 h-14 rounded-lg bg-primary-container flex items-center justify-center shadow-2">
           <span className="material-symbols-outlined text-on-primary-container">add</span>
         </div>
       </div>

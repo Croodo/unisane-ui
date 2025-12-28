@@ -2,13 +2,13 @@
 
 import { ComponentDoc } from "../types";
 import { HeroBackground } from "../hero-background";
-import { TextField, Card } from "@unisane/ui";
+import { TextField, Card, Button } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const TextFieldHeroVisual = () => (
   <HeroBackground tone="secondary">
     {/* Mock Login Form */}
-    <div className="relative bg-surface w-[300px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
+    <div className="relative bg-surface w-80 rounded-xl shadow-xl overflow-hidden border border-outline-variant/30">
       <div className="px-6 py-5 border-b border-outline-variant/20 text-center">
         <span className="text-headline-small text-on-surface">Welcome back</span>
       </div>
@@ -25,9 +25,9 @@ const TextFieldHeroVisual = () => (
           leadingIcon={<span className="material-symbols-outlined">lock</span>}
         />
         <div className="pt-2">
-          <button className="w-full bg-primary text-on-primary py-3 rounded-full text-label-large font-medium">
+          <Button variant="filled" className="w-full">
             Sign in
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -138,7 +138,7 @@ export const textFieldDoc: ComponentDoc = {
       {
         title: "Contact form",
         visual: (
-          <Card variant="outlined" padding="md" className="max-w-[280px] mx-auto">
+          <Card variant="outlined" padding="md" className="max-w-72 mx-auto">
             <div className="text-title-small text-on-surface mb-4">Contact Us</div>
             <div className="space-y-4">
               <TextField label="Name" placeholder="Your name" />
@@ -152,7 +152,7 @@ export const textFieldDoc: ComponentDoc = {
       {
         title: "Inline with button",
         visual: (
-          <Card variant="outlined" padding="md" className="max-w-[300px] mx-auto">
+          <Card variant="outlined" padding="md" className="max-w-80 mx-auto">
             <div className="text-title-small text-on-surface mb-3">Subscribe</div>
             <div className="flex gap-2">
               <TextField

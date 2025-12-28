@@ -9,7 +9,7 @@ const CardHeroVisual = () => (
   <HeroBackground tone="tertiary">
     {/* Hero Card Example */}
     <div className="transform transition-transform hover:scale-[1.02] duration-500 ease-out">
-      <Card variant="elevated" padding="none" className="w-[320px] overflow-hidden shadow-xl">
+      <Card variant="elevated" padding="none" className="w-80 overflow-hidden shadow-xl">
         <div className="h-44 bg-surface-container-high relative">
           <img
             src="https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
@@ -100,7 +100,7 @@ export const cardDoc: ComponentDoc = {
     items: [
       {
         component: (
-          <Card variant="elevated" className="w-full max-w-[200px] p-4 min-h-[140px] flex flex-col">
+          <Card variant="elevated" className="w-full max-w-52 p-4 min-h-36 flex flex-col">
             <div className="h-3 w-10 bg-outline-variant/30 rounded mb-3" />
             <div className="h-3 w-3/4 bg-outline-variant/30 rounded mb-2" />
             <div className="h-3 w-1/2 bg-outline-variant/30 rounded" />
@@ -111,7 +111,7 @@ export const cardDoc: ComponentDoc = {
       },
       {
         component: (
-          <Card variant="filled" className="w-full max-w-[200px] p-4 min-h-[140px] flex flex-col">
+          <Card variant="filled" className="w-full max-w-52 p-4 min-h-36 flex flex-col">
             <div className="h-3 w-10 bg-on-surface/10 rounded mb-3" />
             <div className="h-3 w-3/4 bg-on-surface/10 rounded mb-2" />
             <div className="h-3 w-1/2 bg-on-surface/10 rounded" />
@@ -122,7 +122,7 @@ export const cardDoc: ComponentDoc = {
       },
       {
         component: (
-          <Card variant="outlined" className="w-full max-w-[200px] p-4 min-h-[140px] flex flex-col">
+          <Card variant="outlined" className="w-full max-w-52 p-4 min-h-36 flex flex-col">
             <div className="h-3 w-10 bg-outline-variant/30 rounded mb-3" />
             <div className="h-3 w-3/4 bg-outline-variant/30 rounded mb-2" />
             <div className="h-3 w-1/2 bg-outline-variant/30 rounded" />

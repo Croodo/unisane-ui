@@ -12,7 +12,7 @@ const PopoverHeroVisual = () => (
       <div className="relative">
         <span className="inline-flex items-center justify-center h-10 px-6 rounded-full bg-primary text-on-primary text-label-large font-medium cursor-pointer">More Info</span>
         {/* Simulated popover */}
-        <div className="absolute top-[calc(100%+8px)] left-1/2 -translate-x-1/2 bg-surface rounded-xl shadow-4 p-4 border border-outline-variant/30 min-w-[200px]">
+        <div className="absolute top-[calc(100%+8px)] left-1/2 -translate-x-1/2 bg-surface rounded-xl shadow-4 p-4 border border-outline-variant/30 min-w-52">
           <div className="text-title-small text-on-surface mb-2">Account Details</div>
           <div className="text-body-small text-on-surface-variant mb-3">
             View and manage your account settings here.
@@ -135,7 +135,7 @@ export const popoverDoc: ComponentDoc = {
           <Popover
             trigger={<span className="inline-flex items-center justify-center h-10 px-6 rounded-full bg-secondary-container text-on-secondary-container text-label-large font-medium hover:bg-secondary-container/80 cursor-pointer">View Details</span>}
             content={
-              <div className="w-[180px]">
+              <div className="w-44">
                 <div className="text-title-small text-on-surface mb-2">Item Details</div>
                 <div className="text-body-small text-on-surface-variant">
                   Additional information about this item appears here.
@@ -152,7 +152,7 @@ export const popoverDoc: ComponentDoc = {
           <Popover
             trigger={<span className="inline-flex items-center justify-center h-10 px-6 rounded-full bg-primary text-on-primary text-label-large font-medium hover:bg-primary/90 cursor-pointer">Share</span>}
             content={
-              <div className="w-[160px]">
+              <div className="w-40">
                 <div className="text-label-medium text-on-surface mb-3">Share via</div>
                 <div className="space-y-2">
                   <div className="text-body-small text-on-surface-variant cursor-pointer hover:text-on-surface">Email</div>

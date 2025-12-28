@@ -50,7 +50,7 @@ function PatternCard({
   return (
     <a
       href={href}
-      className="group block p-6 rounded-3xl bg-surface-container hover:bg-surface-container-high border border-outline-variant transition-all duration-200 hover:shadow-1"
+      className="group block p-6 rounded-xl bg-surface-container hover:bg-surface-container-high border border-outline-variant transition-all duration-200 hover:shadow-1"
     >
       <div className="w-12 h-12 rounded-full bg-tertiary-container flex items-center justify-center mb-4">
         <span className="material-symbols-outlined text-on-tertiary-container text-[24px]!">

@@ -8,7 +8,7 @@ import { List, ListItem, ListSubheader, Card, Avatar, Checkbox, Switch } from "@
 const ListHeroVisual = () => (
   <HeroBackground tone="surface">
     {/* Mock List */}
-    <div className="relative bg-surface w-[280px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
+    <div className="relative bg-surface w-72 rounded-xl shadow-xl overflow-hidden border border-outline-variant/30">
       <div className="px-4 py-2 border-b border-outline-variant/20">
         <span className="text-label-medium text-on-surface-variant/70">Recent</span>
       </div>
@@ -160,7 +160,7 @@ export const listDoc: ComponentDoc = {
       {
         title: "Navigation list",
         visual: (
-          <Card variant="outlined" padding="none" className="max-w-[280px] mx-auto overflow-hidden">
+          <Card variant="outlined" padding="none" className="max-w-72 mx-auto overflow-hidden">
             <List>
               <ListItem
                 headline="Dashboard"
@@ -183,7 +183,7 @@ export const listDoc: ComponentDoc = {
       {
         title: "Contact list",
         visual: (
-          <Card variant="outlined" padding="none" className="max-w-[280px] mx-auto overflow-hidden">
+          <Card variant="outlined" padding="none" className="max-w-72 mx-auto overflow-hidden">
             <List>
               <ListSubheader>Contacts</ListSubheader>
               <ListItem

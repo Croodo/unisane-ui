@@ -8,7 +8,7 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent, Card } fr
 const AccordionHeroVisual = () => (
   <HeroBackground tone="tertiary">
     {/* Mock FAQ Card */}
-    <div className="relative bg-surface w-[300px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
+    <div className="relative bg-surface w-80 rounded-xl shadow-xl overflow-hidden border border-outline-variant/30">
       <div className="px-5 py-4 border-b border-outline-variant/20">
         <span className="text-title-medium text-on-surface">FAQ</span>
       </div>
@@ -153,7 +153,7 @@ export const accordionDoc: ComponentDoc = {
       {
         title: "FAQ section",
         visual: (
-          <Card variant="outlined" padding="md" className="max-w-[280px] mx-auto">
+          <Card variant="outlined" padding="md" className="max-w-72 mx-auto">
             <div className="text-title-small text-on-surface mb-3">Frequently Asked</div>
             <Accordion type="single" defaultValue={["faq-1"]}>
               <AccordionItem value="faq-1">
@@ -176,7 +176,7 @@ export const accordionDoc: ComponentDoc = {
       {
         title: "Settings groups",
         visual: (
-          <Card variant="outlined" padding="md" className="max-w-[280px] mx-auto">
+          <Card variant="outlined" padding="md" className="max-w-72 mx-auto">
             <div className="text-title-small text-on-surface mb-3">Settings</div>
             <Accordion type="multiple" defaultValue={["notifications"]}>
               <AccordionItem value="notifications">

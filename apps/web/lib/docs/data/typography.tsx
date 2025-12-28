@@ -8,7 +8,7 @@ import { Typography } from "@unisane/ui";
 const TypographyHeroVisual = () => (
   <HeroBackground tone="surface">
     {/* Mock Typography Scale */}
-    <div className="relative bg-surface w-[320px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30 p-6">
+    <div className="relative bg-surface w-80 rounded-xl shadow-xl overflow-hidden border border-outline-variant/30 p-6">
       <div className="space-y-4">
         <div className="text-display-small text-on-surface">Display</div>
         <div className="text-headline-medium text-on-surface">Headline</div>

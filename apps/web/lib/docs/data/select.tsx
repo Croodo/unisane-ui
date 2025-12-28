@@ -8,7 +8,7 @@ import { Select } from "@unisane/ui";
 const SelectHeroVisual = () => (
   <HeroBackground tone="secondary">
     {/* Mock Form Card */}
-    <div className="relative bg-surface w-[300px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
+    <div className="relative bg-surface w-80 rounded-xl shadow-xl overflow-hidden border border-outline-variant/30">
       <div className="px-6 py-5 border-b border-outline-variant/20">
         <span className="text-title-medium text-on-surface">Preferences</span>
       </div>

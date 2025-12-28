@@ -2,24 +2,34 @@
 
 import { ComponentDoc } from "../types";
 import { HeroBackground } from "../hero-background";
-import { Carousel, CarouselSlide } from "@unisane/ui";
+import { Carousel, CarouselSlide, IconButton } from "@unisane/ui";
 
 // ─── HERO VISUAL ─────────────────────────────────────────────────────────────
 const CarouselHeroVisual = () => (
   <HeroBackground tone="tertiary">
     {/* Mock Carousel */}
-    <div className="relative bg-surface w-[320px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
-      <div className="h-[180px] bg-surface-container-high relative">
+    <div className="relative bg-surface w-80 rounded-xl shadow-xl overflow-hidden border border-outline-variant/30">
+      <div className="h-44 bg-surface-container-high relative">
         <div className="absolute inset-0 flex items-center justify-center">
           <span className="material-symbols-outlined text-on-surface-variant text-[48px]">image</span>
         </div>
         {/* Navigation Arrows */}
-        <button className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-surface/80 flex items-center justify-center">
+        <IconButton
+          variant="filled"
+          size="md"
+          ariaLabel="Previous slide"
+          className="absolute left-3 top-1/2 -translate-y-1/2 bg-surface/80"
+        >
           <span className="material-symbols-outlined text-on-surface">chevron_left</span>
-        </button>
-        <button className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-surface/80 flex items-center justify-center">
+        </IconButton>
+        <IconButton
+          variant="filled"
+          size="md"
+          ariaLabel="Next slide"
+          className="absolute right-3 top-1/2 -translate-y-1/2 bg-surface/80"
+        >
           <span className="material-symbols-outlined text-on-surface">chevron_right</span>
-        </button>
+        </IconButton>
         {/* Indicators */}
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2">
           <div className="w-2 h-2 rounded-full bg-primary" />
@@ -33,7 +43,7 @@ const CarouselHeroVisual = () => (
 
 // ─── INTERACTIVE EXAMPLES ────────────────────────────────────────────────────
 const CarouselBasicExample = () => (
-  <div className="w-full max-w-xs h-[200px]">
+  <div className="w-full max-w-xs h-52">
     <Carousel showControls showIndicators>
       <CarouselSlide>
         <div className="w-full h-full bg-primary-container flex items-center justify-center rounded-lg">

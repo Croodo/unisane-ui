@@ -8,7 +8,7 @@ import { Slider, Card } from "@unisane/ui";
 const SliderHeroVisual = () => (
   <HeroBackground tone="secondary">
     {/* Mock Settings Card */}
-    <div className="relative bg-surface w-[300px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
+    <div className="relative bg-surface w-80 rounded-xl shadow-xl overflow-hidden border border-outline-variant/30">
       <div className="px-5 py-4 border-b border-outline-variant/20">
         <span className="text-title-medium text-on-surface">Settings</span>
       </div>
@@ -144,7 +144,7 @@ export const sliderDoc: ComponentDoc = {
       {
         title: "Settings panel",
         visual: (
-          <Card variant="outlined" padding="md" className="max-w-[280px] mx-auto">
+          <Card variant="outlined" padding="md" className="max-w-72 mx-auto">
             <div className="text-title-small text-on-surface mb-4">Audio Settings</div>
             <div className="space-y-5">
               <div>
@@ -176,7 +176,7 @@ export const sliderDoc: ComponentDoc = {
       {
         title: "Media player",
         visual: (
-          <Card variant="outlined" padding="lg" className="max-w-[280px] mx-auto">
+          <Card variant="outlined" padding="lg" className="max-w-72 mx-auto">
             <div className="flex flex-col items-center gap-4">
               <div className="text-body-small text-on-surface-variant">Now Playing</div>
               <div className="w-full">

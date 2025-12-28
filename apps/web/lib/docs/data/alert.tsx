@@ -8,7 +8,7 @@ import { Alert, Card } from "@unisane/ui";
 const AlertHeroVisual = () => (
   <HeroBackground tone="error">
     {/* Mock Alerts Stack */}
-    <div className="relative w-[300px] space-y-3">
+    <div className="relative w-80 space-y-3">
       <Alert variant="success" title="Success">
         Your changes have been saved successfully.
       </Alert>
@@ -56,7 +56,7 @@ export const alertDoc: ComponentDoc = {
       {
         emphasis: "Success",
         component: (
-          <Alert variant="success" title="Success" className="max-w-[200px]">
+          <Alert variant="success" title="Success" className="max-w-52">
             Operation completed
           </Alert>
         ),
@@ -67,7 +67,7 @@ export const alertDoc: ComponentDoc = {
       {
         emphasis: "Error",
         component: (
-          <Alert variant="error" title="Error" className="max-w-[200px]">
+          <Alert variant="error" title="Error" className="max-w-52">
             Something went wrong
           </Alert>
         ),
@@ -78,7 +78,7 @@ export const alertDoc: ComponentDoc = {
       {
         emphasis: "Warning",
         component: (
-          <Alert variant="warning" title="Warning" className="max-w-[200px]">
+          <Alert variant="warning" title="Warning" className="max-w-52">
             Please review this
           </Alert>
         ),
@@ -89,7 +89,7 @@ export const alertDoc: ComponentDoc = {
       {
         emphasis: "Info",
         component: (
-          <Alert variant="info" title="Info" className="max-w-[200px]">
+          <Alert variant="info" title="Info" className="max-w-52">
             New update available
           </Alert>
         ),
@@ -131,7 +131,7 @@ export const alertDoc: ComponentDoc = {
       {
         title: "Form validation",
         visual: (
-          <Card variant="outlined" padding="md" className="max-w-[280px] mx-auto">
+          <Card variant="outlined" padding="md" className="max-w-72 mx-auto">
             <div className="text-title-small text-on-surface mb-3">Create Account</div>
             <Alert variant="error" title="Validation Error" className="mb-4">
               Please correct the errors below.
@@ -147,7 +147,7 @@ export const alertDoc: ComponentDoc = {
       {
         title: "Status messages",
         visual: (
-          <Card variant="outlined" padding="md" className="max-w-[280px] mx-auto">
+          <Card variant="outlined" padding="md" className="max-w-72 mx-auto">
             <div className="text-title-small text-on-surface mb-3">System Status</div>
             <div className="space-y-2">
               <Alert variant="success" title="Database">

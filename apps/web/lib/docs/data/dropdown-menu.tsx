@@ -15,7 +15,7 @@ const DropdownMenuHeroVisual = () => (
           JD
         </div>
         {/* Simulated profile menu */}
-        <div className="absolute top-[calc(100%+4px)] right-0 bg-surface rounded-lg shadow-4 py-2 border border-outline-variant/20 min-w-[220px]">
+        <div className="absolute top-[calc(100%+4px)] right-0 bg-surface rounded-lg shadow-4 py-2 border border-outline-variant/20 min-w-56">
           {/* Profile header */}
           <div className="px-4 py-3 flex items-center gap-3 border-b border-outline-variant/20 mb-1">
             <div className="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container text-title-medium">

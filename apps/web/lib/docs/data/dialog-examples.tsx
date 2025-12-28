@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Dialog } from "@unisane/ui";
+import { Button, Dialog, IconButton } from "@unisane/ui";
 import { useState } from "react";
 import { HeroBackground } from "../hero-background";
 
@@ -39,19 +39,19 @@ export const DialogInteractiveExample = () => {
 export const DialogHeroVisual = () => (
   <HeroBackground tone="tertiary">
     {/* Background App (dimmed) */}
-    <div className="absolute inset-8 bg-surface/40 rounded-2xl" />
+    <div className="absolute inset-8 bg-surface/40 rounded-lg" />
 
     {/* Dialog Mock */}
-    <div className="bg-surface w-[300px] rounded-3xl shadow-xl overflow-hidden border border-outline-variant/30">
+    <div className="bg-surface w-80 rounded-xl shadow-xl overflow-hidden border border-outline-variant/30">
       {/* Header */}
       <div className="px-6 py-5 border-b border-outline-variant/10 bg-surface-container-low/50 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <span className="material-symbols-outlined text-primary">delete</span>
           <span className="text-title-medium text-on-surface">Delete file?</span>
         </div>
-        <button className="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-variant">
+        <IconButton variant="standard" size="sm" ariaLabel="Close dialog">
           <span className="material-symbols-outlined text-[20px]">close</span>
-        </button>
+        </IconButton>
       </div>
       {/* Content */}
       <div className="px-6 py-5">
@@ -70,7 +70,7 @@ export const DialogHeroVisual = () => (
 
 // ─── PLACEMENT VISUALS ─────────────────────────────────────────────────────────
 export const DialogPlacementBasic = () => (
-  <div className="relative w-[300px] h-44 rounded-xl overflow-hidden mx-auto bg-surface-container-high">
+  <div className="relative w-80 h-44 rounded-xl overflow-hidden mx-auto bg-surface-container-high">
     {/* Scrim overlay */}
     <div className="absolute inset-0 bg-black/30" />
     {/* Dialog */}
@@ -88,7 +88,7 @@ export const DialogPlacementBasic = () => (
 );
 
 export const DialogPlacementWithIcon = () => (
-  <div className="relative w-[300px] h-48 rounded-xl overflow-hidden mx-auto bg-surface-container-high">
+  <div className="relative w-80 h-48 rounded-xl overflow-hidden mx-auto bg-surface-container-high">
     {/* Scrim overlay */}
     <div className="absolute inset-0 bg-black/30" />
     {/* Dialog */}

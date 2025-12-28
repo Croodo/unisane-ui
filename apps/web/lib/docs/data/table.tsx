@@ -8,7 +8,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Card, Ch
 const TableHeroVisual = () => (
   <HeroBackground tone="surface">
     {/* Mock Table */}
-    <div className="relative bg-surface w-[320px] rounded-xl shadow-xl overflow-hidden border border-outline-variant/30">
+    <div className="relative bg-surface w-80 rounded-xl shadow-xl overflow-hidden border border-outline-variant/30">
       <table className="w-full text-body-small">
         <thead className="bg-surface-container-low border-b border-outline-variant/30">
           <tr>
@@ -91,11 +91,11 @@ export const tableDoc: ComponentDoc = {
           <div className="w-44 bg-surface rounded-sm border border-outline-variant/30 overflow-hidden">
             <table className="w-full text-[9px]">
               <thead className="bg-surface-container-low border-b border-outline-variant/30">
-                <tr><th className="px-1 py-0_5 text-left">Col 1</th><th className="px-1 py-0_5 text-left">Col 2</th></tr>
+                <tr><th className="px-1 py-0.5 text-left">Col 1</th><th className="px-1 py-0.5 text-left">Col 2</th></tr>
               </thead>
               <tbody>
-                <tr className="border-b border-outline-variant/15"><td className="px-1 py-0_5">A</td><td className="px-1 py-0_5">B</td></tr>
-                <tr><td className="px-1 py-0_5">C</td><td className="px-1 py-0_5">D</td></tr>
+                <tr className="border-b border-outline-variant/15"><td className="px-1 py-0.5">A</td><td className="px-1 py-0.5">B</td></tr>
+                <tr><td className="px-1 py-0.5">C</td><td className="px-1 py-0.5">D</td></tr>
               </tbody>
             </table>
           </div>
@@ -144,7 +144,7 @@ export const tableDoc: ComponentDoc = {
       {
         title: "Simple data table",
         visual: (
-          <Card variant="outlined" padding="none" className="max-w-[320px] mx-auto overflow-hidden">
+          <Card variant="outlined" padding="none" className="max-w-80 mx-auto overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -173,7 +173,7 @@ export const tableDoc: ComponentDoc = {
       {
         title: "Selectable rows",
         visual: (
-          <Card variant="outlined" padding="none" className="max-w-[320px] mx-auto overflow-hidden">
+          <Card variant="outlined" padding="none" className="max-w-80 mx-auto overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow>
