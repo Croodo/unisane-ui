@@ -49,8 +49,8 @@
 /* Theme defaults layer - can be overridden by unlayered app CSS */
 @layer unisane-defaults {
   :root {
-    --hue: 240;
-    --chroma: 0.13;
+    --hue: 210;
+    --chroma: 0.16;
   }
 }
 
@@ -86,12 +86,12 @@
   --ref-primary-30: oklch(0.44 calc(var(--chroma) * 0.95) var(--hue));
   --ref-primary-40: oklch(0.55 calc(var(--chroma) * 1) var(--hue));
   --ref-primary-50: oklch(0.65 calc(var(--chroma) * 1) var(--hue));
-  --ref-primary-60: oklch(0.74 calc(var(--chroma) * 0.95) var(--hue));
-  --ref-primary-70: oklch(0.82 calc(var(--chroma) * 0.85) var(--hue));
-  --ref-primary-80: oklch(0.88 calc(var(--chroma) * 0.7) var(--hue));
-  --ref-primary-90: oklch(0.94 calc(var(--chroma) * 0.5) var(--hue));
-  --ref-primary-95: oklch(0.97 calc(var(--chroma) * 0.3) var(--hue));
-  --ref-primary-99: oklch(0.995 calc(var(--chroma) * 0.1) var(--hue));
+  --ref-primary-60: oklch(0.74 calc(var(--chroma) * 0.9) var(--hue));
+  --ref-primary-70: oklch(0.82 calc(var(--chroma) * 0.75) var(--hue));
+  --ref-primary-80: oklch(0.88 calc(var(--chroma) * 0.55) var(--hue));
+  --ref-primary-90: oklch(0.94 calc(var(--chroma) * 0.35) var(--hue));
+  --ref-primary-95: oklch(0.97 calc(var(--chroma) * 0.25) var(--hue));
+  --ref-primary-99: oklch(0.995 calc(var(--chroma) * 0.15) var(--hue));
   --ref-primary-100: #FFFFFF;
 
   /* secondary */
@@ -107,12 +107,12 @@
   --ref-secondary-30: oklch(0.44 calc(var(--chroma-secondary) * 0.95) var(--hue-secondary));
   --ref-secondary-40: oklch(0.55 calc(var(--chroma-secondary) * 1) var(--hue-secondary));
   --ref-secondary-50: oklch(0.65 calc(var(--chroma-secondary) * 1) var(--hue-secondary));
-  --ref-secondary-60: oklch(0.74 calc(var(--chroma-secondary) * 0.95) var(--hue-secondary));
-  --ref-secondary-70: oklch(0.82 calc(var(--chroma-secondary) * 0.85) var(--hue-secondary));
-  --ref-secondary-80: oklch(0.88 calc(var(--chroma-secondary) * 0.7) var(--hue-secondary));
-  --ref-secondary-90: oklch(0.94 calc(var(--chroma-secondary) * 0.5) var(--hue-secondary));
-  --ref-secondary-95: oklch(0.97 calc(var(--chroma-secondary) * 0.3) var(--hue-secondary));
-  --ref-secondary-99: oklch(0.995 calc(var(--chroma-secondary) * 0.1) var(--hue-secondary));
+  --ref-secondary-60: oklch(0.74 calc(var(--chroma-secondary) * 0.9) var(--hue-secondary));
+  --ref-secondary-70: oklch(0.82 calc(var(--chroma-secondary) * 0.75) var(--hue-secondary));
+  --ref-secondary-80: oklch(0.88 calc(var(--chroma-secondary) * 0.55) var(--hue-secondary));
+  --ref-secondary-90: oklch(0.94 calc(var(--chroma-secondary) * 0.35) var(--hue-secondary));
+  --ref-secondary-95: oklch(0.97 calc(var(--chroma-secondary) * 0.25) var(--hue-secondary));
+  --ref-secondary-99: oklch(0.995 calc(var(--chroma-secondary) * 0.15) var(--hue-secondary));
   --ref-secondary-100: #FFFFFF;
 
   /* tertiary */
@@ -128,12 +128,12 @@
   --ref-tertiary-30: oklch(0.44 calc(var(--chroma-tertiary) * 0.95) var(--hue-tertiary));
   --ref-tertiary-40: oklch(0.55 calc(var(--chroma-tertiary) * 1) var(--hue-tertiary));
   --ref-tertiary-50: oklch(0.65 calc(var(--chroma-tertiary) * 1) var(--hue-tertiary));
-  --ref-tertiary-60: oklch(0.74 calc(var(--chroma-tertiary) * 0.95) var(--hue-tertiary));
-  --ref-tertiary-70: oklch(0.82 calc(var(--chroma-tertiary) * 0.85) var(--hue-tertiary));
-  --ref-tertiary-80: oklch(0.88 calc(var(--chroma-tertiary) * 0.7) var(--hue-tertiary));
-  --ref-tertiary-90: oklch(0.94 calc(var(--chroma-tertiary) * 0.5) var(--hue-tertiary));
-  --ref-tertiary-95: oklch(0.97 calc(var(--chroma-tertiary) * 0.3) var(--hue-tertiary));
-  --ref-tertiary-99: oklch(0.995 calc(var(--chroma-tertiary) * 0.1) var(--hue-tertiary));
+  --ref-tertiary-60: oklch(0.74 calc(var(--chroma-tertiary) * 0.9) var(--hue-tertiary));
+  --ref-tertiary-70: oklch(0.82 calc(var(--chroma-tertiary) * 0.75) var(--hue-tertiary));
+  --ref-tertiary-80: oklch(0.88 calc(var(--chroma-tertiary) * 0.55) var(--hue-tertiary));
+  --ref-tertiary-90: oklch(0.94 calc(var(--chroma-tertiary) * 0.35) var(--hue-tertiary));
+  --ref-tertiary-95: oklch(0.97 calc(var(--chroma-tertiary) * 0.25) var(--hue-tertiary));
+  --ref-tertiary-99: oklch(0.995 calc(var(--chroma-tertiary) * 0.15) var(--hue-tertiary));
   --ref-tertiary-100: #FFFFFF;
 
   /* neutral */
@@ -149,12 +149,12 @@
   --ref-neutral-30: oklch(0.44 calc(var(--chroma-neutral) * 0.95) var(--hue-neutral));
   --ref-neutral-40: oklch(0.55 calc(var(--chroma-neutral) * 1) var(--hue-neutral));
   --ref-neutral-50: oklch(0.65 calc(var(--chroma-neutral) * 1) var(--hue-neutral));
-  --ref-neutral-60: oklch(0.74 calc(var(--chroma-neutral) * 0.95) var(--hue-neutral));
-  --ref-neutral-70: oklch(0.82 calc(var(--chroma-neutral) * 0.85) var(--hue-neutral));
-  --ref-neutral-80: oklch(0.88 calc(var(--chroma-neutral) * 0.7) var(--hue-neutral));
-  --ref-neutral-90: oklch(0.94 calc(var(--chroma-neutral) * 0.5) var(--hue-neutral));
-  --ref-neutral-95: oklch(0.97 calc(var(--chroma-neutral) * 0.3) var(--hue-neutral));
-  --ref-neutral-99: oklch(0.995 calc(var(--chroma-neutral) * 0.1) var(--hue-neutral));
+  --ref-neutral-60: oklch(0.74 calc(var(--chroma-neutral) * 0.9) var(--hue-neutral));
+  --ref-neutral-70: oklch(0.82 calc(var(--chroma-neutral) * 0.75) var(--hue-neutral));
+  --ref-neutral-80: oklch(0.88 calc(var(--chroma-neutral) * 0.55) var(--hue-neutral));
+  --ref-neutral-90: oklch(0.94 calc(var(--chroma-neutral) * 0.35) var(--hue-neutral));
+  --ref-neutral-95: oklch(0.97 calc(var(--chroma-neutral) * 0.25) var(--hue-neutral));
+  --ref-neutral-99: oklch(0.995 calc(var(--chroma-neutral) * 0.15) var(--hue-neutral));
   --ref-neutral-100: #FFFFFF;
 
   /* neutral-variant */
@@ -170,12 +170,12 @@
   --ref-neutral-variant-30: oklch(0.44 calc(var(--chroma-neutral-variant) * 0.95) var(--hue-neutral));
   --ref-neutral-variant-40: oklch(0.55 calc(var(--chroma-neutral-variant) * 1) var(--hue-neutral));
   --ref-neutral-variant-50: oklch(0.65 calc(var(--chroma-neutral-variant) * 1) var(--hue-neutral));
-  --ref-neutral-variant-60: oklch(0.74 calc(var(--chroma-neutral-variant) * 0.95) var(--hue-neutral));
-  --ref-neutral-variant-70: oklch(0.82 calc(var(--chroma-neutral-variant) * 0.85) var(--hue-neutral));
-  --ref-neutral-variant-80: oklch(0.88 calc(var(--chroma-neutral-variant) * 0.7) var(--hue-neutral));
-  --ref-neutral-variant-90: oklch(0.94 calc(var(--chroma-neutral-variant) * 0.5) var(--hue-neutral));
-  --ref-neutral-variant-95: oklch(0.97 calc(var(--chroma-neutral-variant) * 0.3) var(--hue-neutral));
-  --ref-neutral-variant-99: oklch(0.995 calc(var(--chroma-neutral-variant) * 0.1) var(--hue-neutral));
+  --ref-neutral-variant-60: oklch(0.74 calc(var(--chroma-neutral-variant) * 0.9) var(--hue-neutral));
+  --ref-neutral-variant-70: oklch(0.82 calc(var(--chroma-neutral-variant) * 0.75) var(--hue-neutral));
+  --ref-neutral-variant-80: oklch(0.88 calc(var(--chroma-neutral-variant) * 0.55) var(--hue-neutral));
+  --ref-neutral-variant-90: oklch(0.94 calc(var(--chroma-neutral-variant) * 0.35) var(--hue-neutral));
+  --ref-neutral-variant-95: oklch(0.97 calc(var(--chroma-neutral-variant) * 0.25) var(--hue-neutral));
+  --ref-neutral-variant-99: oklch(0.995 calc(var(--chroma-neutral-variant) * 0.15) var(--hue-neutral));
   --ref-neutral-variant-100: #FFFFFF;
 
   /* error */
@@ -191,12 +191,12 @@
   --ref-error-30: oklch(0.44 calc(var(--chroma-error) * 0.95) var(--hue-error));
   --ref-error-40: oklch(0.55 calc(var(--chroma-error) * 1) var(--hue-error));
   --ref-error-50: oklch(0.65 calc(var(--chroma-error) * 1) var(--hue-error));
-  --ref-error-60: oklch(0.74 calc(var(--chroma-error) * 0.95) var(--hue-error));
-  --ref-error-70: oklch(0.82 calc(var(--chroma-error) * 0.85) var(--hue-error));
-  --ref-error-80: oklch(0.88 calc(var(--chroma-error) * 0.7) var(--hue-error));
-  --ref-error-90: oklch(0.94 calc(var(--chroma-error) * 0.5) var(--hue-error));
-  --ref-error-95: oklch(0.97 calc(var(--chroma-error) * 0.3) var(--hue-error));
-  --ref-error-99: oklch(0.995 calc(var(--chroma-error) * 0.1) var(--hue-error));
+  --ref-error-60: oklch(0.74 calc(var(--chroma-error) * 0.9) var(--hue-error));
+  --ref-error-70: oklch(0.82 calc(var(--chroma-error) * 0.75) var(--hue-error));
+  --ref-error-80: oklch(0.88 calc(var(--chroma-error) * 0.55) var(--hue-error));
+  --ref-error-90: oklch(0.94 calc(var(--chroma-error) * 0.35) var(--hue-error));
+  --ref-error-95: oklch(0.97 calc(var(--chroma-error) * 0.25) var(--hue-error));
+  --ref-error-99: oklch(0.995 calc(var(--chroma-error) * 0.15) var(--hue-error));
   --ref-error-100: #FFFFFF;
 
 
@@ -218,7 +218,7 @@
      This enables special schemes (monochrome, high-contrast) without
      regenerating the entire palette. Just change the tone mappings! */
 
-  /* Primary tone mapping */
+  /* Primary tone mapping (M3 standard: tone 40) */
   --tone-primary: var(--ref-primary-40);
   --tone-on-primary: var(--ref-primary-100);
   --tone-primary-container: var(--ref-primary-90);
@@ -706,44 +706,44 @@
    - high               - Maximum contrast for accessibility (WCAG AAA)
    ============================================================ */
 
-/* Medium contrast - boosted readability */
+/* Medium contrast - boosted readability (darker primary: tone 30) */
 [data-contrast="medium"] {
   --tone-primary: var(--ref-primary-30);
   --tone-on-primary: var(--ref-primary-100);
   --tone-primary-container: var(--ref-primary-95);
-  --tone-on-primary-container: var(--ref-primary-5, var(--ref-primary-10));
+  --tone-on-primary-container: var(--ref-primary-10);
 
   --tone-secondary: var(--ref-secondary-30);
   --tone-on-secondary: var(--ref-secondary-100);
 
-  --tone-on-surface: var(--ref-neutral-5, var(--ref-neutral-10));
+  --tone-on-surface: var(--ref-neutral-10);
   --tone-outline: var(--ref-neutral-variant-40);
 }
 
 .dark[data-contrast="medium"],
 [data-contrast="medium"].dark {
-  --tone-primary: var(--ref-primary-85, var(--ref-primary-80));
+  --tone-primary: var(--ref-primary-80);
   --tone-on-primary: var(--ref-primary-10);
-  --tone-primary-container: var(--ref-primary-25, var(--ref-primary-30));
+  --tone-primary-container: var(--ref-primary-30);
   --tone-on-primary-container: var(--ref-primary-95);
 
-  --tone-secondary: var(--ref-secondary-85, var(--ref-secondary-80));
+  --tone-secondary: var(--ref-secondary-80);
   --tone-on-secondary: var(--ref-secondary-10);
 
   --tone-on-surface: var(--ref-neutral-95);
   --tone-outline: var(--ref-neutral-variant-70);
 }
 
-/* High contrast - maximum accessibility (WCAG AAA) */
+/* High contrast - maximum accessibility, WCAG AAA (darkest primary: tone 20) */
 [data-contrast="high"] {
   --tone-primary: var(--ref-primary-20);
   --tone-on-primary: var(--ref-primary-100);
-  --tone-primary-container: var(--ref-primary-95);
+  --tone-primary-container: var(--ref-primary-99);
   --tone-on-primary-container: var(--ref-primary-0);
 
   --tone-secondary: var(--ref-secondary-20);
   --tone-on-secondary: var(--ref-secondary-100);
-  --tone-secondary-container: var(--ref-secondary-95);
+  --tone-secondary-container: var(--ref-secondary-99);
   --tone-on-secondary-container: var(--ref-secondary-0);
 
   --tone-tertiary: var(--ref-tertiary-20);

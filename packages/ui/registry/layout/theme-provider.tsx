@@ -1,28 +1,56 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 export type Density = "compact" | "standard" | "comfortable" | "dense";
 export type Theme = "light" | "dark" | "system";
 export type RadiusTheme = "none" | "minimal" | "sharp" | "standard" | "soft";
+export type ColorScheme = "tonal" | "monochrome" | "neutral";
+export type ContrastLevel = "standard" | "medium" | "high";
+export type ColorTheme = "blue" | "purple" | "pink" | "red" | "orange" | "yellow" | "green" | "cyan" | "neutral" | "black";
+
+export interface ThemeConfig {
+  density?: Density;
+  theme?: Theme;
+  radius?: RadiusTheme;
+  scheme?: ColorScheme;
+  contrast?: ContrastLevel;
+  colorTheme?: ColorTheme;
+}
 
 interface ThemeContextType {
-  spaceScale: number;
-  typeScale: number;
-  radiusScale: number;
   density: Density;
-  setSpaceScale: (scale: number) => void;
-  setTypeScale: (scale: number) => void;
-  setRadiusScale: (scale: number) => void;
-  setDensity: (density: Density) => void;
   theme: Theme;
-  setTheme: (theme: Theme) => void;
   resolvedTheme: "light" | "dark";
-  radiusTheme: RadiusTheme;
-  setRadiusTheme: (radiusTheme: RadiusTheme) => void;
+  radius: RadiusTheme;
+  scheme: ColorScheme;
+  contrast: ContrastLevel;
+  colorTheme: ColorTheme;
+  setDensity: (density: Density) => void;
+  setTheme: (theme: Theme) => void;
+  setRadius: (radius: RadiusTheme) => void;
+  setScheme: (scheme: ColorScheme) => void;
+  setContrast: (contrast: ContrastLevel) => void;
+  setColorTheme: (colorTheme: ColorTheme) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+
+const STORAGE_KEY = "unisane-theme";
+
+// Color hue mapping (must match theme-script.ts)
+const COLOR_THEMES: Record<ColorTheme, { hue: number; chroma: number }> = {
+  blue: { hue: 240, chroma: 0.13 },
+  purple: { hue: 285, chroma: 0.14 },
+  pink: { hue: 340, chroma: 0.15 },
+  red: { hue: 25, chroma: 0.16 },
+  orange: { hue: 55, chroma: 0.16 },
+  yellow: { hue: 85, chroma: 0.14 },
+  green: { hue: 145, chroma: 0.14 },
+  cyan: { hue: 195, chroma: 0.12 },
+  neutral: { hue: 60, chroma: 0.02 },
+  black: { hue: 0, chroma: 0 },
+};
 
 export function useTheme() {
   const context = useContext(ThemeContext);
@@ -33,205 +61,199 @@ export function useTheme() {
 }
 
 export function useColorScheme() {
-  const context = useContext(ThemeContext);
-  if (!context) {
-    throw new Error("useColorScheme must be used within a ThemeProvider");
-  }
-  return {
-    theme: context.theme,
-    setTheme: context.setTheme,
-    resolvedTheme: context.resolvedTheme,
-  };
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  return { theme, setTheme, resolvedTheme };
 }
 
 export function useDensity() {
-  const context = useContext(ThemeContext);
-  if (!context) {
-    throw new Error("useDensity must be used within a ThemeProvider");
-  }
-  return {
-    density: context.density,
-    setDensity: context.setDensity,
-    spaceScale: context.spaceScale,
-    typeScale: context.typeScale,
-    radiusScale: context.radiusScale,
-  };
-}
-
-// Synced with CSS in uni-tokens.css [data-density="..."] selectors
-const DENSITY_PRESETS: Record<
-  Density,
-  { space: number; type: number; radius: number }
-> = {
-  dense: { space: 0.75, type: 0.85, radius: 0.75 },
-  compact: { space: 0.85, type: 0.9, radius: 0.8 },
-  standard: { space: 1, type: 1, radius: 1.0 },
-  comfortable: { space: 1.1, type: 1, radius: 1.0 },
-};
-
-// Synced with CSS in uni-tokens.css [data-radius="..."] selectors
-// Scale affects all radius tokens: rounded-xs (4px), rounded-sm (8px), rounded-md (12px), etc.
-const RADIUS_PRESETS: Record<RadiusTheme, number> = {
-  none: 0,        // All corners squared (0px)
-  minimal: 0.25,  // Very subtle: xs=1px, sm=2px, md=3px
-  sharp: 0.5,     // Subtle rounding: xs=2px, sm=4px, md=6px
-  standard: 1.0,  // Default M3: xs=4px, sm=8px, md=12px
-  soft: 1.25,     // Extra rounded: xs=5px, sm=10px, md=15px
-};
-
-export interface ThemeConfig {
-  density?: Density;
-  theme?: Theme;
-  radius?: RadiusTheme;
+  const { density, setDensity } = useTheme();
+  return { density, setDensity };
 }
 
 interface ThemeProviderProps {
   children: React.ReactNode;
-  config?: ThemeConfig;
-  initialDensity?: Density;
   storageKey?: string;
+  disableStorage?: boolean;
+}
+
+// Read theme from DOM (set by blocking script in <head>)
+function readFromDOM(): {
+  density: Density;
+  radius: RadiusTheme;
+  scheme: ColorScheme;
+  contrast: ContrastLevel;
+  colorTheme: ColorTheme;
+  theme: Theme;
+  resolvedTheme: "light" | "dark";
+} {
+  if (typeof document === "undefined") {
+    return {
+      density: "standard",
+      radius: "standard",
+      scheme: "tonal",
+      contrast: "standard",
+      colorTheme: "blue",
+      theme: "system",
+      resolvedTheme: "light",
+    };
+  }
+
+  const root = document.documentElement;
+
+  return {
+    density: (root.getAttribute("data-density") || "standard") as Density,
+    radius: (root.getAttribute("data-radius") || "standard") as RadiusTheme,
+    scheme: (root.getAttribute("data-scheme") || "tonal") as ColorScheme,
+    contrast: (root.getAttribute("data-contrast") || "standard") as ContrastLevel,
+    colorTheme: (root.getAttribute("data-theme") || "blue") as ColorTheme,
+    theme: (root.getAttribute("data-theme-mode") || "system") as Theme,
+    resolvedTheme: root.classList.contains("dark") ? "dark" : "light",
+  };
+}
+
+// Update inline style tag with new color values (prevents flicker on theme change)
+function updateInlineStyles(colorTheme: ColorTheme, resolvedTheme: "light" | "dark") {
+  const color = COLOR_THEMES[colorTheme] || COLOR_THEMES.blue;
+  let styleEl = document.getElementById("unisane-theme-init") as HTMLStyleElement | null;
+
+  if (!styleEl) {
+    styleEl = document.createElement("style");
+    styleEl.id = "unisane-theme-init";
+    document.head.appendChild(styleEl);
+  }
+
+  styleEl.textContent = `
+:root {
+  --hue: ${color.hue};
+  --chroma: ${color.chroma};
+  color-scheme: ${resolvedTheme};
+}
+`.trim();
+}
+
+// Update DOM and persist to localStorage
+function updateDOM(key: string, value: string, storageKey: string, disableStorage: boolean) {
+  const root = document.documentElement;
+
+  switch (key) {
+    case "resolvedTheme":
+      root.classList.toggle("dark", value === "dark");
+      break;
+    case "theme":
+      root.setAttribute("data-theme-mode", value);
+      break;
+    case "colorTheme":
+      root.setAttribute("data-theme", value);
+      break;
+    default:
+      root.setAttribute(`data-${key}`, value);
+  }
+
+  // Persist to localStorage
+  if (!disableStorage) {
+    try {
+      const current = JSON.parse(localStorage.getItem(storageKey) || "{}");
+      current[key] = value;
+      localStorage.setItem(storageKey, JSON.stringify(current));
+    } catch {
+      // Ignore storage errors
+    }
+  }
 }
 
 export function ThemeProvider({
   children,
-  config,
-  initialDensity,
-  storageKey = "unisane-theme",
+  storageKey = STORAGE_KEY,
+  disableStorage = false,
 }: ThemeProviderProps) {
-  // Config takes precedence - use config values as initial state
-  const configDensity = config?.density || initialDensity || "standard";
-  const configTheme = config?.theme || "system";
-  const configRadius = config?.radius || "standard";
+  // Read initial values from DOM (already set by blocking script)
+  const initial = readFromDOM();
 
-  // Initialize state directly from config (not hardcoded defaults)
-  const [density, setDensityState] = useState<Density>(configDensity);
-  const [spaceScale, setSpaceScale] = useState(DENSITY_PRESETS[configDensity].space);
-  const [typeScale, setTypeScale] = useState(DENSITY_PRESETS[configDensity].type);
-  const [radiusScale, setRadiusScaleState] = useState(RADIUS_PRESETS[configRadius]);
+  const [density, setDensityState] = useState<Density>(initial.density);
+  const [theme, setThemeState] = useState<Theme>(initial.theme);
+  const [radius, setRadiusState] = useState<RadiusTheme>(initial.radius);
+  const [scheme, setSchemeState] = useState<ColorScheme>(initial.scheme);
+  const [contrast, setContrastState] = useState<ContrastLevel>(initial.contrast);
+  const [colorTheme, setColorThemeState] = useState<ColorTheme>(initial.colorTheme);
+  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">(initial.resolvedTheme);
 
-  const [theme, setThemeState] = useState<Theme>(configTheme);
-  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">(
-    configTheme === "dark" ? "dark" : configTheme === "light" ? "light" : "light"
-  );
+  // Setters
+  const setDensity = (v: Density) => {
+    setDensityState(v);
+    updateDOM("density", v, storageKey, disableStorage);
+  };
 
-  const [radiusTheme, setRadiusThemeState] = useState<RadiusTheme>(configRadius);
+  const setRadius = (v: RadiusTheme) => {
+    setRadiusState(v);
+    updateDOM("radius", v, storageKey, disableStorage);
+  };
 
-  // Load from localStorage only for values not provided in config
-  useEffect(() => {
-    if (typeof window === "undefined") return;
+  const setScheme = (v: ColorScheme) => {
+    setSchemeState(v);
+    updateDOM("scheme", v, storageKey, disableStorage);
+  };
 
-    // Start with config values (already set as initial state)
-    let finalTheme: Theme = configTheme;
-    let finalDensity: Density = configDensity;
-    let finalRadiusTheme: RadiusTheme = configRadius;
+  const setContrast = (v: ContrastLevel) => {
+    setContrastState(v);
+    updateDOM("contrast", v, storageKey, disableStorage);
+  };
 
-    // Only load from localStorage for values NOT explicitly set in config
-    const stored = localStorage.getItem(storageKey);
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        // Only use localStorage if config didn't provide these values
-        if (!config?.theme && parsed.theme) finalTheme = parsed.theme;
-        if (!config?.density && !initialDensity && parsed.density && parsed.density in DENSITY_PRESETS) {
-          finalDensity = parsed.density as Density;
-        }
-        if (!config?.radius && parsed.radiusTheme) finalRadiusTheme = parsed.radiusTheme;
-      } catch (e) {
-        console.warn("Failed to parse theme from localStorage", e);
-      }
+  const setColorTheme = (v: ColorTheme) => {
+    setColorThemeState(v);
+    updateDOM("colorTheme", v, storageKey, disableStorage);
+    // Also update inline styles to prevent flicker
+    updateInlineStyles(v, resolvedTheme);
+  };
+
+  const setTheme = (v: Theme) => {
+    setThemeState(v);
+    updateDOM("theme", v, storageKey, disableStorage);
+
+    let resolved: "light" | "dark";
+    if (v === "system") {
+      resolved = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    } else {
+      resolved = v;
     }
 
-    // Apply final values
-    setThemeState(finalTheme);
-    setDensityState(finalDensity);
-    setSpaceScale(DENSITY_PRESETS[finalDensity].space);
-    setTypeScale(DENSITY_PRESETS[finalDensity].type);
-    setRadiusThemeState(finalRadiusTheme);
-    setRadiusScaleState(RADIUS_PRESETS[finalRadiusTheme]);
-  }, [storageKey, config?.theme, config?.density, config?.radius, initialDensity, configTheme, configDensity, configRadius]);
+    setResolvedTheme(resolved);
+    updateDOM("resolvedTheme", resolved, storageKey, disableStorage);
+    updateInlineStyles(colorTheme, resolved);
+  };
 
+  // Listen for system theme changes
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (theme !== "system") return;
 
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-
-    const updateResolvedTheme = () => {
-      if (theme === "system") {
-        setResolvedTheme(mediaQuery.matches ? "dark" : "light");
-      } else {
-        setResolvedTheme(theme);
-      }
+    const onChange = () => {
+      const resolved = mediaQuery.matches ? "dark" : "light";
+      setResolvedTheme(resolved);
+      updateDOM("resolvedTheme", resolved, storageKey, disableStorage);
+      updateInlineStyles(colorTheme, resolved);
     };
 
-    updateResolvedTheme();
+    mediaQuery.addEventListener("change", onChange);
+    return () => mediaQuery.removeEventListener("change", onChange);
+  }, [theme, colorTheme, storageKey, disableStorage]);
 
-    mediaQuery.addEventListener("change", updateResolvedTheme);
-    return () => mediaQuery.removeEventListener("change", updateResolvedTheme);
-  }, [theme]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const root = document.documentElement;
-
-    // Dark mode via class (CSS handles color switching)
-    if (resolvedTheme === "dark") {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
-    }
-
-    // Data attributes trigger CSS selectors in uni-tokens.css
-    // No inline styles needed - CSS handles all scaling
-    root.setAttribute("data-density", density);
-    root.setAttribute("data-radius", radiusTheme);
-  }, [resolvedTheme, density, radiusTheme]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    localStorage.setItem(
-      storageKey,
-      JSON.stringify({
-        theme,
-        density,
-        radiusTheme,
-      })
-    );
-  }, [theme, density, radiusTheme, storageKey]);
-
-  const setDensity = useCallback((d: Density) => {
-    setDensityState(d);
-    setSpaceScale(DENSITY_PRESETS[d].space);
-    setTypeScale(DENSITY_PRESETS[d].type);
-  }, []);
-
-  const setTheme = useCallback((t: Theme) => {
-    setThemeState(t);
-  }, []);
-
-  const setRadiusTheme = useCallback((r: RadiusTheme) => {
-    setRadiusThemeState(r);
-    setRadiusScaleState(RADIUS_PRESETS[r]);
-  }, []);
-
-  const value = useMemo(
+  const value = useMemo<ThemeContextType>(
     () => ({
-      spaceScale,
-      typeScale,
-      radiusScale,
       density,
-      setSpaceScale,
-      setTypeScale,
-      setRadiusScale: setRadiusScaleState,
-      setDensity,
       theme,
-      setTheme,
       resolvedTheme,
-      radiusTheme,
-      setRadiusTheme,
+      radius,
+      scheme,
+      contrast,
+      colorTheme,
+      setDensity,
+      setTheme,
+      setRadius,
+      setScheme,
+      setContrast,
+      setColorTheme,
     }),
-    [spaceScale, typeScale, radiusScale, density, setDensity, theme, setTheme, resolvedTheme, radiusTheme, setRadiusTheme]
+    [density, theme, resolvedTheme, radius, scheme, contrast, colorTheme]
   );
 
   return (

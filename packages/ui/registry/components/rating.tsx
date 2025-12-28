@@ -95,11 +95,11 @@ export const Rating: React.FC<RatingProps> = ({
           >
             <Ripple disabled={disabled} />
             <svg
-              width="24"
-              height="24"
+              width="20"
+              height="20"
               viewBox="0 0 24 24"
               className={cn(
-                "w-6 h-6 relative z-10",
+                "w-5 h-5 relative z-10",
                 fill === "full" && "text-primary",
                 fill === "half" && "text-primary",
                 fill === "empty" && "text-outline"

@@ -164,6 +164,16 @@
       "dependencies": [],
       "registryDependencies": []
     },
+    "theme-script": {
+      "name": "ThemeScript",
+      "type": "layout:ui",
+      "description": "ThemeScript component",
+      "files": [
+        "layout/theme-script.ts"
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
     "window-size-provider": {
       "name": "WindowSizeProvider",
       "type": "layout:ui",

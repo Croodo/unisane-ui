@@ -42,7 +42,7 @@ export const Accordion: React.FC<AccordionProps> = ({
     <AccordionContext.Provider value={{ expanded, toggle }}>
       <div
         className={cn(
-          "flex flex-col border border-outline-variant/30 rounded-xs overflow-hidden bg-surface",
+          "flex flex-col border border-outline-variant/30 rounded-sm overflow-hidden bg-surface",
           className
         )}
       >

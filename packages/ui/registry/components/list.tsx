@@ -35,7 +35,7 @@ export const ListSubheader: React.FC<{
 );
 
 const listItemVariants = cva(
-  "relative flex items-center px-4 py-2 gap-4 text-left transition-all duration-snappy ease-emphasized group overflow-hidden select-none",
+  "relative flex items-center px-4 h-12 gap-3 text-left transition-all duration-snappy ease-emphasized group overflow-hidden select-none",
   {
     variants: {
       active: {
@@ -91,15 +91,15 @@ export const ListItem: React.FC<ListItemProps> = ({
       {isInteractive && <Ripple />}
 
       {leadingIcon && (
-        <div className="text-inherit flex items-center justify-center shrink-0 w-6 h-6 relative z-10">
+        <div className="text-inherit flex items-center justify-center shrink-0 w-5 h-5 relative z-10">
           {leadingIcon}
         </div>
       )}
 
       <div className="flex-1 flex flex-col justify-center min-w-0 relative z-10">
         <Typography
-          variant="bodyMedium"
-          className="text-inherit leading-none truncate"
+          variant="bodyLarge"
+          className="text-inherit leading-none truncate font-medium"
         >
           {headline}
         </Typography>
@@ -196,7 +196,7 @@ export const ListItemContent: React.FC<ListItemContentProps> = ({
   return (
     <div className={cn("flex items-center gap-3 flex-1 min-w-0", className)}>
       {leading && (
-        <div className="w-6 h-6 flex items-center justify-center">
+        <div className="w-5 h-5 flex items-center justify-center">
           {leading}
         </div>
       )}

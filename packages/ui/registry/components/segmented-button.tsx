@@ -34,7 +34,7 @@ export const SegmentedButton: React.FC<SegmentedButtonProps> = ({
       <div
         className={cn(
           "inline-flex max-w-full rounded-sm border border-outline-variant relative isolate overflow-hidden",
-          density === "high" ? "h-8" : "h-10",
+          density === "high" ? "h-10" : "h-12",
           className
         )}
         role="group"
@@ -102,12 +102,12 @@ export const SegmentedButton: React.FC<SegmentedButtonProps> = ({
             <div
               className={cn(
                 "flex items-center justify-center transition-all duration-medium ease-emphasized overflow-hidden",
-                selected ? "w-4_5 opacity-100" : "w-0 opacity-0"
+                selected ? "w-5 opacity-100" : "w-0 opacity-0"
               )}
             >
               <svg
-                width="18"
-                height="18"
+                width="20"
+                height="20"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -118,7 +118,7 @@ export const SegmentedButton: React.FC<SegmentedButtonProps> = ({
             </div>
 
             {option.icon && !selected && (
-              <span className="w-4_5 h-4_5 flex items-center justify-center relative z-10">
+              <span className="w-5 h-5 flex items-center justify-center relative z-10">
                 {option.icon}
               </span>
             )}

@@ -116,7 +116,7 @@ export function Sheet({
         role="dialog"
         aria-modal="true"
       >
-        <header className="px-6 py-4 border-b border-outline-variant flex items-center justify-between bg-surface shrink-0 z-20">
+        <header className="px-6 py-6 border-b border-outline-variant flex items-center justify-between bg-surface shrink-0 z-20">
           <div className="flex items-center gap-3">
             {icon && (
                <div className="w-10 h-10 rounded-sm bg-inverse-surface text-inverse-on-surface flex items-center justify-center shrink-0 transition-all duration-short">
@@ -150,7 +150,7 @@ export function Sheet({
         </div>
 
         {(footerLeft || footerRight) && (
-          <footer className="px-6 py-4 border-t border-outline-variant bg-surface-container-low shrink-0 z-20">
+          <footer className="px-6 py-6 border-t border-outline-variant bg-surface-container-low shrink-0 z-20">
             <div className="flex flex-col medium:flex-row items-center justify-between gap-4">
                <div className="flex-1 min-w-0 w-full medium:w-auto">
                   {footerLeft}
