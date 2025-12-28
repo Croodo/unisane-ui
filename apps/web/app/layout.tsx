@@ -22,9 +22,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={inter.variable} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={inter.variable}
+      suppressHydrationWarning
+      data-density="standard"
+      data-radius="standard"
+      data-scheme="tonal"
+      data-contrast="standard"
+      data-theme="blue"
+      data-theme-mode="system"
+    >
       <body>
-        <ThemeProvider defaultConfig={{ scheme: "tonal" }}>
+        <ThemeProvider>
           {children}
           <Toaster position="bottom-right" />
         </ThemeProvider>
