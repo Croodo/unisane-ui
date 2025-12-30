@@ -148,7 +148,7 @@ function ToastItem({ toast, onDismiss }: ToastItemProps) {
       aria-live="polite"
     >
       {displayIcon && (
-        <div className="toast-icon w-5 h-5 flex items-center justify-center shrink-0">
+        <div className="toast-icon size-icon-sm flex items-center justify-center shrink-0">
           {displayIcon}
         </div>
       )}
@@ -236,7 +236,7 @@ function ToasterPortal({ position = "bottom-right", maxToasts = 5 }: ToasterProp
   return createPortal(
     <div
       className={cn(
-        "fixed z-[5000] flex flex-col gap-2 pointer-events-none",
+        "fixed z-5000 flex flex-col gap-2 pointer-events-none",
         positionClasses[position]
       )}
     >
@@ -378,7 +378,7 @@ export function Toaster({ position = "bottom-right", maxToasts = 5 }: ToasterPro
   return createPortal(
     <div
       className={cn(
-        "fixed z-[5000] flex flex-col gap-2 pointer-events-none",
+        "fixed z-5000 flex flex-col gap-2 pointer-events-none",
         positionClasses[position]
       )}
     >

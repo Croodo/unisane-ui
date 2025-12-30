@@ -53,7 +53,7 @@ export const NavItem = forwardRef<HTMLElement, NavItemProps>(
       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
       "overflow-hidden select-none",
       variant === "compact" && "px-3 py-2 min-h-10",
-      variant === "default" && "px-4 py-2_5 min-h-12",
+      variant === "default" && "px-4 py-2.5 min-h-12",
       variant === "comfortable" && "px-5 py-3 min-h-14",
       active && [
         "bg-secondary-container text-on-secondary-container",
@@ -102,7 +102,7 @@ export const NavItem = forwardRef<HTMLElement, NavItemProps>(
         {icon && (
           <span
             className={cn(
-              "relative z-10 flex items-center justify-center flex-shrink-0",
+              "relative z-10 flex items-center justify-center shrink-0",
               "w-6 h-6",
               "transition-transform duration-short",
               active && "scale-110"
@@ -129,7 +129,7 @@ export const NavItem = forwardRef<HTMLElement, NavItemProps>(
     );
 
     const componentProps = {
-      ref: ref as any,
+      ref: ref as React.Ref<HTMLButtonElement & HTMLAnchorElement & HTMLDivElement>,
       className: baseClasses,
       onClick: disabled ? undefined : onClick,
       disabled: Component === 'button' ? disabled : undefined,

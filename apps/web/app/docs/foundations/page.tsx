@@ -16,7 +16,7 @@ export default function FoundationsPage() {
         <FoundationCard
           icon="text_fields"
           title="Typography"
-          description="A complete type scale based on Material Design 3 typography roles."
+          description="A complete type scale with semantic typography roles."
           href="/docs/foundations/typography"
         />
         <FoundationCard

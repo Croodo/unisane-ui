@@ -4,7 +4,7 @@ export default function DocsPage() {
   return (
     <DocLayout
       title="Documentation"
-      description="Get started with Unisane UI - a Material Design 3 component library for React."
+      description="Get started with Unisane UI - a modern React component library."
     >
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <QuickLinkCard

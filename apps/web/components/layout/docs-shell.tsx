@@ -63,23 +63,29 @@ function DocsShellContent({ children }: DocsShellProps) {
       : NAV_DATA.find((c) => c.id === activeId)?.label || "Unisane UI";
 
   return (
-    <div className="flex w-full min-h-screen bg-surface-container isolate overflow-x-clip">
+    <div className="flex w-full min-h-screen bg-surface isolate overflow-x-clip">
       {/* Top App Bar (Mobile + Tablet) */}
       {usesTopAppBar && (
         <TopAppBar
           className="fixed top-0 left-0 right-0 z-50"
           title={
-            <div className="flex items-center gap-2 text-on-surface">
+            <span className="inline-flex items-center gap-2 text-on-surface">
               <UnisaneLogo size={24} />
               <span>
                 <span className="font-bold">Unisane</span>
-                <span className="font-normal text-on-surface-variant ml-1">UI</span>
+                <span className="font-normal text-on-surface-variant ml-1">
+                  UI
+                </span>
               </span>
-            </div>
+            </span>
           }
           variant="small"
           navigationIcon={
-            <IconButton variant="standard" ariaLabel="Open menu" onClick={toggleMobile}>
+            <IconButton
+              variant="standard"
+              ariaLabel="Open menu"
+              onClick={toggleMobile}
+            >
               <span className="material-symbols-outlined">menu</span>
             </IconButton>
           }
@@ -144,7 +150,9 @@ function DocsShellContent({ children }: DocsShellProps) {
           {/* Light/Dark Mode Toggle */}
           <IconButton
             variant="standard"
-            ariaLabel={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            ariaLabel={
+              theme === "dark" ? "Switch to light mode" : "Switch to dark mode"
+            }
             onClick={toggleTheme}
             className="w-11! h-11! border-2 border-outline-variant rounded-full"
           >
@@ -207,9 +215,14 @@ function DocsShellContent({ children }: DocsShellProps) {
               })}
             </SidebarMenu>
           </SidebarContent>
-        ) : effectiveItem && effectiveItem.items && effectiveItem.items.length > 0 ? (
+        ) : effectiveItem &&
+          effectiveItem.items &&
+          effectiveItem.items.length > 0 ? (
           // Desktop (hover or expanded): Show active category's sub-items only
-          <SidebarContent className="pt-4 pb-20 animate-content-enter" key={effectiveItem.id}>
+          <SidebarContent
+            className="pt-4 pb-20 animate-content-enter"
+            key={effectiveItem.id}
+          >
             <SidebarGroupLabel>{effectiveItem.label}</SidebarGroupLabel>
             <SidebarMenu>
               {effectiveItem.items.map((item) => (

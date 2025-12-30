@@ -86,7 +86,7 @@ export const BottomAppBarAction: React.FC<BottomAppBarActionProps> = ({
       aria-pressed={active}
     >
       <Ripple />
-      <div className="w-5 h-5 flex items-center justify-center relative z-10">{icon}</div>
+      <div className="size-icon-sm flex items-center justify-center relative z-10">{icon}</div>
     </button>
   );
 };

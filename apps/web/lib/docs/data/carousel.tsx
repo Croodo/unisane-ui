@@ -64,6 +64,45 @@ const CarouselBasicExample = () => (
   </div>
 );
 
+const CarouselAutoPlayExample = () => (
+  <div className="w-full max-w-xs h-52">
+    <Carousel autoPlay interval={3000} showIndicators>
+      <CarouselSlide>
+        <div className="w-full h-full bg-tertiary-container flex items-center justify-center rounded-lg">
+          <span className="text-title-large text-on-tertiary-container">Auto 1</span>
+        </div>
+      </CarouselSlide>
+      <CarouselSlide>
+        <div className="w-full h-full bg-primary-container flex items-center justify-center rounded-lg">
+          <span className="text-title-large text-on-primary-container">Auto 2</span>
+        </div>
+      </CarouselSlide>
+      <CarouselSlide>
+        <div className="w-full h-full bg-secondary-container flex items-center justify-center rounded-lg">
+          <span className="text-title-large text-on-secondary-container">Auto 3</span>
+        </div>
+      </CarouselSlide>
+    </Carousel>
+  </div>
+);
+
+const CarouselMinimalExample = () => (
+  <div className="w-full max-w-xs h-52">
+    <Carousel showControls={false} showIndicators={false}>
+      <CarouselSlide>
+        <div className="w-full h-full bg-surface-container flex items-center justify-center rounded-lg border border-outline-variant">
+          <span className="text-title-large text-on-surface">Minimal</span>
+        </div>
+      </CarouselSlide>
+      <CarouselSlide>
+        <div className="w-full h-full bg-surface-container flex items-center justify-center rounded-lg border border-outline-variant">
+          <span className="text-title-large text-on-surface">Swipe</span>
+        </div>
+      </CarouselSlide>
+    </Carousel>
+  </div>
+);
+
 export const carouselDoc: ComponentDoc = {
   // ─── BASIC INFO ─────────────────────────────────────────────────────────────
   slug: "carousel",
@@ -118,18 +157,89 @@ export const carouselDoc: ComponentDoc = {
         rationale: "For passive viewing experiences.",
         examples: "Hero banners, Testimonials, Promotions",
       },
+      {
+        emphasis: "Minimal",
+        component: (
+          <div className="w-32 h-16 bg-surface-container rounded-sm relative flex items-center justify-center">
+            <div className="w-8 h-8 bg-tertiary/20 rounded-sm" />
+          </div>
+        ),
+        rationale: "For clean, swipe-only interfaces.",
+        examples: "Onboarding, Mobile galleries",
+      },
+    ],
+  },
+
+  // ─── HIERARCHY SECTION ─────────────────────────────────────────────────────
+  hierarchy: {
+    description:
+      "Carousel configurations vary by level of interactivity and visual prominence.",
+    items: [
+      {
+        component: (
+          <div className="w-32 h-20 bg-surface-container rounded-sm relative flex items-center justify-center">
+            <div className="w-4 h-4 rounded-full bg-surface absolute left-1 shadow-sm flex items-center justify-center">
+              <span className="text-[8px] text-on-surface">&lt;</span>
+            </div>
+            <div className="w-8 h-8 bg-primary/30 rounded-sm" />
+            <div className="w-4 h-4 rounded-full bg-surface absolute right-1 shadow-sm flex items-center justify-center">
+              <span className="text-[8px] text-on-surface">&gt;</span>
+            </div>
+            <div className="absolute bottom-1 flex gap-1">
+              <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+              <div className="w-1.5 h-1.5 rounded-full bg-on-surface/30" />
+              <div className="w-1.5 h-1.5 rounded-full bg-on-surface/30" />
+            </div>
+          </div>
+        ),
+        title: "Full controls",
+        subtitle: "Arrows + Indicators",
+      },
+      {
+        component: (
+          <div className="w-32 h-20 bg-surface-container rounded-sm relative flex items-center justify-center">
+            <div className="w-8 h-8 bg-secondary/30 rounded-sm" />
+            <div className="absolute bottom-1 flex gap-1">
+              <div className="w-1.5 h-1.5 rounded-full bg-secondary" />
+              <div className="w-1.5 h-1.5 rounded-full bg-on-surface/30" />
+              <div className="w-1.5 h-1.5 rounded-full bg-on-surface/30" />
+            </div>
+          </div>
+        ),
+        title: "Indicators only",
+        subtitle: "Auto-play friendly",
+      },
+      {
+        component: (
+          <div className="w-32 h-20 bg-surface-container rounded-sm relative flex items-center justify-center">
+            <div className="w-8 h-8 bg-tertiary/30 rounded-sm" />
+          </div>
+        ),
+        title: "Minimal",
+        subtitle: "Swipe/touch only",
+      },
     ],
   },
 
   // ─── PLACEMENT SECTION ─────────────────────────────────────────────────────
   placement: {
     description:
-      "Carousels are typically used for featured content and image galleries.",
+      "Carousels are typically used for featured content, image galleries, and promotional banners.",
     examples: [
       {
-        title: "Basic carousel",
+        title: "With controls",
         visual: <CarouselBasicExample />,
         caption: "Use arrow keys or click controls to navigate",
+      },
+      {
+        title: "Auto-play",
+        visual: <CarouselAutoPlayExample />,
+        caption: "Automatically advances slides, pauses on hover",
+      },
+      {
+        title: "Minimal (swipe only)",
+        visual: <CarouselMinimalExample />,
+        caption: "Clean interface for touch/swipe navigation",
       },
     ],
   },

@@ -59,7 +59,7 @@ export const Avatar: React.FC<AvatarProps> = ({
           className="w-full h-full object-cover"
         />
       ) : (
-        <Text variant="labelLarge" className="text-on-surface-variant" aria-hidden="true">
+        <Text variant="labelLarge" className="text-inherit" aria-hidden="true">
           {fallbackChar}
         </Text>
       )}

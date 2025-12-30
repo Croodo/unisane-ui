@@ -134,7 +134,7 @@ export const Select: React.FC<SelectProps> = ({
   return (
     <div
       ref={containerRef}
-      className={cn("relative inline-flex flex-col w-full min-w-[calc(var(--unit)*40)]", className)}
+      className={cn("relative inline-flex flex-col w-full min-w-40", className)}
     >
       <button
         id={triggerId}
@@ -153,7 +153,7 @@ export const Select: React.FC<SelectProps> = ({
               : "hover:bg-surface-container hover:border-outline"),
           isOpen &&
             (variant === "outlined"
-              ? "!border-primary border-2"
+              ? "border-primary! border-2"
               : "bg-surface"),
           error && "border-error",
           disabled && "opacity-38 cursor-not-allowed"
@@ -170,7 +170,7 @@ export const Select: React.FC<SelectProps> = ({
         {variant === "filled" && (
           <div
             className={cn(
-              "absolute bottom-[calc(var(--unit)*-0.25)] left-0 right-0 h-0_5u scale-x-0 transition-transform duration-snappy ease-out origin-center",
+              "absolute bottom-[calc(var(--unit)*-0.25)] left-0 right-0 h-0.5 scale-x-0 transition-transform duration-snappy ease-out origin-center",
               error ? "bg-error scale-x-100" : "bg-primary",
               isOpen && "scale-x-100"
             )}
@@ -201,7 +201,7 @@ export const Select: React.FC<SelectProps> = ({
                     "top-0 -translate-y-1/2 bg-surface px-1 -ml-1",
                     labelClassName ? labelClassName : "bg-surface",
                   ],
-                  variant === "filled" && "top-2 -translate-y-0",
+                  variant === "filled" && "top-2 translate-y-0",
                   error ? "text-error" : "text-primary",
                 ],
                 !value && isOpen && "text-primary"
@@ -229,7 +229,7 @@ export const Select: React.FC<SelectProps> = ({
           id={listboxId}
           role="listbox"
           aria-labelledby={label ? labelId : undefined}
-          className="absolute top-[calc(100%+var(--unit))] left-0 w-full bg-surface border border-outline-variant rounded-sm shadow-3 py-1 max-h-[calc(var(--unit)*70)] overflow-y-auto z-[100] animate-in fade-in zoom-in-95 duration-snappy"
+          className="absolute top-[calc(100%+var(--unit))] left-0 w-full bg-surface border border-outline-variant rounded-sm shadow-2 py-1 max-h-70 overflow-y-auto z-100 animate-in fade-in zoom-in-95 duration-snappy"
         >
           {options.length > 0 ? (
             options.map((option, index) => {

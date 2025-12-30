@@ -55,7 +55,7 @@ export const NavGroup = forwardRef<HTMLDivElement, NavGroupProps>(
               "text-label-small font-semibold uppercase tracking-wide",
               "text-on-surface-variant/60",
               variant === "compact" && "px-3 py-2",
-              variant === "default" && "px-4 py-2_5",
+              variant === "default" && "px-4 py-2.5",
               variant === "comfortable" && "px-5 py-3",
 
               collapsible && "cursor-pointer select-none hover:text-on-surface-variant transition-colors"
@@ -80,7 +80,7 @@ export const NavGroup = forwardRef<HTMLDivElement, NavGroupProps>(
             {collapsible && (
               <svg
                 className={cn(
-                  "w-4 h-4 transition-transform duration-short",
+                  "size-icon-xs transition-transform duration-short",
                   isOpen && "rotate-180"
                 )}
                 viewBox="0 0 24 24"
@@ -97,9 +97,9 @@ export const NavGroup = forwardRef<HTMLDivElement, NavGroupProps>(
         <div
           className={cn(
             "flex flex-col",
-            variant === "compact" && "gap-0_5",
+            variant === "compact" && "gap-0.5",
             variant === "default" && "gap-1",
-            variant === "comfortable" && "gap-1_5",
+            variant === "comfortable" && "gap-1.5",
             collapsible && [
               "transition-all duration-medium ease-emphasized overflow-hidden",
               isOpen ? "max-h-[9999px] opacity-100" : "max-h-0 opacity-0",

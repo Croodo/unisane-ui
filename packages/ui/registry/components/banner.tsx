@@ -59,7 +59,7 @@ export const Banner: React.FC<BannerProps> = ({
       aria-live={variant === "error" || variant === "warning" ? "assertive" : "polite"}
     >
       {icon && (
-        <div className="w-5 h-5 flex items-center justify-center text-primary mt-0.5 shrink-0">
+        <div className="size-icon-sm flex items-center justify-center text-primary mt-0.5 shrink-0">
           {icon}
         </div>
       )}

@@ -5,7 +5,7 @@ import { Typography } from "../components/typography";
 import { Ripple } from "../components/ripple";
 
 const menuVariants = cva(
-  "min-w-[calc(var(--unit)*50)] bg-surface shadow-2 border border-outline-variant/20 overflow-hidden",
+  "min-w-50 bg-surface shadow-2 border border-outline-variant/20 overflow-hidden",
   {
     variants: {
       rounded: {
@@ -83,7 +83,7 @@ export const MenuItem: React.FC<MenuItemProps> = ({
   const innerContent = (
     <>
       <Ripple disabled={disabled} />
-      {icon && <div className="shrink-0 relative z-10 flex items-center justify-center w-5 h-5">{icon}</div>}
+      {icon && <div className="shrink-0 relative z-10 flex items-center justify-center size-icon-sm">{icon}</div>}
       <Typography variant="bodyLarge" className="flex-1 relative z-10 font-medium">
         {asChild ? null : children}
       </Typography>
@@ -165,7 +165,7 @@ export const MenuCheckboxItem: React.FC<MenuCheckboxItemProps> = ({
       icon={
         <div
           className={cn(
-            "w-5 h-5 rounded-xs border-2 border-current",
+            "size-icon-sm rounded-xs border-2 border-current",
             checked && "bg-primary border-primary text-on-primary"
           )}
         >
@@ -210,7 +210,7 @@ export const MenuRadioItem: React.FC<MenuRadioItemProps> = ({
       icon={
         <div
           className={cn(
-            "w-5 h-5 rounded-full border-2 border-current flex items-center justify-center",
+            "size-icon-sm rounded-full border-2 border-current flex items-center justify-center",
             checked && "bg-primary border-primary"
           )}
         >

@@ -83,7 +83,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
           {/* Checkbox box - sibling of input, receives peer-checked */}
           <div
             className={cn(
-              "relative z-10 w-5 h-5 rounded-xs border-2 flex items-center justify-center overflow-hidden bg-surface",
+              "relative z-10 size-icon-sm rounded-xs border-2 flex items-center justify-center overflow-hidden bg-surface",
               "transition-all duration-snappy ease-emphasized pointer-events-none",
               !error && "border-outline group-hover:border-on-surface",
               error && "border-error",
@@ -98,7 +98,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
           {/* Check icon - sibling of input, receives peer-checked */}
           <svg
             className={cn(
-              "absolute z-20 w-5 h-5 p-0.5 transition-all duration-snappy ease-emphasized pointer-events-none",
+              "absolute z-20 size-icon-sm p-0.5 transition-all duration-snappy ease-emphasized pointer-events-none",
               error ? "text-on-error" : "text-on-primary",
               "opacity-0 scale-50",
               !indeterminate && "peer-checked:opacity-100 peer-checked:scale-100"
@@ -117,7 +117,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
           {/* Indeterminate icon - controlled by prop, not peer */}
           <svg
             className={cn(
-              "absolute z-20 w-5 h-5 p-0.5 transition-all duration-snappy ease-emphasized pointer-events-none",
+              "absolute z-20 size-icon-sm p-0.5 transition-all duration-snappy ease-emphasized pointer-events-none",
               error ? "text-on-error" : "text-on-primary",
               indeterminate ? "opacity-100 scale-100 rotate-0" : "opacity-0 scale-50 rotate-90"
             )}

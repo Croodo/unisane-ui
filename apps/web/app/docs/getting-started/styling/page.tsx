@@ -118,7 +118,7 @@ export default function StylingPage() {
       <DocSection
         id="component-variants"
         title="Component Variants"
-        description="Most components come with built-in variants that follow Material Design 3 specifications."
+        description="Most components come with built-in variants for different use cases."
       >
         <div className="space-y-8">
           <Typography variant="titleMedium">Button Variants</Typography>

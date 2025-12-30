@@ -51,10 +51,10 @@ export const Pane = React.forwardRef<HTMLDivElement, PaneProps>(
     if (!width) {
       if (role === "list")
         widthClass =
-          "w-full medium:w-[var(--width-pane-list,calc(var(--unit)*90))] shrink-0";
+          "w-full medium:w-(--width-pane-list,var(--spacing-90)) shrink-0";
       if (role === "supporting")
         widthClass =
-          "w-full medium:w-[var(--width-pane-supporting,calc(var(--unit)*100))] shrink-0";
+          "w-full medium:w-(--width-pane-supporting,var(--spacing-100)) shrink-0";
       if (role === "main") widthClass = "w-full flex-1 min-w-0";
     }
 

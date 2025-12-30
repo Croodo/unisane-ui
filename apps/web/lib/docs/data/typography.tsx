@@ -37,7 +37,7 @@ export const typographyDoc: ComponentDoc = {
   slug: "typography",
   name: "Typography",
   description:
-    "Typography component provides semantic text styles following Material Design type scale.",
+    "Typography component provides semantic text styles with a complete type scale.",
   category: "foundations",
   status: "stable",
   icon: "text_fields",

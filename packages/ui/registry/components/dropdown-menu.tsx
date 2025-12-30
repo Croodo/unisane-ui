@@ -20,7 +20,7 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({ children }) => {
 
   const childrenWithProps = React.Children.map(children, (child) => {
     if (React.isValidElement(child)) {
-      return React.cloneElement(child as React.ReactElement<any>, {
+      return React.cloneElement(child as React.ReactElement<Record<string, unknown>>, {
         isOpen,
         setIsOpen,
         menuId,
@@ -158,7 +158,7 @@ export const DropdownMenuContent: React.FC<DropdownMenuContentProps> = ({
     >
       <Menu
         open={true}
-        className={cn("w-full relative shadow-3 border border-outline-variant/20 overflow-visible", className)}
+        className={cn("w-full relative shadow-2 border border-outline-variant/20 overflow-visible", className)}
       >
         {children}
       </Menu>
@@ -298,7 +298,7 @@ export const DropdownMenuSubContent: React.FC<DropdownMenuSubContentProps> = ({
     >
       <Menu
         open={true}
-        className={cn("min-w-40 shadow-3 border border-outline-variant/20", className)}
+        className={cn("min-w-40 shadow-2 border border-outline-variant/20", className)}
       >
         {children}
       </Menu>

@@ -58,10 +58,10 @@ export const Chip = forwardRef<HTMLDivElement, ChipProps>(
   ) => {
     const isInteractive = !disabled && (!!onClick || !!onDelete);
 
-    const handleKeyDown = (e: React.KeyboardEvent) => {
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
       if (onClick && (e.key === "Enter" || e.key === " ")) {
         e.preventDefault();
-        onClick(e as any);
+        onClick(e as unknown as React.MouseEvent<HTMLDivElement>);
       }
     };
 
@@ -90,12 +90,12 @@ export const Chip = forwardRef<HTMLDivElement, ChipProps>(
         )}
         
         {icon && !selected && (
-          <span className="w-4 h-4 flex items-center justify-center relative z-10 pointer-events-none" aria-hidden="true">
+          <span className="size-icon-xs flex items-center justify-center relative z-10 pointer-events-none" aria-hidden="true">
             {icon}
           </span>
         )}
         
-        <span className="relative z-10 truncate leading-none pt-0_5">{label}</span>
+        <span className="relative z-10 truncate leading-none pt-0.5">{label}</span>
         
         {onDelete && (
           <button

@@ -48,7 +48,6 @@ const DatePickerBasicExample = () => {
         label="Select Date"
         value={date}
         onChange={setDate}
-        placeholder="Choose a date"
       />
     </div>
   );
@@ -97,7 +96,7 @@ export const datePickerDoc: ComponentDoc = {
         emphasis: "Calendar",
         component: (
           <div className="w-24 h-16 bg-surface-container rounded-sm p-2">
-            <div className="grid grid-cols-7 gap-0_5u">
+            <div className="grid grid-cols-7 gap-0.5">
               {[...Array(14)].map((_, i) => (
                 <div key={i} className={`w-2 h-2 rounded-full ${i === 7 ? "bg-primary" : "bg-outline-variant/30"}`} />
               ))}

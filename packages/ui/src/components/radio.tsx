@@ -55,7 +55,7 @@ export const Radio = forwardRef<HTMLInputElement, RadioProps>(
 
           <div
             className={cn(
-              "relative z-10 w-5 h-5 rounded-full border-2 bg-surface",
+              "relative z-10 size-icon-sm rounded-full border-2 bg-surface",
               "transition-colors duration-snappy ease-emphasized flex items-center justify-center",
               !error && "border-outline group-hover:border-on-surface",
               !error && props.checked && "border-primary",
@@ -64,7 +64,7 @@ export const Radio = forwardRef<HTMLInputElement, RadioProps>(
           >
             <div
               className={cn(
-                "w-2_5 h-2_5 rounded-full transition-transform duration-snappy ease-emphasized",
+                "w-2.5 h-2.5 rounded-full transition-transform duration-snappy ease-emphasized",
                 props.checked ? "scale-100" : "scale-0",
                 !error && "bg-primary",
                 error && "bg-error"
@@ -74,7 +74,7 @@ export const Radio = forwardRef<HTMLInputElement, RadioProps>(
         </div>
 
         {label && (
-          <span className="text-body-small font-medium text-on-surface leading-none pt-0_5">
+          <span className="text-body-small font-medium text-on-surface leading-none pt-0.5">
             {label}
           </span>
         )}

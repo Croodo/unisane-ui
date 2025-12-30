@@ -134,7 +134,7 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(
           elevation={4}
           rounded="sm"
           className={cn(
-            "relative outline-none w-full min-w-[calc(var(--unit)*70)] max-w-[calc(var(--unit)*78)] expanded:max-w-[calc(var(--unit)*170)] flex flex-col border border-outline-variant/30 overflow-hidden",
+            "relative outline-none w-full min-w-70 max-w-78 expanded:max-w-170 flex flex-col border border-outline-variant overflow-hidden",
             "animate-in fade-in zoom-in-95 duration-medium ease-emphasized",
             className
           )}

@@ -45,7 +45,7 @@ export default function ComponentsPage() {
             className="text-on-surface-variant leading-relaxed @3xl:text-title-large max-w-3xl"
           >
             A comprehensive collection of production-ready React components built with
-            Material Design 3 principles. Accessible, customizable, and beautifully designed.
+            modern design principles. Accessible, customizable, and beautifully crafted.
           </Typography>
         </div>
 

@@ -1,5 +1,3 @@
-import { DocsShell } from "@/components/layout";
-
 export default function DocsLayout({ children }: { children: React.ReactNode }) {
-  return <DocsShell>{children}</DocsShell>;
+  return <>{children}</>;
 }

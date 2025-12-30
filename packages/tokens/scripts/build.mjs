@@ -507,12 +507,14 @@ function generateUniTokens() {
   --radius-full: 9999px;
 
   /* === ELEVATION === */
+  /* Shadow opacity scale (controlled by data-elevation attribute) */
+  --shadow-opacity: 1;
   --shadow-0: none;
-  --shadow-1: 0px 1px 3px 1px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.30);
-  --shadow-2: 0px 2px 6px 2px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.30);
-  --shadow-3: 0px 4px 8px 3px rgba(0, 0, 0, 0.15), 0px 1px 3px 0px rgba(0, 0, 0, 0.30);
-  --shadow-4: 0px 6px 10px 4px rgba(0, 0, 0, 0.15), 0px 2px 3px 0px rgba(0, 0, 0, 0.30);
-  --shadow-5: 0px 8px 12px 6px rgba(0, 0, 0, 0.15), 0px 4px 4px 0px rgba(0, 0, 0, 0.30);
+  --shadow-1: 0px 1px 3px 1px rgba(0, 0, 0, calc(0.15 * var(--shadow-opacity))), 0px 1px 2px 0px rgba(0, 0, 0, calc(0.30 * var(--shadow-opacity)));
+  --shadow-2: 0px 2px 6px 2px rgba(0, 0, 0, calc(0.15 * var(--shadow-opacity))), 0px 1px 2px 0px rgba(0, 0, 0, calc(0.30 * var(--shadow-opacity)));
+  --shadow-3: 0px 4px 8px 3px rgba(0, 0, 0, calc(0.15 * var(--shadow-opacity))), 0px 1px 3px 0px rgba(0, 0, 0, calc(0.30 * var(--shadow-opacity)));
+  --shadow-4: 0px 6px 10px 4px rgba(0, 0, 0, calc(0.15 * var(--shadow-opacity))), 0px 2px 3px 0px rgba(0, 0, 0, calc(0.30 * var(--shadow-opacity)));
+  --shadow-5: 0px 8px 12px 6px rgba(0, 0, 0, calc(0.15 * var(--shadow-opacity))), 0px 4px 4px 0px rgba(0, 0, 0, calc(0.30 * var(--shadow-opacity)));
 
   /* === MOTION === */
   --duration-short: 100ms;
@@ -540,20 +542,6 @@ function generateUniTokens() {
   --icon-lg: calc(32px * var(--scale-space));
   --icon-xl: calc(48px * var(--scale-space));
 
-  /* === SPACING (Unit-based) === */
-`;
-
-  // Unit spacing (0.5u to 16u, plus larger values)
-  const units = [];
-  for (let i = 1; i <= 32; i++) units.push(i / 2);
-  units.push(20, 24, 28, 32, 36, 38, 40, 44, 48, 52, 56, 60, 64, 72, 80, 96, 100);
-
-  for (const u of units) {
-    const key = u.toString().replace(".", "_");
-    css += `  --space-${key}u: calc(var(--unit) * ${u});\n`;
-  }
-
-  css += `
   /* === LAYOUT === */
   --layout-margin: calc(16px * var(--scale-space));
   --layout-gutter: calc(16px * var(--scale-space));
@@ -893,6 +881,36 @@ function generateUniTokens() {
 }
 
 /* ============================================================
+   ELEVATION - Control shadow intensity
+   Usage: <html data-elevation="subtle">
+
+   Elevation controls SHADOW OPACITY for visual depth.
+   Can be combined with any scheme or contrast level.
+
+   Available levels:
+   - flat        - No shadows (--shadow-opacity: 0)
+   - subtle      - Reduced shadows for minimal UI (--shadow-opacity: 0.5)
+   - standard    - Default M3 shadows (--shadow-opacity: 1)
+   - pronounced  - Stronger shadows for depth (--shadow-opacity: 1.5)
+   ============================================================ */
+
+[data-elevation="flat"] {
+  --shadow-opacity: 0;
+}
+
+[data-elevation="subtle"] {
+  --shadow-opacity: 0.5;
+}
+
+[data-elevation="standard"] {
+  --shadow-opacity: 1;
+}
+
+[data-elevation="pronounced"] {
+  --shadow-opacity: 1.5;
+}
+
+/* ============================================================
    SCROLLBAR STYLING
    Consistent scrollbars for all modes
    ============================================================ */
@@ -1104,21 +1122,34 @@ function generateTailwindTheme() {
     [16, 16],         // 16 = 64px = 16u
     [20, 20],         // 20 = 80px = 20u
     [24, 24],         // 24 = 96px = 24u
+    [25, 25],         // 25 = 100px (time-picker hand)
     [28, 28],         // 28 = 112px = 28u
+    [30, 30],         // 30 = 120px (stepper, text-field)
     [32, 32],         // 32 = 128px - not in our scale, use calc
     [36, 36],         // 36 = 144px
     [38, 38],         // 38 = 152px = 38u (our custom)
     [40, 40],         // 40 = 160px
     [44, 44],         // 44 = 176px
     [48, 48],         // 48 = 192px
+    [50, 50],         // 50 = 200px (tooltip, menu)
     [52, 52],         // 52 = 208px
     [56, 56],         // 56 = 224px
     [60, 60],         // 60 = 240px
     [64, 64],         // 64 = 256px
+    [70, 70],         // 70 = 280px (dialog)
     [72, 72],         // 72 = 288px = 72u (our custom)
+    [78, 78],         // 78 = 312px (dialog max)
     [80, 80],         // 80 = 320px
+    [86, 86],         // 86 = 344px (snackbar)
+    [90, 90],         // 90 = 360px (pane list)
     [96, 96],         // 96 = 384px
     [100, 100],       // 100 = 400px = 100u (our custom)
+    [120, 120],       // 120 = 480px
+    [150, 150],       // 150 = 600px (sheet md)
+    [170, 170],       // 170 = 680px (dialog expanded)
+    [210, 210],       // 210 = 840px (sheet lg)
+    [250, 250],       // 250 = 1000px (accordion expanded)
+    [280, 280],       // 280 = 1120px (sheet xl)
   ];
 
   for (const [twKey, unitMultiplier] of tailwindSpacing) {
@@ -1128,17 +1159,6 @@ function generateTailwindTheme() {
       // Use calc for dynamic scaling with --unit
       css += `  --spacing-${twKey.toString().replace(".", "_")}: calc(var(--unit) * ${unitMultiplier});\n`;
     }
-  }
-
-  // Keep legacy *u keys for backwards compatibility during migration
-  css += `\n  /* Legacy unit-based spacing (deprecated - use standard keys above) */\n`;
-  const units = [];
-  for (let i = 1; i <= 32; i++) units.push(i / 2);
-  units.push(20, 24, 28, 38, 72, 100);
-
-  for (const u of units) {
-    const key = u.toString().replace(".", "_");
-    css += `  --spacing-${key}u: var(--space-${key}u);\n`;
   }
 
   css += `
@@ -1158,12 +1178,19 @@ function generateTailwindTheme() {
   --z-popover: var(--z-popover);
   --z-modal: var(--z-modal);
 
-  /* Icons */
+  /* Icons - use with w-icon-sm, h-icon-sm */
   --spacing-icon-xs: var(--icon-xs);
   --spacing-icon-sm: var(--icon-sm);
   --spacing-icon-md: var(--icon-md);
   --spacing-icon-lg: var(--icon-lg);
   --spacing-icon-xl: var(--icon-xl);
+
+  /* Size utilities for icons - use with size-icon-sm */
+  --size-icon-xs: var(--icon-xs);
+  --size-icon-sm: var(--icon-sm);
+  --size-icon-md: var(--icon-md);
+  --size-icon-lg: var(--icon-lg);
+  --size-icon-xl: var(--icon-xl);
 
   /* Opacity */
   --opacity-hover: var(--opacity-hover);

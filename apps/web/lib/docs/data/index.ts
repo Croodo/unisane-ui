@@ -56,6 +56,9 @@ import { timePickerDoc } from "./time-picker";
 import { topAppBarDoc } from "./top-app-bar";
 import { bottomAppBarDoc } from "./bottom-app-bar";
 import { typographyDoc } from "./typography";
+import { canonicalLayoutsDoc } from "./canonical-layouts";
+import { paneGroupDoc } from "./pane-group";
+import { sidebarDoc } from "./sidebar";
 
 /**
  * Registry of all components with full documentation.
@@ -109,6 +112,9 @@ const DETAILED_DOCS: Record<string, ComponentDoc> = {
   "top-app-bar": topAppBarDoc,
   "bottom-app-bar": bottomAppBarDoc,
   typography: typographyDoc,
+  "canonical-layouts": canonicalLayoutsDoc,
+  "pane-group": paneGroupDoc,
+  sidebar: sidebarDoc,
 };
 
 // ─── BASIC COMPONENT REGISTRY ─────────────────────────────────────────────────
@@ -196,7 +202,7 @@ export const COMPONENT_REGISTRY: ComponentListItem[] = [
     slug: "canonical-layouts",
     name: "Canonical Layouts",
     description:
-      "Pre-built responsive layouts following Material Design 3 patterns.",
+      "Pre-built responsive layouts for common app patterns.",
     category: "layout",
     status: "stable",
     icon: "grid_view",
@@ -439,6 +445,15 @@ export const COMPONENT_REGISTRY: ComponentListItem[] = [
     icon: "view_sidebar",
   },
   {
+    slug: "sidebar",
+    name: "Sidebar",
+    description:
+      "App-level navigation with a collapsible rail and expandable drawer.",
+    category: "navigation",
+    status: "stable",
+    icon: "dock_to_left",
+  },
+  {
     slug: "skeleton",
     name: "Skeleton",
     description:
@@ -536,7 +551,7 @@ export const COMPONENT_REGISTRY: ComponentListItem[] = [
     slug: "typography",
     name: "Typography",
     description:
-      "Typography component provides semantic text styles following Material Design type scale.",
+      "Typography component provides semantic text styles with a complete type scale.",
     category: "foundations",
     status: "stable",
     icon: "text_fields",

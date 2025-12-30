@@ -91,7 +91,7 @@ export const ListItem: React.FC<ListItemProps> = ({
       {isInteractive && <Ripple />}
 
       {leadingIcon && (
-        <div className="text-inherit flex items-center justify-center shrink-0 w-5 h-5 relative z-10">
+        <div className="text-inherit flex items-center justify-center shrink-0 size-icon-sm relative z-10">
           {leadingIcon}
         </div>
       )}
@@ -106,7 +106,7 @@ export const ListItem: React.FC<ListItemProps> = ({
         {supportingText && (
           <Typography
             variant="labelSmall"
-            className="text-on-surface-variant leading-none mt-1_5 opacity-60 truncate"
+            className="text-on-surface-variant leading-none mt-1.5 opacity-60 truncate"
           >
             {supportingText}
           </Typography>
@@ -124,7 +124,7 @@ export const ListItem: React.FC<ListItemProps> = ({
             </Typography>
           )}
           {trailingIcon && (
-            <div className="w-5 h-5 flex items-center justify-center">
+            <div className="size-icon-sm flex items-center justify-center">
               {trailingIcon}
             </div>
           )}
@@ -196,7 +196,7 @@ export const ListItemContent: React.FC<ListItemContentProps> = ({
   return (
     <div className={cn("flex items-center gap-3 flex-1 min-w-0", className)}>
       {leading && (
-        <div className="w-5 h-5 flex items-center justify-center">
+        <div className="size-icon-sm flex items-center justify-center">
           {leading}
         </div>
       )}

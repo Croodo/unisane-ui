@@ -417,12 +417,14 @@
   --radius-full: 9999px;
 
   /* === ELEVATION === */
+  /* Shadow opacity scale (controlled by data-elevation attribute) */
+  --shadow-opacity: 1;
   --shadow-0: none;
-  --shadow-1: 0px 1px 3px 1px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.30);
-  --shadow-2: 0px 2px 6px 2px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.30);
-  --shadow-3: 0px 4px 8px 3px rgba(0, 0, 0, 0.15), 0px 1px 3px 0px rgba(0, 0, 0, 0.30);
-  --shadow-4: 0px 6px 10px 4px rgba(0, 0, 0, 0.15), 0px 2px 3px 0px rgba(0, 0, 0, 0.30);
-  --shadow-5: 0px 8px 12px 6px rgba(0, 0, 0, 0.15), 0px 4px 4px 0px rgba(0, 0, 0, 0.30);
+  --shadow-1: 0px 1px 3px 1px rgba(0, 0, 0, calc(0.15 * var(--shadow-opacity))), 0px 1px 2px 0px rgba(0, 0, 0, calc(0.30 * var(--shadow-opacity)));
+  --shadow-2: 0px 2px 6px 2px rgba(0, 0, 0, calc(0.15 * var(--shadow-opacity))), 0px 1px 2px 0px rgba(0, 0, 0, calc(0.30 * var(--shadow-opacity)));
+  --shadow-3: 0px 4px 8px 3px rgba(0, 0, 0, calc(0.15 * var(--shadow-opacity))), 0px 1px 3px 0px rgba(0, 0, 0, calc(0.30 * var(--shadow-opacity)));
+  --shadow-4: 0px 6px 10px 4px rgba(0, 0, 0, calc(0.15 * var(--shadow-opacity))), 0px 2px 3px 0px rgba(0, 0, 0, calc(0.30 * var(--shadow-opacity)));
+  --shadow-5: 0px 8px 12px 6px rgba(0, 0, 0, calc(0.15 * var(--shadow-opacity))), 0px 4px 4px 0px rgba(0, 0, 0, calc(0.30 * var(--shadow-opacity)));
 
   /* === MOTION === */
   --duration-short: 100ms;
@@ -449,57 +451,6 @@
   --icon-md: calc(24px * var(--scale-space));
   --icon-lg: calc(32px * var(--scale-space));
   --icon-xl: calc(48px * var(--scale-space));
-
-  /* === SPACING (Unit-based) === */
-  --space-0_5u: calc(var(--unit) * 0.5);
-  --space-1u: calc(var(--unit) * 1);
-  --space-1_5u: calc(var(--unit) * 1.5);
-  --space-2u: calc(var(--unit) * 2);
-  --space-2_5u: calc(var(--unit) * 2.5);
-  --space-3u: calc(var(--unit) * 3);
-  --space-3_5u: calc(var(--unit) * 3.5);
-  --space-4u: calc(var(--unit) * 4);
-  --space-4_5u: calc(var(--unit) * 4.5);
-  --space-5u: calc(var(--unit) * 5);
-  --space-5_5u: calc(var(--unit) * 5.5);
-  --space-6u: calc(var(--unit) * 6);
-  --space-6_5u: calc(var(--unit) * 6.5);
-  --space-7u: calc(var(--unit) * 7);
-  --space-7_5u: calc(var(--unit) * 7.5);
-  --space-8u: calc(var(--unit) * 8);
-  --space-8_5u: calc(var(--unit) * 8.5);
-  --space-9u: calc(var(--unit) * 9);
-  --space-9_5u: calc(var(--unit) * 9.5);
-  --space-10u: calc(var(--unit) * 10);
-  --space-10_5u: calc(var(--unit) * 10.5);
-  --space-11u: calc(var(--unit) * 11);
-  --space-11_5u: calc(var(--unit) * 11.5);
-  --space-12u: calc(var(--unit) * 12);
-  --space-12_5u: calc(var(--unit) * 12.5);
-  --space-13u: calc(var(--unit) * 13);
-  --space-13_5u: calc(var(--unit) * 13.5);
-  --space-14u: calc(var(--unit) * 14);
-  --space-14_5u: calc(var(--unit) * 14.5);
-  --space-15u: calc(var(--unit) * 15);
-  --space-15_5u: calc(var(--unit) * 15.5);
-  --space-16u: calc(var(--unit) * 16);
-  --space-20u: calc(var(--unit) * 20);
-  --space-24u: calc(var(--unit) * 24);
-  --space-28u: calc(var(--unit) * 28);
-  --space-32u: calc(var(--unit) * 32);
-  --space-36u: calc(var(--unit) * 36);
-  --space-38u: calc(var(--unit) * 38);
-  --space-40u: calc(var(--unit) * 40);
-  --space-44u: calc(var(--unit) * 44);
-  --space-48u: calc(var(--unit) * 48);
-  --space-52u: calc(var(--unit) * 52);
-  --space-56u: calc(var(--unit) * 56);
-  --space-60u: calc(var(--unit) * 60);
-  --space-64u: calc(var(--unit) * 64);
-  --space-72u: calc(var(--unit) * 72);
-  --space-80u: calc(var(--unit) * 80);
-  --space-96u: calc(var(--unit) * 96);
-  --space-100u: calc(var(--unit) * 100);
 
   /* === LAYOUT === */
   --layout-margin: calc(16px * var(--scale-space));
@@ -837,6 +788,36 @@
 
 [data-radius="soft"] {
   --scale-radius: 1.25;
+}
+
+/* ============================================================
+   ELEVATION - Control shadow intensity
+   Usage: <html data-elevation="subtle">
+
+   Elevation controls SHADOW OPACITY for visual depth.
+   Can be combined with any scheme or contrast level.
+
+   Available levels:
+   - flat        - No shadows (--shadow-opacity: 0)
+   - subtle      - Reduced shadows for minimal UI (--shadow-opacity: 0.5)
+   - standard    - Default M3 shadows (--shadow-opacity: 1)
+   - pronounced  - Stronger shadows for depth (--shadow-opacity: 1.5)
+   ============================================================ */
+
+[data-elevation="flat"] {
+  --shadow-opacity: 0;
+}
+
+[data-elevation="subtle"] {
+  --shadow-opacity: 0.5;
+}
+
+[data-elevation="standard"] {
+  --shadow-opacity: 1;
+}
+
+[data-elevation="pronounced"] {
+  --shadow-opacity: 1.5;
 }
 
 /* ============================================================

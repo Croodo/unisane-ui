@@ -118,7 +118,7 @@ export const SegmentedButton: React.FC<SegmentedButtonProps> = ({
             </div>
 
             {option.icon && !selected && (
-              <span className="w-5 h-5 flex items-center justify-center relative z-10">
+              <span className="size-icon-sm flex items-center justify-center relative z-10">
                 {option.icon}
               </span>
             )}

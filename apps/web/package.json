@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@types/react-syntax-highlighter": "^15.5.13",
+    "@unisane/data-table": "workspace:*",
     "@unisane/tokens": "workspace:*",
     "@unisane/ui": "workspace:*",
     "material-symbols": "^0.40.2",

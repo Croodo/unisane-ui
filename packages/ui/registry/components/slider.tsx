@@ -118,7 +118,7 @@ export const Slider: React.FC<SliderProps> = ({
             <div
               key={i}
               className={cn(
-                "absolute w-0_5 h-0_5 rounded-full z-10",
+                "absolute w-0.5 h-0.5 rounded-full z-10",
                 tick <= percentage
                   ? "bg-on-primary/60"
                   : "bg-on-surface-variant/40"
@@ -147,7 +147,7 @@ export const Slider: React.FC<SliderProps> = ({
             "rounded-full transition-all duration-medium ease-emphasized",
             disabled
               ? "bg-on-surface/38 w-3 h-3"
-              : "bg-primary w-5 h-5 group-active:scale-125"
+              : "bg-primary size-icon-sm group-active:scale-125"
           )}
         >
           {shouldShowLabel && !disabled && (

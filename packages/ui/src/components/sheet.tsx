@@ -80,11 +80,11 @@ export function Sheet({
   if (typeof document === "undefined") return null;
 
   const sizeClasses = {
-    sm: "max-w-[calc(var(--unit)*100)]",
-    md: "max-w-[calc(var(--unit)*150)]",
-    lg: "max-w-[calc(var(--unit)*210)]",
-    xl: "max-w-[calc(var(--unit)*280)]",
-    full: "max-w-[calc(100vw-(var(--unit)*14))]"
+    sm: "max-w-100",
+    md: "max-w-150",
+    lg: "max-w-210",
+    xl: "max-w-280",
+    full: "max-w-[calc(100vw-var(--spacing-14))]"
   };
 
   return createPortal(
@@ -127,7 +127,7 @@ export function Sheet({
               <h2 className="text-title-medium text-on-surface leading-none">
                 {title}
               </h2>
-              <div className="text-on-surface-variant font-medium text-label-small mt-1 flex items-center gap-1_5">
+              <div className="text-on-surface-variant font-medium text-label-small mt-1 flex items-center gap-1.5">
                 <span className="w-1 h-1 rounded-full bg-primary animate-pulse" />
                 Active Instance
               </div>

@@ -1,0 +1,47 @@
+{
+  "name": "@unisane/data-table",
+  "version": "0.1.0",
+  "description": "High-performance, feature-rich DataTable component for Unisane UI",
+  "type": "module",
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./hooks": {
+      "types": "./dist/hooks/index.d.ts",
+      "import": "./dist/hooks/index.js"
+    }
+  },
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc -p tsconfig.json && tsc-alias -p tsconfig.json",
+    "check-types": "tsc --noEmit",
+    "dev": "tsc --watch",
+    "lint": "eslint src --max-warnings 0"
+  },
+  "peerDependencies": {
+    "@unisane/ui": "workspace:*",
+    "react": "^19",
+    "react-dom": "^19"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.1",
+    "@unisane/eslint-config": "workspace:*",
+    "@unisane/typescript-config": "workspace:*",
+    "eslint": "^9.39.1",
+    "tsc-alias": "^1.8.10",
+    "typescript": "5.9.2"
+  },
+  "dependencies": {
+    "@tanstack/react-virtual": "^3.13.13"
+  }
+}

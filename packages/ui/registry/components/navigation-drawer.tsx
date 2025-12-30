@@ -8,8 +8,8 @@ const navigationDrawerVariants = cva(
   {
     variants: {
       modal: {
-        true: "fixed inset-y-0 left-0 z-[60] shadow-3 rounded-e-[2rem] w-[300px] max-w-[85vw] border-none",
-        false: "fixed inset-y-0 left-0 z-[30] w-[300px] rounded-e-none border-r-0",
+        true: "fixed inset-y-0 left-0 z-60 shadow-3 rounded-e-[2rem] w-[300px] max-w-[85vw] border-none",
+        false: "fixed inset-y-0 left-0 z-30 w-[300px] rounded-e-none border-r-0",
       },
       open: {
         true: "translate-x-0 visible",
@@ -140,7 +140,7 @@ export const NavigationDrawerItem = forwardRef<
       {badge && (
         <span className="relative z-10 ml-auto">
           {typeof badge === "string" || typeof badge === "number" ? (
-            <span className="text-label-small font-medium text-on-surface-variant px-1_5 py-0_5 min-w-5 text-center inline-block">
+            <span className="text-label-small font-medium text-on-surface-variant px-1.5 py-0.5 min-w-5 text-center inline-block">
               {badge}
             </span>
           ) : (

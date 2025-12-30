@@ -1,37 +1,67 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# dependencies
+# Dependencies
 node_modules
 .pnp
 .pnp.js
 
-# testing
+# Testing
 coverage
 
-# next.js
+# Next.js
 .next/
 out/
 build
 .swc/
 
-# misc
+# Misc
 .DS_Store
 *.pem
+Thumbs.db
 
-# debug
+# Debug logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+*.log
 
-# local env files
+# Local env files
+.env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+.env*.local
 
-# turbo
+# Turbo
 .turbo
 
-# ui
+# Build outputs
 dist/
-unisane-reference
+
+# TypeScript
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# Cache
+.cache
+.eslintcache
+*.cache
+
+# Temp files
+.tmp/
+*.tmp
+*.bak
+*.swp
+*~
+
+# IDE
+.idea/
+*.sublime-*
+
+# Reference/test directories (local development only)
+references/
+
+# Claude Code
+.claude/

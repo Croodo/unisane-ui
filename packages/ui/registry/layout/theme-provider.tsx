@@ -8,6 +8,7 @@ export type RadiusTheme = "none" | "minimal" | "sharp" | "standard" | "soft";
 export type ColorScheme = "tonal" | "monochrome" | "neutral";
 export type ContrastLevel = "standard" | "medium" | "high";
 export type ColorTheme = "blue" | "purple" | "pink" | "red" | "orange" | "yellow" | "green" | "cyan" | "neutral" | "black";
+export type Elevation = "flat" | "subtle" | "standard" | "pronounced";
 
 export interface ThemeConfig {
   density?: Density;
@@ -16,6 +17,7 @@ export interface ThemeConfig {
   scheme?: ColorScheme;
   contrast?: ContrastLevel;
   colorTheme?: ColorTheme;
+  elevation?: Elevation;
 }
 
 interface ThemeContextType {
@@ -26,31 +28,19 @@ interface ThemeContextType {
   scheme: ColorScheme;
   contrast: ContrastLevel;
   colorTheme: ColorTheme;
+  elevation: Elevation;
   setDensity: (density: Density) => void;
   setTheme: (theme: Theme) => void;
   setRadius: (radius: RadiusTheme) => void;
   setScheme: (scheme: ColorScheme) => void;
   setContrast: (contrast: ContrastLevel) => void;
   setColorTheme: (colorTheme: ColorTheme) => void;
+  setElevation: (elevation: Elevation) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 const STORAGE_KEY = "unisane-theme";
-
-// Color hue mapping (must match theme-script.ts)
-const COLOR_THEMES: Record<ColorTheme, { hue: number; chroma: number }> = {
-  blue: { hue: 240, chroma: 0.13 },
-  purple: { hue: 285, chroma: 0.14 },
-  pink: { hue: 340, chroma: 0.15 },
-  red: { hue: 25, chroma: 0.16 },
-  orange: { hue: 55, chroma: 0.16 },
-  yellow: { hue: 85, chroma: 0.14 },
-  green: { hue: 145, chroma: 0.14 },
-  cyan: { hue: 195, chroma: 0.12 },
-  neutral: { hue: 60, chroma: 0.02 },
-  black: { hue: 0, chroma: 0 },
-};
 
 export function useTheme() {
   const context = useContext(ThemeContext);
@@ -72,156 +62,175 @@ export function useDensity() {
 
 interface ThemeProviderProps {
   children: React.ReactNode;
-  storageKey?: string;
-  disableStorage?: boolean;
+  /**
+   * Storage key for persisting theme. Set to `false` to disable persistence.
+   * When disabled, HTML attributes become the source of truth.
+   */
+  storageKey?: string | false;
 }
 
-// Read theme from DOM (set by blocking script in <head>)
-function readFromDOM(): {
-  density: Density;
-  radius: RadiusTheme;
-  scheme: ColorScheme;
-  contrast: ContrastLevel;
-  colorTheme: ColorTheme;
-  theme: Theme;
-  resolvedTheme: "light" | "dark";
-} {
-  if (typeof document === "undefined") {
-    return {
-      density: "standard",
-      radius: "standard",
-      scheme: "tonal",
-      contrast: "standard",
-      colorTheme: "blue",
-      theme: "system",
-      resolvedTheme: "light",
-    };
-  }
+// Fallback defaults (only used if HTML attributes are missing)
+const DEFAULTS: Required<ThemeConfig> = {
+  density: "standard",
+  theme: "system",
+  radius: "standard",
+  scheme: "tonal",
+  contrast: "standard",
+  colorTheme: "blue",
+  elevation: "standard",
+};
 
+// Read initial values from HTML attributes (SSR source of truth)
+function getInitialFromDOM(): Partial<ThemeConfig> {
+  if (typeof document === "undefined") return {};
   const root = document.documentElement;
-
   return {
-    density: (root.getAttribute("data-density") || "standard") as Density,
-    radius: (root.getAttribute("data-radius") || "standard") as RadiusTheme,
-    scheme: (root.getAttribute("data-scheme") || "tonal") as ColorScheme,
-    contrast: (root.getAttribute("data-contrast") || "standard") as ContrastLevel,
-    colorTheme: (root.getAttribute("data-theme") || "blue") as ColorTheme,
-    theme: (root.getAttribute("data-theme-mode") || "system") as Theme,
-    resolvedTheme: root.classList.contains("dark") ? "dark" : "light",
+    density: root.getAttribute("data-density") as Density | undefined,
+    radius: root.getAttribute("data-radius") as RadiusTheme | undefined,
+    scheme: root.getAttribute("data-scheme") as ColorScheme | undefined,
+    contrast: root.getAttribute("data-contrast") as ContrastLevel | undefined,
+    colorTheme: root.getAttribute("data-theme") as ColorTheme | undefined,
+    theme: root.getAttribute("data-theme-mode") as Theme | undefined,
+    elevation: root.getAttribute("data-elevation") as Elevation | undefined,
   };
 }
 
-// Update inline style tag with new color values (prevents flicker on theme change)
-function updateInlineStyles(colorTheme: ColorTheme, resolvedTheme: "light" | "dark") {
-  const color = COLOR_THEMES[colorTheme] || COLOR_THEMES.blue;
-  let styleEl = document.getElementById("unisane-theme-init") as HTMLStyleElement | null;
-
-  if (!styleEl) {
-    styleEl = document.createElement("style");
-    styleEl.id = "unisane-theme-init";
-    document.head.appendChild(styleEl);
+// Get stored values from localStorage
+function getStoredConfig(storageKey: string | false): Partial<ThemeConfig> {
+  if (!storageKey || typeof localStorage === "undefined") return {};
+  try {
+    return JSON.parse(localStorage.getItem(storageKey) || "{}");
+  } catch {
+    return {};
   }
-
-  styleEl.textContent = `
-:root {
-  --hue: ${color.hue};
-  --chroma: ${color.chroma};
-  color-scheme: ${resolvedTheme};
-}
-`.trim();
 }
 
-// Update DOM and persist to localStorage
-function updateDOM(key: string, value: string, storageKey: string, disableStorage: boolean) {
+// Persist to localStorage
+function persist(key: string, value: string, storageKey: string | false) {
+  if (!storageKey) return;
+  try {
+    const current = JSON.parse(localStorage.getItem(storageKey) || "{}");
+    current[key] = value;
+    localStorage.setItem(storageKey, JSON.stringify(current));
+  } catch {
+    // Ignore storage errors
+  }
+}
+
+// Apply a single attribute to DOM
+function applyAttribute(attr: string, value: string) {
+  document.documentElement.setAttribute(attr, value);
+}
+
+// Resolve dark mode
+function resolveDarkMode(theme: Theme): "light" | "dark" {
+  if (theme === "system") {
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+  return theme;
+}
+
+// Apply dark mode class
+function applyDarkMode(resolved: "light" | "dark") {
   const root = document.documentElement;
-
-  switch (key) {
-    case "resolvedTheme":
-      root.classList.toggle("dark", value === "dark");
-      break;
-    case "theme":
-      root.setAttribute("data-theme-mode", value);
-      break;
-    case "colorTheme":
-      root.setAttribute("data-theme", value);
-      break;
-    default:
-      root.setAttribute(`data-${key}`, value);
-  }
-
-  // Persist to localStorage
-  if (!disableStorage) {
-    try {
-      const current = JSON.parse(localStorage.getItem(storageKey) || "{}");
-      current[key] = value;
-      localStorage.setItem(storageKey, JSON.stringify(current));
-    } catch {
-      // Ignore storage errors
-    }
-  }
+  root.classList.toggle("dark", resolved === "dark");
+  root.style.colorScheme = resolved;
 }
 
 export function ThemeProvider({
   children,
   storageKey = STORAGE_KEY,
-  disableStorage = false,
 }: ThemeProviderProps) {
-  // Read initial values from DOM (already set by blocking script)
-  const initial = readFromDOM();
+  // Priority: localStorage > HTML attributes > DEFAULTS
+  // This allows HTML attributes to be the SSR source of truth,
+  // while localStorage preserves user changes across sessions.
+  const domValues = typeof window !== "undefined" ? getInitialFromDOM() : {};
+  const stored = getStoredConfig(storageKey);
 
-  const [density, setDensityState] = useState<Density>(initial.density);
-  const [theme, setThemeState] = useState<Theme>(initial.theme);
-  const [radius, setRadiusState] = useState<RadiusTheme>(initial.radius);
-  const [scheme, setSchemeState] = useState<ColorScheme>(initial.scheme);
-  const [contrast, setContrastState] = useState<ContrastLevel>(initial.contrast);
-  const [colorTheme, setColorThemeState] = useState<ColorTheme>(initial.colorTheme);
-  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">(initial.resolvedTheme);
+  const initialConfig: Required<ThemeConfig> = {
+    density: stored.density ?? domValues.density ?? DEFAULTS.density,
+    theme: stored.theme ?? domValues.theme ?? DEFAULTS.theme,
+    radius: stored.radius ?? domValues.radius ?? DEFAULTS.radius,
+    scheme: stored.scheme ?? domValues.scheme ?? DEFAULTS.scheme,
+    contrast: stored.contrast ?? domValues.contrast ?? DEFAULTS.contrast,
+    colorTheme: stored.colorTheme ?? domValues.colorTheme ?? DEFAULTS.colorTheme,
+    elevation: stored.elevation ?? domValues.elevation ?? DEFAULTS.elevation,
+  };
 
-  // Setters
+  const [density, setDensityState] = useState<Density>(initialConfig.density);
+  const [theme, setThemeState] = useState<Theme>(initialConfig.theme);
+  const [radius, setRadiusState] = useState<RadiusTheme>(initialConfig.radius);
+  const [scheme, setSchemeState] = useState<ColorScheme>(initialConfig.scheme);
+  const [contrast, setContrastState] = useState<ContrastLevel>(initialConfig.contrast);
+  const [colorTheme, setColorThemeState] = useState<ColorTheme>(initialConfig.colorTheme);
+  const [elevation, setElevationState] = useState<Elevation>(initialConfig.elevation);
+  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">(() => {
+    if (typeof window === "undefined") return "light";
+    return resolveDarkMode(initialConfig.theme);
+  });
+
+  // Sync DOM on mount (in case state differs from SSR HTML)
+  useEffect(() => {
+    applyAttribute("data-density", density);
+    applyAttribute("data-radius", radius);
+    applyAttribute("data-scheme", scheme);
+    applyAttribute("data-contrast", contrast);
+    applyAttribute("data-theme", colorTheme);
+    applyAttribute("data-theme-mode", theme);
+    applyAttribute("data-elevation", elevation);
+
+    const resolved = resolveDarkMode(theme);
+    applyDarkMode(resolved);
+    setResolvedTheme(resolved);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const setDensity = (v: Density) => {
     setDensityState(v);
-    updateDOM("density", v, storageKey, disableStorage);
+    applyAttribute("data-density", v);
+    persist("density", v, storageKey);
   };
 
   const setRadius = (v: RadiusTheme) => {
     setRadiusState(v);
-    updateDOM("radius", v, storageKey, disableStorage);
+    applyAttribute("data-radius", v);
+    persist("radius", v, storageKey);
   };
 
   const setScheme = (v: ColorScheme) => {
     setSchemeState(v);
-    updateDOM("scheme", v, storageKey, disableStorage);
+    applyAttribute("data-scheme", v);
+    persist("scheme", v, storageKey);
   };
 
   const setContrast = (v: ContrastLevel) => {
     setContrastState(v);
-    updateDOM("contrast", v, storageKey, disableStorage);
+    applyAttribute("data-contrast", v);
+    persist("contrast", v, storageKey);
   };
 
   const setColorTheme = (v: ColorTheme) => {
     setColorThemeState(v);
-    updateDOM("colorTheme", v, storageKey, disableStorage);
-    // Also update inline styles to prevent flicker
-    updateInlineStyles(v, resolvedTheme);
+    applyAttribute("data-theme", v);
+    persist("colorTheme", v, storageKey);
+  };
+
+  const setElevation = (v: Elevation) => {
+    setElevationState(v);
+    applyAttribute("data-elevation", v);
+    persist("elevation", v, storageKey);
   };
 
   const setTheme = (v: Theme) => {
     setThemeState(v);
-    updateDOM("theme", v, storageKey, disableStorage);
+    applyAttribute("data-theme-mode", v);
+    persist("theme", v, storageKey);
 
-    let resolved: "light" | "dark";
-    if (v === "system") {
-      resolved = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-    } else {
-      resolved = v;
-    }
-
+    const resolved = resolveDarkMode(v);
     setResolvedTheme(resolved);
-    updateDOM("resolvedTheme", resolved, storageKey, disableStorage);
-    updateInlineStyles(colorTheme, resolved);
+    applyDarkMode(resolved);
   };
 
-  // Listen for system theme changes
+  // Listen for system theme changes when in "system" mode
   useEffect(() => {
     if (theme !== "system") return;
 
@@ -229,13 +238,12 @@ export function ThemeProvider({
     const onChange = () => {
       const resolved = mediaQuery.matches ? "dark" : "light";
       setResolvedTheme(resolved);
-      updateDOM("resolvedTheme", resolved, storageKey, disableStorage);
-      updateInlineStyles(colorTheme, resolved);
+      applyDarkMode(resolved);
     };
 
     mediaQuery.addEventListener("change", onChange);
     return () => mediaQuery.removeEventListener("change", onChange);
-  }, [theme, colorTheme, storageKey, disableStorage]);
+  }, [theme]);
 
   const value = useMemo<ThemeContextType>(
     () => ({
@@ -246,17 +254,29 @@ export function ThemeProvider({
       scheme,
       contrast,
       colorTheme,
+      elevation,
       setDensity,
       setTheme,
       setRadius,
       setScheme,
       setContrast,
       setColorTheme,
+      setElevation,
     }),
-    [density, theme, resolvedTheme, radius, scheme, contrast, colorTheme]
+    [density, theme, resolvedTheme, radius, scheme, contrast, colorTheme, elevation]
   );
 
   return (
     <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
   );
+}
+
+/**
+ * Clears stored theme preferences, resetting to HTML attribute defaults.
+ * Useful for testing or providing a "reset to defaults" option.
+ */
+export function clearStoredTheme(storageKey: string = STORAGE_KEY) {
+  if (typeof localStorage !== "undefined") {
+    localStorage.removeItem(storageKey);
+  }
 }

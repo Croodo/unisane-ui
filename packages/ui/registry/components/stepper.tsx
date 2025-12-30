@@ -42,7 +42,7 @@ export const Stepper: React.FC<StepperProps> = ({
             {!isLast && (
               <div
                 className={cn(
-                  "absolute top-4 left-1/2 w-full h-0_5u transition-colors duration-medium z-0",
+                  "absolute top-4 left-1/2 w-full h-0.5 transition-colors duration-medium z-0",
                   isCompleted ? "bg-primary" : "bg-outline-variant/30"
                 )}
               />
@@ -65,7 +65,7 @@ export const Stepper: React.FC<StepperProps> = ({
               )}
             </div>
 
-            <div className="mt-4 text-center px-2 max-w-[calc(var(--unit)*30)]">
+            <div className="mt-4 text-center px-2 max-w-30">
               <span
                 className={cn(
                   "block text-label-small font-medium transition-colors",

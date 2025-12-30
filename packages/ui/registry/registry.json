@@ -164,16 +164,6 @@
       "dependencies": [],
       "registryDependencies": []
     },
-    "theme-script": {
-      "name": "ThemeScript",
-      "type": "layout:ui",
-      "description": "ThemeScript component",
-      "files": [
-        "layout/theme-script.ts"
-      ],
-      "dependencies": [],
-      "registryDependencies": []
-    },
     "window-size-provider": {
       "name": "WindowSizeProvider",
       "type": "layout:ui",
@@ -379,6 +369,16 @@
         "ripple"
       ]
     },
+    "date-input": {
+      "name": "DateInput",
+      "type": "components:ui",
+      "description": "DateInput component",
+      "files": [
+        "components/date-input.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
     "date-picker": {
       "name": "DatePicker",
       "type": "components:ui",
@@ -388,12 +388,8 @@
       ],
       "dependencies": [],
       "registryDependencies": [
-        "surface",
-        "text",
-        "text-field",
         "calendar",
-        "popover",
-        "icon-button"
+        "date-input"
       ]
     },
     "dialog": {

@@ -91,14 +91,23 @@ export const Popover: React.FC<PopoverProps> = ({
         <div
           id={popoverId}
           role="dialog"
-          aria-modal="false"
+          aria-modal="true"
           className={cn(
-            "absolute z-modal min-w-[calc(var(--unit)*50)] bg-surface rounded-sm shadow-4 p-4 animate-in fade-in zoom-in-95 duration-short ease-standard border border-outline-variant/30",
-            side === "bottom" && "top-[calc(100%+(var(--unit)*2))]",
-            side === "top" && "bottom-[calc(100%+(var(--unit)*2))]",
-            align === "center" && "left-1/2 -translate-x-1/2",
-            align === "start" && "left-0",
-            align === "end" && "right-0",
+            "absolute z-modal min-w-40 bg-surface rounded-sm shadow-2 py-1 animate-in fade-in zoom-in-95 duration-short ease-standard border border-outline-variant",
+            // Vertical positioning (top/bottom)
+            side === "bottom" && "top-[calc(100%+8px)]",
+            side === "top" && "bottom-[calc(100%+8px)]",
+            // Horizontal positioning (left/right)
+            side === "left" && "right-[calc(100%+8px)] top-0",
+            side === "right" && "left-[calc(100%+8px)] top-0",
+            // Alignment for vertical sides (top/bottom)
+            (side === "top" || side === "bottom") && align === "center" && "left-1/2 -translate-x-1/2",
+            (side === "top" || side === "bottom") && align === "start" && "left-0",
+            (side === "top" || side === "bottom") && align === "end" && "right-0",
+            // Alignment for horizontal sides (left/right)
+            (side === "left" || side === "right") && align === "center" && "top-1/2 -translate-y-1/2",
+            (side === "left" || side === "right") && align === "start" && "top-0",
+            (side === "left" || side === "right") && align === "end" && "bottom-0",
             className
           )}
         >

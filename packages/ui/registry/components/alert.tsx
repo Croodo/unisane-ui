@@ -51,7 +51,7 @@ export const Alert: React.FC<AlertProps> = ({
 
   return (
     <div className={cn(alertVariants({ variant, className }))} role="alert" {...props}>
-      <div className="shrink-0 w-5 h-5 flex items-center justify-center">{iconNode}</div>
+      <div className="shrink-0 size-icon-sm flex items-center justify-center">{iconNode}</div>
       <div className="flex-1 flex flex-col gap-1">
         {title && (
           <Typography

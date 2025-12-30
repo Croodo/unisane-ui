@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { Dialog } from "./dialog";
 import { Button } from "./button";
 import { IconButton } from "./icon-button";
@@ -33,6 +33,8 @@ export const TimePicker: React.FC<TimePickerProps> = ({
 
   const [inputType, setInputType] = useState<"dial" | "keyboard">("dial");
   const [dialMode, setDialMode] = useState<"hour" | "minute">("hour");
+  const [isDragging, setIsDragging] = useState(false);
+  const dialRef = useRef<HTMLDivElement>(null);
 
   const getRotation = () => {
     if (dialMode === "hour") {
@@ -41,11 +43,102 @@ export const TimePicker: React.FC<TimePickerProps> = ({
     return minutes * 6;
   };
 
-  const handleClockClick = () => {
+  // Calculate value from mouse/touch position
+  const getValueFromPosition = useCallback((clientX: number, clientY: number) => {
+    if (!dialRef.current) return null;
+
+    const rect = dialRef.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+
+    const x = clientX - centerX;
+    const y = clientY - centerY;
+
+    // Calculate angle in degrees (0 = top, clockwise)
+    let angle = Math.atan2(x, -y) * (180 / Math.PI);
+    if (angle < 0) angle += 360;
+
     if (dialMode === "hour") {
-      setDialMode("minute");
+      // Hours: 30 degrees per hour, snap to nearest hour
+      let hour = Math.round(angle / 30);
+      if (hour === 0) hour = 12;
+      return hour;
+    } else {
+      // Minutes: 6 degrees per minute, snap to nearest minute
+      let minute = Math.round(angle / 6);
+      if (minute === 60) minute = 0;
+      return minute;
     }
-  };
+  }, [dialMode]);
+
+  const handleDialInteraction = useCallback((clientX: number, clientY: number) => {
+    const value = getValueFromPosition(clientX, clientY);
+    if (value === null) return;
+
+    if (dialMode === "hour") {
+      setHours(value);
+    } else {
+      setMinutes(value);
+    }
+  }, [dialMode, getValueFromPosition]);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+    handleDialInteraction(e.clientX, e.clientY);
+  }, [handleDialInteraction]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isDragging) return;
+    handleDialInteraction(e.clientX, e.clientY);
+  }, [isDragging, handleDialInteraction]);
+
+  const handleMouseUp = useCallback(() => {
+    if (isDragging) {
+      setIsDragging(false);
+      // Auto-advance to minutes after selecting hour
+      if (dialMode === "hour") {
+        setDialMode("minute");
+      }
+    }
+  }, [isDragging, dialMode]);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+    const touch = e.touches[0];
+    if (touch) {
+      handleDialInteraction(touch.clientX, touch.clientY);
+    }
+  }, [handleDialInteraction]);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!isDragging) return;
+    const touch = e.touches[0];
+    if (touch) {
+      handleDialInteraction(touch.clientX, touch.clientY);
+    }
+  }, [isDragging, handleDialInteraction]);
+
+  const handleTouchEnd = useCallback(() => {
+    if (isDragging) {
+      setIsDragging(false);
+      // Auto-advance to minutes after selecting hour
+      if (dialMode === "hour") {
+        setDialMode("minute");
+      }
+    }
+  }, [isDragging, dialMode]);
+
+  // Handle clicking on a specific number
+  const handleNumberClick = useCallback((value: number) => {
+    if (dialMode === "hour") {
+      setHours(value);
+      setDialMode("minute");
+    } else {
+      setMinutes(value);
+    }
+  }, [dialMode]);
 
   const formatTime = (h: number, m: number) => {
     return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
@@ -171,47 +264,93 @@ export const TimePicker: React.FC<TimePickerProps> = ({
         {inputType === "dial" && (
           <div className="relative flex justify-center w-full mb-4 animate-in fade-in zoom-in-95 duration-emphasized">
             <div
-              className="w-[calc(var(--unit)*64)] h-[calc(var(--unit)*64)] rounded-full bg-surface-container-highest relative cursor-pointer touch-none select-none shrink-0"
-              onClick={handleClockClick}
+              ref={dialRef}
+              className="w-64 h-64 rounded-full bg-surface-container-highest relative cursor-pointer touch-none select-none shrink-0"
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
               role="listbox"
               aria-label={dialMode === "hour" ? "Select hour" : "Select minute"}
             >
-              <div className="absolute top-1/2 left-1/2 w-2 h-2 -translate-x-1/2 -translate-y-1/2 bg-primary rounded-full z-20" />
+              <div className="absolute top-1/2 left-1/2 w-2 h-2 -translate-x-1/2 -translate-y-1/2 bg-primary rounded-full z-20 pointer-events-none" />
 
               <div
-                className="absolute top-1/2 left-1/2 h-[calc(var(--unit)*25)] w-0_5u bg-primary origin-bottom z-10 transition-transform duration-long ease-smooth"
+                className={cn(
+                  "absolute top-1/2 left-1/2 h-25 w-0.5 bg-primary origin-bottom z-10 pointer-events-none",
+                  isDragging ? "transition-none" : "transition-transform duration-long ease-smooth"
+                )}
                 style={{
                   transform: `translate(-50%, -100%) rotate(${getRotation()}deg)`,
                 }}
               >
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-primary border-2 border-surface -mt-1" />
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-primary -mt-6 opacity-20" />
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1_5u h-1_5u rounded-full bg-primary -mt-[calc(var(--unit)*0.75)] border border-surface" />
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-primary -mt-[calc(var(--unit)*0.75)] border border-surface" />
               </div>
 
-              {[12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((num) => {
-                const angle = num * 30 - 90;
-                const rad = angle * (Math.PI / 180);
-                const x = 50 + 42 * Math.cos(rad);
-                const y = 50 + 42 * Math.sin(rad);
+              {dialMode === "hour" ? (
+                // Hour numbers (1-12)
+                [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((num) => {
+                  const angle = num * 30 - 90;
+                  const rad = angle * (Math.PI / 180);
+                  const x = 50 + 42 * Math.cos(rad);
+                  const y = 50 + 42 * Math.sin(rad);
 
-                const isSelected = dialMode === "hour" && hours === num;
+                  const isSelected = hours === num;
 
-                return (
-                  <div
-                    key={num}
-                    role="option"
-                    aria-selected={isSelected}
-                    className={cn(
-                      "absolute w-8 h-8 -ml-4 -mt-4 flex items-center justify-center rounded-full text-body-medium transition-colors z-0",
-                      isSelected ? "text-on-primary font-medium" : "text-on-surface"
-                    )}
-                    style={{ left: `${x}%`, top: `${y}%` }}
-                  >
-                    {num}
-                  </div>
-                );
-              })}
+                  return (
+                    <div
+                      key={num}
+                      role="option"
+                      aria-selected={isSelected}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleNumberClick(num);
+                      }}
+                      className={cn(
+                        "absolute w-8 h-8 -ml-4 -mt-4 flex items-center justify-center rounded-full text-body-medium transition-colors z-30 cursor-pointer hover:bg-on-surface/8",
+                        isSelected ? "text-on-primary font-medium" : "text-on-surface"
+                      )}
+                      style={{ left: `${x}%`, top: `${y}%` }}
+                    >
+                      {num}
+                    </div>
+                  );
+                })
+              ) : (
+                // Minute numbers (00, 05, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55)
+                [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55].map((num) => {
+                  const angle = num * 6 - 90;
+                  const rad = angle * (Math.PI / 180);
+                  const x = 50 + 42 * Math.cos(rad);
+                  const y = 50 + 42 * Math.sin(rad);
+
+                  const isSelected = minutes === num;
+
+                  return (
+                    <div
+                      key={num}
+                      role="option"
+                      aria-selected={isSelected}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleNumberClick(num);
+                      }}
+                      className={cn(
+                        "absolute w-8 h-8 -ml-4 -mt-4 flex items-center justify-center rounded-full text-body-medium transition-colors z-30 cursor-pointer hover:bg-on-surface/8",
+                        isSelected ? "text-on-primary font-medium" : "text-on-surface"
+                      )}
+                      style={{ left: `${x}%`, top: `${y}%` }}
+                    >
+                      {num.toString().padStart(2, "0")}
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         )}

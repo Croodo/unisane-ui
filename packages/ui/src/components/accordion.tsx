@@ -78,7 +78,7 @@ export const AccordionItem: React.FC<AccordionItemProps> = ({
     >
       {React.Children.map(children, (child) => {
         if (React.isValidElement(child)) {
-          return React.cloneElement(child as React.ReactElement<any>, {
+          return React.cloneElement(child as React.ReactElement<Record<string, unknown>>, {
             value,
             isExpanded,
             contentId,
@@ -128,7 +128,7 @@ export const AccordionTrigger: React.FC<AccordionTriggerProps> = ({
       )}
     >
       <Ripple />
-      <span className="relative z-10 flex-1 text-left pt-0_5">
+      <span className="relative z-10 flex-1 text-left pt-0.5">
         {children}
       </span>
       <Icon
@@ -162,7 +162,7 @@ export const AccordionContent: React.FC<AccordionContentProps> = ({
     aria-hidden={!isExpanded}
     className={cn(
       "overflow-hidden transition-all duration-medium ease-emphasized",
-      isExpanded ? "max-h-[calc(var(--unit)*250)] opacity-100" : "max-h-0 opacity-0"
+      isExpanded ? "max-h-250 opacity-100" : "max-h-0 opacity-0"
     )}
   >
     <div className="px-4 pb-4 pt-1 text-on-surface-variant text-body-small font-medium leading-relaxed">

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 import { Surface } from "@/primitives/surface";
@@ -23,104 +23,179 @@ export type CalendarProps = VariantProps<typeof calendarVariants> & {
   selectedDate?: Date;
   onDateSelect?: (date: Date) => void;
   className?: string;
+  min?: Date;
+  max?: Date;
+};
+
+const MONTH_NAMES = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+const getDaysInMonth = (date: Date) => {
+  return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+};
+
+const getFirstDayOfMonth = (date: Date) => {
+  return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+};
+
+const isSameDay = (date1: Date, date2: Date) => {
+  return (
+    date1.getDate() === date2.getDate() &&
+    date1.getMonth() === date2.getMonth() &&
+    date1.getFullYear() === date2.getFullYear()
+  );
+};
+
+const isToday = (date: Date) => {
+  return isSameDay(date, new Date());
+};
+
+const isDateDisabled = (date: Date, min?: Date, max?: Date) => {
+  if (min && date < new Date(min.getFullYear(), min.getMonth(), min.getDate())) {
+    return true;
+  }
+  if (max && date > new Date(max.getFullYear(), max.getMonth(), max.getDate())) {
+    return true;
+  }
+  return false;
 };
 
 export const Calendar: React.FC<CalendarProps> = ({
   selectedDate,
   onDateSelect,
   className,
+  min,
+  max,
 }) => {
   const [currentMonth, setCurrentMonth] = useState(selectedDate || new Date());
   const [focusedDay, setFocusedDay] = useState<number | null>(null);
+  const dayRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
 
-  const monthNames = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
-
-  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-  const getDaysInMonth = (date: Date) => {
-    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-  };
-
-  const getFirstDayOfMonth = (date: Date) => {
-    return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
-  };
-
-  const isSameDay = (date1: Date, date2: Date) => {
-    return (
-      date1.getDate() === date2.getDate() &&
-      date1.getMonth() === date2.getMonth() &&
-      date1.getFullYear() === date2.getFullYear()
-    );
-  };
-
-  const handlePreviousMonth = () => {
-    setCurrentMonth(
-      new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1)
-    );
-    setFocusedDay(null);
-  };
-
-  const handleNextMonth = () => {
-    setCurrentMonth(
-      new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1)
-    );
-    setFocusedDay(null);
-  };
-
-  const handleDateClick = (day: number) => {
-    const newDate = new Date(
-      currentMonth.getFullYear(),
-      currentMonth.getMonth(),
-      day
-    );
-    onDateSelect?.(newDate);
-  };
-
-  const handleKeyDown = useCallback((e: React.KeyboardEvent, day: number) => {
-    const daysInMonth = getDaysInMonth(currentMonth);
-    let newDay = day;
-
-    switch (e.key) {
-      case "ArrowLeft":
-        e.preventDefault();
-        newDay = day > 1 ? day - 1 : daysInMonth;
-        break;
-      case "ArrowRight":
-        e.preventDefault();
-        newDay = day < daysInMonth ? day + 1 : 1;
-        break;
-      case "ArrowUp":
-        e.preventDefault();
-        newDay = day > 7 ? day - 7 : day + daysInMonth - 7;
-        break;
-      case "ArrowDown":
-        e.preventDefault();
-        newDay = day + 7 <= daysInMonth ? day + 7 : day + 7 - daysInMonth;
-        break;
-      case "Enter":
-      case " ":
-        e.preventDefault();
-        handleDateClick(day);
-        return;
-      default:
-        return;
+  // Focus the day when focusedDay changes
+  useEffect(() => {
+    if (focusedDay !== null) {
+      const dayEl = dayRefs.current.get(focusedDay);
+      if (dayEl) {
+        dayEl.focus();
+      }
     }
+  }, [focusedDay]);
 
-    setFocusedDay(newDay);
-  }, [currentMonth]);
+  const handlePreviousMonth = useCallback(() => {
+    setCurrentMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1));
+    setFocusedDay(null);
+  }, []);
+
+  const handleNextMonth = useCallback(() => {
+    setCurrentMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1));
+    setFocusedDay(null);
+  }, []);
+
+  const handleDateClick = useCallback(
+    (day: number) => {
+      const newDate = new Date(
+        currentMonth.getFullYear(),
+        currentMonth.getMonth(),
+        day
+      );
+      if (!isDateDisabled(newDate, min, max)) {
+        onDateSelect?.(newDate);
+      }
+    },
+    [currentMonth, min, max, onDateSelect]
+  );
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent, day: number) => {
+      const daysInMonth = getDaysInMonth(currentMonth);
+      let newDay = day;
+
+      switch (e.key) {
+        case "ArrowLeft":
+          e.preventDefault();
+          if (day > 1) {
+            newDay = day - 1;
+          } else {
+            // Go to previous month's last day
+            handlePreviousMonth();
+            const prevMonthDays = getDaysInMonth(
+              new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1)
+            );
+            setFocusedDay(prevMonthDays);
+            return;
+          }
+          break;
+        case "ArrowRight":
+          e.preventDefault();
+          if (day < daysInMonth) {
+            newDay = day + 1;
+          } else {
+            // Go to next month's first day
+            handleNextMonth();
+            setFocusedDay(1);
+            return;
+          }
+          break;
+        case "ArrowUp":
+          e.preventDefault();
+          if (day > 7) {
+            newDay = day - 7;
+          } else {
+            // Go to previous month
+            handlePreviousMonth();
+            const prevMonthDays = getDaysInMonth(
+              new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1)
+            );
+            setFocusedDay(prevMonthDays - (7 - day));
+            return;
+          }
+          break;
+        case "ArrowDown":
+          e.preventDefault();
+          if (day + 7 <= daysInMonth) {
+            newDay = day + 7;
+          } else {
+            // Go to next month
+            handleNextMonth();
+            setFocusedDay(day + 7 - daysInMonth);
+            return;
+          }
+          break;
+        case "Home":
+          e.preventDefault();
+          newDay = 1;
+          break;
+        case "End":
+          e.preventDefault();
+          newDay = daysInMonth;
+          break;
+        case "Enter":
+        case " ":
+          e.preventDefault();
+          handleDateClick(day);
+          return;
+        default:
+          return;
+      }
+
+      setFocusedDay(newDay);
+    },
+    [currentMonth, handlePreviousMonth, handleNextMonth, handleDateClick]
+  );
 
   const daysInMonth = getDaysInMonth(currentMonth);
   const firstDay = getFirstDayOfMonth(currentMonth);
@@ -134,13 +209,23 @@ export const Calendar: React.FC<CalendarProps> = ({
     days.push(day);
   }
 
+  // Determine initial focused day
+  const getInitialFocusDay = () => {
+    if (selectedDate &&
+        selectedDate.getMonth() === currentMonth.getMonth() &&
+        selectedDate.getFullYear() === currentMonth.getFullYear()) {
+      return selectedDate.getDate();
+    }
+    return 1;
+  };
+
   return (
     <Surface
       tone="surface"
       elevation={1}
       className={cn(calendarVariants({ className }))}
       role="application"
-      aria-label={`Calendar, ${monthNames[currentMonth.getMonth()]} ${currentMonth.getFullYear()}`}
+      aria-label={`Calendar, ${MONTH_NAMES[currentMonth.getMonth()]} ${currentMonth.getFullYear()}`}
     >
       <div className="flex items-center justify-between p-4 border-b border-outline-variant">
         <IconButton
@@ -154,7 +239,7 @@ export const Calendar: React.FC<CalendarProps> = ({
         />
 
         <Text variant="titleMedium" aria-live="polite">
-          {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+          {MONTH_NAMES[currentMonth.getMonth()]} {currentMonth.getFullYear()}
         </Text>
 
         <IconButton
@@ -169,7 +254,7 @@ export const Calendar: React.FC<CalendarProps> = ({
       </div>
 
       <div className="grid grid-cols-7 gap-1 p-2" role="row">
-        {dayNames.map((day) => (
+        {DAY_NAMES.map((day) => (
           <div key={day} className="text-center py-2" role="columnheader">
             <Text variant="labelSmall" className="text-on-surface-variant">
               {day}
@@ -178,56 +263,69 @@ export const Calendar: React.FC<CalendarProps> = ({
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-1 p-2 pb-4" role="grid" aria-label="Calendar dates">
-        {days.map((day, index) => (
-          <div key={index} className="aspect-square" role="gridcell">
-            {day ? (
+      <div
+        className="grid grid-cols-7 gap-1 p-2 pb-4"
+        role="grid"
+        aria-label="Calendar dates"
+      >
+        {days.map((day, index) => {
+          if (!day) {
+            return (
+              <div key={`empty-${index}`} className="aspect-square" role="gridcell" aria-hidden="true" />
+            );
+          }
+
+          const dateForDay = new Date(
+            currentMonth.getFullYear(),
+            currentMonth.getMonth(),
+            day
+          );
+          const isSelected = selectedDate && isSameDay(dateForDay, selectedDate);
+          const isTodayDate = isToday(dateForDay);
+          const isDisabled = isDateDisabled(dateForDay, min, max);
+          const isFocusable =
+            focusedDay === day || (focusedDay === null && day === getInitialFocusDay());
+
+          return (
+            <div key={day} className="aspect-square" role="gridcell">
               <button
+                ref={(el) => {
+                  if (el) {
+                    dayRefs.current.set(day, el);
+                  } else {
+                    dayRefs.current.delete(day);
+                  }
+                }}
+                type="button"
+                disabled={isDisabled}
                 className={cn(
                   "relative w-full h-full rounded-full flex items-center justify-center overflow-hidden",
                   "transition-colors duration-short ease-standard",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
-                  selectedDate &&
-                    isSameDay(
-                      new Date(
-                        currentMonth.getFullYear(),
-                        currentMonth.getMonth(),
-                        day
-                      ),
-                      selectedDate
-                    )
+                  // M3 spec: Selected date uses colorPrimary background, colorOnPrimary text
+                  isSelected
                     ? "bg-primary text-on-primary"
-                    : "text-on-surface hover:bg-on-surface/8"
+                    // M3 spec: Today's date uses 1dp stroke with colorPrimary (ring instead of fill)
+                    : isTodayDate
+                      ? "ring-1 ring-inset ring-primary text-primary font-medium"
+                      : "text-on-surface hover:bg-on-surface/8",
+                  isDisabled && "opacity-38 cursor-not-allowed pointer-events-none"
                 )}
                 onClick={() => handleDateClick(day)}
                 onKeyDown={(e) => handleKeyDown(e, day)}
-                aria-label={`${monthNames[currentMonth.getMonth()]} ${day}, ${currentMonth.getFullYear()}`}
-                aria-selected={
-                  selectedDate &&
-                  isSameDay(
-                    new Date(
-                      currentMonth.getFullYear(),
-                      currentMonth.getMonth(),
-                      day
-                    ),
-                    selectedDate
-                  )
-                }
-                tabIndex={focusedDay === day || (focusedDay === null && day === 1) ? 0 : -1}
-                ref={(el) => {
-                  if (focusedDay === day && el) {
-                    el.focus();
-                  }
-                }}
+                aria-label={`${MONTH_NAMES[currentMonth.getMonth()]} ${day}, ${currentMonth.getFullYear()}${isTodayDate ? " (today)" : ""}${isSelected ? " (selected)" : ""}`}
+                aria-selected={isSelected}
+                aria-disabled={isDisabled}
+                tabIndex={isFocusable ? 0 : -1}
               >
-                <Ripple />
-                <Text variant="bodyMedium" className="relative z-10">{day}</Text>
+                <Ripple disabled={isDisabled} />
+                <Text variant="bodyMedium" className="relative z-10">
+                  {day}
+                </Text>
               </button>
-            ) : (
-              <div aria-hidden="true" />
-            )}
-          </div>
-        ))}
+            </div>
+          );
+        })}
       </div>
     </Surface>
   );

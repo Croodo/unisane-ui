@@ -58,7 +58,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref
   ) => {
-    const iconSizeClass = "w-5 h-5";
+    const iconSizeClass = "size-icon-sm";
     const buttonClasses = cn(buttonVariants({ variant, size }), className);
 
     const innerContent = (
@@ -90,7 +90,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
         {!loading && icon && (
           <span
-            className={`${iconSizeClass} flex items-center justify-center flex-shrink-0 relative z-10 pointer-events-none`}
+            className={`${iconSizeClass} flex items-center justify-center shrink-0 relative z-10 pointer-events-none`}
           >
             {icon}
           </span>
@@ -107,7 +107,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
         {!loading && trailingIcon && (
           <span
-            className={`${iconSizeClass} flex items-center justify-center flex-shrink-0 relative z-10 pointer-events-none`}
+            className={`${iconSizeClass} flex items-center justify-center shrink-0 relative z-10 pointer-events-none`}
           >
             {trailingIcon}
           </span>
@@ -117,9 +117,62 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     // asChild pattern: render user's element (e.g., Next.js Link) with button styles
     if (asChild && isValidElement(children)) {
+      // Get the text content from the Link's children
+      const childElement = children as React.ReactElement<{ children?: ReactNode }>;
+      const linkChildren = childElement.props.children;
+      const contentWithText = (
+        <>
+          <span className="absolute inset-0 pointer-events-none bg-current opacity-0 transition-opacity duration-snappy group-hover:opacity-hover group-focus-visible:opacity-focus group-active:opacity-pressed" />
+          <Ripple disabled={disabled || loading} />
+          {loading && (
+            <svg
+              className={`animate-spin ${iconSizeClass} relative z-10`}
+              viewBox="0 0 24 24"
+              fill="none"
+              aria-hidden="true"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              />
+            </svg>
+          )}
+          {!loading && icon && (
+            <span
+              className={`${iconSizeClass} flex items-center justify-center shrink-0 relative z-10 pointer-events-none`}
+            >
+              {icon}
+            </span>
+          )}
+          <span
+            className={cn(
+              "relative z-10 pointer-events-none",
+              loading ? "opacity-0" : "opacity-100"
+            )}
+          >
+            {linkChildren}
+          </span>
+          {!loading && trailingIcon && (
+            <span
+              className={`${iconSizeClass} flex items-center justify-center shrink-0 relative z-10 pointer-events-none`}
+            >
+              {trailingIcon}
+            </span>
+          )}
+        </>
+      );
       return (
         <Slot className={buttonClasses}>
-          {cloneElement(children as React.ReactElement, {}, innerContent)}
+          {cloneElement(children as React.ReactElement, {}, contentWithText)}
         </Slot>
       );
     }

@@ -184,7 +184,7 @@ setColorTheme("green");`}
                 <tr className="border-b border-outline-variant/50">
                   <td className="py-3 pr-4 font-mono text-primary">standard</td>
                   <td className="py-3 pr-4">8px</td>
-                  <td className="py-3">Balanced, Material Design default</td>
+                  <td className="py-3">Balanced, default setting</td>
                 </tr>
                 <tr>
                   <td className="py-3 pr-4 font-mono text-primary">soft</td>

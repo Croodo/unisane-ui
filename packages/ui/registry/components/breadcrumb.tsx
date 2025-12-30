@@ -29,7 +29,7 @@ export const BreadcrumbLink: React.FC<{
   asChild?: boolean;
 }> = ({ children, onClick, href, className, asChild }) => {
   const linkClasses = cn(
-    "text-label-medium font-medium text-on-surface-variant hover:text-primary transition-colors leading-none pt-0_5",
+    "text-label-medium font-medium text-on-surface-variant hover:text-primary transition-colors leading-none pt-0.5",
     className
   );
 
@@ -63,7 +63,7 @@ export const BreadcrumbPage: React.FC<{
 }> = ({ children, className }) => (
   <span
     className={cn(
-      "text-label-medium font-medium text-on-surface leading-none pt-0_5",
+      "text-label-medium font-medium text-on-surface leading-none pt-0.5",
       className
     )}
   >

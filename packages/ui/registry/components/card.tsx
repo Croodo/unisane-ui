@@ -145,7 +145,7 @@ const CardMedia = React.forwardRef<
 CardMedia.displayName = "CardMedia";
 
 const CardTitle = React.forwardRef<
-  HTMLParagraphElement,
+  HTMLHeadingElement,
   React.HTMLAttributes<HTMLHeadingElement>
 >(({ className, ...props }, ref) => (
   <h3

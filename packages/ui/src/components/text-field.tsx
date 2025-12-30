@@ -10,7 +10,7 @@ const textFieldContainerVariants = cva(
     variants: {
       variant: {
         outlined:
-          "rounded-sm border border-outline-variant bg-surface hover:border-outline focus-within:!border-primary focus-within:ring-1 focus-within:ring-primary/20",
+          "rounded-sm border border-outline-variant bg-surface hover:border-outline focus-within:border-primary! focus-within:ring-1 focus-within:ring-primary/20",
         filled:
           "rounded-t-sm rounded-b-none border-b border-outline-variant bg-surface-container-low hover:bg-surface-container focus-within:bg-surface",
       },
@@ -18,7 +18,7 @@ const textFieldContainerVariants = cva(
         true: "border-error focus-within:border-error hover:border-error ring-error/20",
       },
       disabled: {
-        true: "opacity-38 cursor-not-allowed pointer-events-none grayscale",
+        true: "opacity-38 cursor-not-allowed pointer-events-none",
       },
     },
     defaultVariants: {
@@ -79,17 +79,17 @@ export const TextField = React.forwardRef<
       if (value !== undefined) setInternalValue(value);
     }, [value]);
 
-    const handleFocus = (e: any) => {
+    const handleFocus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       setIsFocused(true);
-      onFocus?.(e);
+      onFocus?.(e as React.FocusEvent<HTMLInputElement> & React.FocusEvent<HTMLTextAreaElement>);
     };
-    const handleBlur = (e: any) => {
+    const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       setIsFocused(false);
-      onBlur?.(e);
+      onBlur?.(e as React.FocusEvent<HTMLInputElement> & React.FocusEvent<HTMLTextAreaElement>);
     };
-    const handleChange = (e: any) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       setInternalValue(e.target.value);
-      onChange?.(e);
+      onChange?.(e as React.ChangeEvent<HTMLInputElement> & React.ChangeEvent<HTMLTextAreaElement>);
     };
 
     const hasValue =
@@ -128,7 +128,7 @@ export const TextField = React.forwardRef<
                   : "text-on-surface-variant"
               )}
             >
-              <div className="w-5 h-5 flex items-center justify-center">
+              <div className="size-icon-sm flex items-center justify-center">
                 {leadingIcon}
               </div>
             </span>
@@ -136,27 +136,25 @@ export const TextField = React.forwardRef<
           <div className="relative flex-1 h-full min-w-0">
             {multiline ? (
               <textarea
-                ref={internalRef as any}
+                ref={internalRef as React.RefObject<HTMLTextAreaElement>}
                 id={inputId}
-                value={value}
-                defaultValue={defaultValue}
+                {...(value !== undefined ? { value } : { defaultValue })}
                 disabled={disabled}
                 onFocus={handleFocus}
                 onBlur={handleBlur}
                 onChange={handleChange}
                 className={cn(
-                  "w-full h-full bg-transparent px-4 outline-none border-none focus:ring-0 text-on-surface text-body-large caret-primary placeholder-transparent resize-none py-5 min-h-[calc(var(--unit)*30)]",
+                  "w-full h-full bg-transparent px-4 outline-none border-none focus:ring-0 text-on-surface text-body-large caret-primary placeholder-transparent resize-none py-5 min-h-30",
                   variant === "filled" ? "pt-7 pb-3" : ""
                 )}
                 placeholder=" "
-                {...(props as any)}
+                {...(props as React.TextareaHTMLAttributes<HTMLTextAreaElement>)}
               />
             ) : (
               <input
-                ref={internalRef as any}
+                ref={internalRef as React.RefObject<HTMLInputElement>}
                 id={inputId}
-                value={value}
-                defaultValue={defaultValue}
+                {...(value !== undefined ? { value } : { defaultValue })}
                 disabled={disabled}
                 onFocus={handleFocus}
                 onBlur={handleBlur}
@@ -166,7 +164,7 @@ export const TextField = React.forwardRef<
                   variant === "filled" ? "pt-7 pb-1" : ""
                 )}
                 placeholder=" "
-                {...(props as any)}
+                {...(props as React.InputHTMLAttributes<HTMLInputElement>)}
               />
             )}
             <label
@@ -205,7 +203,7 @@ export const TextField = React.forwardRef<
                 error ? "text-error" : "text-on-surface-variant"
               )}
             >
-              <div className="w-5 h-5 flex items-center justify-center">
+              <div className="size-icon-sm flex items-center justify-center">
                 {trailingIcon}
               </div>
             </span>
@@ -214,7 +212,7 @@ export const TextField = React.forwardRef<
         {helperText && (
           <span
             className={cn(
-              "text-label-small mt-1_5 px-4 font-medium",
+              "text-label-small mt-1.5 px-4 font-medium",
               error ? "text-error" : "text-on-surface-variant"
             )}
           >

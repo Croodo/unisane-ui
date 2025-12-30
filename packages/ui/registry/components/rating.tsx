@@ -99,7 +99,7 @@ export const Rating: React.FC<RatingProps> = ({
               height="20"
               viewBox="0 0 24 24"
               className={cn(
-                "w-5 h-5 relative z-10",
+                "size-icon-sm relative z-10",
                 fill === "full" && "text-primary",
                 fill === "half" && "text-primary",
                 fill === "empty" && "text-outline"

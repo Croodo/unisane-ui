@@ -1,6 +1,13 @@
 "use client";
 
-import React, { forwardRef, cloneElement, isValidElement, useEffect, useRef, useId } from "react";
+import React, {
+  forwardRef,
+  cloneElement,
+  isValidElement,
+  useEffect,
+  useRef,
+  useId,
+} from "react";
 import { cn, Slot } from "@/lib/utils";
 import { useSidebar } from "./sidebar-context";
 import { Ripple } from "../ripple";
@@ -12,11 +19,7 @@ export interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
 export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(
   ({ children, className, ...props }, ref) => {
     return (
-      <div
-        ref={ref}
-        className={cn("flex h-full", className)}
-        {...props}
-      >
+      <div ref={ref} className={cn("flex h-full", className)} {...props}>
         {children}
       </div>
     );
@@ -30,7 +33,8 @@ export interface SidebarRailProps extends React.HTMLAttributes<HTMLElement> {
 
 export const SidebarRail = forwardRef<HTMLElement, SidebarRailProps>(
   ({ children, className, ...props }, ref) => {
-    const { handleRailLeave, railWidth, isMobile, isTablet, isDrawerVisible } = useSidebar();
+    const { handleRailLeave, railWidth, isMobile, isTablet, isDrawerVisible } =
+      useSidebar();
 
     // Hide rail on mobile and tablet (tablet uses top app bar instead)
     if (isMobile || isTablet) return null;
@@ -72,12 +76,19 @@ export interface SidebarRailItemProps {
   childIds?: string[];
 }
 
-const renderIcon = (icon: React.ReactNode | string, isActive: boolean = false) => {
+const renderIcon = (
+  icon: React.ReactNode | string,
+  isActive: boolean = false
+) => {
   if (typeof icon === "string") {
     return (
       <span
         className="material-symbols-outlined text-[22px]! transition-all duration-short"
-        style={isActive ? { fontVariationSettings: "'FILL' 1, 'wght' 500" } : { fontVariationSettings: "'wght' 400" }}
+        style={
+          isActive
+            ? { fontVariationSettings: "'FILL' 1, 'wght' 500" }
+            : { fontVariationSettings: "'wght' 400" }
+        }
       >
         {icon}
       </span>
@@ -126,11 +137,11 @@ export function SidebarRailItem({
         {badge !== undefined && (
           <span
             className={cn(
-              "absolute -top-0_5 -right-0_5 min-w-3 h-3 px-0_5",
+              "absolute -top-0.5 -right-0.5 min-w-3 h-3 px-0.5",
               "bg-error text-on-error text-[10px] leading-none",
               "flex items-center justify-center rounded-full font-medium",
               "z-20 pointer-events-none ring-1 ring-surface",
-              typeof badge === "number" && badge < 10 && "min-w-2 h-2 p-0_5"
+              typeof badge === "number" && badge < 10 && "min-w-2 h-2 p-0.5"
             )}
           >
             {badge}
@@ -141,7 +152,7 @@ export function SidebarRailItem({
       <span
         className={cn(
           "text-label-small transition-colors duration-short",
-          "text-center px-0_5 max-w-full",
+          "text-center px-0.5 max-w-full",
           isActive
             ? "text-primary font-bold"
             : "text-on-surface-variant font-medium group-hover:text-on-surface"
@@ -153,7 +164,7 @@ export function SidebarRailItem({
   );
 
   const commonClasses = cn(
-    "group flex flex-col items-center gap-0_5 w-full py-1 min-h-12",
+    "group flex flex-col items-center gap-0.5 w-full py-1 min-h-12",
     "relative select-none cursor-pointer outline-none",
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
     "focus-visible:ring-offset-2 rounded-sm",
@@ -197,10 +208,7 @@ export function SidebarRailItem({
   }
 
   return (
-    <button
-      {...commonProps}
-      disabled={disabled}
-    >
+    <button {...commonProps} disabled={disabled}>
       {content}
     </button>
   );
@@ -263,7 +271,8 @@ export const SidebarDrawer = forwardRef<HTMLElement, SidebarDrawerProps>(
 );
 SidebarDrawer.displayName = "SidebarDrawer";
 
-export interface SidebarHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface SidebarHeaderProps
+  extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
 }
 
@@ -282,7 +291,8 @@ export const SidebarHeader = forwardRef<HTMLDivElement, SidebarHeaderProps>(
 );
 SidebarHeader.displayName = "SidebarHeader";
 
-export interface SidebarFooterProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface SidebarFooterProps
+  extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
 }
 
@@ -301,7 +311,8 @@ export const SidebarFooter = forwardRef<HTMLDivElement, SidebarFooterProps>(
 );
 SidebarFooter.displayName = "SidebarFooter";
 
-export interface SidebarContentProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface SidebarContentProps
+  extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
 }
 
@@ -320,7 +331,8 @@ export const SidebarContent = forwardRef<HTMLDivElement, SidebarContentProps>(
 );
 SidebarContent.displayName = "SidebarContent";
 
-export interface SidebarGroupProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface SidebarGroupProps
+  extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
 }
 
@@ -339,27 +351,29 @@ export const SidebarGroup = forwardRef<HTMLDivElement, SidebarGroupProps>(
 );
 SidebarGroup.displayName = "SidebarGroup";
 
-export interface SidebarGroupLabelProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface SidebarGroupLabelProps
+  extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
 }
 
-export const SidebarGroupLabel = forwardRef<HTMLDivElement, SidebarGroupLabelProps>(
-  ({ children, className, ...props }, ref) => {
-    return (
-      <div
-        ref={ref}
-        className={cn(
-          "px-4 py-2 text-label-small font-semibold text-on-surface-variant",
-          "uppercase tracking-wider",
-          className
-        )}
-        {...props}
-      >
-        {children}
-      </div>
-    );
-  }
-);
+export const SidebarGroupLabel = forwardRef<
+  HTMLDivElement,
+  SidebarGroupLabelProps
+>(({ children, className, ...props }, ref) => {
+  return (
+    <div
+      ref={ref}
+      className={cn(
+        "px-4 py-2 text-label-small font-semibold text-on-surface-variant",
+        "uppercase tracking-wider",
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+});
 SidebarGroupLabel.displayName = "SidebarGroupLabel";
 
 export interface SidebarMenuProps extends React.HTMLAttributes<HTMLElement> {
@@ -371,7 +385,7 @@ export const SidebarMenu = forwardRef<HTMLElement, SidebarMenuProps>(
     return (
       <nav
         ref={ref}
-        className={cn("flex flex-col gap-0_5", className)}
+        className={cn("flex flex-col gap-0.5", className)}
         {...props}
       >
         {children}
@@ -408,7 +422,7 @@ export function SidebarMenuItem({
 }: SidebarMenuItemProps) {
   const sidebar = useSidebar();
   const isControlled = active !== undefined;
-  const isActive = isControlled ? active : (id ? sidebar.activeId === id : false);
+  const isActive = isControlled ? active : id ? sidebar.activeId === id : false;
 
   const handleItemClick = () => {
     if (disabled) return;
@@ -429,7 +443,9 @@ export function SidebarMenuItem({
           {typeof icon === "string" ? (
             <span
               className="material-symbols-outlined text-[20px]!"
-              style={isActive ? { fontVariationSettings: "'FILL' 1" } : undefined}
+              style={
+                isActive ? { fontVariationSettings: "'FILL' 1" } : undefined
+              }
             >
               {icon}
             </span>
@@ -484,51 +500,58 @@ export function SidebarMenuItem({
   );
 }
 
-export interface SidebarTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface SidebarTriggerProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children?: React.ReactNode;
 }
 
-export const SidebarTrigger = forwardRef<HTMLButtonElement, SidebarTriggerProps>(
-  ({ children, className, onClick, ...props }, ref) => {
-    const { isMobile, toggleMobile, toggleExpanded } = useSidebar();
+export const SidebarTrigger = forwardRef<
+  HTMLButtonElement,
+  SidebarTriggerProps
+>(({ children, className, onClick, ...props }, ref) => {
+  const { isMobile, toggleMobile, toggleExpanded } = useSidebar();
 
-    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-      if (isMobile) {
-        toggleMobile();
-      } else {
-        toggleExpanded();
-      }
-      onClick?.(e);
-    };
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (isMobile) {
+      toggleMobile();
+    } else {
+      toggleExpanded();
+    }
+    onClick?.(e);
+  };
 
-    return (
-      <button
-        ref={ref}
-        onClick={handleClick}
-        className={cn(
-          "inline-flex items-center justify-center",
-          "w-10 h-10 rounded-full",
-          "text-on-surface-variant hover:bg-on-surface/8",
-          "transition-colors duration-short",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-          className
-        )}
-        aria-label="Toggle sidebar"
-        {...props}
-      >
-        {children || (
-          <span className="material-symbols-outlined">menu</span>
-        )}
-      </button>
-    );
-  }
-);
+  return (
+    <button
+      ref={ref}
+      onClick={handleClick}
+      className={cn(
+        "inline-flex items-center justify-center",
+        "w-10 h-10 rounded-full",
+        "text-on-surface-variant hover:bg-on-surface/8",
+        "transition-colors duration-short",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+        className
+      )}
+      aria-label="Toggle sidebar"
+      {...props}
+    >
+      {children || <span className="material-symbols-outlined">menu</span>}
+    </button>
+  );
+});
 SidebarTrigger.displayName = "SidebarTrigger";
 
-export interface SidebarBackdropProps extends React.HTMLAttributes<HTMLDivElement> {}
+export type SidebarBackdropProps = React.HTMLAttributes<HTMLDivElement>;
 
 export function SidebarBackdrop({ className, ...props }: SidebarBackdropProps) {
-  const { isDrawerVisible, expanded, mobileOpen, isMobile, isTablet, setMobileOpen } = useSidebar();
+  const {
+    isDrawerVisible,
+    expanded,
+    mobileOpen,
+    isMobile,
+    isTablet,
+    setMobileOpen,
+  } = useSidebar();
 
   // Tablet behaves like mobile for backdrop
   const usesOverlayDrawer = isMobile || isTablet;
@@ -571,7 +594,7 @@ export const SidebarInset = forwardRef<HTMLElement, SidebarInsetProps>(
         ref={ref}
         className={cn(
           "flex-1 min-h-screen flex flex-col",
-          "bg-surface-container-lowest",
+          "bg-surface",
           "transition-[margin] duration-emphasized ease-emphasized",
           usesTopAppBar && "mt-16",
           className
@@ -589,7 +612,8 @@ export const SidebarInset = forwardRef<HTMLElement, SidebarInsetProps>(
 );
 SidebarInset.displayName = "SidebarInset";
 
-export interface SidebarCollapsibleGroupProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface SidebarCollapsibleGroupProps
+  extends React.HTMLAttributes<HTMLDivElement> {
   id: string;
   label: string;
   icon?: React.ReactNode | string;
@@ -608,10 +632,12 @@ export function SidebarCollapsibleGroup({
   childIds = [],
   ...props
 }: SidebarCollapsibleGroupProps) {
-  const { isGroupExpanded, toggleGroup, setGroupExpanded, activeId } = useSidebar();
+  const { isGroupExpanded, toggleGroup, setGroupExpanded, activeId } =
+    useSidebar();
   const contentId = useId();
   const defaultAppliedRef = useRef(false);
-  const hasActiveChild = childIds.length > 0 && activeId !== null && childIds.includes(activeId);
+  const hasActiveChild =
+    childIds.length > 0 && activeId !== null && childIds.includes(activeId);
 
   useEffect(() => {
     if (!defaultAppliedRef.current && defaultOpen) {
@@ -653,7 +679,11 @@ export function SidebarCollapsibleGroup({
             {typeof icon === "string" ? (
               <span
                 className="material-symbols-outlined text-[20px]!"
-                style={hasActiveChild ? { fontVariationSettings: "'FILL' 1" } : undefined}
+                style={
+                  hasActiveChild
+                    ? { fontVariationSettings: "'FILL' 1" }
+                    : undefined
+                }
               >
                 {icon}
               </span>
@@ -665,7 +695,7 @@ export function SidebarCollapsibleGroup({
         <span className="flex-1 text-left truncate">{label}</span>
         <svg
           className={cn(
-            "w-5 h-5 transition-transform duration-medium ease-emphasized shrink-0",
+            "size-icon-sm transition-transform duration-medium ease-emphasized shrink-0",
             isOpen && "rotate-180"
           )}
           viewBox="0 0 24 24"
@@ -687,9 +717,7 @@ export function SidebarCollapsibleGroup({
         )}
         aria-hidden={!isOpen}
       >
-        <div className="flex flex-col pl-4 overflow-hidden">
-          {children}
-        </div>
+        <div className="flex flex-col pl-4 overflow-hidden">{children}</div>
       </div>
     </div>
   );

@@ -21,7 +21,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     <div
       role="search"
       className={cn(
-        "group relative flex items-center w-full h-14 rounded-sm bg-surface-container-high border border-outline-variant/30 hover:bg-surface-container-highest focus-within:bg-surface-container-highest transition-all duration-medium ease-standard cursor-text",
+        "group relative flex items-center w-full h-14 rounded-sm bg-surface-container border border-outline-variant hover:bg-surface-container-high focus-within:bg-surface-container-high transition-all duration-medium ease-standard cursor-text",
         className
       )}
     >

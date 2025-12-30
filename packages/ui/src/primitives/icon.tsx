@@ -37,8 +37,8 @@ export const Icon = forwardRef<HTMLElement, IconProps>(
 
     const sizeClasses = isScale
       ? {
-          xs: "w-icon-xs h-icon-xs text-[var(--icon-xs)]",
-          sm: "w-icon-sm h-icon-sm text-[var(--icon-sm)]",
+          xs: "size-icon-xs text-[var(--icon-xs)]",
+          sm: "size-icon-sm text-[var(--icon-sm)]",
           md: "w-icon-md h-icon-md text-[var(--icon-md)]",
           lg: "w-icon-lg h-icon-lg text-[var(--icon-lg)]",
           xl: "w-icon-xl h-icon-xl text-[var(--icon-xl)]",
