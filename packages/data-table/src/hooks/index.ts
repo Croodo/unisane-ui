@@ -5,3 +5,4 @@ export { useKeyboardNavigation, type UseKeyboardNavigationOptions, type UseKeybo
 export { useDebounce, useDebouncedCallback } from "./use-debounce";
 export { useInlineEditing } from "./use-inline-editing";
 export { useDensityScale, getDensityScale, DENSITY_SCALE_MAP } from "./use-density-scale";
+export { useColumnDrag, type DragState, type UseColumnDragOptions, type UseColumnDragReturn } from "./use-column-drag";

@@ -1,0 +1,262 @@
+"use client";
+
+import React, { memo } from "react";
+import { cn, Checkbox } from "@unisane/ui";
+import type { Column, ColumnGroup, SortDirection, MultiSortState, PinPosition, ColumnMetaMap, FilterValue } from "../../types";
+import { isColumnGroup } from "../../types";
+import { DENSITY_STYLES, type Density } from "../../constants";
+import { useColumnDrag } from "../../hooks/use-column-drag";
+import { HeaderCell } from "./header-cell";
+import { GroupHeaderRow } from "./group-header-row";
+
+// Re-export sub-components for direct use
+export { ResizeHandle } from "./resize-handle";
+export { ColumnMenu } from "./column-menu";
+export { HeaderCell } from "./header-cell";
+export { GroupHeaderRow } from "./group-header-row";
+
+// ─── HEADER PROPS ───────────────────────────────────────────────────────────
+
+export interface DataTableHeaderProps<T> {
+  /** Flattened leaf columns for rendering cells */
+  columns: Column<T>[];
+  /** Original column definitions (may include groups) */
+  columnDefinitions?: Array<Column<T> | ColumnGroup<T>>;
+  /** Whether column groups exist */
+  hasGroups?: boolean;
+  /** @deprecated Use sortState instead */
+  sortKey: string | null;
+  /** @deprecated Use sortState instead */
+  sortDirection: SortDirection;
+  /** Multi-sort state */
+  sortState?: MultiSortState;
+  /** Sort handler - receives key and whether Shift was held (for multi-sort) */
+  onSort: (key: string, addToMultiSort?: boolean) => void;
+  columnMeta: ColumnMetaMap;
+  getEffectivePinPosition: (col: Column<T>) => PinPosition;
+  selectable: boolean;
+  allSelected: boolean;
+  indeterminate: boolean;
+  onSelectAll: (checked: boolean) => void;
+  showColumnBorders: boolean;
+  enableExpansion: boolean;
+  density?: Density;
+  // Column features
+  resizable?: boolean;
+  pinnable?: boolean;
+  reorderable?: boolean;
+  onColumnPin?: (key: string, position: PinPosition) => void;
+  onColumnResize?: (key: string, width: number) => void;
+  onColumnHide?: (key: string) => void;
+  onColumnFilter?: (key: string, value: FilterValue) => void;
+  onColumnReorder?: (fromKey: string, toKey: string) => void;
+  columnFilters?: Record<string, FilterValue>;
+  /** Tailwind class for sticky header offset */
+  headerOffsetClassName?: string;
+}
+
+// ─── HEADER COMPONENT ───────────────────────────────────────────────────────
+
+function DataTableHeaderInner<T extends { id: string }>({
+  columns,
+  columnDefinitions,
+  hasGroups = false,
+  sortKey,
+  sortDirection,
+  sortState = [],
+  onSort,
+  columnMeta,
+  getEffectivePinPosition,
+  selectable,
+  allSelected,
+  indeterminate,
+  onSelectAll,
+  showColumnBorders,
+  enableExpansion,
+  density = "standard",
+  resizable = false,
+  pinnable = false,
+  reorderable = false,
+  onColumnPin,
+  onColumnResize,
+  onColumnHide,
+  onColumnFilter,
+  onColumnReorder,
+  columnFilters = {},
+  headerOffsetClassName,
+}: DataTableHeaderProps<T>) {
+  const paddingClass = DENSITY_STYLES[density];
+
+  // Column drag-to-reorder
+  const { getDragProps, isDraggingColumn, isDropTarget, getDropPosition } = useColumnDrag({
+    enabled: reorderable,
+    onReorder: (fromKey, toKey) => onColumnReorder?.(fromKey, toKey),
+  });
+
+  // Helper to get sort info from sortState
+  const getSortInfo = (key: string): { isSorted: boolean; direction: SortDirection; priority: number | null } => {
+    // First check sortState (multi-sort)
+    if (sortState.length > 0) {
+      const index = sortState.findIndex((s) => s.key === key);
+      if (index === -1) {
+        return { isSorted: false, direction: null, priority: null };
+      }
+      return {
+        isSorted: true,
+        direction: sortState[index]!.direction,
+        priority: sortState.length > 1 ? index + 1 : null,
+      };
+    }
+    // Fall back to legacy single-sort
+    if (sortKey === key) {
+      return { isSorted: true, direction: sortDirection, priority: null };
+    }
+    return { isSorted: false, direction: null, priority: null };
+  };
+
+  // Get columns that are children of groups (for second row when groups exist)
+  const groupChildColumns = hasGroups && columnDefinitions
+    ? columnDefinitions.flatMap((def) =>
+        isColumnGroup(def) ? def.children : []
+      )
+    : [];
+
+  // Determine pinned column info for border logic
+  const columnsToRender = hasGroups ? groupChildColumns : columns;
+  const pinnedLeftColumns = columnsToRender.filter((col) => getEffectivePinPosition(col) === "left");
+  const pinnedRightColumns = columnsToRender.filter((col) => getEffectivePinPosition(col) === "right");
+  const hasPinnedLeftData = pinnedLeftColumns.length > 0;
+  const lastPinnedLeftKey = hasPinnedLeftData ? String(pinnedLeftColumns[pinnedLeftColumns.length - 1]!.key) : null;
+  const firstPinnedRightKey = pinnedRightColumns.length > 0 ? String(pinnedRightColumns[0]!.key) : null;
+
+  return (
+    <thead className={cn("sticky top-0 z-30", headerOffsetClassName)}>
+      {/* Group header row (only if groups exist) */}
+      {hasGroups && columnDefinitions && (
+        <GroupHeaderRow
+          columnDefinitions={columnDefinitions}
+          selectable={selectable}
+          enableExpansion={enableExpansion}
+          showColumnBorders={showColumnBorders}
+          paddingClass={paddingClass}
+          hasPinnedLeftData={hasPinnedLeftData}
+        />
+      )}
+
+      {/* Main header row (or child columns row if groups exist) */}
+      <tr>
+        {/* Checkbox column - only render if no groups (groups use rowSpan) */}
+        {selectable && !hasGroups && (
+          <th
+            className={cn(
+              "bg-surface border-b border-outline-variant/50",
+              "sticky left-0 z-20 isolate",
+              // Only show border-r if there are no more sticky columns after this
+              showColumnBorders && !enableExpansion && !hasPinnedLeftData && "border-r border-outline-variant/50"
+            )}
+            style={{ width: 48, minWidth: 48, maxWidth: 48 }}
+          >
+            <div className="flex items-center justify-center h-full">
+              <Checkbox
+                checked={allSelected}
+                indeterminate={indeterminate}
+                onChange={(e) => onSelectAll(e.target.checked)}
+                aria-label="Select all rows"
+                className="[&>div]:w-8 [&>div]:h-8"
+              />
+            </div>
+          </th>
+        )}
+
+        {/* Checkbox for group mode (needs to be in second row too for proper alignment) */}
+        {selectable && hasGroups && (
+          <th
+            className={cn(
+              "bg-surface border-b border-outline-variant/50",
+              "sticky left-0 z-20 isolate",
+              // Only show border-r if there are no more sticky columns after this
+              showColumnBorders && !enableExpansion && !hasPinnedLeftData && "border-r border-outline-variant/50"
+            )}
+            style={{ width: 48, minWidth: 48, maxWidth: 48 }}
+          >
+            <div className="flex items-center justify-center h-full">
+              <Checkbox
+                checked={allSelected}
+                indeterminate={indeterminate}
+                onChange={(e) => onSelectAll(e.target.checked)}
+                aria-label="Select all rows"
+                className="[&>div]:w-8 [&>div]:h-8"
+              />
+            </div>
+          </th>
+        )}
+
+        {/* Expander column - only render if no groups */}
+        {enableExpansion && !hasGroups && (
+          <th
+            className={cn(
+              "bg-surface border-b border-outline-variant/50",
+              "sticky z-20 isolate",
+              // Only show border-r if there are no pinned-left data columns after this
+              showColumnBorders && !hasPinnedLeftData && "border-r border-outline-variant/50"
+            )}
+            style={{
+              width: 40,
+              minWidth: 40,
+              maxWidth: 40,
+              left: selectable ? 48 : 0,
+            }}
+          >
+            <span className="sr-only">Expand row</span>
+          </th>
+        )}
+
+        {/* Data columns - render group children if groups exist, otherwise all columns */}
+        {(hasGroups ? groupChildColumns : columns).map((col, index) => {
+          const key = String(col.key);
+          const meta = columnMeta[key];
+          const sortInfo = getSortInfo(key);
+          const isSortable = col.sortable !== false;
+          const pinPosition = getEffectivePinPosition(col);
+          const columnsToCheck = hasGroups ? groupChildColumns : columns;
+          const isLastColumn = index === columnsToCheck.length - 1;
+
+          // Only allow reordering non-pinned columns
+          const canReorder = reorderable && col.reorderable !== false && !pinPosition;
+
+          return (
+            <HeaderCell
+              key={key}
+              column={col}
+              meta={meta}
+              isSorted={sortInfo.isSorted}
+              sortDirection={sortInfo.direction}
+              sortPriority={sortInfo.priority}
+              isSortable={isSortable}
+              pinPosition={pinPosition}
+              isLastColumn={isLastColumn}
+              paddingClass={paddingClass}
+              showColumnBorders={showColumnBorders}
+              resizable={resizable}
+              pinnable={pinnable}
+              onSort={(e) => onSort(key, e.shiftKey)}
+              onPin={(position) => onColumnPin?.(key, position)}
+              onResize={(colKey, width) => onColumnResize?.(colKey, width)}
+              onHide={() => onColumnHide?.(key)}
+              onFilter={(value) => onColumnFilter?.(key, value)}
+              currentFilter={columnFilters[key]}
+              isLastPinnedLeft={key === lastPinnedLeftKey}
+              isFirstPinnedRight={key === firstPinnedRightKey}
+              dragProps={canReorder ? getDragProps(key) : undefined}
+              isDragging={canReorder && isDraggingColumn(key)}
+              isDropTarget={canReorder && isDropTarget(key)}
+              dropPosition={canReorder ? getDropPosition(key) : null}
+            />
+          );
+        })}
+      </tr>
+    </thead>
+  );
+}
+
+export const DataTableHeader = memo(DataTableHeaderInner) as typeof DataTableHeaderInner;

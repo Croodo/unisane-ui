@@ -8,10 +8,11 @@ import {
   DataTablePagination,
   useInlineEditing,
   useSelection,
-  exportToCSV,
+  exportData,
   type Column,
   type BulkAction,
   type Density,
+  type ExportFormat,
 } from "@unisane/data-table";
 import { Typography, Chip, Avatar, Icon, Card, Switch } from "@unisane/ui";
 
@@ -523,7 +524,17 @@ function DataTableWithToolbar({
           selectedIds={selectedIds}
           bulkActions={enableSelection ? bulkActions : []}
           onClearSelection={deselectAll}
-          onExport={() => exportToCSV(data, columns, "all-users.csv")}
+          exportHandler={{
+            onExport: (format: ExportFormat) => {
+              exportData({
+                format,
+                data,
+                columns,
+                filename: "all-users",
+              });
+            },
+            formats: ["csv", "excel", "pdf", "json"],
+          }}
           density={density}
           onDensityChange={onDensityChange}
         />
@@ -571,6 +582,8 @@ export default function DataTableDemoPage() {
   const [enableVirtualization, setEnableVirtualization] = useState(true);
   const [enableResizable, setEnableResizable] = useState(true);
   const [enablePinnable, setEnablePinnable] = useState(true);
+  const [enableMultiSort, setEnableMultiSort] = useState(true);
+  const [enableReorderable, setEnableReorderable] = useState(true);
   const [density, setDensity] = useState<Density>("standard");
 
   // Inline editing
@@ -614,7 +627,12 @@ export default function DataTableDemoPage() {
         icon: "download",
         onClick: (selectedIds) => {
           const selectedData = data.filter((d) => selectedIds.includes(d.id));
-          exportToCSV(selectedData, columns, "selected-users.csv");
+          exportData({
+            format: "csv",
+            data: selectedData,
+            columns,
+            filename: "selected-users",
+          });
         },
       },
       {
@@ -741,6 +759,20 @@ export default function DataTableDemoPage() {
               />
               <span className="text-body-medium">Pinnable Columns</span>
             </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <Switch
+                checked={enableMultiSort}
+                onChange={(e) => setEnableMultiSort(e.target.checked)}
+              />
+              <span className="text-body-medium">Multi-Sort (Shift+Click)</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <Switch
+                checked={enableReorderable}
+                onChange={(e) => setEnableReorderable(e.target.checked)}
+              />
+              <span className="text-body-medium">Drag to Reorder</span>
+            </label>
           </div>
 
           <div className="mt-4 flex items-center gap-4">
@@ -799,6 +831,9 @@ export default function DataTableDemoPage() {
             stickyHeader
             resizable={enableResizable}
             pinnable={enablePinnable}
+            reorderable={enableReorderable}
+            multiSort={enableMultiSort}
+            maxSortColumns={3}
             initialPageSize={25}
           >
             <DataTableWithToolbar
@@ -879,8 +914,8 @@ export default function DataTableDemoPage() {
             />
             <FeatureCard
               icon="sort"
-              title="Sorting"
-              description="Click column headers to sort. Tri-state cycling: ascending → descending → none."
+              title="Multi-Sort"
+              description="Click column headers to sort. Shift+Click to add secondary/tertiary sort columns with priority badges."
             />
             <FeatureCard
               icon="check_box"
@@ -906,6 +941,11 @@ export default function DataTableDemoPage() {
               icon="push_pin"
               title="Column Pinning"
               description="Right-click column header to pin left/right. Pinned columns stay visible during horizontal scroll."
+            />
+            <FeatureCard
+              icon="drag_indicator"
+              title="Column Reordering"
+              description="Drag column headers to reorder. Non-pinned columns can be dragged to change their position."
             />
             <FeatureCard
               icon="keyboard"

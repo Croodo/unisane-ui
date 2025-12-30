@@ -10,6 +10,8 @@ export type {
   DataTableProps,
   CellContext,
   SortDirection,
+  SortItem,
+  MultiSortState,
   PinPosition,
   ColumnMetaMap,
   Density,
@@ -111,17 +113,43 @@ export {
 
 export {
   DataTableToolbar,
+  ExportDropdown,
   type ToolbarAction,
   type ToolbarDropdown,
   type ToolbarDropdownOption,
   type ToolbarIconAction,
-} from "./components/toolbar";
+  type DataTableToolbarProps,
+  type ExportHandler,
+} from "./components/toolbar/index";
 export { DataTablePagination } from "./components/pagination";
 
 // ─── UTILITIES ─────────────────────────────────────────────────────────────
 export { getNestedValue, setNestedValue } from "./utils/get-nested-value";
 export { ensureRowIds } from "./utils/ensure-row-ids";
-export { exportToCSV, toCSVString, type ExportResult } from "./utils/csv-export";
+
+// Export utilities - CSV, Excel, PDF, JSON
+export {
+  // Types
+  type ExportFormat,
+  type ExportOptions,
+  type CSVExportOptions,
+  type ExcelExportOptions,
+  type PDFExportOptions,
+  type JSONExportOptions,
+  type ExportResult,
+  type ExportConfig,
+  // Unified export
+  exportData,
+  // Individual exports
+  exportToCSV,
+  toCSVString,
+  exportToExcel,
+  toExcelBlob,
+  exportToPDF,
+  toPDFBlob,
+  exportToJSON,
+  toJSONString,
+} from "./utils/export";
 
 // ─── CONSTANTS ─────────────────────────────────────────────────────────────
 export {

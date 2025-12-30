@@ -1,7 +1,7 @@
 "use client";
 
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useRef, useMemo, useCallback } from "react";
+import { useRef, useMemo, useCallback, useEffect } from "react";
 
 export interface UseVirtualizedRowsOptions<T> {
   /** Data rows */
@@ -84,6 +84,10 @@ export function useVirtualizedRows<T extends { id: string }>({
   // Enable virtualization when data exceeds threshold
   const shouldVirtualize = enabled && data.length > threshold;
 
+  // Track data identity to reset scroll position on page changes
+  const prevDataFirstIdRef = useRef<string | undefined>(undefined);
+  const dataFirstId = data[0]?.id;
+
   const virtualizer = useVirtualizer({
     count: data.length,
     getScrollElement: () => containerRef.current,
@@ -91,6 +95,19 @@ export function useVirtualizedRows<T extends { id: string }>({
     overscan,
     enabled: shouldVirtualize,
   });
+
+  // Reset scroll position when data set changes (e.g., pagination)
+  // We detect this by checking if the first item ID changed
+  useEffect(() => {
+    if (shouldVirtualize && prevDataFirstIdRef.current !== undefined && prevDataFirstIdRef.current !== dataFirstId) {
+      // Data changed (likely page change), scroll to top
+      if (containerRef.current) {
+        containerRef.current.scrollTop = 0;
+      }
+      virtualizer.scrollToIndex(0);
+    }
+    prevDataFirstIdRef.current = dataFirstId;
+  }, [dataFirstId, shouldVirtualize, virtualizer]);
 
   const virtualRows = useMemo<VirtualRow<T>[]>(() => {
     if (!shouldVirtualize) {

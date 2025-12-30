@@ -4,10 +4,10 @@
  * @param path - The path to the value (e.g., "user.name" or "items.0.id")
  * @returns The value at the path, or undefined if not found
  */
-export function getNestedValue<T = unknown>(
-  obj: Record<string, unknown>,
+export function getNestedValue<TResult = unknown, TObj extends object = Record<string, unknown>>(
+  obj: TObj,
   path: string
-): T | undefined {
+): TResult | undefined {
   if (!obj || typeof obj !== "object") return undefined;
 
   const keys = path.split(".");
@@ -25,7 +25,7 @@ export function getNestedValue<T = unknown>(
     current = (current as Record<string, unknown>)[key];
   }
 
-  return current as T;
+  return current as TResult;
 }
 
 /**

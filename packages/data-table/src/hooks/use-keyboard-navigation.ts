@@ -18,6 +18,8 @@ export interface UseKeyboardNavigationOptions {
   containerRef?: React.RefObject<HTMLElement | null>;
   /** Number of rows to skip for PageUp/PageDown (defaults to 10) */
   pageSize?: number;
+  /** Function to get the DOM id for a row at given index */
+  getRowId?: (index: number) => string;
 }
 
 export interface UseKeyboardNavigationReturn {
@@ -79,6 +81,7 @@ export function useKeyboardNavigation({
   enabled = true,
   containerRef,
   pageSize = DEFAULT_KEYBOARD_PAGE_SIZE,
+  getRowId,
 }: UseKeyboardNavigationOptions): UseKeyboardNavigationReturn {
   const [focusedIndex, setFocusedIndexState] = useState<number | null>(null);
   const [isFocused, setIsFocused] = useState(false);
@@ -177,7 +180,10 @@ export function useKeyboardNavigation({
 
   // Get container props
   const getContainerProps = useCallback(() => {
-    const focusedRowId = focusedIndex !== null ? `row-${focusedIndex}` : undefined;
+    // Use custom getRowId if provided, otherwise fall back to default format
+    const focusedRowId = focusedIndex !== null
+      ? (getRowId ? getRowId(focusedIndex) : `row-${focusedIndex}`)
+      : undefined;
 
     return {
       tabIndex: enabled ? 0 : -1,
@@ -187,7 +193,7 @@ export function useKeyboardNavigation({
       onFocus: handleFocus,
       onBlur: handleBlur,
     };
-  }, [enabled, focusedIndex, handleKeyDown, handleFocus, handleBlur]);
+  }, [enabled, focusedIndex, handleKeyDown, handleFocus, handleBlur, getRowId]);
 
   // Get row props
   const getRowProps = useCallback(

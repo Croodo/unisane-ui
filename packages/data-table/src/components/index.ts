@@ -1,5 +1,5 @@
 export { Table, TableContainer, TableHead, TableBody, TableRow, TableHeaderCell, TableCell } from "./table";
-export { DataTableHeader } from "./header";
+export { DataTableHeader, type DataTableHeaderProps } from "./header/index";
 export { DataTableRow } from "./row";
 export { DataTableBody } from "./body";
 export { VirtualizedBody } from "./virtualized-body";

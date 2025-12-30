@@ -4,7 +4,7 @@ import React, { useMemo, useRef, useCallback } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { cn } from "@unisane/ui";
 import type { Column, BulkAction, ColumnMetaMap, PinPosition, InlineEditingController } from "./types";
-import { DataTableHeader } from "./components/header";
+import { DataTableHeader } from "./components/header/index";
 import { DataTableBody } from "./components/body";
 import { VirtualizedBody } from "./components/virtualized-body";
 import { Table, TableContainer } from "./components/table";
@@ -82,7 +82,7 @@ export function DataTableInner<T extends { id: string }>({
   // Context hooks
   const { selectedRows, expandedRows, selectAll, deselectAll, toggleSelect, toggleExpand } =
     useSelection();
-  const { sortKey, sortDirection, cycleSort } = useSorting();
+  const { sortKey, sortDirection, sortState, cycleSort } = useSorting();
   const { searchText, columnFilters, setFilter } = useFiltering();
   const { page, pageSize } = usePagination();
   const {
@@ -93,6 +93,8 @@ export function DataTableInner<T extends { id: string }>({
     setColumnPin,
     setColumnWidth,
     hideColumn,
+    reorderColumn,
+    reorderable,
   } = useColumns<T>();
   const { config } = useTableUI();
 
@@ -184,11 +186,16 @@ export function DataTableInner<T extends { id: string }>({
     columnFilters,
     sortKey,
     sortDirection,
+    sortState,
     columns: columns as Column<T>[],
     disableLocalProcessing,
   });
 
   const paginatedData = useMemo(() => {
+    // Defensive check - processedData should always be an array
+    if (!processedData) {
+      return [];
+    }
     if (config.paginationMode === "cursor" || config.mode === "remote") {
       return processedData;
     }
@@ -231,7 +238,7 @@ export function DataTableInner<T extends { id: string }>({
   // ─── HANDLERS ─────────────────────────────────────────────────────────────
 
   const handleSort = useCallback(
-    (key: string) => cycleSort(key),
+    (key: string, addToMultiSort?: boolean) => cycleSort(key, addToMultiSort),
     [cycleSort]
   );
 
@@ -275,12 +282,33 @@ export function DataTableInner<T extends { id: string }>({
     (index: number) => {
       const row = paginatedData[index];
       if (row && onRowClick) {
-        // Create a synthetic mouse event for consistency
-        const syntheticEvent = new MouseEvent("click") as unknown as React.MouseEvent;
+        // Create a synthetic keyboard event since activation came from keyboard
+        // Using KeyboardEvent is more accurate than faking a MouseEvent
+        const nativeEvent = new KeyboardEvent("keydown", { key: "Enter" });
+        const syntheticEvent = {
+          type: "keydown",
+          key: "Enter",
+          target: document.activeElement,
+          currentTarget: document.activeElement,
+          preventDefault: () => nativeEvent.preventDefault(),
+          stopPropagation: () => nativeEvent.stopPropagation(),
+          nativeEvent,
+          // Flag to indicate keyboard activation
+          detail: 0, // 0 indicates keyboard, non-zero indicates mouse clicks
+        } as unknown as React.MouseEvent;
         onRowClick(row, syntheticEvent);
       }
     },
     [paginatedData, onRowClick]
+  );
+
+  // Generate row DOM ID based on row data ID for proper ARIA linking
+  const getRowDomId = useCallback(
+    (index: number) => {
+      const row = paginatedData[index];
+      return row ? `data-table-row-${row.id}` : `data-table-row-${index}`;
+    },
+    [paginatedData]
   );
 
   const { focusedIndex, getContainerProps, isFocused } = useKeyboardNavigation({
@@ -289,6 +317,7 @@ export function DataTableInner<T extends { id: string }>({
     onActivate: onRowClick ? handleKeyboardActivate : undefined,
     enabled: !isLoading && paginatedData.length > 0,
     containerRef: tableContainerRef,
+    getRowId: getRowDomId,
   });
 
   // ─── STATUS ANNOUNCEMENTS ─────────────────────────────────────────────────
@@ -341,7 +370,7 @@ export function DataTableInner<T extends { id: string }>({
             columnDefinitions={config.columnDefinitions}
             hasGroups={config.hasGroups}
             columnMeta={columnMeta}
-            getEffectivePinPosition={getEffectivePinPosition as (col: Column<T>) => PinPosition}
+            getEffectivePinPosition={getEffectivePinPosition}
             selectedRows={selectedRows}
             expandedRows={expandedRows}
             activeRowId={activeRowId}
@@ -362,16 +391,19 @@ export function DataTableInner<T extends { id: string }>({
             inlineEditing={inlineEditing}
             sortKey={sortKey}
             sortDirection={sortDirection}
+            sortState={sortState}
             onSort={handleSort}
             allSelected={allSelected}
             indeterminate={isIndeterminate}
             onSelectAll={handleSelectAll}
             resizable={config.resizable}
             pinnable={config.pinnable}
+            reorderable={reorderable}
             onColumnPin={setColumnPin}
             onColumnResize={setColumnWidth}
             onColumnHide={hideColumn}
             onColumnFilter={setFilter}
+            onColumnReorder={reorderColumn}
             columnFilters={columnFilters}
             headerOffsetClassName={headerOffsetClassName}
             tableWidth={totalTableWidth}
@@ -383,7 +415,7 @@ export function DataTableInner<T extends { id: string }>({
               columnMeta={columnMeta}
               selectable={effectiveSelectable}
               enableExpansion={enableExpansion}
-              getEffectivePinPosition={getEffectivePinPosition as (col: Column<T>) => PinPosition}
+              getEffectivePinPosition={getEffectivePinPosition}
             />
             <DataTableHeader
               columns={sortedVisibleColumns}
@@ -391,9 +423,10 @@ export function DataTableInner<T extends { id: string }>({
               hasGroups={config.hasGroups}
               sortKey={sortKey}
               sortDirection={sortDirection}
+              sortState={sortState}
               onSort={handleSort}
               columnMeta={columnMeta}
-              getEffectivePinPosition={getEffectivePinPosition as (col: Column<T>) => PinPosition}
+              getEffectivePinPosition={getEffectivePinPosition}
               selectable={effectiveSelectable}
               allSelected={allSelected}
               indeterminate={isIndeterminate}
@@ -403,10 +436,12 @@ export function DataTableInner<T extends { id: string }>({
               density={density}
               resizable={config.resizable}
               pinnable={config.pinnable}
+              reorderable={reorderable}
               onColumnPin={setColumnPin}
               onColumnResize={setColumnWidth}
               onColumnHide={hideColumn}
               onColumnFilter={setFilter}
+              onColumnReorder={reorderColumn}
               columnFilters={columnFilters}
               headerOffsetClassName={headerOffsetClassName}
             />
@@ -414,7 +449,7 @@ export function DataTableInner<T extends { id: string }>({
               data={paginatedData}
               columns={sortedVisibleColumns}
               columnMeta={columnMeta}
-              getEffectivePinPosition={getEffectivePinPosition as (col: Column<T>) => PinPosition}
+              getEffectivePinPosition={getEffectivePinPosition}
               selectedRows={selectedRows}
               expandedRows={expandedRows}
               isLoading={isLoading}

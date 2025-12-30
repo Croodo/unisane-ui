@@ -205,7 +205,7 @@ function DataTableRowInner<T extends { id: string }>({
           const isLastColumn = colIndex === columns.length - 1;
 
           // Get cell value
-          const rawValue = getNestedValue(row as unknown as Record<string, unknown>, key);
+          const rawValue = getNestedValue(row, key);
 
           // Create cell context
           const cellContext: CellContext<T> = {

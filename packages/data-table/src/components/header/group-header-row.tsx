@@ -1,0 +1,101 @@
+"use client";
+
+import React from "react";
+import { cn } from "@unisane/ui";
+import type { Column, ColumnGroup } from "../../types";
+import { isColumnGroup } from "../../types";
+
+export interface GroupHeaderRowProps<T> {
+  columnDefinitions: Array<Column<T> | ColumnGroup<T>>;
+  selectable: boolean;
+  enableExpansion: boolean;
+  showColumnBorders: boolean;
+  paddingClass: string;
+  hasPinnedLeftData: boolean;
+}
+
+export function GroupHeaderRow<T>({
+  columnDefinitions,
+  selectable,
+  enableExpansion,
+  showColumnBorders,
+  paddingClass,
+  hasPinnedLeftData,
+}: GroupHeaderRowProps<T>) {
+  return (
+    <tr>
+      {/* Checkbox placeholder */}
+      {selectable && (
+        <th
+          className={cn(
+            "bg-surface-container-low border-b border-outline-variant/50",
+            "sticky left-0 z-20 isolate",
+            // Only show border-r if there are no more sticky columns after this
+            showColumnBorders && !enableExpansion && !hasPinnedLeftData && "border-r border-outline-variant/50"
+          )}
+          style={{ width: 48, minWidth: 48, maxWidth: 48 }}
+          rowSpan={2}
+        />
+      )}
+
+      {/* Expander placeholder */}
+      {enableExpansion && (
+        <th
+          className={cn(
+            "bg-surface-container-low border-b border-outline-variant/50",
+            "sticky z-20 isolate",
+            // Only show border-r if there are no pinned-left data columns after this
+            showColumnBorders && !hasPinnedLeftData && "border-r border-outline-variant/50"
+          )}
+          style={{
+            width: 40,
+            minWidth: 40,
+            maxWidth: 40,
+            left: selectable ? 48 : 0,
+          }}
+          rowSpan={2}
+        />
+      )}
+
+      {/* Group headers */}
+      {columnDefinitions.map((def, idx) => {
+        if (isColumnGroup(def)) {
+          const isLastGroup = idx === columnDefinitions.length - 1;
+          return (
+            <th
+              key={`group-${idx}`}
+              colSpan={def.children.length}
+              className={cn(
+                "bg-surface-container-low border-b border-outline-variant/50",
+                "text-label-medium font-semibold text-on-surface-variant text-center align-middle",
+                paddingClass,
+                showColumnBorders && !isLastGroup && "border-r border-outline-variant/50"
+              )}
+            >
+              {def.header}
+            </th>
+          );
+        } else {
+          // Standalone column spans both rows
+          const isLastColumn = idx === columnDefinitions.length - 1;
+          return (
+            <th
+              key={String(def.key)}
+              rowSpan={2}
+              className={cn(
+                "bg-surface-container-low border-b border-outline-variant/50",
+                "text-label-large font-medium text-on-surface-variant align-middle",
+                paddingClass,
+                def.align === "center" && "text-center",
+                def.align === "end" && "text-right",
+                showColumnBorders && !isLastColumn && "border-r border-outline-variant/50"
+              )}
+            >
+              {def.header}
+            </th>
+          );
+        }
+      })}
+    </tr>
+  );
+}

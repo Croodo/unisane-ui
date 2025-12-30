@@ -4,6 +4,7 @@ import type {
   ColumnGroup,
   FilterState,
   SortDirection,
+  MultiSortState,
   PaginationState,
   ColumnPinState,
   PinPosition,
@@ -18,9 +19,11 @@ export interface DataTableState {
   selectedRows: Set<string>;
   expandedRows: Set<string>;
 
-  // Sorting
+  // Sorting (single-sort for backward compatibility)
   sortKey: string | null;
   sortDirection: SortDirection;
+  // Multi-sort state
+  sortState: MultiSortState;
 
   // Filtering
   searchText: string;
@@ -52,9 +55,14 @@ export type DataTableAction =
   | { type: "EXPAND_ROW"; id: string }
   | { type: "COLLAPSE_ROW"; id: string }
 
-  // Sorting
+  // Sorting (single-sort)
   | { type: "SET_SORT"; key: string | null; direction: SortDirection }
   | { type: "CYCLE_SORT"; key: string }
+  // Multi-sort
+  | { type: "SET_MULTI_SORT"; sortState: MultiSortState }
+  | { type: "ADD_SORT"; key: string; maxColumns?: number }
+  | { type: "REMOVE_SORT"; key: string }
+  | { type: "CLEAR_SORT" }
 
   // Filtering
   | { type: "SET_SEARCH"; value: string }
@@ -104,6 +112,7 @@ export interface DataTableConfig<T> {
   stickyHeader: boolean;
   resizable: boolean;
   pinnable: boolean;
+  reorderable: boolean;
 }
 
 // ─── CONTEXT VALUE ──────────────────────────────────────────────────────────
@@ -116,17 +125,25 @@ export interface DataTableContextValue<T = unknown> {
   // Controlled state
   controlled: {
     sort: { key: string | null; direction: SortDirection } | undefined;
+    sortState: MultiSortState | undefined;
     filters: FilterState | undefined;
     search: string | undefined;
     pinState: ColumnPinState | undefined;
+    columnOrder: string[] | undefined;
     selectedIds: string[] | undefined;
   };
 
+  // Multi-sort config
+  multiSort: boolean;
+  maxSortColumns: number;
+
   // Event callbacks
   onSortChange: ((key: string | null, direction: SortDirection) => void) | undefined;
+  onMultiSortChange: ((sortState: MultiSortState) => void) | undefined;
   onFilterChange: ((filters: FilterState) => void) | undefined;
   onSearchChange: ((value: string) => void) | undefined;
   onColumnPinChange: ((key: string, position: PinPosition) => void) | undefined;
+  onColumnOrderChange: ((order: string[]) => void) | undefined;
   onSelectionChange: ((ids: string[]) => void) | undefined;
   /** Async callback to select all rows across the filtered dataset (server-backed) */
   onSelectAllFiltered: (() => Promise<string[]>) | undefined;
@@ -150,17 +167,26 @@ export interface DataTableProviderProps<T> {
   stickyHeader?: boolean;
   resizable?: boolean;
   pinnable?: boolean;
+  reorderable?: boolean;
   initialPageSize?: number;
+
+  // Multi-sort config
+  multiSort?: boolean;
+  maxSortColumns?: number;
 
   // Controlled props
   controlledSort?: { key: string | null; direction: SortDirection };
+  controlledSortState?: MultiSortState;
   onSortChange?: (key: string | null, direction: SortDirection) => void;
+  onMultiSortChange?: (sortState: MultiSortState) => void;
   controlledFilters?: FilterState;
   onFilterChange?: (filters: FilterState) => void;
   searchValue?: string;
   onSearchChange?: (value: string) => void;
   columnPinState?: ColumnPinState;
   onColumnPinChange?: (key: string, position: PinPosition) => void;
+  columnOrder?: string[];
+  onColumnOrderChange?: (order: string[]) => void;
   selectedIds?: string[];
   onSelectionChange?: (ids: string[]) => void;
   /** Async callback to select all rows across the filtered dataset (server-backed) */

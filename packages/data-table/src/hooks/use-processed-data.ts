@@ -1,15 +1,19 @@
 "use client";
 
 import { useMemo } from "react";
-import type { Column, FilterState, SortDirection, FilterValue } from "../types";
+import type { Column, FilterState, SortDirection, MultiSortState, FilterValue } from "../types";
 import { getNestedValue } from "../utils/get-nested-value";
 
 interface UseProcessedDataOptions<T> {
   data: T[];
   searchText: string;
   columnFilters: FilterState;
+  /** @deprecated Use sortState instead for multi-sort */
   sortKey: string | null;
+  /** @deprecated Use sortState instead for multi-sort */
   sortDirection: SortDirection;
+  /** Multi-sort state - takes precedence over sortKey/sortDirection */
+  sortState?: MultiSortState;
   columns: Column<T>[];
   disableLocalProcessing?: boolean;
 }
@@ -24,10 +28,16 @@ export function useProcessedData<T extends { id: string }>({
   columnFilters,
   sortKey,
   sortDirection,
+  sortState = [],
   columns,
   disableLocalProcessing = false,
 }: UseProcessedDataOptions<T>): T[] {
   return useMemo(() => {
+    // Guard against undefined data
+    if (!data) {
+      return [];
+    }
+
     // Skip processing if disabled (for remote data)
     if (disableLocalProcessing) {
       return data;
@@ -41,10 +51,7 @@ export function useProcessedData<T extends { id: string }>({
       result = result.filter((row) => {
         // Search across all columns
         return columns.some((col) => {
-          const value = getNestedValue(
-            row as unknown as Record<string, unknown>,
-            String(col.key)
-          );
+          const value = getNestedValue(row, String(col.key));
           if (value === null || value === undefined) return false;
           return String(value).toLowerCase().includes(searchLower);
         });
@@ -65,10 +72,7 @@ export function useProcessedData<T extends { id: string }>({
           }
 
           // Default filtering logic
-          const cellValue = getNestedValue(
-            row as unknown as Record<string, unknown>,
-            key
-          );
+          const cellValue = getNestedValue(row, key);
 
           return matchesFilter(cellValue, filterValue);
         });
@@ -76,34 +80,50 @@ export function useProcessedData<T extends { id: string }>({
     }
 
     // ─── SORTING ──────────────────────────────────────────────────────────────
-    if (sortKey && sortDirection) {
-      // Find the column for custom sort function
-      const sortColumn = columns.find((col) => String(col.key) === sortKey);
+    // Determine effective sort state (prefer sortState array over legacy sortKey/sortDirection)
+    const effectiveSortState: MultiSortState =
+      sortState.length > 0
+        ? sortState
+        : sortKey && sortDirection
+          ? [{ key: sortKey, direction: sortDirection }]
+          : [];
 
+    if (effectiveSortState.length > 0) {
       result.sort((a, b) => {
-        // Use custom sort function if provided
-        if (sortColumn?.sortFn) {
-          const comparison = sortColumn.sortFn(a, b);
-          return sortDirection === "asc" ? comparison : -comparison;
+        // Compare by each sort column in order (primary first, then secondary, etc.)
+        for (const sortItem of effectiveSortState) {
+          // Find the column for custom sort function
+          const sortColumn = columns.find((col) => String(col.key) === sortItem.key);
+
+          let comparison: number;
+
+          // Use custom sort function if provided
+          if (sortColumn?.sortFn) {
+            comparison = sortColumn.sortFn(a, b);
+          } else {
+            // Default sorting by column value
+            const aValue = getNestedValue(a, sortItem.key);
+            const bValue = getNestedValue(b, sortItem.key);
+            comparison = compareValues(aValue, bValue);
+          }
+
+          // Apply direction
+          comparison = sortItem.direction === "asc" ? comparison : -comparison;
+
+          // If not equal, return the comparison result
+          if (comparison !== 0) {
+            return comparison;
+          }
+          // If equal, continue to next sort column
         }
 
-        // Default sorting by column value
-        const aValue = getNestedValue(
-          a as unknown as Record<string, unknown>,
-          sortKey
-        );
-        const bValue = getNestedValue(
-          b as unknown as Record<string, unknown>,
-          sortKey
-        );
-
-        const comparison = compareValues(aValue, bValue);
-        return sortDirection === "asc" ? comparison : -comparison;
+        // All sort columns are equal
+        return 0;
       });
     }
 
     return result;
-  }, [data, searchText, columnFilters, sortKey, sortDirection, columns, disableLocalProcessing]);
+  }, [data, searchText, columnFilters, sortKey, sortDirection, sortState, columns, disableLocalProcessing]);
 }
 
 /**

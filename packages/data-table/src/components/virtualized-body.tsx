@@ -3,10 +3,10 @@
 import React from "react";
 import type { ReactNode, RefObject, CSSProperties } from "react";
 import { Icon } from "@unisane/ui";
-import type { Column, ColumnGroup, PinPosition, ColumnMetaMap, InlineEditingController, SortDirection, FilterValue } from "../types";
+import type { Column, ColumnGroup, PinPosition, ColumnMetaMap, InlineEditingController, SortDirection, MultiSortState, FilterValue } from "../types";
 import { Table } from "./table";
 import { TableColgroup } from "./colgroup";
-import { DataTableHeader } from "./header";
+import { DataTableHeader } from "./header/index";
 import { DataTableRow } from "./row";
 import type { VirtualRow } from "../hooks";
 import type { Density } from "../constants";
@@ -50,17 +50,20 @@ interface VirtualizedBodyProps<T extends { id: string }> {
   // Header props
   sortKey: string | null;
   sortDirection: SortDirection;
-  onSort: (key: string) => void;
+  sortState?: MultiSortState;
+  onSort: (key: string, addToMultiSort?: boolean) => void;
   allSelected: boolean;
   indeterminate: boolean;
   onSelectAll: (checked: boolean) => void;
   // Column features
   resizable?: boolean;
   pinnable?: boolean;
+  reorderable?: boolean;
   onColumnPin?: (key: string, position: PinPosition) => void;
   onColumnResize?: (key: string, width: number) => void;
   onColumnHide?: (key: string) => void;
   onColumnFilter?: (key: string, value: FilterValue) => void;
+  onColumnReorder?: (fromKey: string, toKey: string) => void;
   columnFilters?: Record<string, FilterValue>;
   /** Tailwind class for sticky header offset */
   headerOffsetClassName?: string;
@@ -134,16 +137,19 @@ export function VirtualizedBody<T extends { id: string }>({
   inlineEditing,
   sortKey,
   sortDirection,
+  sortState,
   onSort,
   allSelected,
   indeterminate,
   onSelectAll,
   resizable,
   pinnable,
+  reorderable,
   onColumnPin,
   onColumnResize,
   onColumnHide,
   onColumnFilter,
+  onColumnReorder,
   columnFilters,
   headerOffsetClassName,
   tableWidth,
@@ -170,6 +176,7 @@ export function VirtualizedBody<T extends { id: string }>({
               hasGroups={hasGroups}
               sortKey={sortKey}
               sortDirection={sortDirection}
+              sortState={sortState}
               onSort={onSort}
               columnMeta={columnMeta}
               getEffectivePinPosition={getEffectivePinPosition}
@@ -182,10 +189,12 @@ export function VirtualizedBody<T extends { id: string }>({
               density={density}
               resizable={resizable}
               pinnable={pinnable}
+              reorderable={reorderable}
               onColumnPin={onColumnPin}
               onColumnResize={onColumnResize}
               onColumnHide={onColumnHide}
               onColumnFilter={onColumnFilter}
+              onColumnReorder={onColumnReorder}
               columnFilters={columnFilters}
               headerOffsetClassName={headerOffsetClassName}
             />

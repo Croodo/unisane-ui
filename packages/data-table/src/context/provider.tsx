@@ -14,7 +14,7 @@ import type {
   DataTableConfig,
 } from "./types";
 import { dataTableReducer, createInitialState } from "./reducer";
-import type { PinPosition, SortDirection, Column } from "../types";
+import type { PinPosition, SortDirection, MultiSortState, Column } from "../types";
 import { flattenColumns, hasColumnGroups } from "../types";
 
 // ─── CONTEXT ────────────────────────────────────────────────────────────────
@@ -41,16 +41,24 @@ export function DataTableProvider<T extends { id: string }>({
   stickyHeader = true,
   resizable = true,
   pinnable = true,
+  reorderable = false,
   initialPageSize,
+  // Multi-sort config
+  multiSort = false,
+  maxSortColumns = 3,
   // Controlled props
   controlledSort,
+  controlledSortState,
   onSortChange,
+  onMultiSortChange,
   controlledFilters,
   onFilterChange,
   searchValue,
   onSearchChange,
   columnPinState: externalPinState,
   onColumnPinChange,
+  columnOrder: externalColumnOrder,
+  onColumnOrderChange,
   selectedIds: externalSelectedIds,
   onSelectionChange,
   onSelectAllFiltered,
@@ -78,6 +86,7 @@ export function DataTableProvider<T extends { id: string }>({
       stickyHeader,
       resizable,
       pinnable,
+      reorderable,
     }),
     [
       tableId,
@@ -93,6 +102,7 @@ export function DataTableProvider<T extends { id: string }>({
       stickyHeader,
       resizable,
       pinnable,
+      reorderable,
     ]
   );
 
@@ -195,12 +205,14 @@ export function DataTableProvider<T extends { id: string }>({
   const controlled = useMemo(
     () => ({
       sort: controlledSort,
+      sortState: controlledSortState,
       filters: controlledFilters,
       search: searchValue,
       pinState: externalPinState,
+      columnOrder: externalColumnOrder,
       selectedIds: externalSelectedIds,
     }),
-    [controlledSort, controlledFilters, searchValue, externalPinState, externalSelectedIds]
+    [controlledSort, controlledSortState, controlledFilters, searchValue, externalPinState, externalColumnOrder, externalSelectedIds]
   );
 
   const contextValue = useMemo<DataTableContextValue<T>>(
@@ -209,10 +221,14 @@ export function DataTableProvider<T extends { id: string }>({
       dispatch,
       config,
       controlled,
+      multiSort,
+      maxSortColumns,
       onSortChange,
+      onMultiSortChange,
       onFilterChange,
       onSearchChange,
       onColumnPinChange,
+      onColumnOrderChange,
       onSelectionChange,
       onSelectAllFiltered,
       onPaginationChange,
@@ -221,10 +237,14 @@ export function DataTableProvider<T extends { id: string }>({
       state,
       config,
       controlled,
+      multiSort,
+      maxSortColumns,
       onSortChange,
+      onMultiSortChange,
       onFilterChange,
       onSearchChange,
       onColumnPinChange,
+      onColumnOrderChange,
       onSelectionChange,
       onSelectAllFiltered,
       onPaginationChange,
@@ -371,11 +391,24 @@ export function useSelection() {
 }
 
 export function useSorting() {
-  const { state, dispatch, controlled, onSortChange } = useDataTableContext();
+  const {
+    state,
+    dispatch,
+    controlled,
+    multiSort: multiSortEnabled,
+    maxSortColumns,
+    onSortChange,
+    onMultiSortChange,
+  } = useDataTableContext();
 
+  // Legacy single-sort values (for backward compatibility)
   const sortKey = controlled.sort?.key ?? state.sortKey;
   const sortDirection = controlled.sort?.direction ?? state.sortDirection;
 
+  // Multi-sort state (ensure always an array)
+  const sortState: MultiSortState = controlled.sortState ?? state.sortState ?? [];
+
+  // Legacy single-sort setter
   const setSort = useCallback(
     (key: string | null, direction: SortDirection) => {
       if (controlled.sort) {
@@ -388,8 +421,123 @@ export function useSorting() {
     [controlled.sort, onSortChange, dispatch]
   );
 
-  const cycleSort = useCallback(
+  // Multi-sort setter
+  const setMultiSort = useCallback(
+    (newSortState: MultiSortState) => {
+      if (controlled.sortState) {
+        onMultiSortChange?.(newSortState);
+      } else {
+        dispatch({ type: "SET_MULTI_SORT", sortState: newSortState });
+        onMultiSortChange?.(newSortState);
+      }
+
+      // Also notify legacy callback with primary sort
+      if (newSortState.length > 0) {
+        const primary = newSortState[0]!;
+        onSortChange?.(primary.key, primary.direction);
+      } else {
+        onSortChange?.(null, null);
+      }
+    },
+    [controlled.sortState, onMultiSortChange, onSortChange, dispatch]
+  );
+
+  // Add or cycle a column in multi-sort (Shift+Click behavior)
+  const addSort = useCallback(
     (key: string) => {
+      if (controlled.sortState) {
+        // Calculate new state for controlled mode
+        const existingIndex = controlled.sortState.findIndex((s) => s.key === key);
+        let newState: MultiSortState;
+
+        if (existingIndex === -1) {
+          newState = [...controlled.sortState, { key, direction: "asc" }];
+          if (newState.length > maxSortColumns) {
+            newState = newState.slice(-maxSortColumns);
+          }
+        } else {
+          const existing = controlled.sortState[existingIndex]!;
+          if (existing.direction === "asc") {
+            newState = [...controlled.sortState];
+            newState[existingIndex] = { key, direction: "desc" };
+          } else {
+            newState = controlled.sortState.filter((_, i) => i !== existingIndex);
+          }
+        }
+        onMultiSortChange?.(newState);
+        // Notify legacy callback
+        if (newState.length > 0) {
+          const primary = newState[0]!;
+          onSortChange?.(primary.key, primary.direction);
+        } else {
+          onSortChange?.(null, null);
+        }
+      } else {
+        dispatch({ type: "ADD_SORT", key, maxColumns: maxSortColumns });
+        // Callbacks will be handled by the state change
+      }
+    },
+    [controlled.sortState, onMultiSortChange, onSortChange, dispatch, maxSortColumns]
+  );
+
+  // Remove a column from multi-sort
+  const removeSort = useCallback(
+    (key: string) => {
+      if (controlled.sortState) {
+        const newState = controlled.sortState.filter((s) => s.key !== key);
+        onMultiSortChange?.(newState);
+        if (newState.length > 0) {
+          const primary = newState[0]!;
+          onSortChange?.(primary.key, primary.direction);
+        } else {
+          onSortChange?.(null, null);
+        }
+      } else {
+        dispatch({ type: "REMOVE_SORT", key });
+      }
+    },
+    [controlled.sortState, onMultiSortChange, onSortChange, dispatch]
+  );
+
+  // Clear all sorts
+  const clearSort = useCallback(() => {
+    if (controlled.sortState) {
+      onMultiSortChange?.([]);
+      onSortChange?.(null, null);
+    } else {
+      dispatch({ type: "CLEAR_SORT" });
+      onSortChange?.(null, null);
+      onMultiSortChange?.([]);
+    }
+  }, [controlled.sortState, onMultiSortChange, onSortChange, dispatch]);
+
+  // Unified cycle sort that respects multiSort mode
+  const cycleSort = useCallback(
+    (key: string, addToMultiSort: boolean = false) => {
+      // If multiSort enabled and Shift held (addToMultiSort), use multi-sort
+      if (multiSortEnabled && addToMultiSort) {
+        addSort(key);
+        return;
+      }
+
+      // In multi-sort mode, check sortState for current column state
+      if (multiSortEnabled) {
+        const currentSort = sortState.find((s) => s.key === key);
+
+        if (!currentSort) {
+          // Not sorted - start with asc
+          setMultiSort([{ key, direction: "asc" }]);
+        } else if (currentSort.direction === "asc") {
+          // Currently asc - change to desc
+          setMultiSort([{ key, direction: "desc" }]);
+        } else {
+          // Currently desc - clear sort
+          clearSort();
+        }
+        return;
+      }
+
+      // Legacy single-sort behavior
       let nextKey: string | null = key;
       let nextDir: SortDirection = "asc";
 
@@ -404,10 +552,42 @@ export function useSorting() {
 
       setSort(nextKey, nextDir);
     },
-    [sortKey, sortDirection, setSort]
+    [multiSortEnabled, sortKey, sortDirection, sortState, addSort, setSort, setMultiSort, clearSort]
   );
 
-  return { sortKey, sortDirection, setSort, cycleSort };
+  // Get sort info for a specific column
+  const getSortInfo = useCallback(
+    (key: string): { direction: "asc" | "desc" | null; priority: number | null } => {
+      const index = sortState.findIndex((s) => s.key === key);
+      if (index === -1) {
+        return { direction: null, priority: null };
+      }
+      return {
+        direction: sortState[index]!.direction,
+        priority: sortState.length > 1 ? index + 1 : null,
+      };
+    },
+    [sortState]
+  );
+
+  return {
+    // Legacy single-sort (backward compatible)
+    sortKey,
+    sortDirection,
+    setSort,
+    // Multi-sort
+    sortState,
+    setMultiSort,
+    addSort,
+    removeSort,
+    clearSort,
+    // Unified
+    cycleSort,
+    getSortInfo,
+    // Config
+    multiSortEnabled,
+    maxSortColumns,
+  };
 }
 
 export function useFiltering() {
@@ -551,10 +731,11 @@ export function usePagination() {
 }
 
 export function useColumns<T>() {
-  const { state, dispatch, config, controlled, onColumnPinChange } =
+  const { state, dispatch, config, controlled, onColumnPinChange, onColumnOrderChange } =
     useDataTableContext<T>();
 
   const pinState = controlled.pinState ?? state.columnPinState;
+  const columnOrder = controlled.columnOrder ?? state.columnOrder;
 
   const toggleVisibility = useCallback(
     (key: string) => dispatch({ type: "TOGGLE_COLUMN_VISIBILITY", key }),
@@ -599,6 +780,56 @@ export function useColumns<T>() {
     [dispatch]
   );
 
+  // Column order management
+  const setColumnOrder = useCallback(
+    (order: string[]) => {
+      if (controlled.columnOrder) {
+        onColumnOrderChange?.(order);
+      } else {
+        dispatch({ type: "SET_COLUMN_ORDER", order });
+        onColumnOrderChange?.(order);
+      }
+    },
+    [controlled.columnOrder, onColumnOrderChange, dispatch]
+  );
+
+  // Move a column from one index to another
+  const reorderColumn = useCallback(
+    (fromKey: string, toKey: string) => {
+      // Get current column keys in order
+      const currentOrder = columnOrder.length > 0
+        ? columnOrder
+        : config.columns.map((col) => String(col.key));
+
+      const fromIndex = currentOrder.indexOf(fromKey);
+      const toIndex = currentOrder.indexOf(toKey);
+
+      if (fromIndex === -1 || toIndex === -1 || fromIndex === toIndex) {
+        return;
+      }
+
+      // Create new order array
+      const newOrder = [...currentOrder];
+      const [removed] = newOrder.splice(fromIndex, 1);
+      newOrder.splice(toIndex, 0, removed!);
+
+      setColumnOrder(newOrder);
+    },
+    [columnOrder, config.columns, setColumnOrder]
+  );
+
+  const resetColumnOrder = useCallback(
+    () => {
+      if (controlled.columnOrder) {
+        onColumnOrderChange?.([]);
+      } else {
+        dispatch({ type: "SET_COLUMN_ORDER", order: [] });
+        onColumnOrderChange?.([]);
+      }
+    },
+    [controlled.columnOrder, onColumnOrderChange, dispatch]
+  );
+
   // Get effective pin position (user override > column definition)
   const getEffectivePinPosition = useCallback(
     (col: Column<T>) => {
@@ -611,11 +842,25 @@ export function useColumns<T>() {
     [pinState]
   );
 
-  const visibleColumns = useMemo(
-    () =>
-      config.columns.filter((col) => !state.hiddenColumns.has(String(col.key))),
-    [config.columns, state.hiddenColumns]
-  );
+  // Visible columns - respects column order if set
+  const visibleColumns = useMemo(() => {
+    const visible = config.columns.filter(
+      (col) => !state.hiddenColumns.has(String(col.key))
+    );
+
+    // If no custom order, return default order
+    if (columnOrder.length === 0) {
+      return visible;
+    }
+
+    // Sort by column order
+    const orderMap = new Map(columnOrder.map((key, index) => [key, index]));
+    return [...visible].sort((a, b) => {
+      const aIndex = orderMap.get(String(a.key)) ?? Infinity;
+      const bIndex = orderMap.get(String(b.key)) ?? Infinity;
+      return aIndex - bIndex;
+    });
+  }, [config.columns, state.hiddenColumns, columnOrder]);
 
   const pinnedLeftColumns = useMemo(
     () => visibleColumns.filter((col) => getEffectivePinPosition(col) === "left"),
@@ -641,6 +886,7 @@ export function useColumns<T>() {
     hiddenColumns: state.hiddenColumns,
     columnWidths: state.columnWidths,
     pinState,
+    columnOrder,
     toggleVisibility,
     hideColumn,
     showAllColumns,
@@ -648,9 +894,13 @@ export function useColumns<T>() {
     resetColumnWidths,
     setColumnPin,
     resetColumnPins,
+    setColumnOrder,
+    reorderColumn,
+    resetColumnOrder,
     getEffectivePinPosition,
     getColumnWidth: (key: string, defaultWidth: number = 150) =>
       state.columnWidths[key] ?? defaultWidth,
+    reorderable: config.reorderable,
   };
 }
 

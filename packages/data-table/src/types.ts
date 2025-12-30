@@ -4,6 +4,20 @@ import type { ReactNode, CSSProperties } from "react";
 
 export type SortDirection = "asc" | "desc" | null;
 
+/**
+ * Single sort item for multi-sort support
+ */
+export interface SortItem {
+  key: string;
+  direction: "asc" | "desc";
+}
+
+/**
+ * Multi-sort state - array of sort items in priority order
+ * First item is primary sort, second is secondary, etc.
+ */
+export type MultiSortState = SortItem[];
+
 export type FilterValue =
   | string
   | number
@@ -86,6 +100,8 @@ export interface Column<T> {
   pinnable?: boolean;
   /** Allow hiding this column */
   hideable?: boolean;
+  /** Allow reordering this column via drag-and-drop */
+  reorderable?: boolean;
   /** Static pin position (user can override) */
   pinned?: "left" | "right";
 
@@ -207,9 +223,13 @@ export interface InlineEditingController<T> {
 /** Header component props for custom header rendering */
 export interface DataTableHeaderRenderProps<T> {
   columns: Column<T>[];
+  /** @deprecated Use sortState instead */
   sortKey: string | null;
+  /** @deprecated Use sortState instead */
   sortDirection: SortDirection;
-  onSort: (key: string) => void;
+  /** Multi-sort state - array of sort items in priority order */
+  sortState: MultiSortState;
+  onSort: (key: string, addToMultiSort?: boolean) => void;
   selectable: boolean;
   allSelected: boolean;
   indeterminate: boolean;
@@ -266,6 +286,8 @@ export interface DataTableProps<T extends { id: string }> {
   resizable?: boolean;
   /** Enable column pinning */
   pinnable?: boolean;
+  /** Enable column drag-to-reorder */
+  reorderable?: boolean;
   /** Enable virtual scrolling for large datasets */
   virtualize?: boolean;
   /** Row count threshold before virtualization kicks in */
@@ -320,28 +342,40 @@ export interface DataTableProps<T extends { id: string }> {
    * Return array of row IDs to mark selected.
    */
   onSelectAllFiltered?: () => Promise<string[]>;
-  /** Callback when sort changes */
+  /** Callback when sort changes (single-sort mode, for backward compatibility) */
   onSortChange?: (key: string | null, direction: SortDirection) => void;
+  /** Callback when multi-sort state changes */
+  onMultiSortChange?: (sortState: MultiSortState) => void;
   /** Callback when filters change */
   onFilterChange?: (filters: FilterState) => void;
   /** Callback when search changes */
   onSearchChange?: (value: string) => void;
   /** Callback when column pin changes */
   onColumnPinChange?: (columnKey: string, position: PinPosition) => void;
+  /** Callback when column order changes */
+  onColumnOrderChange?: (columnOrder: string[]) => void;
 
   // ─── Controlled State ───
   /** Controlled selected row IDs */
   selectedIds?: string[];
-  /** Controlled sort key */
+  /** Controlled sort key (single-sort mode, for backward compatibility) */
   sortKey?: string | null;
-  /** Controlled sort direction */
+  /** Controlled sort direction (single-sort mode) */
   sortDirection?: SortDirection;
+  /** Controlled multi-sort state */
+  sortState?: MultiSortState;
+  /** Enable multi-column sorting (Shift+Click to add columns) */
+  multiSort?: boolean;
+  /** Maximum number of sort columns (default: 3) */
+  maxSortColumns?: number;
   /** Controlled filters */
   filters?: FilterState;
   /** Controlled search value */
   searchValue?: string;
   /** Controlled column pin state */
   columnPinState?: ColumnPinState;
+  /** Controlled column order (array of column keys) */
+  columnOrder?: string[];
 
   // ─── Inline Editing ───
   /** Inline editing controller from useInlineEditing hook */
