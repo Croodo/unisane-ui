@@ -84,7 +84,7 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
                   className={cn(
                     "w-14 h-8 rounded-full flex items-center justify-center transition-all duration-medium ease-emphasized overflow-hidden relative",
                     isActive
-                      ? "bg-secondary-container text-primary"
+                      ? "bg-secondary-container text-on-secondary-container"
                       : "text-on-surface-variant bg-transparent hover:bg-on-surface/8"
                   )}
                 >
@@ -112,7 +112,7 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
                 className={cn(
                   "text-label-medium transition-colors duration-short text-center px-0.5 max-w-full",
                   isActive
-                    ? "text-primary font-bold"
+                    ? "text-on-secondary-container font-bold"
                     : "text-on-surface-variant font-semibold group-hover:text-on-surface"
                 )}
               >

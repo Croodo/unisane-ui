@@ -10,6 +10,20 @@ export type ContrastLevel = "standard" | "medium" | "high";
 export type ColorTheme = "blue" | "purple" | "pink" | "red" | "orange" | "yellow" | "green" | "cyan" | "neutral" | "black";
 export type Elevation = "flat" | "subtle" | "standard" | "pronounced";
 
+// Valid values for runtime validation
+const VALID_DENSITIES: Density[] = ["compact", "standard", "comfortable", "dense"];
+const VALID_THEMES: Theme[] = ["light", "dark", "system"];
+const VALID_RADII: RadiusTheme[] = ["none", "minimal", "sharp", "standard", "soft"];
+const VALID_SCHEMES: ColorScheme[] = ["tonal", "monochrome", "neutral"];
+const VALID_CONTRASTS: ContrastLevel[] = ["standard", "medium", "high"];
+const VALID_COLOR_THEMES: ColorTheme[] = ["blue", "purple", "pink", "red", "orange", "yellow", "green", "cyan", "neutral", "black"];
+const VALID_ELEVATIONS: Elevation[] = ["flat", "subtle", "standard", "pronounced"];
+
+// Validation helper
+function isValid<T>(value: T, validValues: readonly T[]): boolean {
+  return validValues.includes(value);
+}
+
 export interface ThemeConfig {
   density?: Density;
   theme?: Theme;
@@ -89,7 +103,7 @@ function getInitialFromDOM(): Partial<ThemeConfig> {
     radius: root.getAttribute("data-radius") as RadiusTheme | undefined,
     scheme: root.getAttribute("data-scheme") as ColorScheme | undefined,
     contrast: root.getAttribute("data-contrast") as ContrastLevel | undefined,
-    colorTheme: root.getAttribute("data-theme") as ColorTheme | undefined,
+    colorTheme: root.getAttribute("data-color-theme") as ColorTheme | undefined,
     theme: root.getAttribute("data-theme-mode") as Theme | undefined,
     elevation: root.getAttribute("data-elevation") as Elevation | undefined,
   };
@@ -120,6 +134,14 @@ function persist(key: string, value: string, storageKey: string | false) {
 // Apply a single attribute to DOM
 function applyAttribute(attr: string, value: string) {
   document.documentElement.setAttribute(attr, value);
+}
+
+// Batch apply multiple attributes to DOM (reduces reflows)
+function applyAttributes(attrs: Record<string, string>) {
+  const root = document.documentElement;
+  for (const [attr, value] of Object.entries(attrs)) {
+    root.setAttribute(attr, value);
+  }
 }
 
 // Resolve dark mode
@@ -170,14 +192,17 @@ export function ThemeProvider({
   });
 
   // Sync DOM on mount (in case state differs from SSR HTML)
+  // Uses batched updates to minimize browser reflows
   useEffect(() => {
-    applyAttribute("data-density", density);
-    applyAttribute("data-radius", radius);
-    applyAttribute("data-scheme", scheme);
-    applyAttribute("data-contrast", contrast);
-    applyAttribute("data-theme", colorTheme);
-    applyAttribute("data-theme-mode", theme);
-    applyAttribute("data-elevation", elevation);
+    applyAttributes({
+      "data-density": density,
+      "data-radius": radius,
+      "data-scheme": scheme,
+      "data-contrast": contrast,
+      "data-color-theme": colorTheme,
+      "data-theme-mode": theme,
+      "data-elevation": elevation,
+    });
 
     const resolved = resolveDarkMode(theme);
     applyDarkMode(resolved);
@@ -185,42 +210,70 @@ export function ThemeProvider({
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const setDensity = (v: Density) => {
+    if (!isValid(v, VALID_DENSITIES)) {
+      console.warn(`Invalid density "${v}". Valid values: ${VALID_DENSITIES.join(", ")}`);
+      return;
+    }
     setDensityState(v);
     applyAttribute("data-density", v);
     persist("density", v, storageKey);
   };
 
   const setRadius = (v: RadiusTheme) => {
+    if (!isValid(v, VALID_RADII)) {
+      console.warn(`Invalid radius "${v}". Valid values: ${VALID_RADII.join(", ")}`);
+      return;
+    }
     setRadiusState(v);
     applyAttribute("data-radius", v);
     persist("radius", v, storageKey);
   };
 
   const setScheme = (v: ColorScheme) => {
+    if (!isValid(v, VALID_SCHEMES)) {
+      console.warn(`Invalid scheme "${v}". Valid values: ${VALID_SCHEMES.join(", ")}`);
+      return;
+    }
     setSchemeState(v);
     applyAttribute("data-scheme", v);
     persist("scheme", v, storageKey);
   };
 
   const setContrast = (v: ContrastLevel) => {
+    if (!isValid(v, VALID_CONTRASTS)) {
+      console.warn(`Invalid contrast "${v}". Valid values: ${VALID_CONTRASTS.join(", ")}`);
+      return;
+    }
     setContrastState(v);
     applyAttribute("data-contrast", v);
     persist("contrast", v, storageKey);
   };
 
   const setColorTheme = (v: ColorTheme) => {
+    if (!isValid(v, VALID_COLOR_THEMES)) {
+      console.warn(`Invalid colorTheme "${v}". Valid values: ${VALID_COLOR_THEMES.join(", ")}`);
+      return;
+    }
     setColorThemeState(v);
-    applyAttribute("data-theme", v);
+    applyAttribute("data-color-theme", v);
     persist("colorTheme", v, storageKey);
   };
 
   const setElevation = (v: Elevation) => {
+    if (!isValid(v, VALID_ELEVATIONS)) {
+      console.warn(`Invalid elevation "${v}". Valid values: ${VALID_ELEVATIONS.join(", ")}`);
+      return;
+    }
     setElevationState(v);
     applyAttribute("data-elevation", v);
     persist("elevation", v, storageKey);
   };
 
   const setTheme = (v: Theme) => {
+    if (!isValid(v, VALID_THEMES)) {
+      console.warn(`Invalid theme "${v}". Valid values: ${VALID_THEMES.join(", ")}`);
+      return;
+    }
     setThemeState(v);
     applyAttribute("data-theme-mode", v);
     persist("theme", v, storageKey);

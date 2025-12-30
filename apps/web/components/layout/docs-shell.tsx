@@ -18,11 +18,10 @@ import {
   SidebarInset,
   TopAppBar,
   IconButton,
-  useColorScheme,
 } from "@unisane/ui";
 import { NAV_DATA, getActiveCategoryId } from "@/lib/docs/navigation";
 import { AppHeader } from "./app-header";
-import { ThemeSwitcher } from "./theme-switcher";
+import { ThemeSettings } from "./theme-settings";
 import { UnisaneLogo } from "@/components/ui/unisane-logo";
 
 interface DocsShellProps {
@@ -44,17 +43,6 @@ function DocsShellContent({ children }: DocsShellProps) {
 
   // Mobile and tablet both use top app bar with hamburger menu
   const usesTopAppBar = isMobile || isTablet;
-
-  const { theme, setTheme } = useColorScheme();
-
-  // Toggle between light and dark mode
-  const toggleTheme = () => {
-    if (theme === "dark") {
-      setTheme("light");
-    } else {
-      setTheme("dark");
-    }
-  };
 
   // Get title for mobile top bar
   const title =
@@ -143,23 +131,9 @@ function DocsShellContent({ children }: DocsShellProps) {
           ))}
         </div>
 
-        {/* Footer - Theme Controls */}
+        {/* Footer - Theme Settings */}
         <div className="flex flex-col items-center gap-3 pb-4">
-          {/* Color Theme Switcher */}
-          <ThemeSwitcher />
-          {/* Light/Dark Mode Toggle */}
-          <IconButton
-            variant="standard"
-            ariaLabel={
-              theme === "dark" ? "Switch to light mode" : "Switch to dark mode"
-            }
-            onClick={toggleTheme}
-            className="w-11! h-11! border-2 border-outline-variant rounded-full"
-          >
-            <span className="material-symbols-outlined">
-              {theme === "dark" ? "light_mode" : "dark_mode"}
-            </span>
-          </IconButton>
+          <ThemeSettings />
         </div>
       </SidebarRail>
 

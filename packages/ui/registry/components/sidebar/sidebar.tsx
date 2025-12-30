@@ -122,7 +122,7 @@ export function SidebarRailItem({
             "w-13 h-7 rounded-xl flex items-center justify-center",
             "transition-all duration-medium ease-emphasized overflow-hidden relative",
             isActive
-              ? "bg-secondary-container text-primary"
+              ? "bg-secondary-container text-on-secondary-container"
               : "text-on-surface-variant bg-transparent hover:bg-on-surface/8"
           )}
         >
@@ -154,7 +154,7 @@ export function SidebarRailItem({
           "text-label-small transition-colors duration-short",
           "text-center px-0.5 max-w-full",
           isActive
-            ? "text-primary font-bold"
+            ? "text-on-secondary-container font-bold"
             : "text-on-surface-variant font-medium group-hover:text-on-surface"
         )}
       >
@@ -463,7 +463,7 @@ export function SidebarMenuItem({
     "text-body-medium transition-colors duration-short cursor-pointer",
     "relative overflow-hidden select-none",
     isActive
-      ? "bg-secondary-container text-primary font-semibold"
+      ? "bg-secondary-container text-on-secondary-container font-semibold"
       : "text-on-surface-variant font-medium hover:bg-on-surface/8 hover:text-on-surface",
     disabled && "opacity-38 cursor-not-allowed pointer-events-none",
     className

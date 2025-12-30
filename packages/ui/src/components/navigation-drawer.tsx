@@ -69,7 +69,7 @@ const navigationDrawerItemVariants = cva(
   {
     variants: {
       active: {
-        true: "bg-secondary-container text-primary font-semibold",
+        true: "bg-secondary-container text-on-secondary-container font-semibold",
         false: "bg-transparent text-on-surface-variant hover:bg-on-surface-variant/8 font-medium",
       },
       disabled: {
@@ -105,7 +105,7 @@ export const NavigationDrawerItem = forwardRef<
         <span
           className={cn(
             "material-symbols-outlined text-[24px]! transition-colors",
-            active ? "text-primary" : "text-on-surface-variant"
+            active ? "text-on-secondary-container" : "text-on-surface-variant"
           )}
           style={active ? { fontVariationSettings: "'FILL' 1" } : undefined}
         >

@@ -44,6 +44,7 @@ import { calendarDoc } from "./calendar";
 import { carouselDoc } from "./carousel";
 import { comboboxDoc } from "./combobox";
 import { datePickerDoc } from "./date-picker";
+import { dateInputDoc } from "./date-input";
 import { fabMenuDoc } from "./fab-menu";
 import { navigationBarDoc } from "./navigation-bar";
 import { navigationDrawerDoc } from "./navigation-drawer";
@@ -100,6 +101,7 @@ const DETAILED_DOCS: Record<string, ComponentDoc> = {
   carousel: carouselDoc,
   combobox: comboboxDoc,
   "date-picker": datePickerDoc,
+  "date-input": dateInputDoc,
   "fab-menu": fabMenuDoc,
   "navigation-bar": navigationBarDoc,
   "navigation-drawer": navigationDrawerDoc,
@@ -259,6 +261,15 @@ export const COMPONENT_REGISTRY: ComponentListItem[] = [
     category: "text-inputs",
     status: "stable",
     icon: "calendar_today",
+  },
+  {
+    slug: "date-input",
+    name: "Date Input",
+    description:
+      "A segment-based date input where each part (month, day, year) is individually editable with keyboard support.",
+    category: "text-inputs",
+    status: "stable",
+    icon: "edit_calendar",
   },
   {
     slug: "dialog",

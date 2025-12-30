@@ -54,6 +54,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
           className
         )}
       >
+        {/* Touch target container - scales with density (w-10 = 10 units = 40px at standard) */}
         <div className="relative flex items-center justify-center w-10 h-10">
           {/* Hover state layer */}
           <div

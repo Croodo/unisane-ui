@@ -47,7 +47,7 @@ export default function RootLayout({
       data-scheme={themeConfig.scheme}
       data-contrast={themeConfig.contrast}
       data-elevation={themeConfig.elevation}
-      data-theme={themeConfig.colorTheme}
+      data-color-theme={themeConfig.colorTheme}
       data-theme-mode={themeConfig.theme}
     >
       <body>

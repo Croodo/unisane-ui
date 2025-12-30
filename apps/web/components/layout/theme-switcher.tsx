@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useTheme, IconButton, type ColorTheme } from "@unisane/ui";
 
 // Ordered like a color wheel: blue → purple → pink → red → orange → yellow → green → cyan
@@ -31,6 +32,12 @@ const THEME_LABELS: Record<ColorTheme, string> = {
 
 export function ThemeSwitcher() {
   const { colorTheme, setColorTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  // Avoid hydration mismatch by only showing dynamic content after mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const cycleTheme = () => {
     const currentIndex = THEME_ORDER.indexOf(colorTheme);
@@ -39,12 +46,17 @@ export function ThemeSwitcher() {
     setColorTheme(nextTheme);
   };
 
+  // Use static label until mounted to avoid hydration mismatch
+  const ariaLabel = mounted
+    ? `Color theme: ${THEME_LABELS[colorTheme]}. Click to change.`
+    : "Color theme. Click to change.";
+
   return (
     <IconButton
       variant="filled"
       size="lg"
       onClick={cycleTheme}
-      ariaLabel={`Color theme: ${THEME_LABELS[colorTheme]}. Click to change.`}
+      ariaLabel={ariaLabel}
       className="border-2 border-outline-variant"
     />
   );

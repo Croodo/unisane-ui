@@ -228,12 +228,19 @@
   --z-popover: var(--z-popover);
   --z-modal: var(--z-modal);
 
-  /* Icons */
+  /* Icons - use with w-icon-sm, h-icon-sm */
   --spacing-icon-xs: var(--icon-xs);
   --spacing-icon-sm: var(--icon-sm);
   --spacing-icon-md: var(--icon-md);
   --spacing-icon-lg: var(--icon-lg);
   --spacing-icon-xl: var(--icon-xl);
+
+  /* Size utilities for icons - use with size-icon-sm */
+  --size-icon-xs: var(--icon-xs);
+  --size-icon-sm: var(--icon-sm);
+  --size-icon-md: var(--icon-md);
+  --size-icon-lg: var(--icon-lg);
+  --size-icon-xl: var(--icon-xl);
 
   /* Opacity */
   --opacity-hover: var(--opacity-hover);

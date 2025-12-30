@@ -345,7 +345,10 @@ function generateUniTokens() {
   /* === SCALING KNOBS === */
   --scale-space: 1;
   --scale-type: 1;
-  --scale-radius: 1;
+  /* Radius uses combined multiplier: density-radius × theme-radius */
+  --scale-radius-density: 1;   /* Modified by data-density */
+  --scale-radius-theme: 1;     /* Modified by data-radius */
+  --scale-radius: calc(var(--scale-radius-density) * var(--scale-radius-theme));
   --unit: calc(4px * var(--scale-space));
 
   /* Pane Widths */
@@ -839,19 +842,19 @@ function generateUniTokens() {
 [data-density="compact"] {
   --scale-space: 0.875;
   --scale-type: 0.9;
-  --scale-radius: 0.8;
+  --scale-radius-density: 0.9;
 }
 
 [data-density="dense"] {
   --scale-space: 0.75;
   --scale-type: 0.85;
-  --scale-radius: 0.75;
+  --scale-radius-density: 0.85;
 }
 
 [data-density="comfortable"] {
   --scale-space: 1.1;
   --scale-type: 1.0;
-  --scale-radius: 1.0;
+  --scale-radius-density: 1.0;
 }
 
 /* ============================================================
@@ -861,23 +864,23 @@ function generateUniTokens() {
    ============================================================ */
 
 [data-radius="none"] {
-  --scale-radius: 0;
+  --scale-radius-theme: 0;
 }
 
 [data-radius="minimal"] {
-  --scale-radius: 0.25;
+  --scale-radius-theme: 0.25;
 }
 
 [data-radius="sharp"] {
-  --scale-radius: 0.5;
+  --scale-radius-theme: 0.5;
 }
 
 [data-radius="standard"] {
-  --scale-radius: 1.0;
+  --scale-radius-theme: 1.0;
 }
 
 [data-radius="soft"] {
-  --scale-radius: 1.25;
+  --scale-radius-theme: 1.25;
 }
 
 /* ============================================================

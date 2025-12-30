@@ -36,7 +36,11 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
           className
         )}
       >
-        <div className="relative w-13 h-8 shrink-0 group/switch">
+        {/* Track container - uses calc with --unit for density scaling */}
+        {/* Base: 52x32px at standard density (13 units x 8 units) */}
+        <div
+          className="relative shrink-0 group/switch h-[calc(var(--unit)*8)] w-[calc(var(--unit)*13)]"
+        >
           <input
             ref={ref}
             type="checkbox"
@@ -47,6 +51,7 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
             {...props}
           />
 
+          {/* Track background */}
           <div
             className={cn(
               "absolute inset-0 rounded-full transition-colors duration-medium ease-standard border-2",
@@ -56,27 +61,33 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
             )}
           />
 
-          {/* Thumb */}
+          {/* Thumb - uses size-icon for density scaling */}
           <div
             className={cn(
               "absolute top-1/2 -translate-y-1/2 rounded-full transition-all duration-emphasized ease-emphasized flex items-center justify-center z-10",
-              "left-1 bg-outline group-hover:bg-on-surface-variant w-4 h-4",
-              "peer-checked:translate-x-5 peer-checked:bg-on-primary peer-checked:w-6 peer-checked:h-6"
+              // Background colors
+              "bg-outline group-hover:bg-on-surface-variant peer-checked:bg-on-primary",
+              // Size: with icons always size-icon-md (24px), without icons size-icon-xs (16px) → size-icon-md (24px)
+              icons
+                ? "size-icon-md left-[var(--unit)] peer-checked:left-[calc(var(--unit)*13-var(--icon-md)-var(--unit))]"
+                : "size-icon-xs left-[calc(var(--unit)*2)] peer-checked:size-icon-md peer-checked:left-[calc(var(--unit)*13-var(--icon-md)-var(--unit))]"
             )}
           />
 
           {/* Icons (rendered separately to use peer selectors) */}
           {icons && (
             <>
-              <Icon
-                symbol="check"
-                size="xs"
-                className="absolute top-1/2 -translate-y-1/2 left-7 text-primary z-20 transition-opacity duration-snappy ease-standard opacity-0 peer-checked:opacity-100"
-              />
+              {/* Close icon - shown when unchecked */}
               <Icon
                 symbol="close"
                 size="xs"
-                className="absolute top-1/2 -translate-y-1/2 left-1.5 text-surface-container z-20 transition-opacity duration-snappy ease-standard opacity-100 peer-checked:opacity-0"
+                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 left-[calc(var(--unit)+var(--icon-md)/2)] text-surface-container-highest z-20 transition-opacity duration-snappy ease-standard opacity-100 peer-checked:opacity-0"
+              />
+              {/* Check icon - shown when checked */}
+              <Icon
+                symbol="check"
+                size="xs"
+                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 left-[calc(var(--unit)*13-var(--icon-md)/2-var(--unit))] text-primary z-20 transition-opacity duration-snappy ease-standard opacity-0 peer-checked:opacity-100"
               />
             </>
           )}

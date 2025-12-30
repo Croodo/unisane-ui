@@ -18,7 +18,6 @@ interface RippleEffect {
 }
 
 export const Ripple: React.FC<RippleProps> = ({
-  color = "currentColor",
   center = false,
   disabled = false,
   className,

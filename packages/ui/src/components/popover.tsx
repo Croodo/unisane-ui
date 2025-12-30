@@ -97,9 +97,9 @@ export const Popover: React.FC<PopoverProps> = ({
             // Vertical positioning (top/bottom)
             side === "bottom" && "top-[calc(100%+8px)]",
             side === "top" && "bottom-[calc(100%+8px)]",
-            // Horizontal positioning (left/right)
-            side === "left" && "right-[calc(100%+8px)] top-0",
-            side === "right" && "left-[calc(100%+8px)] top-0",
+            // Horizontal positioning (left/right) - only set the horizontal offset, not vertical
+            side === "left" && "right-[calc(100%+8px)]",
+            side === "right" && "left-[calc(100%+8px)]",
             // Alignment for vertical sides (top/bottom)
             (side === "top" || side === "bottom") && align === "center" && "left-1/2 -translate-x-1/2",
             (side === "top" || side === "bottom") && align === "start" && "left-0",
