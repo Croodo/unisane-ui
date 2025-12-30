@@ -1,5 +1,5 @@
 {
-  "name": "with-tailwind",
+  "name": "unisane",
   "private": true,
   "scripts": {
     "build": "turbo run build",

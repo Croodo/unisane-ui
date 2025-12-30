@@ -134,7 +134,7 @@ export const SupportingPaneLayout: React.FC<SupportingPaneLayoutProps> = ({
                 onClick={handleClose}
                 variant="standard"
                 icon={
-                  <span className="material-symbols-outlined text-[length:var(--size-icon-sm)]">
+                  <span className="material-symbols-outlined text-(length:--size-icon-sm)">
                     close
                   </span>
                 }
