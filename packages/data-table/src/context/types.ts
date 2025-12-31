@@ -10,7 +10,7 @@ import type {
   PinPosition,
   TableVariant,
   InlineEditingController,
-} from "../types";
+} from "../types/index";
 
 // ─── STATE TYPES ────────────────────────────────────────────────────────────
 
@@ -39,7 +39,15 @@ export interface DataTableState {
   columnOrder: string[];
 
   // UI State
+  /**
+   * @deprecated Use container queries or useColumns().containerWidth instead.
+   * Responsive behavior is now container-based, not viewport-based.
+   */
   isMobile: boolean;
+
+  // Row Grouping (supports single string or array for multi-level)
+  groupBy: string | string[] | null;
+  expandedGroups: Set<string>;
 }
 
 // ─── ACTION TYPES ───────────────────────────────────────────────────────────
@@ -86,7 +94,16 @@ export type DataTableAction =
   | { type: "RESET_COLUMN_PINS" }
   | { type: "SET_COLUMN_ORDER"; order: string[] }
 
-  // UI
+  // Row Grouping (supports single column or multi-level grouping)
+  | { type: "SET_GROUP_BY"; key: string | string[] | null }
+  | { type: "ADD_GROUP_BY"; key: string }
+  | { type: "REMOVE_GROUP_BY"; key: string }
+  | { type: "TOGGLE_GROUP_EXPAND"; groupId: string }
+  | { type: "EXPAND_ALL_GROUPS"; groupIds: string[] }
+  | { type: "COLLAPSE_ALL_GROUPS" }
+
+  // UI (deprecated - kept for backward compatibility)
+  /** @deprecated Container queries are now used for responsive behavior */
   | { type: "SET_MOBILE"; isMobile: boolean }
 
   // Bulk
@@ -113,6 +130,12 @@ export interface DataTableConfig<T> {
   resizable: boolean;
   pinnable: boolean;
   reorderable: boolean;
+  /** Enable row grouping feature */
+  groupingEnabled: boolean;
+  /** Show summary footer row */
+  showSummary: boolean;
+  /** Label for the summary row */
+  summaryLabel: string;
 }
 
 // ─── CONTEXT VALUE ──────────────────────────────────────────────────────────
@@ -131,6 +154,7 @@ export interface DataTableContextValue<T = unknown> {
     pinState: ColumnPinState | undefined;
     columnOrder: string[] | undefined;
     selectedIds: string[] | undefined;
+    groupBy: string | string[] | null | undefined;
   };
 
   // Multi-sort config
@@ -145,6 +169,7 @@ export interface DataTableContextValue<T = unknown> {
   onColumnPinChange: ((key: string, position: PinPosition) => void) | undefined;
   onColumnOrderChange: ((order: string[]) => void) | undefined;
   onSelectionChange: ((ids: string[]) => void) | undefined;
+  onGroupByChange: ((key: string | string[] | null) => void) | undefined;
   /** Async callback to select all rows across the filtered dataset (server-backed) */
   onSelectAllFiltered: (() => Promise<string[]>) | undefined;
   /** Callback when pagination changes (useful for sync when controlled sort/filter resets page) */
@@ -168,6 +193,12 @@ export interface DataTableProviderProps<T> {
   resizable?: boolean;
   pinnable?: boolean;
   reorderable?: boolean;
+  /** Enable row grouping feature (adds "Group by" option to column menus) */
+  groupingEnabled?: boolean;
+  /** Show summary footer row with aggregated values */
+  showSummary?: boolean;
+  /** Custom label for the summary row (defaults to "Summary") */
+  summaryLabel?: string;
   initialPageSize?: number;
 
   // Multi-sort config
@@ -189,6 +220,9 @@ export interface DataTableProviderProps<T> {
   onColumnOrderChange?: (order: string[]) => void;
   selectedIds?: string[];
   onSelectionChange?: (ids: string[]) => void;
+  /** Controlled groupBy column key(s) - single string or array for multi-level */
+  groupBy?: string | string[] | null;
+  onGroupByChange?: (key: string | string[] | null) => void;
   /** Async callback to select all rows across the filtered dataset (server-backed) */
   onSelectAllFiltered?: () => Promise<string[]>;
   /** Callback when pagination changes (useful for sync when controlled sort/filter resets page) */

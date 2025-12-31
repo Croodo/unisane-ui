@@ -1,5 +1,12 @@
-export { getNestedValue, setNestedValue } from "./get-nested-value";
-export { ensureRowIds } from "./ensure-row-ids";
+export { getNestedValue, setNestedValue, getNestedValueSafe, type GetNestedValueOptions } from "./get-nested-value";
+export {
+  ensureRowIds,
+  validateRowIds,
+  findDuplicateRowIds,
+} from "./ensure-row-ids";
+
+// Re-export error from errors module
+export { DuplicateRowIdError } from "../errors";
 
 // Export module - CSV, Excel, PDF, JSON
 export {

@@ -2,9 +2,9 @@
 
 import React, { memo, type ReactNode, type CSSProperties } from "react";
 import { cn, Icon, Checkbox } from "@unisane/ui";
-import type { Column, PinPosition, ColumnMetaMap, CellContext, InlineEditingController } from "../types";
+import type { Column, PinPosition, ColumnMetaMap, CellContext, InlineEditingController, CellSelectionContext } from "../types/index";
 import { getNestedValue } from "../utils/get-nested-value";
-import { DENSITY_STYLES, type Density } from "../constants";
+import { DENSITY_STYLES, type Density } from "../constants/index";
 
 // ─── ROW PROPS ──────────────────────────────────────────────────────────────
 
@@ -39,6 +39,14 @@ interface DataTableRowProps<T> {
   isFocused?: boolean;
   /** Inline editing controller */
   inlineEditing?: InlineEditingController<T>;
+  /** Depth level for row indentation in grouped data (used for visual hierarchy) */
+  groupDepth?: number;
+  /** Cell selection: whether cell selection is enabled */
+  cellSelectionEnabled?: boolean;
+  /** Cell selection: get cell selection context for a specific cell */
+  getCellSelectionContext?: (rowId: string, columnKey: string) => CellSelectionContext;
+  /** Cell selection: handle cell click */
+  onCellClick?: (rowId: string, columnKey: string, event: React.MouseEvent) => void;
 }
 
 // ─── ROW COMPONENT ──────────────────────────────────────────────────────────
@@ -69,6 +77,10 @@ function DataTableRowInner<T extends { id: string }>({
   "data-index": dataIndex,
   isFocused = false,
   inlineEditing,
+  groupDepth = 0,
+  cellSelectionEnabled = false,
+  getCellSelectionContext,
+  onCellClick,
 }: DataTableRowProps<T>) {
   const isOddRow = rowIndex % 2 === 1;
   const paddingClass = DENSITY_STYLES[density];
@@ -221,6 +233,11 @@ function DataTableRowInner<T extends { id: string }>({
           const isEditing = isEditable && inlineEditing?.isCellEditing(row.id, key);
           const editProps = isEditable ? inlineEditing?.getCellEditProps(row.id, key, rawValue) : null;
 
+          // Get cell selection context if enabled
+          const cellSelectionCtx = cellSelectionEnabled && getCellSelectionContext
+            ? getCellSelectionContext(row.id, key)
+            : null;
+
           // Render content
           let content: ReactNode;
           if (isEditing && inlineEditing) {
@@ -254,6 +271,14 @@ function DataTableRowInner<T extends { id: string }>({
               : (rawValue as ReactNode);
           }
 
+          // Handle cell click for cell selection
+          const handleCellClick = (e: React.MouseEvent) => {
+            if (cellSelectionEnabled && onCellClick) {
+              e.stopPropagation(); // Prevent row click
+              onCellClick(row.id, key, e);
+            }
+          };
+
           // Width is handled by colgroup - only set left/right for pinned columns
           return (
             <td
@@ -276,7 +301,16 @@ function DataTableRowInner<T extends { id: string }>({
                 showColumnBorders && pinPosition === "right" && key === firstPinnedRightKey && "border-l border-outline-variant/50",
                 paddingClass,
                 isEditable && !isEditing && "cursor-cell",
-                isEditing && "overflow-visible z-[3]"
+                isEditing && "overflow-visible z-[3]",
+                // Cell selection styling
+                cellSelectionEnabled && "cursor-cell select-none",
+                cellSelectionCtx?.isSelected && "bg-secondary-container/50",
+                cellSelectionCtx?.isActive && "ring-1 ring-inset ring-primary",
+                // Range edge borders (Excel-like selection border)
+                cellSelectionCtx?.isSelected && cellSelectionCtx.isRangeEdge.top && "border-t-2 border-t-primary",
+                cellSelectionCtx?.isSelected && cellSelectionCtx.isRangeEdge.right && "border-r-2 border-r-primary",
+                cellSelectionCtx?.isSelected && cellSelectionCtx.isRangeEdge.bottom && "border-b-2 border-b-primary",
+                cellSelectionCtx?.isSelected && cellSelectionCtx.isRangeEdge.left && "border-l-2 border-l-primary"
               )}
               style={{
                 left: pinPosition === "left" ? meta?.left : undefined,
@@ -288,9 +322,11 @@ function DataTableRowInner<T extends { id: string }>({
                   ? "-4px 0 8px -3px rgba(0, 0, 0, 0.15)"
                   : undefined,
               }}
+              onClick={cellSelectionEnabled ? handleCellClick : undefined}
               onDoubleClick={editProps?.onDoubleClick}
               onKeyDown={editProps?.onKeyDown}
-              tabIndex={isEditable ? 0 : undefined}
+              tabIndex={isEditable || cellSelectionEnabled ? 0 : undefined}
+              data-cell-id={cellSelectionEnabled ? `${row.id}:${key}` : undefined}
             >
               {content}
             </td>
@@ -349,6 +385,10 @@ export const DataTableRow = memo(DataTableRowInner, (prev, next) => {
     prev["data-index"] === next["data-index"] &&
     prev.inlineEditing === next.inlineEditing &&
     prev.onRowHover === next.onRowHover &&
-    prev.onRowContextMenu === next.onRowContextMenu
+    prev.onRowContextMenu === next.onRowContextMenu &&
+    prev.groupDepth === next.groupDepth &&
+    prev.cellSelectionEnabled === next.cellSelectionEnabled &&
+    prev.getCellSelectionContext === next.getCellSelectionContext &&
+    prev.onCellClick === next.onCellClick
   );
 }) as typeof DataTableRowInner;

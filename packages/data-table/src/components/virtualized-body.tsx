@@ -3,13 +3,13 @@
 import React from "react";
 import type { ReactNode, RefObject, CSSProperties } from "react";
 import { Icon } from "@unisane/ui";
-import type { Column, ColumnGroup, PinPosition, ColumnMetaMap, InlineEditingController, SortDirection, MultiSortState, FilterValue } from "../types";
+import type { Column, ColumnGroup, PinPosition, ColumnMetaMap, InlineEditingController, SortDirection, MultiSortState, FilterValue } from "../types/index";
 import { Table } from "./table";
 import { TableColgroup } from "./colgroup";
 import { DataTableHeader } from "./header/index";
 import { DataTableRow } from "./row";
 import type { VirtualRow } from "../hooks";
-import type { Density } from "../constants";
+import type { Density } from "../constants/index";
 
 // ─── PROPS ──────────────────────────────────────────────────────────────────
 

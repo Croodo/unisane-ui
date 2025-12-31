@@ -15,9 +15,49 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
+    "./types": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/types/index.js"
+    },
+    "./types/*": {
+      "types": "./dist/types/*.d.ts",
+      "import": "./dist/types/*.js"
+    },
     "./hooks": {
       "types": "./dist/hooks/index.d.ts",
       "import": "./dist/hooks/index.js"
+    },
+    "./hooks/data": {
+      "types": "./dist/hooks/data/index.d.ts",
+      "import": "./dist/hooks/data/index.js"
+    },
+    "./hooks/ui": {
+      "types": "./dist/hooks/ui/index.d.ts",
+      "import": "./dist/hooks/ui/index.js"
+    },
+    "./hooks/features": {
+      "types": "./dist/hooks/features/index.d.ts",
+      "import": "./dist/hooks/features/index.js"
+    },
+    "./hooks/utilities": {
+      "types": "./dist/hooks/utilities/index.d.ts",
+      "import": "./dist/hooks/utilities/index.js"
+    },
+    "./constants": {
+      "types": "./dist/constants/index.d.ts",
+      "import": "./dist/constants/index.js"
+    },
+    "./errors": {
+      "types": "./dist/errors/index.d.ts",
+      "import": "./dist/errors/index.js"
+    },
+    "./context": {
+      "types": "./dist/context/index.d.ts",
+      "import": "./dist/context/index.js"
+    },
+    "./utils": {
+      "types": "./dist/utils/index.d.ts",
+      "import": "./dist/utils/index.js"
     }
   },
   "license": "MIT",

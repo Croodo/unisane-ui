@@ -1,6 +1,6 @@
 import type { DataTableState, DataTableAction } from "./types";
-import type { SortDirection, MultiSortState } from "../types";
-import { DEFAULT_PAGE_SIZE } from "../constants";
+import type { SortDirection, MultiSortState } from "../types/index";
+import { DEFAULT_PAGE_SIZE } from "../constants/index";
 
 export function createInitialState(options?: {
   pageSize?: number;
@@ -22,6 +22,9 @@ export function createInitialState(options?: {
     columnPinState: {},
     columnOrder: [],
     isMobile: false,
+    // Row Grouping
+    groupBy: null,
+    expandedGroups: new Set(),
   };
 }
 
@@ -341,6 +344,86 @@ export function dataTableReducer(
 
     case "SET_COLUMN_ORDER":
       return { ...state, columnOrder: action.order };
+
+    // ─── ROW GROUPING ─────────────────────────────────────────────────────────
+    case "SET_GROUP_BY":
+      return {
+        ...state,
+        groupBy: action.key,
+        expandedGroups: new Set(), // Reset expanded state when changing groupBy
+      };
+
+    case "ADD_GROUP_BY": {
+      // Add a column to multi-level grouping
+      const currentGroupBy = state.groupBy;
+      let newGroupBy: string[];
+
+      if (currentGroupBy === null) {
+        newGroupBy = [action.key];
+      } else if (Array.isArray(currentGroupBy)) {
+        // Don't add if already present
+        if (currentGroupBy.includes(action.key)) {
+          return state;
+        }
+        newGroupBy = [...currentGroupBy, action.key];
+      } else {
+        // Single string, convert to array
+        if (currentGroupBy === action.key) {
+          return state;
+        }
+        newGroupBy = [currentGroupBy, action.key];
+      }
+
+      return {
+        ...state,
+        groupBy: newGroupBy,
+        expandedGroups: new Set(), // Reset expanded state when adding groupBy
+      };
+    }
+
+    case "REMOVE_GROUP_BY": {
+      const currentGroupBy = state.groupBy;
+
+      if (currentGroupBy === null) {
+        return state;
+      }
+
+      if (Array.isArray(currentGroupBy)) {
+        const newGroupBy = currentGroupBy.filter((k) => k !== action.key);
+        return {
+          ...state,
+          groupBy: newGroupBy.length === 0 ? null : newGroupBy.length === 1 ? newGroupBy[0]! : newGroupBy,
+          expandedGroups: new Set(),
+        };
+      }
+
+      // Single string
+      if (currentGroupBy === action.key) {
+        return {
+          ...state,
+          groupBy: null,
+          expandedGroups: new Set(),
+        };
+      }
+
+      return state;
+    }
+
+    case "TOGGLE_GROUP_EXPAND": {
+      const next = new Set(state.expandedGroups);
+      if (next.has(action.groupId)) {
+        next.delete(action.groupId);
+      } else {
+        next.add(action.groupId);
+      }
+      return { ...state, expandedGroups: next };
+    }
+
+    case "EXPAND_ALL_GROUPS":
+      return { ...state, expandedGroups: new Set(action.groupIds) };
+
+    case "COLLAPSE_ALL_GROUPS":
+      return { ...state, expandedGroups: new Set() };
 
     // ─── UI ──────────────────────────────────────────────────────────────────
     case "SET_MOBILE":

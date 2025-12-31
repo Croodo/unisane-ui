@@ -12,6 +12,16 @@ export interface ExportHandler {
   exporting?: ExportFormat | null;
 }
 
+/** Print handler configuration */
+export interface PrintHandler {
+  /** Callback to print all rows */
+  onPrint: () => void;
+  /** Callback to print selected rows only (optional) */
+  onPrintSelected?: () => void;
+  /** Whether printing is in progress */
+  isPrinting?: boolean;
+}
+
 /** Action button displayed in the toolbar */
 export interface ToolbarAction {
   /** Unique key for React */
@@ -26,8 +36,10 @@ export interface ToolbarAction {
   disabled?: boolean;
   /** Button variant - primary shows filled, others show outlined */
   variant?: "primary" | "secondary" | "danger";
-  /** If true, shows only icon on mobile */
+  /** If true, shows only icon on mobile, label on larger screens */
   iconOnly?: boolean;
+  /** Badge count to show on the button (e.g., for issues count) */
+  badge?: number;
 }
 
 /** Dropdown option for toolbar dropdowns */
@@ -84,6 +96,10 @@ export interface DataTableToolbarProps<T> {
   onExport?: () => void;
   /** Export configuration with multi-format support */
   exportHandler?: ExportHandler;
+  /** @deprecated Use `printHandler` instead for full print support */
+  onPrint?: () => void;
+  /** Print configuration */
+  printHandler?: PrintHandler;
   onRefresh?: () => void;
   refreshing?: boolean;
   density?: Density;
@@ -115,4 +131,18 @@ export interface DataTableToolbarProps<T> {
   filtersActive?: boolean;
   /** Use segmented button style for toolbar controls (Columns, Density, etc.) */
   segmentedControls?: boolean;
+  /** Whether row grouping is currently active */
+  isGrouped?: boolean;
+  /** Whether all groups are currently expanded */
+  allGroupsExpanded?: boolean;
+  /** Callback to toggle expand/collapse all groups */
+  onToggleAllGroups?: () => void;
+  /** Whether to show the grouping pills bar when grouping is active */
+  showGroupingPills?: boolean;
+  /** Number of columns frozen on the left */
+  frozenLeftCount?: number;
+  /** Number of columns frozen on the right */
+  frozenRightCount?: number;
+  /** Callback to unfreeze all columns */
+  onUnfreezeAll?: () => void;
 }

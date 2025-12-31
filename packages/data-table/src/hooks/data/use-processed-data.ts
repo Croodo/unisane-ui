@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import type { Column, FilterState, SortDirection, MultiSortState, FilterValue } from "../types";
-import { getNestedValue } from "../utils/get-nested-value";
+import type { Column, FilterState, SortDirection, MultiSortState, FilterValue } from "../../types";
+import { getNestedValue } from "../../utils/get-nested-value";
 
 interface UseProcessedDataOptions<T> {
   data: T[];

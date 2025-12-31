@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useCallback } from "react";
-import type { FilterState, SortDirection, CursorPagination } from "../types";
+import type { FilterState, SortDirection, CursorPagination } from "../../types";
 
 // ─── TYPES ─────────────────────────────────────────────────────────────────
 

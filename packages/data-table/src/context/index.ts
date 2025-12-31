@@ -16,5 +16,6 @@ export {
   useFiltering,
   usePagination,
   useColumns,
+  useGrouping,
   useTableUI,
 } from "./provider";

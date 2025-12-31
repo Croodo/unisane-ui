@@ -16,7 +16,7 @@ import {
   LabeledDropdown,
 } from "./dropdowns";
 import { ExportDropdown } from "./export-dropdown";
-import { SelectionBar, TitleBar, ActiveFiltersBar } from "./sections";
+import { SelectionBar, TitleBar, ActiveFiltersBar, GroupingPillsBar, FrozenColumnsIndicator } from "./sections";
 import type { DataTableToolbarProps } from "./types";
 
 // Re-export types and sub-components for direct use
@@ -37,7 +37,8 @@ export {
   LabeledDropdown,
 } from "./dropdowns";
 export { ExportDropdown } from "./export-dropdown";
-export { SelectionBar, TitleBar, ActiveFiltersBar } from "./sections";
+export { SelectionBar, TitleBar, ActiveFiltersBar, GroupingPillsBar, FrozenColumnsIndicator } from "./sections";
+export type { GroupingPillsBarProps, FrozenColumnsIndicatorProps } from "./sections";
 
 // ─── TOOLBAR COMPONENT ──────────────────────────────────────────────────────
 
@@ -50,6 +51,8 @@ function DataTableToolbarInner<T extends { id: string }>({
   onClearSelection,
   onExport,
   exportHandler,
+  onPrint,
+  printHandler,
   onRefresh,
   refreshing = false,
   density = "standard",
@@ -69,19 +72,29 @@ function DataTableToolbarInner<T extends { id: string }>({
   onFilterClick,
   filtersActive = false,
   segmentedControls = false,
+  isGrouped = false,
+  allGroupsExpanded = false,
+  onToggleAllGroups,
+  showGroupingPills = false,
+  frozenLeftCount = 0,
+  frozenRightCount = 0,
+  onUnfreezeAll,
 }: DataTableToolbarProps<T>) {
   const hasSelection = selectedCount > 0;
   const hasActions = actions.length > 0 || moreActions.length > 0;
   const hasDropdowns = dropdowns.length > 0;
   const hasIconActions = iconActions.length > 0;
   const hasExport = onExport !== undefined || exportHandler !== undefined;
+  const hasPrint = onPrint !== undefined || printHandler !== undefined;
+  const hasFrozenColumns = frozenLeftCount > 0 || frozenRightCount > 0;
 
   // Calculate segmented button positions
-  const segmentedItems: Array<{ type: "filter" | "columns" | "density" | "export" | "refresh" }> = [];
+  const segmentedItems: Array<{ type: "filter" | "columns" | "density" | "export" | "print" | "refresh" }> = [];
   if (showFilter) segmentedItems.push({ type: "filter" });
   if (showColumnToggle) segmentedItems.push({ type: "columns" });
   if (showDensityToggle) segmentedItems.push({ type: "density" });
   if (hasExport) segmentedItems.push({ type: "export" });
+  if (hasPrint) segmentedItems.push({ type: "print" });
   if (onRefresh) segmentedItems.push({ type: "refresh" });
 
   const getSegmentedPosition = (type: string) => {
@@ -127,6 +140,20 @@ function DataTableToolbarInner<T extends { id: string }>({
               {/* Custom left content */}
               {leftContent}
 
+              {/* Frozen columns indicator */}
+              {hasFrozenColumns && (
+                <>
+                  {(title || totalItems !== undefined || leftContent) && (
+                    <div className="h-6 w-px bg-outline-variant/50 hidden sm:block" />
+                  )}
+                  <FrozenColumnsIndicator
+                    frozenLeftCount={frozenLeftCount}
+                    frozenRightCount={frozenRightCount}
+                    onUnfreezeAll={onUnfreezeAll}
+                  />
+                </>
+              )}
+
               {/* Action buttons */}
               {hasActions && (
                 <>
@@ -163,6 +190,18 @@ function DataTableToolbarInner<T extends { id: string }>({
 
           {/* Search input */}
           {searchable && !hasSelection && <SearchInput />}
+
+          {/* Group expand/collapse toggle */}
+          {isGrouped && !hasSelection && onToggleAllGroups && (
+            <>
+              <div className="h-6 w-px bg-outline-variant/50 hidden sm:block" />
+              <CompactIconButton
+                icon={allGroupsExpanded ? "unfold_less" : "unfold_more"}
+                label={allGroupsExpanded ? "Collapse all groups" : "Expand all groups"}
+                onClick={onToggleAllGroups}
+              />
+            </>
+          )}
 
           {/* Divider before controls */}
           {segmentedItems.length > 0 && (
@@ -209,6 +248,22 @@ function DataTableToolbarInner<T extends { id: string }>({
                   {...getSegmentedPosition("export")}
                 />
               ) : null}
+              {printHandler ? (
+                <SegmentedIconButton
+                  icon="print"
+                  label="Print"
+                  onClick={printHandler.onPrint}
+                  disabled={printHandler.isPrinting}
+                  {...getSegmentedPosition("print")}
+                />
+              ) : onPrint ? (
+                <SegmentedIconButton
+                  icon="print"
+                  label="Print"
+                  onClick={onPrint}
+                  {...getSegmentedPosition("print")}
+                />
+              ) : null}
               {onRefresh && (
                 <SegmentedIconButton
                   icon="refresh"
@@ -237,6 +292,16 @@ function DataTableToolbarInner<T extends { id: string }>({
                 <ExportDropdown handler={exportHandler} />
               ) : onExport ? (
                 <ToolbarTextButton label="Export" icon="download" onClick={onExport} />
+              ) : null}
+              {printHandler ? (
+                <ToolbarTextButton
+                  label="Print"
+                  icon="print"
+                  onClick={printHandler.onPrint}
+                  disabled={printHandler.isPrinting}
+                />
+              ) : onPrint ? (
+                <ToolbarTextButton label="Print" icon="print" onClick={onPrint} />
               ) : null}
               {onRefresh && (
                 <ToolbarTextButton
@@ -267,6 +332,7 @@ function DataTableToolbarInner<T extends { id: string }>({
         </div>
       </div>
       <ActiveFiltersBar />
+      {showGroupingPills && <GroupingPillsBar />}
     </>
   );
 }

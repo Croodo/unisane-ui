@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { DEFAULT_KEYBOARD_PAGE_SIZE } from "../constants";
+import { DEFAULT_KEYBOARD_PAGE_SIZE } from "../../constants";
 
 export interface UseKeyboardNavigationOptions {
   /** Total number of rows */

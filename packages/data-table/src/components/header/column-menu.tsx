@@ -24,6 +24,16 @@ export interface ColumnMenuProps<T> {
   onPin: (position: PinPosition) => void;
   onHide: () => void;
   onFilter?: (value: FilterValue) => void;
+  /** Whether grouping is enabled for the table */
+  groupingEnabled?: boolean;
+  /** Current column(s) being grouped by */
+  groupBy?: string | string[] | null;
+  /** Normalized array of groupBy keys */
+  groupByArray?: string[];
+  /** Callback to set groupBy column(s) */
+  onGroupBy?: (key: string | string[] | null) => void;
+  /** Callback to add a column to multi-level grouping */
+  onAddGroupBy?: (key: string) => void;
 }
 
 export function ColumnMenu<T>({
@@ -35,6 +45,11 @@ export function ColumnMenu<T>({
   onPin,
   onHide,
   onFilter,
+  groupingEnabled = false,
+  groupBy,
+  groupByArray = [],
+  onGroupBy,
+  onAddGroupBy,
 }: ColumnMenuProps<T>) {
   const [filterInputValue, setFilterInputValue] = useState(
     typeof currentFilter === "string" ? currentFilter : ""
@@ -111,6 +126,54 @@ export function ColumnMenu<T>({
               >
                 {pinPosition === "right" ? "Unpin from right" : "Pin to right"}
               </DropdownMenuItem>
+              {(column.hideable !== false || groupingEnabled) && <DropdownMenuSeparator />}
+            </>
+          )}
+
+          {/* Group by this column */}
+          {/* Only show grouping for columns that are explicitly groupable OR have select filter (categorical data) */}
+          {groupingEnabled && (column.groupable === true || (column.groupable !== false && column.filterType === "select")) && (
+            <>
+              {(() => {
+                const columnKey = String(column.key);
+                const isColumnGrouped = groupByArray.includes(columnKey);
+                const hasExistingGrouping = groupByArray.length > 0;
+
+                return (
+                  <>
+                    {/* Primary grouping action */}
+                    <DropdownMenuItem
+                      onClick={() => {
+                        if (isColumnGrouped) {
+                          // Remove this column from grouping
+                          if (groupByArray.length === 1) {
+                            onGroupBy?.(null);
+                          } else {
+                            const newGroupBy = groupByArray.filter((k) => k !== columnKey);
+                            onGroupBy?.(newGroupBy.length === 1 ? newGroupBy[0]! : newGroupBy);
+                          }
+                        } else {
+                          // Set as the only grouping column
+                          onGroupBy?.(columnKey);
+                        }
+                      }}
+                      icon={<Icon symbol="workspaces" className="w-4 h-4" />}
+                    >
+                      {isColumnGrouped ? "Remove grouping" : "Group by this column"}
+                    </DropdownMenuItem>
+
+                    {/* Add to multi-level grouping (only show if there's existing grouping and this column isn't grouped) */}
+                    {hasExistingGrouping && !isColumnGrouped && onAddGroupBy && (
+                      <DropdownMenuItem
+                        onClick={() => onAddGroupBy(columnKey)}
+                        icon={<Icon symbol="add" className="w-4 h-4" />}
+                      >
+                        Add to grouping (Level {groupByArray.length + 1})
+                      </DropdownMenuItem>
+                    )}
+                  </>
+                );
+              })()}
               {column.hideable !== false && <DropdownMenuSeparator />}
             </>
           )}

@@ -5,7 +5,7 @@ import { Button, Icon } from "@unisane/ui";
 
 // ─── ERROR STATE PROPS ───────────────────────────────────────────────────────
 
-interface DataTableErrorProps {
+interface DataTableErrorDisplayProps {
   error: Error;
   resetError?: () => void;
   title?: string;
@@ -15,12 +15,12 @@ interface DataTableErrorProps {
 /**
  * Error state component for displaying table errors
  */
-export function DataTableError({
+export function DataTableErrorDisplay({
   error,
   resetError,
   title = "Something went wrong",
   message,
-}: DataTableErrorProps) {
+}: DataTableErrorDisplayProps) {
   const displayMessage = message ?? error.message ?? "An unexpected error occurred while loading the table.";
 
   return (
@@ -125,7 +125,7 @@ export class DataTableErrorBoundary extends Component<
       }
 
       // Default error UI
-      return <DataTableError error={error} resetError={this.resetError} />;
+      return <DataTableErrorDisplay error={error} resetError={this.resetError} />;
     }
 
     return children;

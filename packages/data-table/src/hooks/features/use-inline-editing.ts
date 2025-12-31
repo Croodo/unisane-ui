@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import type { UseInlineEditingOptions, InlineEditingController, EditingCell } from "../types";
+import type { UseInlineEditingOptions, InlineEditingController, EditingCell } from "../../types";
 
 /**
  * Deep equality check for comparing cell values

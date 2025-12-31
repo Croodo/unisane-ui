@@ -2,7 +2,7 @@
 
 import { cn, Icon } from "@unisane/ui";
 import type { BulkAction } from "../../types";
-import { useFiltering, useColumns } from "../../context";
+import { useFiltering, useColumns, useGrouping } from "../../context";
 
 // ─── SELECTION BAR ────────────────────────────────────────────────────────
 
@@ -148,6 +148,164 @@ export function ActiveFiltersBar<T>() {
       >
         Clear all
       </button>
+    </div>
+  );
+}
+
+// ─── GROUPING PILLS BAR ─────────────────────────────────────────────────────
+
+export interface GroupingPillsBarProps {
+  /** Whether to show the bar even when no grouping is active (shows "No grouping" state) */
+  showEmpty?: boolean;
+}
+
+/**
+ * Displays active row groupings as removable chips/pills.
+ * Shows grouping hierarchy with drag handles for reordering (future).
+ */
+export function GroupingPillsBar<T>({ showEmpty = false }: GroupingPillsBarProps = {}) {
+  const { groupByArray, removeGroupBy, setGroupBy, isGrouped } = useGrouping();
+  const { columns } = useColumns<T>();
+
+  // Don't render if no grouping and showEmpty is false
+  if (!isGrouped && !showEmpty) return null;
+
+  const getColumnHeader = (key: string) => {
+    const col = columns.find((c) => String(c.key) === key);
+    return col?.header ?? key;
+  };
+
+  return (
+    <div className="flex items-center gap-2 px-3 py-2 bg-surface-container-low border-b border-outline-variant/30">
+      <div className="flex items-center gap-1.5 text-on-surface-variant">
+        <Icon symbol="account_tree" className="text-[16px]" />
+        <span className="text-label-small font-medium">Grouped by:</span>
+      </div>
+
+      {isGrouped ? (
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {groupByArray.map((key, index) => (
+            <div key={key} className="flex items-center">
+              {/* Hierarchy arrow for multi-level grouping */}
+              {index > 0 && (
+                <Icon
+                  symbol="chevron_right"
+                  className="text-[16px] text-on-surface-variant/50 mx-0.5"
+                />
+              )}
+              <GroupingPill
+                label={getColumnHeader(key)}
+                level={index + 1}
+                onRemove={() => removeGroupBy(key)}
+              />
+            </div>
+          ))}
+
+          {/* Clear all grouping button */}
+          {groupByArray.length > 1 && (
+            <button
+              onClick={() => setGroupBy(null)}
+              className="text-label-small text-error hover:underline ml-2"
+            >
+              Clear all
+            </button>
+          )}
+        </div>
+      ) : (
+        <span className="text-label-small text-on-surface-variant/60 italic">
+          None
+        </span>
+      )}
+    </div>
+  );
+}
+
+// ─── GROUPING PILL ──────────────────────────────────────────────────────────
+
+interface GroupingPillProps {
+  label: string;
+  level: number;
+  onRemove: () => void;
+}
+
+function GroupingPill({ label, level, onRemove }: GroupingPillProps) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-full",
+        "text-label-small font-medium transition-colors",
+        "bg-secondary-container text-on-secondary-container",
+        "hover:bg-secondary-container/80"
+      )}
+    >
+      {/* Level indicator for multi-level grouping */}
+      {level > 1 && (
+        <span className="text-[10px] font-bold opacity-60">{level}</span>
+      )}
+      <span>{label}</span>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onRemove();
+        }}
+        className="inline-flex items-center justify-center w-4 h-4 rounded-full hover:bg-on-secondary-container/10 transition-colors"
+        aria-label={`Remove ${label} grouping`}
+      >
+        <Icon symbol="close" className="text-[12px]" />
+      </button>
+    </span>
+  );
+}
+
+// ─── FROZEN COLUMNS INDICATOR ───────────────────────────────────────────────
+
+export interface FrozenColumnsIndicatorProps {
+  /** Number of columns frozen on the left */
+  frozenLeftCount: number;
+  /** Number of columns frozen on the right */
+  frozenRightCount: number;
+  /** Callback to unfreeze all columns */
+  onUnfreezeAll?: () => void;
+}
+
+/**
+ * Displays a compact indicator showing the number of frozen columns.
+ * Can be placed in the toolbar to inform users about column freezing state.
+ */
+export function FrozenColumnsIndicator({
+  frozenLeftCount,
+  frozenRightCount,
+  onUnfreezeAll,
+}: FrozenColumnsIndicatorProps) {
+  const totalFrozen = frozenLeftCount + frozenRightCount;
+
+  if (totalFrozen === 0) return null;
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <span
+        className={cn(
+          "inline-flex items-center gap-1 px-2 py-0.5 rounded",
+          "text-label-small font-medium",
+          "bg-tertiary-container/50 text-on-tertiary-container"
+        )}
+      >
+        <Icon symbol="push_pin" className="text-[14px] -rotate-45" />
+        <span>
+          {frozenLeftCount > 0 && `${frozenLeftCount} left`}
+          {frozenLeftCount > 0 && frozenRightCount > 0 && ", "}
+          {frozenRightCount > 0 && `${frozenRightCount} right`}
+        </span>
+        {onUnfreezeAll && (
+          <button
+            onClick={onUnfreezeAll}
+            className="inline-flex items-center justify-center w-4 h-4 rounded hover:bg-on-tertiary-container/10 transition-colors ml-0.5"
+            aria-label="Unfreeze all columns"
+          >
+            <Icon symbol="close" className="text-[12px]" />
+          </button>
+        )}
+      </span>
     </div>
   );
 }

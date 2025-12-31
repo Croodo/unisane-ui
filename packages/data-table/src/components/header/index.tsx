@@ -5,7 +5,7 @@ import { cn, Checkbox } from "@unisane/ui";
 import type { Column, ColumnGroup, SortDirection, MultiSortState, PinPosition, ColumnMetaMap, FilterValue } from "../../types";
 import { isColumnGroup } from "../../types";
 import { DENSITY_STYLES, type Density } from "../../constants";
-import { useColumnDrag } from "../../hooks/use-column-drag";
+import { useColumnDrag } from "../../hooks/ui/use-column-drag";
 import { HeaderCell } from "./header-cell";
 import { GroupHeaderRow } from "./group-header-row";
 
@@ -53,6 +53,16 @@ export interface DataTableHeaderProps<T> {
   columnFilters?: Record<string, FilterValue>;
   /** Tailwind class for sticky header offset */
   headerOffsetClassName?: string;
+  /** Whether grouping is enabled */
+  groupingEnabled?: boolean;
+  /** Current column(s) being grouped by (supports multi-level) */
+  groupBy?: string | string[] | null;
+  /** Normalized array of groupBy keys */
+  groupByArray?: string[];
+  /** Callback to set groupBy column(s) - replaces current grouping */
+  onGroupBy?: (key: string | string[] | null) => void;
+  /** Callback to add a column to multi-level grouping */
+  onAddGroupBy?: (key: string) => void;
 }
 
 // ─── HEADER COMPONENT ───────────────────────────────────────────────────────
@@ -84,6 +94,11 @@ function DataTableHeaderInner<T extends { id: string }>({
   onColumnReorder,
   columnFilters = {},
   headerOffsetClassName,
+  groupingEnabled = false,
+  groupBy,
+  groupByArray = [],
+  onGroupBy,
+  onAddGroupBy,
 }: DataTableHeaderProps<T>) {
   const paddingClass = DENSITY_STYLES[density];
 
@@ -251,6 +266,11 @@ function DataTableHeaderInner<T extends { id: string }>({
               isDragging={canReorder && isDraggingColumn(key)}
               isDropTarget={canReorder && isDropTarget(key)}
               dropPosition={canReorder ? getDropPosition(key) : null}
+              groupingEnabled={groupingEnabled}
+              groupBy={groupBy}
+              groupByArray={groupByArray}
+              onGroupBy={onGroupBy}
+              onAddGroupBy={onAddGroupBy}
             />
           );
         })}

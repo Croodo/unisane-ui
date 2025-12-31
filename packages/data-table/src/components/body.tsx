@@ -3,9 +3,10 @@
 import React, { memo } from "react";
 import type { ReactNode } from "react";
 import { Icon } from "@unisane/ui";
-import type { Column, PinPosition, ColumnMetaMap, InlineEditingController } from "../types";
+import type { Column, PinPosition, ColumnMetaMap, InlineEditingController, RowGroup, GroupHeaderProps, CellSelectionContext } from "../types/index";
 import { DataTableRow } from "./row";
-import type { Density } from "../constants";
+import { GroupRow } from "./group-row";
+import type { Density } from "../constants/index";
 
 // ─── BODY PROPS ─────────────────────────────────────────────────────────────
 
@@ -37,6 +38,22 @@ interface DataTableBodyProps<T> {
   focusedIndex?: number | null;
   /** Inline editing controller */
   inlineEditing?: InlineEditingController<T>;
+  /** Whether data is grouped */
+  isGrouped?: boolean;
+  /** Grouped row data (when isGrouped is true) */
+  groupedRows?: RowGroup<T>[];
+  /** Toggle group expand/collapse */
+  onToggleGroupExpand?: (groupId: string) => void;
+  /** Custom group header renderer */
+  renderGroupHeader?: (props: GroupHeaderProps<T>) => ReactNode;
+  /** Callback to select/deselect all rows in a group */
+  onSelectGroup?: (rowIds: string[], selected: boolean) => void;
+  /** Cell selection: whether cell selection is enabled */
+  cellSelectionEnabled?: boolean;
+  /** Cell selection: get cell selection context for a specific cell */
+  getCellSelectionContext?: (rowId: string, columnKey: string) => CellSelectionContext;
+  /** Cell selection: handle cell click */
+  onCellClick?: (rowId: string, columnKey: string, event: React.MouseEvent) => void;
 }
 
 // ─── LOADING STATE ─────────────────────────────────────────────────────────
@@ -117,6 +134,14 @@ function DataTableBodyInner<T extends { id: string }>({
   emptyIcon,
   focusedIndex,
   inlineEditing,
+  isGrouped = false,
+  groupedRows = [],
+  onToggleGroupExpand,
+  renderGroupHeader,
+  onSelectGroup,
+  cellSelectionEnabled = false,
+  getCellSelectionContext,
+  onCellClick,
 }: DataTableBodyProps<T>) {
   // Calculate colspan
   const colSpan = columns.length + (selectable ? 1 : 0) + (enableExpansion ? 1 : 0);
@@ -131,7 +156,101 @@ function DataTableBodyInner<T extends { id: string }>({
     return <EmptyState colSpan={colSpan} message={emptyMessage} icon={emptyIcon} />;
   }
 
-  // Render rows
+  // Recursive function to render groups and their children (for multi-level grouping)
+  const renderGroupsRecursively = (
+    groups: RowGroup<T>[],
+    isLastInParent: boolean[] = []
+  ): React.ReactNode[] => {
+    const elements: React.ReactNode[] = [];
+    let globalRowIndex = 0;
+
+    groups.forEach((group, groupIndex) => {
+      const isLastGroup = groupIndex === groups.length - 1;
+      const hasChildGroups = group.childGroups && group.childGroups.length > 0;
+      const hasRows = group.rows.length > 0;
+
+      // Render group header
+      elements.push(
+        <GroupRow
+          key={group.groupId}
+          group={group}
+          columns={columns}
+          selectable={selectable}
+          enableExpansion={enableExpansion}
+          onToggle={() => onToggleGroupExpand?.(group.groupId)}
+          density={density}
+          renderGroupHeader={renderGroupHeader}
+          isLastGroup={isLastGroup && !group.isExpanded && !hasChildGroups}
+          selectedRows={selectedRows}
+          onSelectGroup={onSelectGroup}
+        />
+      );
+
+      // If expanded, render child groups or rows
+      if (group.isExpanded) {
+        if (hasChildGroups) {
+          // Recursively render child groups
+          const childElements = renderGroupsRecursively(
+            group.childGroups!,
+            [...isLastInParent, isLastGroup]
+          );
+          elements.push(...childElements);
+        } else if (hasRows) {
+          // Render data rows at the deepest level
+          group.rows.forEach((row, rowIndexInGroup) => {
+            const currentRowIndex = globalRowIndex++;
+            const isLastRow = isLastGroup && rowIndexInGroup === group.rows.length - 1;
+
+            elements.push(
+              <DataTableRow
+                key={row.id}
+                row={row}
+                rowIndex={currentRowIndex}
+                columns={columns}
+                columnMeta={columnMeta}
+                getEffectivePinPosition={getEffectivePinPosition}
+                isSelected={selectedRows.has(row.id)}
+                isExpanded={expandedRows.has(row.id)}
+                isActive={activeRowId === row.id}
+                isFocused={focusedIndex === currentRowIndex}
+                isLastRow={isLastRow}
+                selectable={selectable}
+                showColumnBorders={showColumnBorders}
+                zebra={zebra}
+                enableExpansion={enableExpansion}
+                canExpand={getRowCanExpand ? getRowCanExpand(row) : !!renderExpandedRow}
+                onSelect={onSelect}
+                onToggleExpand={onToggleExpand}
+                onRowClick={onRowClick}
+                onRowContextMenu={onRowContextMenu}
+                onRowHover={onRowHover}
+                renderExpandedRow={renderExpandedRow}
+                density={density}
+                inlineEditing={inlineEditing}
+                groupDepth={group.depth + 1}
+                cellSelectionEnabled={cellSelectionEnabled}
+                getCellSelectionContext={getCellSelectionContext}
+                onCellClick={onCellClick}
+              />
+            );
+          });
+        }
+      }
+    });
+
+    return elements;
+  };
+
+  // Render grouped rows (supports multi-level)
+  if (isGrouped && groupedRows.length > 0) {
+    return (
+      <tbody className="bg-surface">
+        {renderGroupsRecursively(groupedRows)}
+      </tbody>
+    );
+  }
+
+  // Render ungrouped rows
   return (
     <tbody className="bg-surface">
       {data.map((row, index) => (
@@ -160,6 +279,9 @@ function DataTableBodyInner<T extends { id: string }>({
           renderExpandedRow={renderExpandedRow}
           density={density}
           inlineEditing={inlineEditing}
+          cellSelectionEnabled={cellSelectionEnabled}
+          getCellSelectionContext={getCellSelectionContext}
+          onCellClick={onCellClick}
         />
       ))}
     </tbody>

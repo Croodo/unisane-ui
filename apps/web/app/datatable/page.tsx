@@ -8,11 +8,20 @@ import {
   DataTablePagination,
   useInlineEditing,
   useSelection,
+  useGrouping,
+  useColumns,
+  useRowContextMenu,
+  RowContextMenu,
+  useCellSelection,
+  usePrint,
   exportData,
+  getNestedValue,
   type Column,
   type BulkAction,
   type Density,
   type ExportFormat,
+  type RowContextMenuItemOrSeparator,
+  type PrintHandler,
 } from "@unisane/data-table";
 import { Typography, Chip, Avatar, Icon, Card, Switch } from "@unisane/ui";
 
@@ -317,6 +326,8 @@ const columns: Column<User>[] = [
     align: "end",
     hideable: true,
     pinnable: true,
+    aggregation: "sum",
+    summary: "sum", // Shows total salary in footer
     render: (row) => (
       <span className="font-mono text-on-surface">
         ${row.salary.toLocaleString()}
@@ -330,6 +341,8 @@ const columns: Column<User>[] = [
     width: 100,
     align: "center",
     hideable: true,
+    aggregation: "average",
+    summary: "average", // Shows average projects in footer
     render: (row) => (
       <div className="flex items-center justify-center gap-1">
         <Icon symbol="folder" className="w-4 h-4 text-on-surface-variant" />
@@ -493,9 +506,12 @@ function DataTableWithToolbar({
   enableZebra,
   enableColumnBorders,
   enableVirtualization,
+  enableContextMenu,
+  enableCellSelection,
   onRowClick,
   onRowHover,
   inlineEditing,
+  contextMenuItems,
 }: {
   data: User[];
   bulkActions: BulkAction[];
@@ -506,12 +522,131 @@ function DataTableWithToolbar({
   enableZebra: boolean;
   enableColumnBorders: boolean;
   enableVirtualization: boolean;
+  enableContextMenu: boolean;
+  enableCellSelection: boolean;
   onRowClick: (row: User) => void;
   onRowHover: (row: User | null) => void;
   inlineEditing: ReturnType<typeof useInlineEditing<User>>;
+  contextMenuItems: RowContextMenuItemOrSeparator<User>[];
 }) {
   const { selectedRows, deselectAll } = useSelection();
   const selectedIds = Array.from(selectedRows);
+  const { isGrouped, groupBy, groupByArray, expandedGroups, expandAllGroups, collapseAllGroups } = useGrouping();
+  const { pinnedLeftColumns, pinnedRightColumns, resetColumnPins } = useColumns<User>();
+
+  // Row context menu
+  const { menuState, handleRowContextMenu, closeMenu } = useRowContextMenu<User>();
+
+  // Cell selection - get column keys for navigation
+  const columnKeys = useMemo(() => columns.map((col) => String(col.key)), []);
+
+  const cellSelection = useCellSelection<User>({
+    data,
+    columnKeys,
+    enabled: enableCellSelection,
+    onSelectionChange: (cells) => {
+      if (cells.length > 0) {
+        console.log("Selected cells:", cells.length);
+      }
+    },
+  });
+
+  // Copy selected cells to clipboard
+  const handleCopySelectedCells = useCallback(async () => {
+    if (cellSelection.state.selectedCells.size === 0) return;
+
+    const values = cellSelection.getSelectedValues((rowId, columnKey) => {
+      const row = data.find((r) => r.id === rowId);
+      if (!row) return "";
+      return String(getNestedValue(row, columnKey) ?? "");
+    });
+
+    // Convert to TSV (tab-separated values) for Excel compatibility
+    const tsv = values.map((row) => row.join("\t")).join("\n");
+    await navigator.clipboard.writeText(tsv);
+    console.log("Copied to clipboard:", tsv);
+  }, [cellSelection, data]);
+
+  // Enhanced keyboard handler for copy
+  const handleCellKeyDown = useCallback(
+    (event: React.KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === "c") {
+        event.preventDefault();
+        handleCopySelectedCells();
+        return;
+      }
+      cellSelection.handleCellKeyDown(event);
+    },
+    [cellSelection, handleCopySelectedCells]
+  );
+
+  // Print functionality
+  const { print, printSelected, isPrinting } = usePrint<User>({
+    data,
+    columns,
+    selectedIds: selectedRows,
+    defaultOptions: {
+      title: "Users Report",
+      orientation: "landscape",
+      includeTimestamp: true,
+    },
+  });
+
+  const printHandler: PrintHandler = useMemo(
+    () => ({
+      onPrint: () => print(),
+      onPrintSelected: selectedRows.size > 0 ? () => printSelected() : undefined,
+      isPrinting,
+    }),
+    [print, printSelected, isPrinting, selectedRows.size]
+  );
+
+  // Compute all group IDs for multi-level grouping (compound IDs with :: separator)
+  const groupIds = useMemo(() => {
+    if (!isGrouped || groupByArray.length === 0) return [];
+
+    // For multi-level grouping, we need to compute compound group IDs
+    const allGroupIds = new Set<string>();
+
+    // Helper to recursively build group IDs
+    const buildGroupIds = (rows: User[], keys: string[], parentId: string | null) => {
+      if (keys.length === 0 || rows.length === 0) return;
+
+      const currentKey = keys[0]!;
+      const remainingKeys = keys.slice(1);
+
+      // Group rows by current key
+      const groupMap = new Map<string, User[]>();
+      for (const row of rows) {
+        const value = row[currentKey as keyof User];
+        const valueKey = String(value ?? "__null__");
+        if (!groupMap.has(valueKey)) {
+          groupMap.set(valueKey, []);
+        }
+        groupMap.get(valueKey)!.push(row);
+      }
+
+      // Add group IDs and recurse
+      for (const [valueKey, groupRows] of groupMap) {
+        const groupId = parentId ? `${parentId}::${valueKey}` : valueKey;
+        allGroupIds.add(groupId);
+        buildGroupIds(groupRows, remainingKeys, groupId);
+      }
+    };
+
+    buildGroupIds(data, groupByArray, null);
+    return Array.from(allGroupIds);
+  }, [data, groupByArray, isGrouped]);
+
+  // Toggle all groups expanded/collapsed
+  const allGroupsExpanded = isGrouped && groupIds.length > 0 && expandedGroups.size === groupIds.length;
+  const handleToggleAllGroups = useCallback(() => {
+    if (allGroupsExpanded) {
+      collapseAllGroups();
+    } else {
+      expandAllGroups(groupIds);
+    }
+  }, [allGroupsExpanded, collapseAllGroups, expandAllGroups, groupIds]);
 
   return (
     <div className="flex flex-col bg-surface isolate border-t border-outline-variant divide-y divide-outline-variant">
@@ -535,8 +670,16 @@ function DataTableWithToolbar({
             },
             formats: ["csv", "excel", "pdf", "json"],
           }}
+          printHandler={printHandler}
           density={density}
           onDensityChange={onDensityChange}
+          isGrouped={isGrouped}
+          allGroupsExpanded={allGroupsExpanded}
+          onToggleAllGroups={handleToggleAllGroups}
+          showGroupingPills={isGrouped}
+          frozenLeftCount={pinnedLeftColumns.length}
+          frozenRightCount={pinnedRightColumns.length}
+          onUnfreezeAll={resetColumnPins}
         />
       </div>
 
@@ -553,13 +696,28 @@ function DataTableWithToolbar({
         getRowCanExpand={enableExpansion ? () => true : undefined}
         onRowClick={onRowClick}
         onRowHover={onRowHover}
+        onRowContextMenu={enableContextMenu ? handleRowContextMenu : undefined}
         density={density}
         virtualize={enableVirtualization}
         virtualizeThreshold={50}
         emptyMessage="No users found"
         emptyIcon="person_off"
         inlineEditing={inlineEditing}
+        cellSelectionEnabled={enableCellSelection}
+        getCellSelectionContext={enableCellSelection ? cellSelection.getCellSelectionContext : undefined}
+        onCellClick={enableCellSelection ? cellSelection.handleCellClick : undefined}
+        onCellKeyDown={enableCellSelection ? handleCellKeyDown : undefined}
       />
+
+      {/* Row Context Menu */}
+      {enableContextMenu && (
+        <RowContextMenu
+          state={menuState}
+          onClose={closeMenu}
+          items={contextMenuItems}
+          selectedIds={selectedIds}
+        />
+      )}
 
       {/* Pagination */}
       <DataTablePagination totalItems={data.length} />
@@ -584,6 +742,10 @@ export default function DataTableDemoPage() {
   const [enablePinnable, setEnablePinnable] = useState(true);
   const [enableMultiSort, setEnableMultiSort] = useState(true);
   const [enableReorderable, setEnableReorderable] = useState(true);
+  const [enableGrouping, setEnableGrouping] = useState(true);
+  const [enableSummary, setEnableSummary] = useState(true);
+  const [enableContextMenu, setEnableContextMenu] = useState(true);
+  const [enableCellSelection, setEnableCellSelection] = useState(true);
   const [density, setDensity] = useState<Density>("standard");
 
   // Inline editing
@@ -674,6 +836,99 @@ export default function DataTableDemoPage() {
       },
     ],
     [data]
+  );
+
+  // Context menu items for rows
+  const contextMenuItems: RowContextMenuItemOrSeparator<User>[] = useMemo(
+    () => [
+      {
+        key: "view",
+        label: "View details",
+        icon: "visibility",
+        onClick: (row) => {
+          alert(`Viewing details for ${row.name}\n\nEmail: ${row.email}\nDepartment: ${row.department}\nRole: ${row.role}`);
+        },
+      },
+      {
+        key: "edit",
+        label: "Edit user",
+        icon: "edit",
+        onClick: (row) => {
+          console.log("Edit user:", row);
+          alert(`Editing ${row.name}`);
+        },
+      },
+      {
+        key: "duplicate",
+        label: "Duplicate",
+        icon: "content_copy",
+        onClick: (row) => {
+          const newUser: User = {
+            ...row,
+            id: `user-${Date.now()}`,
+            name: `${row.name} (Copy)`,
+            email: `copy.${row.email}`,
+          };
+          setData((prev) => [...prev, newUser]);
+          console.log("Duplicated user:", newUser);
+        },
+      },
+      { type: "separator" },
+      {
+        key: "copy-id",
+        label: "Copy ID",
+        icon: "content_copy",
+        onClick: async (row) => {
+          await navigator.clipboard.writeText(row.id);
+          console.log("Copied ID:", row.id);
+        },
+      },
+      {
+        key: "copy-email",
+        label: "Copy email",
+        icon: "mail",
+        onClick: async (row) => {
+          await navigator.clipboard.writeText(row.email);
+          console.log("Copied email:", row.email);
+        },
+      },
+      { type: "separator" },
+      {
+        key: "activate",
+        label: "Activate",
+        icon: "check_circle",
+        visible: (row) => row.status !== "active",
+        onClick: (row) => {
+          setData((prev) =>
+            prev.map((r) => (r.id === row.id ? { ...r, status: "active" } : r))
+          );
+        },
+      },
+      {
+        key: "deactivate",
+        label: "Deactivate",
+        icon: "cancel",
+        visible: (row) => row.status === "active",
+        onClick: (row) => {
+          setData((prev) =>
+            prev.map((r) => (r.id === row.id ? { ...r, status: "inactive" } : r))
+          );
+        },
+      },
+      { type: "separator" },
+      {
+        key: "delete",
+        label: "Delete",
+        icon: "delete",
+        variant: "danger",
+        onClick: (row) => {
+          if (confirm(`Delete ${row.name}?`)) {
+            setData((prev) => prev.filter((r) => r.id !== row.id));
+          }
+        },
+      },
+    ],
+    []
   );
 
   // Row click handler
@@ -773,6 +1028,34 @@ export default function DataTableDemoPage() {
               />
               <span className="text-body-medium">Drag to Reorder</span>
             </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <Switch
+                checked={enableGrouping}
+                onChange={(e) => setEnableGrouping(e.target.checked)}
+              />
+              <span className="text-body-medium">Row Grouping</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <Switch
+                checked={enableSummary}
+                onChange={(e) => setEnableSummary(e.target.checked)}
+              />
+              <span className="text-body-medium">Summary Row</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <Switch
+                checked={enableContextMenu}
+                onChange={(e) => setEnableContextMenu(e.target.checked)}
+              />
+              <span className="text-body-medium">Context Menu</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <Switch
+                checked={enableCellSelection}
+                onChange={(e) => setEnableCellSelection(e.target.checked)}
+              />
+              <span className="text-body-medium">Cell Selection</span>
+            </label>
           </div>
 
           <div className="mt-4 flex items-center gap-4">
@@ -832,6 +1115,9 @@ export default function DataTableDemoPage() {
             resizable={enableResizable}
             pinnable={enablePinnable}
             reorderable={enableReorderable}
+            groupingEnabled={enableGrouping}
+            showSummary={enableSummary}
+            summaryLabel="Totals"
             multiSort={enableMultiSort}
             maxSortColumns={3}
             initialPageSize={25}
@@ -846,9 +1132,12 @@ export default function DataTableDemoPage() {
               enableZebra={enableZebra}
               enableColumnBorders={enableColumnBorders}
               enableVirtualization={enableVirtualization}
+              enableContextMenu={enableContextMenu}
+              enableCellSelection={enableCellSelection}
               onRowClick={handleRowClick}
               onRowHover={handleRowHover}
               inlineEditing={inlineEditing}
+              contextMenuItems={contextMenuItems}
             />
           </DataTableProvider>
         </div>
@@ -948,6 +1237,31 @@ export default function DataTableDemoPage() {
               description="Drag column headers to reorder. Non-pinned columns can be dragged to change their position."
             />
             <FeatureCard
+              icon="workspaces"
+              title="Multi-level Grouping"
+              description="Right-click column header → 'Group by this column' or 'Add to grouping' for nested hierarchical groups with aggregations at each level."
+            />
+            <FeatureCard
+              icon="functions"
+              title="Summary Row"
+              description="Shows aggregated values (sum, average, count, min, max) in a footer row. Enable 'Summary Row' toggle to see totals for Salary and Projects."
+            />
+            <FeatureCard
+              icon="menu"
+              title="Row Context Menu"
+              description="Right-click any row to access context actions: View, Edit, Duplicate, Copy ID/Email, Activate/Deactivate, and Delete."
+            />
+            <FeatureCard
+              icon="select_all"
+              title="Cell Selection"
+              description="Click cells to select, Shift+Click for range, Ctrl/Cmd+Click for multi-select, Ctrl/Cmd+C to copy. Arrow keys to navigate."
+            />
+            <FeatureCard
+              icon="print"
+              title="Print View"
+              description="Click the Print button in toolbar to open a printer-friendly view. Optimized layout with proper headers, borders, and page breaks."
+            />
+            <FeatureCard
               icon="keyboard"
               title="Keyboard Navigation"
               description="Arrow keys to navigate rows. Space to select, Enter to activate, Escape to clear focus."
@@ -1009,16 +1323,16 @@ export default function DataTableDemoPage() {
                 edit
               </p>
               <p>
-                7. <strong>Columns:</strong> Click "Columns" to hide/show
+                7. <strong>Context Menu:</strong> Right-click a row for quick
+                actions
+              </p>
+              <p>
+                8. <strong>Cell Select:</strong> Enable "Cell Selection" then
+                click cells, Shift+Click for range
+              </p>
+              <p>
+                9. <strong>Columns:</strong> Click "Columns" to hide/show
                 columns
-              </p>
-              <p>
-                8. <strong>Density:</strong> Click "Density" to change row
-                height
-              </p>
-              <p>
-                9. <strong>Resize:</strong> Drag the border between column
-                headers
               </p>
               <p>
                 10. <strong>Export:</strong> Click "Export" to download CSV

@@ -46,6 +46,16 @@ export interface HeaderCellProps<T> {
   isDropTarget?: boolean;
   /** Drop position indicator */
   dropPosition?: "before" | "after" | null;
+  /** Whether grouping is enabled */
+  groupingEnabled?: boolean;
+  /** Current column(s) being grouped by */
+  groupBy?: string | string[] | null;
+  /** Normalized array of groupBy keys */
+  groupByArray?: string[];
+  /** Callback to set groupBy column(s) */
+  onGroupBy?: (key: string | string[] | null) => void;
+  /** Callback to add a column to multi-level grouping */
+  onAddGroupBy?: (key: string) => void;
 }
 
 export function HeaderCell<T>({
@@ -73,12 +83,20 @@ export function HeaderCell<T>({
   isDragging = false,
   isDropTarget = false,
   dropPosition = null,
+  groupingEnabled = false,
+  groupBy,
+  groupByArray = [],
+  onGroupBy,
+  onAddGroupBy,
 }: HeaderCellProps<T>) {
   const hasFilterOptions = column.filterable !== false;
+  // Grouping is only available for columns with explicit groupable: true OR columns with select filter (categorical data)
+  const isGroupable = column.groupable === true || (column.groupable !== false && column.filterType === "select");
   const hasMenu =
     hasFilterOptions ||
     (pinnable && column.pinnable !== false) ||
-    (column.hideable !== false);
+    (column.hideable !== false) ||
+    (groupingEnabled && isGroupable);
 
   const hasActiveFilter = currentFilter !== undefined && currentFilter !== null && currentFilter !== "";
 
@@ -194,6 +212,11 @@ export function HeaderCell<T>({
             onPin={onPin}
             onHide={onHide}
             onFilter={onFilter}
+            groupingEnabled={groupingEnabled}
+            groupBy={groupBy}
+            groupByArray={groupByArray}
+            onGroupBy={onGroupBy}
+            onAddGroupBy={onAddGroupBy}
           />
         )}
       </div>
@@ -216,6 +239,28 @@ export function HeaderCell<T>({
             "absolute top-0 bottom-0 w-0.5 bg-primary z-30",
             dropPosition === "before" ? "left-0" : "right-0"
           )}
+        />
+      )}
+
+      {/* Freeze boundary indicator - shows on last pinned-left and first pinned-right columns */}
+      {isLastPinnedLeft && (
+        <div
+          className="absolute top-0 bottom-0 right-0 w-[3px] z-30 pointer-events-none"
+          style={{
+            background: "linear-gradient(to right, var(--color-primary) 0%, transparent 100%)",
+            opacity: 0.4,
+          }}
+          aria-hidden="true"
+        />
+      )}
+      {isFirstPinnedRight && (
+        <div
+          className="absolute top-0 bottom-0 left-0 w-[3px] z-30 pointer-events-none"
+          style={{
+            background: "linear-gradient(to left, var(--color-primary) 0%, transparent 100%)",
+            opacity: 0.4,
+          }}
+          aria-hidden="true"
         />
       )}
     </th>

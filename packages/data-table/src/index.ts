@@ -1,6 +1,6 @@
 // ─── MAIN COMPONENT ────────────────────────────────────────────────────────
-export { DataTable, default as DataTableDefault } from "./data-table";
-export { DataTableInner, type DataTableInnerProps } from "./data-table-inner";
+export { DataTable } from "./components/data-table";
+export { DataTableInner, type DataTableInnerProps } from "./components/data-table-inner";
 
 // ─── TYPES ─────────────────────────────────────────────────────────────────
 export type {
@@ -9,10 +9,8 @@ export type {
   ColumnGroup,
   DataTableProps,
   CellContext,
-  SortDirection,
   SortItem,
   MultiSortState,
-  PinPosition,
   ColumnMetaMap,
   Density,
 
@@ -27,6 +25,20 @@ export type {
   // Action types
   BulkAction,
 
+  // Row Context Menu types
+  RowContextMenuItem,
+  RowContextMenuSeparator,
+  RowContextMenuItemOrSeparator,
+  RowContextMenuRenderProps,
+
+  // Cell Selection types
+  CellPosition,
+  CellRange,
+  CellSelectionState,
+  CellSelectionContext,
+  UseCellSelectionOptions,
+  UseCellSelectionReturn,
+
   // Controller types
   InlineEditingController,
   EditingCell,
@@ -38,14 +50,14 @@ export type {
   // Render prop types
   DataTableHeaderRenderProps,
   DataTableToolbarRenderProps,
-} from "./types";
+} from "./types/index";
 
 // ─── TYPE UTILITIES ─────────────────────────────────────────────────────────
 export {
   isColumnGroup,
   flattenColumns,
   hasColumnGroups,
-} from "./types";
+} from "./types/index";
 
 // ─── CONTEXT & HOOKS ───────────────────────────────────────────────────────
 export {
@@ -56,6 +68,7 @@ export {
   useFiltering,
   usePagination,
   useColumns,
+  useGrouping,
   useTableUI,
 } from "./context";
 
@@ -85,6 +98,9 @@ export {
   // Inline editing
   useInlineEditing,
 
+  // Cell selection
+  useCellSelection,
+
   // Debouncing
   useDebounce,
   useDebouncedCallback,
@@ -105,31 +121,64 @@ export {
   DataTableHeader,
   DataTableRow,
   DataTableBody,
+  DataTableFooter,
+  SummaryRow,
+
+  // Summary utilities
+  calculateSummary,
+  formatSummaryValue,
+
+  // Row Context Menu
+  RowContextMenu,
+  useRowContextMenu,
+  createDefaultContextMenuItems,
 
   // Error handling
   DataTableErrorBoundary,
-  DataTableError,
+  DataTableErrorDisplay,
+} from "./components";
+
+export type {
+  DataTableFooterProps,
+  SummaryRowProps,
+  RowContextMenuProps,
+  ContextMenuState,
+  UseRowContextMenuOptions,
+  UseRowContextMenuReturn,
 } from "./components";
 
 export {
   DataTableToolbar,
   ExportDropdown,
+  GroupingPillsBar,
+  FrozenColumnsIndicator,
   type ToolbarAction,
   type ToolbarDropdown,
   type ToolbarDropdownOption,
   type ToolbarIconAction,
   type DataTableToolbarProps,
   type ExportHandler,
+  type PrintHandler,
+  type GroupingPillsBarProps,
+  type FrozenColumnsIndicatorProps,
 } from "./components/toolbar/index";
 export { DataTablePagination } from "./components/pagination";
 
 // ─── UTILITIES ─────────────────────────────────────────────────────────────
-export { getNestedValue, setNestedValue } from "./utils/get-nested-value";
-export { ensureRowIds } from "./utils/ensure-row-ids";
+export {
+  getNestedValue,
+  setNestedValue,
+  getNestedValueSafe,
+  type GetNestedValueOptions,
+} from "./utils/get-nested-value";
+export {
+  ensureRowIds,
+  validateRowIds,
+  findDuplicateRowIds,
+} from "./utils/ensure-row-ids";
 
 // Export utilities - CSV, Excel, PDF, JSON
 export {
-  // Types
   type ExportFormat,
   type ExportOptions,
   type CSVExportOptions,
@@ -138,9 +187,7 @@ export {
   type JSONExportOptions,
   type ExportResult,
   type ExportConfig,
-  // Unified export
   exportData,
-  // Individual exports
   exportToCSV,
   toCSVString,
   exportToExcel,
@@ -151,15 +198,97 @@ export {
   toJSONString,
 } from "./utils/export";
 
+// Print utilities
+export {
+  type PrintOptions,
+  type PrintConfig,
+  type UsePrintOptions,
+  type UsePrintReturn,
+  printDataTable,
+  printInline,
+  usePrint,
+} from "./utils/print";
+
 // ─── CONSTANTS ─────────────────────────────────────────────────────────────
 export {
+  // Density
   DENSITY_STYLES,
   DENSITY_CONFIG,
+  ROW_HEIGHT_BASE,
+  DEFAULT_DENSITY,
+  DensityLevel,
+  type DensityLevelValue,
+
+  // Dimensions
   COLUMN_WIDTHS,
+  HEADER_DIMENSIONS,
+  SCROLL_CONSTANTS,
+
+  // Pagination
   DEFAULT_PAGE_SIZE,
   DEFAULT_PAGE_SIZE_OPTIONS,
-  DEFAULT_KEYBOARD_PAGE_SIZE,
+  PAGINATION_LIMITS,
+
+  // Virtualization
   DEFAULT_VIRTUALIZE_THRESHOLD,
   DEFAULT_OVERSCAN,
-} from "./constants";
-export type { Density as DensityType } from "./constants";
+  VIRTUALIZATION_CONFIG,
+
+  // Keyboard
+  DEFAULT_KEYBOARD_PAGE_SIZE,
+  KeyboardKeys,
+  KEYBOARD_SHORTCUTS,
+
+  // Enums
+  SortDirection,
+  type SortDirectionValue,
+  PinPosition,
+  type PinPositionValue,
+  TableVariant,
+  type TableVariantValue,
+  FilterType,
+  type FilterTypeValue,
+  SelectionMode,
+  type SelectionModeValue,
+  ColumnAlign,
+  type ColumnAlignValue,
+  CellSelectionMode,
+  type CellSelectionModeValue,
+} from "./constants/index";
+
+// ─── ERRORS ────────────────────────────────────────────────────────────────
+export {
+  // Base error
+  DataTableError,
+  DataTableErrorCode,
+  type DataTableErrorCodeValue,
+
+  // Data errors
+  DuplicateRowIdError,
+  MissingRowIdError,
+  InvalidDataFormatError,
+  DataFetchError,
+
+  // Column errors
+  InvalidColumnKeyError,
+  DuplicateColumnKeyError,
+  MissingColumnAccessorError,
+
+  // Config errors
+  InvalidConfigError,
+  MissingRequiredPropError,
+  IncompatibleOptionsError,
+
+  // Context errors
+  ContextNotFoundError,
+  ProviderMissingError,
+
+  // Runtime errors
+  RenderError,
+  VirtualizationError,
+  EditError,
+
+  // Type guards
+  isDataTableError,
+  hasErrorCode,
+} from "./errors";

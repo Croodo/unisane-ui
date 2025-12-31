@@ -5,6 +5,7 @@
 /* Source paths for Tailwind class scanning */
 @source "../**/*.{ts,tsx,mdx}";
 @source "../../../packages/ui/src/**/*.{ts,tsx}";
+@source "../../../packages/data-table/src/**/*.{ts,tsx}";
 
 /* ============================================================
    THEME CONFIGURATION (Single Source of Truth)

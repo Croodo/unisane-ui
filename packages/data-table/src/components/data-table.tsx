@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import type { DataTableProps } from "./types";
-import { DataTableProvider } from "./context/provider";
+import type { DataTableProps } from "../types/index";
+import { DataTableProvider } from "../context/provider";
 import { DataTableInner } from "./data-table-inner";
 
 /**

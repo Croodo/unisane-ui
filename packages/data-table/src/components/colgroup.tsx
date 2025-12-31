@@ -1,7 +1,7 @@
 "use client";
 
-import type { Column, ColumnMetaMap, PinPosition } from "../types";
-import { COLUMN_WIDTHS } from "../constants";
+import type { Column, ColumnMetaMap, PinPosition } from "../types/index";
+import { COLUMN_WIDTHS } from "../constants/index";
 
 // ─── COLGROUP PROPS ───────────────────────────────────────────────────────
 
@@ -35,12 +35,12 @@ export function TableColgroup<T>({
     <colgroup>
       {/* Checkbox column - fixed width */}
       {selectable && (
-        <col style={{ width: `${COLUMN_WIDTHS.checkbox}px`, minWidth: `${COLUMN_WIDTHS.checkbox}px` }} />
+        <col style={{ width: `${COLUMN_WIDTHS.CHECKBOX}px`, minWidth: `${COLUMN_WIDTHS.CHECKBOX}px` }} />
       )}
 
       {/* Expander column - fixed width */}
       {enableExpansion && (
-        <col style={{ width: `${COLUMN_WIDTHS.expander}px`, minWidth: `${COLUMN_WIDTHS.expander}px` }} />
+        <col style={{ width: `${COLUMN_WIDTHS.EXPANDER}px`, minWidth: `${COLUMN_WIDTHS.EXPANDER}px` }} />
       )}
 
       {/* Data columns */}

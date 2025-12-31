@@ -3,16 +3,17 @@
 import React, { useMemo, useRef, useCallback } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { cn } from "@unisane/ui";
-import type { Column, BulkAction, ColumnMetaMap, PinPosition, InlineEditingController } from "./types";
-import { DataTableHeader } from "./components/header/index";
-import { DataTableBody } from "./components/body";
-import { VirtualizedBody } from "./components/virtualized-body";
-import { Table, TableContainer } from "./components/table";
-import { TableColgroup } from "./components/colgroup";
-import { useProcessedData } from "./hooks/use-processed-data";
-import { useVirtualizedRows } from "./hooks/use-virtualized-rows";
-import { useKeyboardNavigation } from "./hooks/use-keyboard-navigation";
-import { useDensityScale } from "./hooks/use-density-scale";
+import type { Column, BulkAction, ColumnMetaMap, InlineEditingController, RowGroup, GroupHeaderProps, CellSelectionContext } from "../types/index";
+import { DataTableHeader } from "./header/index";
+import { DataTableBody } from "./body";
+import { DataTableFooter } from "./footer";
+import { VirtualizedBody } from "./virtualized-body";
+import { Table, TableContainer } from "./table";
+import { TableColgroup } from "./colgroup";
+import { useProcessedData } from "../hooks/data/use-processed-data";
+import { useVirtualizedRows } from "../hooks/features/use-virtualized-rows";
+import { useKeyboardNavigation } from "../hooks/ui/use-keyboard-navigation";
+import { useDensityScale } from "../hooks/ui/use-density-scale";
 import {
   useSelection,
   useSorting,
@@ -20,9 +21,10 @@ import {
   usePagination,
   useColumns,
   useTableUI,
-} from "./context";
-import { ensureRowIds } from "./utils/ensure-row-ids";
-import { DENSITY_CONFIG, COLUMN_WIDTHS, type Density } from "./constants";
+  useGrouping,
+} from "../context";
+import { ensureRowIds } from "../utils/ensure-row-ids";
+import { DENSITY_CONFIG, COLUMN_WIDTHS, type Density } from "../constants/index";
 
 // ─── INNER PROPS ───────────────────────────────────────────────────────────
 
@@ -52,6 +54,16 @@ export interface DataTableInnerProps<T extends { id: string }> {
   headerOffsetClassName?: string;
   /** Estimated row height for virtualization (overrides density-based height) */
   estimateRowHeight?: number;
+  /** Custom renderer for group headers */
+  renderGroupHeader?: (props: GroupHeaderProps<T>) => ReactNode;
+  /** Cell selection: whether cell selection is enabled */
+  cellSelectionEnabled?: boolean;
+  /** Cell selection: get cell selection context for a specific cell */
+  getCellSelectionContext?: (rowId: string, columnKey: string) => CellSelectionContext;
+  /** Cell selection: handle cell click */
+  onCellClick?: (rowId: string, columnKey: string, event: React.MouseEvent) => void;
+  /** Cell selection: handle keyboard navigation */
+  onCellKeyDown?: (event: React.KeyboardEvent) => void;
 }
 
 // ─── INNER COMPONENT ───────────────────────────────────────────────────────
@@ -78,6 +90,11 @@ export function DataTableInner<T extends { id: string }>({
   inlineEditing,
   headerOffsetClassName,
   estimateRowHeight,
+  renderGroupHeader,
+  cellSelectionEnabled = false,
+  getCellSelectionContext,
+  onCellClick,
+  onCellKeyDown,
 }: DataTableInnerProps<T>) {
   // Context hooks
   const { selectedRows, expandedRows, selectAll, deselectAll, toggleSelect, toggleExpand } =
@@ -97,6 +114,7 @@ export function DataTableInner<T extends { id: string }>({
     reorderable,
   } = useColumns<T>();
   const { config } = useTableUI();
+  const { groupBy, groupByArray, setGroupBy, isGrouped, isMultiLevel, toggleGroupExpand, isGroupExpanded, addGroupBy } = useGrouping();
 
   const tableContainerRef = useRef<HTMLDivElement>(null);
 
@@ -127,8 +145,8 @@ export function DataTableInner<T extends { id: string }>({
 
   const columnMeta = useMemo<ColumnMetaMap>(() => {
     const meta: ColumnMetaMap = {};
-    const expanderWidth = enableExpansion ? COLUMN_WIDTHS.expander : 0;
-    let leftAcc = (effectiveSelectable ? COLUMN_WIDTHS.checkbox : 0) + expanderWidth;
+    const expanderWidth = enableExpansion ? COLUMN_WIDTHS.EXPANDER : 0;
+    let leftAcc = (effectiveSelectable ? COLUMN_WIDTHS.CHECKBOX : 0) + expanderWidth;
 
     // Initialize all column widths (use sorted columns for consistency)
     sortedVisibleColumns.forEach((col) => {
@@ -166,8 +184,8 @@ export function DataTableInner<T extends { id: string }>({
 
   // Calculate total table width for consistent header/body alignment
   const totalTableWidth = useMemo(() => {
-    const checkboxWidth = effectiveSelectable ? COLUMN_WIDTHS.checkbox : 0;
-    const expanderWidth = enableExpansion ? COLUMN_WIDTHS.expander : 0;
+    const checkboxWidth = effectiveSelectable ? COLUMN_WIDTHS.CHECKBOX : 0;
+    const expanderWidth = enableExpansion ? COLUMN_WIDTHS.EXPANDER : 0;
     const columnsWidth = sortedVisibleColumns.reduce((acc, col) => {
       const key = String(col.key);
       const width = columnMeta[key]?.width ?? (typeof col.width === "number" ? col.width : 150);
@@ -204,6 +222,146 @@ export function DataTableInner<T extends { id: string }>({
     const start = (safePage - 1) * pageSize;
     return processedData.slice(start, start + pageSize);
   }, [processedData, page, pageSize, config.paginationMode, config.mode]);
+
+  // ─── ROW GROUPING ───────────────────────────────────────────────────────────
+
+  // Helper to get nested value for grouping
+  const getNestedValue = useCallback((obj: T, path: string): unknown => {
+    const keys = path.split(".");
+    let value: unknown = obj;
+    for (const key of keys) {
+      if (value == null) return undefined;
+      value = (value as Record<string, unknown>)[key];
+    }
+    return value;
+  }, []);
+
+  // Calculate aggregation for a set of rows
+  const calculateAggregation = useCallback(
+    (rows: T[], columnKey: string, aggregationType: "sum" | "average" | "count" | "min" | "max"): number | null => {
+      const values = rows
+        .map((row) => {
+          const val = getNestedValue(row, columnKey);
+          return typeof val === "number" ? val : null;
+        })
+        .filter((v): v is number => v !== null);
+
+      if (values.length === 0) return null;
+
+      switch (aggregationType) {
+        case "sum":
+          return values.reduce((acc, v) => acc + v, 0);
+        case "average":
+          return values.reduce((acc, v) => acc + v, 0) / values.length;
+        case "count":
+          return values.length;
+        case "min":
+          return Math.min(...values);
+        case "max":
+          return Math.max(...values);
+        default:
+          return null;
+      }
+    },
+    [getNestedValue]
+  );
+
+  // Get columns with aggregations configured
+  const aggregationColumns = useMemo(() => {
+    return (columns as Column<T>[]).filter((col) => col.aggregation);
+  }, [columns]);
+
+  // Helper to create a group label from a value
+  const formatGroupLabel = useCallback((value: unknown): string => {
+    if (value == null) return "(Empty)";
+    if (typeof value === "boolean") return value ? "Yes" : "No";
+    return String(value);
+  }, []);
+
+  // Recursive function to build nested groups
+  const buildNestedGroups = useCallback(
+    (
+      rows: T[],
+      groupByKeys: string[],
+      depth: number,
+      parentGroupId: string | null
+    ): RowGroup<T>[] => {
+      if (groupByKeys.length === 0 || rows.length === 0) {
+        return [];
+      }
+
+      const currentKey = groupByKeys[0]!;
+      const remainingKeys = groupByKeys.slice(1);
+      const isDeepestLevel = remainingKeys.length === 0;
+
+      // Group rows by the current groupBy column value
+      const groupMap = new Map<string, T[]>();
+      const groupValues = new Map<string, unknown>();
+
+      for (const row of rows) {
+        const value = getNestedValue(row, currentKey);
+        const valueKey = String(value ?? "__null__");
+
+        if (!groupMap.has(valueKey)) {
+          groupMap.set(valueKey, []);
+          groupValues.set(valueKey, value);
+        }
+        groupMap.get(valueKey)!.push(row);
+      }
+
+      // Convert to array and sort alphabetically
+      const groupEntries = Array.from(groupMap.entries());
+      groupEntries.sort(([a], [b]) => a.localeCompare(b));
+
+      // Build group objects
+      return groupEntries.map(([valueKey, groupRows]) => {
+        // Create compound group ID for nested groups
+        const groupId = parentGroupId ? `${parentGroupId}::${valueKey}` : valueKey;
+        const groupValue = groupValues.get(valueKey) as string | number | boolean | null;
+        const groupLabel = formatGroupLabel(groupValue);
+
+        // Calculate aggregations for columns that have aggregation configured
+        const aggregations: Record<string, unknown> = {};
+        for (const col of aggregationColumns) {
+          const key = String(col.key);
+          const result = calculateAggregation(groupRows, key, col.aggregation!);
+          if (result !== null) {
+            aggregations[col.header] = result;
+          }
+        }
+
+        // Recursively build child groups if not at deepest level
+        const childGroups = isDeepestLevel
+          ? undefined
+          : buildNestedGroups(groupRows, remainingKeys, depth + 1, groupId);
+
+        return {
+          type: "group" as const,
+          groupId,
+          groupValue,
+          groupLabel,
+          // Only include rows at the deepest level
+          rows: isDeepestLevel ? groupRows : [],
+          isExpanded: isGroupExpanded(groupId),
+          aggregations,
+          depth,
+          groupByKey: currentKey,
+          childGroups,
+          parentGroupId,
+        };
+      });
+    },
+    [getNestedValue, formatGroupLabel, isGroupExpanded, aggregationColumns, calculateAggregation]
+  );
+
+  // Build grouped data structure (supports multi-level)
+  const groupedRows = useMemo((): RowGroup<T>[] => {
+    if (!isGrouped || groupByArray.length === 0) {
+      return [];
+    }
+
+    return buildNestedGroups(paginatedData, groupByArray, 0, null);
+  }, [paginatedData, groupByArray, isGrouped, buildNestedGroups]);
 
   // ─── VIRTUALIZATION ───────────────────────────────────────────────────────
 
@@ -260,6 +418,23 @@ export function DataTableInner<T extends { id: string }>({
       } else {
         const next = new Set(selectedRows);
         next.delete(id);
+        selectAll(Array.from(next));
+      }
+    },
+    [selectedRows, selectAll]
+  );
+
+  const handleSelectGroup = useCallback(
+    (rowIds: string[], selected: boolean) => {
+      if (selected) {
+        // Add all group rows to selection
+        const next = new Set(selectedRows);
+        rowIds.forEach((id) => next.add(id));
+        selectAll(Array.from(next));
+      } else {
+        // Remove all group rows from selection
+        const next = new Set(selectedRows);
+        rowIds.forEach((id) => next.delete(id));
         selectAll(Array.from(next));
       }
     },
@@ -336,6 +511,20 @@ export function DataTableInner<T extends { id: string }>({
 
   const keyboardProps = getContainerProps();
 
+  // Combine keyboard handlers for row navigation and cell selection
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent) => {
+      // Cell selection keyboard handling takes priority if enabled
+      if (cellSelectionEnabled && onCellKeyDown) {
+        onCellKeyDown(event);
+        if (event.defaultPrevented) return;
+      }
+      // Fall through to default keyboard navigation
+      keyboardProps.onKeyDown?.(event);
+    },
+    [cellSelectionEnabled, onCellKeyDown, keyboardProps]
+  );
+
   return (
     <div
       className={cn(
@@ -345,6 +534,7 @@ export function DataTableInner<T extends { id: string }>({
       )}
       style={style}
       {...keyboardProps}
+      onKeyDown={handleKeyDown}
     >
       {/* Screen reader announcements */}
       <div
@@ -444,6 +634,11 @@ export function DataTableInner<T extends { id: string }>({
               onColumnReorder={reorderColumn}
               columnFilters={columnFilters}
               headerOffsetClassName={headerOffsetClassName}
+              groupingEnabled={config.groupingEnabled}
+              groupBy={groupBy}
+              groupByArray={groupByArray}
+              onGroupBy={setGroupBy}
+              onAddGroupBy={addGroupBy}
             />
             <DataTableBody
               data={paginatedData}
@@ -470,6 +665,26 @@ export function DataTableInner<T extends { id: string }>({
               emptyIcon={emptyIcon}
               focusedIndex={focusedIndex}
               inlineEditing={inlineEditing}
+              isGrouped={isGrouped}
+              groupedRows={groupedRows}
+              onToggleGroupExpand={toggleGroupExpand}
+              renderGroupHeader={renderGroupHeader}
+              onSelectGroup={handleSelectGroup}
+              cellSelectionEnabled={cellSelectionEnabled}
+              getCellSelectionContext={getCellSelectionContext}
+              onCellClick={onCellClick}
+            />
+            <DataTableFooter
+              data={processedData}
+              columns={sortedVisibleColumns}
+              columnMeta={columnMeta}
+              getEffectivePinPosition={getEffectivePinPosition}
+              selectable={effectiveSelectable}
+              enableExpansion={enableExpansion}
+              showColumnBorders={effectiveColumnBorders}
+              density={density}
+              showSummary={config.showSummary}
+              summaryLabel={config.summaryLabel}
             />
           </Table>
         )}
