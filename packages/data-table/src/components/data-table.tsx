@@ -14,7 +14,7 @@ import { DataTableInner } from "./data-table-inner";
  * - DataTableInner: Renders the actual table UI using context hooks
  *
  * Features:
- * - Sorting (tri-state: asc → desc → none)
+ * - Sorting (tri-state: asc → desc → none, supports multi-sort)
  * - Filtering (search + column filters)
  * - Pagination (offset & cursor-based)
  * - Column pinning (left/right)
@@ -90,11 +90,15 @@ export function DataTable<T extends { id: string }>({
   onFilterChange,
   onSearchChange,
   onColumnPinChange,
+  onRowReorder,
+
+  // Row reordering
+  reorderableRows = false,
 
   // Controlled state
   selectedIds,
-  sortKey: controlledSortKey,
-  sortDirection: controlledSortDirection,
+  sortState,
+  maxSortColumns,
   filters: controlledFilters,
   searchValue,
   columnPinState,
@@ -114,15 +118,6 @@ export function DataTable<T extends { id: string }>({
   const effectiveSelectable = selectable ?? (variant === "grid" || bulkActions.length > 0);
   const effectiveColumnBorders = columnBorders ?? variant === "grid";
 
-  // Normalize controlled sort for provider
-  const controlledSort =
-    controlledSortKey !== undefined
-      ? {
-          key: controlledSortKey,
-          direction: controlledSortDirection ?? "asc",
-        }
-      : undefined;
-
   return (
     <DataTableProvider
       tableId={tableId}
@@ -137,8 +132,9 @@ export function DataTable<T extends { id: string }>({
       resizable={resizable}
       pinnable={pinnable}
       initialPageSize={pageSize}
+      maxSortColumns={maxSortColumns}
       // Controlled props
-      controlledSort={controlledSort}
+      sortState={sortState}
       onSortChange={onSortChange}
       controlledFilters={controlledFilters}
       onFilterChange={onFilterChange}
@@ -168,6 +164,8 @@ export function DataTable<T extends { id: string }>({
         emptyIcon={emptyIcon}
         headerOffsetClassName={headerOffsetClassName}
         estimateRowHeight={estimateRowHeight}
+        reorderableRows={reorderableRows}
+        onRowReorder={onRowReorder}
       />
     </DataTableProvider>
   );

@@ -3,14 +3,13 @@ import type {
   Column,
   ColumnGroup,
   FilterState,
-  SortDirection,
   MultiSortState,
   PaginationState,
   ColumnPinState,
   PinPosition,
   TableVariant,
-  InlineEditingController,
 } from "../types/index";
+import type { PartialDataTableLocale } from "../i18n/types";
 
 // ─── STATE TYPES ────────────────────────────────────────────────────────────
 
@@ -19,10 +18,7 @@ export interface DataTableState {
   selectedRows: Set<string>;
   expandedRows: Set<string>;
 
-  // Sorting (single-sort for backward compatibility)
-  sortKey: string | null;
-  sortDirection: SortDirection;
-  // Multi-sort state
+  // Sorting (supports multi-sort)
   sortState: MultiSortState;
 
   // Filtering
@@ -37,13 +33,6 @@ export interface DataTableState {
   columnWidths: Record<string, number>;
   columnPinState: ColumnPinState;
   columnOrder: string[];
-
-  // UI State
-  /**
-   * @deprecated Use container queries or useColumns().containerWidth instead.
-   * Responsive behavior is now container-based, not viewport-based.
-   */
-  isMobile: boolean;
 
   // Row Grouping (supports single string or array for multi-level)
   groupBy: string | string[] | null;
@@ -63,11 +52,9 @@ export type DataTableAction =
   | { type: "EXPAND_ROW"; id: string }
   | { type: "COLLAPSE_ROW"; id: string }
 
-  // Sorting (single-sort)
-  | { type: "SET_SORT"; key: string | null; direction: SortDirection }
+  // Sorting (multi-sort)
+  | { type: "SET_SORT"; sortState: MultiSortState }
   | { type: "CYCLE_SORT"; key: string }
-  // Multi-sort
-  | { type: "SET_MULTI_SORT"; sortState: MultiSortState }
   | { type: "ADD_SORT"; key: string; maxColumns?: number }
   | { type: "REMOVE_SORT"; key: string }
   | { type: "CLEAR_SORT" }
@@ -101,10 +88,6 @@ export type DataTableAction =
   | { type: "TOGGLE_GROUP_EXPAND"; groupId: string }
   | { type: "EXPAND_ALL_GROUPS"; groupIds: string[] }
   | { type: "COLLAPSE_ALL_GROUPS" }
-
-  // UI (deprecated - kept for backward compatibility)
-  /** @deprecated Container queries are now used for responsive behavior */
-  | { type: "SET_MOBILE"; isMobile: boolean }
 
   // Bulk
   | { type: "RESET_ALL" }
@@ -147,7 +130,6 @@ export interface DataTableContextValue<T = unknown> {
 
   // Controlled state
   controlled: {
-    sort: { key: string | null; direction: SortDirection } | undefined;
     sortState: MultiSortState | undefined;
     filters: FilterState | undefined;
     search: string | undefined;
@@ -158,12 +140,10 @@ export interface DataTableContextValue<T = unknown> {
   };
 
   // Multi-sort config
-  multiSort: boolean;
   maxSortColumns: number;
 
   // Event callbacks
-  onSortChange: ((key: string | null, direction: SortDirection) => void) | undefined;
-  onMultiSortChange: ((sortState: MultiSortState) => void) | undefined;
+  onSortChange: ((sortState: MultiSortState) => void) | undefined;
   onFilterChange: ((filters: FilterState) => void) | undefined;
   onSearchChange: ((value: string) => void) | undefined;
   onColumnPinChange: ((key: string, position: PinPosition) => void) | undefined;
@@ -201,15 +181,15 @@ export interface DataTableProviderProps<T> {
   summaryLabel?: string;
   initialPageSize?: number;
 
-  // Multi-sort config
-  multiSort?: boolean;
+  // Sort config
+  /** Maximum number of columns that can be sorted simultaneously */
   maxSortColumns?: number;
 
   // Controlled props
-  controlledSort?: { key: string | null; direction: SortDirection };
-  controlledSortState?: MultiSortState;
-  onSortChange?: (key: string | null, direction: SortDirection) => void;
-  onMultiSortChange?: (sortState: MultiSortState) => void;
+  /** Controlled sort state - array of sort items for multi-sort support */
+  sortState?: MultiSortState;
+  /** Callback when sort state changes */
+  onSortChange?: (sortState: MultiSortState) => void;
   controlledFilters?: FilterState;
   onFilterChange?: (filters: FilterState) => void;
   searchValue?: string;
@@ -227,4 +207,8 @@ export interface DataTableProviderProps<T> {
   onSelectAllFiltered?: () => Promise<string[]>;
   /** Callback when pagination changes (useful for sync when controlled sort/filter resets page) */
   onPaginationChange?: (page: number, pageSize: number) => void;
+
+  // ─── Internationalization ───
+  /** Locale configuration for i18n support */
+  locale?: PartialDataTableLocale;
 }

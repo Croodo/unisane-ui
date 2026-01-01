@@ -2,6 +2,7 @@
 
 import { memo } from "react";
 import { cn } from "@unisane/ui";
+import { useI18n } from "../../i18n";
 import { SearchInput } from "./search-input";
 import {
   ActionButton,
@@ -16,7 +17,13 @@ import {
   LabeledDropdown,
 } from "./dropdowns";
 import { ExportDropdown } from "./export-dropdown";
-import { SelectionBar, TitleBar, ActiveFiltersBar, GroupingPillsBar, FrozenColumnsIndicator } from "./sections";
+import {
+  SelectionBar,
+  TitleBar,
+  ActiveFiltersBar,
+  GroupingPillsBar,
+  FrozenColumnsIndicator,
+} from "./sections";
 import type { DataTableToolbarProps } from "./types";
 
 // Re-export types and sub-components for direct use
@@ -37,8 +44,17 @@ export {
   LabeledDropdown,
 } from "./dropdowns";
 export { ExportDropdown } from "./export-dropdown";
-export { SelectionBar, TitleBar, ActiveFiltersBar, GroupingPillsBar, FrozenColumnsIndicator } from "./sections";
-export type { GroupingPillsBarProps, FrozenColumnsIndicatorProps } from "./sections";
+export {
+  SelectionBar,
+  TitleBar,
+  ActiveFiltersBar,
+  GroupingPillsBar,
+  FrozenColumnsIndicator,
+} from "./sections";
+export type {
+  GroupingPillsBarProps,
+  FrozenColumnsIndicatorProps,
+} from "./sections";
 
 // ─── TOOLBAR COMPONENT ──────────────────────────────────────────────────────
 
@@ -80,6 +96,7 @@ function DataTableToolbarInner<T extends { id: string }>({
   frozenRightCount = 0,
   onUnfreezeAll,
 }: DataTableToolbarProps<T>) {
+  const { t } = useI18n();
   const hasSelection = selectedCount > 0;
   const hasActions = actions.length > 0 || moreActions.length > 0;
   const hasDropdowns = dropdowns.length > 0;
@@ -89,7 +106,9 @@ function DataTableToolbarInner<T extends { id: string }>({
   const hasFrozenColumns = frozenLeftCount > 0 || frozenRightCount > 0;
 
   // Calculate segmented button positions
-  const segmentedItems: Array<{ type: "filter" | "columns" | "density" | "export" | "print" | "refresh" }> = [];
+  const segmentedItems: Array<{
+    type: "filter" | "columns" | "density" | "export" | "print" | "refresh";
+  }> = [];
   if (showFilter) segmentedItems.push({ type: "filter" });
   if (showColumnToggle) segmentedItems.push({ type: "columns" });
   if (showDensityToggle) segmentedItems.push({ type: "density" });
@@ -110,7 +129,7 @@ function DataTableToolbarInner<T extends { id: string }>({
       {/* Main toolbar row */}
       <div
         className={cn(
-          "relative flex items-center justify-between gap-3 px-3 h-12 bg-surface transition-shadow",
+          "relative flex items-center justify-between gap-3 px-1 h-12 bg-surface transition-shadow",
           hasSelection && "shadow-1"
         )}
       >
@@ -197,7 +216,11 @@ function DataTableToolbarInner<T extends { id: string }>({
               <div className="h-6 w-px bg-outline-variant/50 hidden sm:block" />
               <CompactIconButton
                 icon={allGroupsExpanded ? "unfold_less" : "unfold_more"}
-                label={allGroupsExpanded ? "Collapse all groups" : "Expand all groups"}
+                label={
+                  allGroupsExpanded
+                    ? t("collapseAllGroups")
+                    : t("expandAllGroups")
+                }
                 onClick={onToggleAllGroups}
               />
             </>
@@ -214,7 +237,7 @@ function DataTableToolbarInner<T extends { id: string }>({
               {showFilter && (
                 <SegmentedIconButton
                   icon="filter_list"
-                  label="Filter"
+                  label={t("filter")}
                   onClick={onFilterClick}
                   active={filtersActive}
                   {...getSegmentedPosition("filter")}
@@ -243,7 +266,7 @@ function DataTableToolbarInner<T extends { id: string }>({
               ) : onExport ? (
                 <SegmentedIconButton
                   icon="download"
-                  label="Download"
+                  label={t("download")}
                   onClick={onExport}
                   {...getSegmentedPosition("export")}
                 />
@@ -251,7 +274,7 @@ function DataTableToolbarInner<T extends { id: string }>({
               {printHandler ? (
                 <SegmentedIconButton
                   icon="print"
-                  label="Print"
+                  label={t("print")}
                   onClick={printHandler.onPrint}
                   disabled={printHandler.isPrinting}
                   {...getSegmentedPosition("print")}
@@ -259,7 +282,7 @@ function DataTableToolbarInner<T extends { id: string }>({
               ) : onPrint ? (
                 <SegmentedIconButton
                   icon="print"
-                  label="Print"
+                  label={t("print")}
                   onClick={onPrint}
                   {...getSegmentedPosition("print")}
                 />
@@ -267,7 +290,7 @@ function DataTableToolbarInner<T extends { id: string }>({
               {onRefresh && (
                 <SegmentedIconButton
                   icon="refresh"
-                  label="Refresh"
+                  label={t("refresh")}
                   onClick={onRefresh}
                   disabled={refreshing}
                   {...getSegmentedPosition("refresh")}
@@ -278,7 +301,7 @@ function DataTableToolbarInner<T extends { id: string }>({
             <div className="flex items-center gap-2">
               {showFilter && (
                 <ToolbarTextButton
-                  label="Filters"
+                  label={t("filtersLabel")}
                   icon="filter_list"
                   onClick={onFilterClick}
                   active={filtersActive}
@@ -286,26 +309,37 @@ function DataTableToolbarInner<T extends { id: string }>({
               )}
               {showColumnToggle && <ColumnVisibilityDropdown />}
               {showDensityToggle && (
-                <DensityDropdown density={density} onDensityChange={onDensityChange} />
+                <DensityDropdown
+                  density={density}
+                  onDensityChange={onDensityChange}
+                />
               )}
               {exportHandler ? (
                 <ExportDropdown handler={exportHandler} />
               ) : onExport ? (
-                <ToolbarTextButton label="Export" icon="download" onClick={onExport} />
+                <ToolbarTextButton
+                  label={t("export")}
+                  icon="download"
+                  onClick={onExport}
+                />
               ) : null}
               {printHandler ? (
                 <ToolbarTextButton
-                  label="Print"
+                  label={t("print")}
                   icon="print"
                   onClick={printHandler.onPrint}
                   disabled={printHandler.isPrinting}
                 />
               ) : onPrint ? (
-                <ToolbarTextButton label="Print" icon="print" onClick={onPrint} />
+                <ToolbarTextButton
+                  label={t("print")}
+                  icon="print"
+                  onClick={onPrint}
+                />
               ) : null}
               {onRefresh && (
                 <ToolbarTextButton
-                  label="Refresh"
+                  label={t("refresh")}
                   icon="refresh"
                   onClick={onRefresh}
                   disabled={refreshing}
@@ -337,4 +371,6 @@ function DataTableToolbarInner<T extends { id: string }>({
   );
 }
 
-export const DataTableToolbar = memo(DataTableToolbarInner) as typeof DataTableToolbarInner;
+export const DataTableToolbar = memo(
+  DataTableToolbarInner
+) as typeof DataTableToolbarInner;

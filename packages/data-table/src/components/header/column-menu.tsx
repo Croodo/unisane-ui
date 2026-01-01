@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useId } from "react";
 import {
   cn,
   Icon,
@@ -14,6 +14,7 @@ import {
   DropdownMenuSubContent,
 } from "@unisane/ui";
 import type { Column, PinPosition, FilterValue } from "../../types";
+import { useI18n } from "../../i18n";
 
 export interface ColumnMenuProps<T> {
   column: Column<T>;
@@ -51,6 +52,7 @@ export function ColumnMenu<T>({
   onGroupBy,
   onAddGroupBy,
 }: ColumnMenuProps<T>) {
+  const { t } = useI18n();
   const [filterInputValue, setFilterInputValue] = useState(
     typeof currentFilter === "string" ? currentFilter : ""
   );
@@ -118,13 +120,13 @@ export function ColumnMenu<T>({
                 onClick={() => onPin(pinPosition === "left" ? null : "left")}
                 icon={<Icon symbol="push_pin" className="w-4 h-4 -rotate-45" />}
               >
-                {pinPosition === "left" ? "Unpin from left" : "Pin to left"}
+                {pinPosition === "left" ? t("unpinLeft") : t("pinLeft")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => onPin(pinPosition === "right" ? null : "right")}
                 icon={<Icon symbol="push_pin" className="w-4 h-4 rotate-45" />}
               >
-                {pinPosition === "right" ? "Unpin from right" : "Pin to right"}
+                {pinPosition === "right" ? t("unpinRight") : t("pinRight")}
               </DropdownMenuItem>
               {(column.hideable !== false || groupingEnabled) && <DropdownMenuSeparator />}
             </>
@@ -159,7 +161,7 @@ export function ColumnMenu<T>({
                       }}
                       icon={<Icon symbol="workspaces" className="w-4 h-4" />}
                     >
-                      {isColumnGrouped ? "Remove grouping" : "Group by this column"}
+                      {isColumnGrouped ? t("removeGrouping") : t("groupByColumn")}
                     </DropdownMenuItem>
 
                     {/* Add to multi-level grouping (only show if there's existing grouping and this column isn't grouped) */}
@@ -168,7 +170,7 @@ export function ColumnMenu<T>({
                         onClick={() => onAddGroupBy(columnKey)}
                         icon={<Icon symbol="add" className="w-4 h-4" />}
                       >
-                        Add to grouping (Level {groupByArray.length + 1})
+                        {t("addToGrouping", { level: groupByArray.length + 1 })}
                       </DropdownMenuItem>
                     )}
                   </>
@@ -184,7 +186,7 @@ export function ColumnMenu<T>({
               onClick={onHide}
               icon={<Icon symbol="visibility_off" className="w-4 h-4" />}
             >
-              Hide column
+              {t("hideColumn")}
             </DropdownMenuItem>
           )}
         </DropdownMenuContent>
@@ -208,14 +210,15 @@ function SelectFilter<T>({
   hasActiveFilter,
   onFilter,
 }: SelectFilterProps<T>) {
+  const { t } = useI18n();
   return (
     <DropdownMenuSub>
       <DropdownMenuSubTrigger
         icon={<Icon symbol="filter_alt" className="w-4 h-4" />}
       >
-        Filter by {column.header}
+        {t("filterBy", { column: String(column.header) })}
         {hasActiveFilter && (
-          <span className="ml-auto text-primary text-xs">Active</span>
+          <span className="ml-auto text-primary text-xs">{t("filterActive")}</span>
         )}
       </DropdownMenuSubTrigger>
       <DropdownMenuSubContent className="min-w-40">
@@ -247,7 +250,7 @@ function SelectFilter<T>({
               onClick={() => onFilter?.(null)}
               icon={<Icon symbol="close" className="w-4 h-4" />}
             >
-              Clear filter
+              {t("clearFilter")}
             </DropdownMenuItem>
           </>
         )}
@@ -275,19 +278,28 @@ function TextFilter<T>({
   onSubmit,
   onClear,
 }: TextFilterProps<T>) {
+  const { t } = useI18n();
+  const inputId = useId();
+  const descriptionId = `${inputId}-desc`;
+
   return (
     <DropdownMenuSub>
       <DropdownMenuSubTrigger
         icon={<Icon symbol="filter_alt" className="w-4 h-4" />}
       >
-        Filter by {column.header}
+        {t("filterBy", { column: String(column.header) })}
         {hasActiveFilter && (
-          <span className="ml-auto text-primary text-xs">Active</span>
+          <span className="ml-auto text-primary text-xs">{t("filterActive")}</span>
         )}
       </DropdownMenuSubTrigger>
       <DropdownMenuSubContent className="min-w-56 p-2">
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2" role="search" aria-label={t("filterBy", { column: String(column.header) })}>
+          {/* Hidden description for screen readers */}
+          <span id={descriptionId} className="sr-only">
+            {t("searchColumn", { column: String(column.header) })}
+          </span>
           <input
+            id={inputId}
             type="text"
             value={filterInputValue}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => onInputChange(e.target.value)}
@@ -300,7 +312,9 @@ function TextFilter<T>({
               e.stopPropagation();
             }}
             onClick={(e: React.MouseEvent) => e.stopPropagation()}
-            placeholder={`Search ${column.header}...`}
+            placeholder={t("searchColumn", { column: String(column.header) })}
+            aria-describedby={descriptionId}
+            aria-label={t("filterBy", { column: String(column.header) })}
             className={cn(
               "w-full px-3 py-2 text-body-medium",
               "bg-surface border border-outline-variant rounded-sm",
@@ -321,7 +335,7 @@ function TextFilter<T>({
                 "disabled:opacity-50 disabled:cursor-not-allowed"
               )}
             >
-              Apply
+              {t("apply")}
             </button>
             {hasActiveFilter && (
               <button
@@ -333,7 +347,7 @@ function TextFilter<T>({
                   "hover:bg-surface-container-high transition-colors"
                 )}
               >
-                Clear
+                {t("clear")}
               </button>
             )}
           </div>

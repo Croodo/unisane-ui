@@ -14,6 +14,7 @@ import type {
 } from "./types";
 import { dataTableReducer, createInitialState } from "./reducer";
 import { flattenColumns, hasColumnGroups } from "../types/index";
+import { I18nProvider } from "../i18n/index";
 
 // ─── CONTEXT ────────────────────────────────────────────────────────────────
 
@@ -44,14 +45,11 @@ export function DataTableProvider<T extends { id: string }>({
   showSummary = false,
   summaryLabel = "Summary",
   initialPageSize,
-  // Multi-sort config
-  multiSort = false,
+  // Sort config
   maxSortColumns = 3,
   // Controlled props
-  controlledSort,
-  controlledSortState,
+  sortState: externalSortState,
   onSortChange,
-  onMultiSortChange,
   controlledFilters,
   onFilterChange,
   searchValue,
@@ -66,6 +64,7 @@ export function DataTableProvider<T extends { id: string }>({
   onGroupByChange,
   onSelectAllFiltered,
   onPaginationChange,
+  locale,
 }: DataTableProviderProps<T>) {
   // Compute effective column borders based on variant
   const effectiveColumnBorders = columnBorders ?? variant === "grid";
@@ -73,6 +72,33 @@ export function DataTableProvider<T extends { id: string }>({
   // Flatten columns and check for groups
   const flatColumns = useMemo(() => flattenColumns(columns), [columns]);
   const hasGroups = useMemo(() => hasColumnGroups(columns), [columns]);
+
+  // Validate columns on mount/change and warn about issues
+  useEffect(() => {
+    if (!columns || columns.length === 0) {
+      console.warn("DataTable: No columns provided. Table will not render correctly.");
+      return;
+    }
+
+    // Check for duplicate keys
+    const keys = flatColumns.map((col) => String(col.key));
+    const duplicates = keys.filter((key, index) => keys.indexOf(key) !== index);
+    if (duplicates.length > 0) {
+      console.error(
+        `DataTable: Duplicate column keys detected: ${[...new Set(duplicates)].join(", ")}. ` +
+        "Each column must have a unique key."
+      );
+    }
+
+    // Check for missing headers
+    const missingHeaders = flatColumns.filter((col) => !col.header);
+    if (missingHeaders.length > 0) {
+      console.warn(
+        `DataTable: Columns missing headers: ${missingHeaders.map((c) => String(c.key)).join(", ")}. ` +
+        "Consider adding header text for better UX."
+      );
+    }
+  }, [columns, flatColumns]);
 
   const config: DataTableConfig<T> = useMemo(
     () => ({
@@ -159,7 +185,7 @@ export function DataTableProvider<T extends { id: string }>({
     }
   }, [tableId, externalPinState]);
 
-  // Save settings to localStorage
+  // Save settings to localStorage (using requestIdleCallback to avoid blocking UI)
   useEffect(() => {
     if (!tableId || typeof localStorage === "undefined") return;
 
@@ -167,20 +193,50 @@ export function DataTableProvider<T extends { id: string }>({
       hiddenColumns: Array.from(state.hiddenColumns),
       columnWidths: state.columnWidths,
     };
-    localStorage.setItem(getStorageKey(tableId, "settings"), JSON.stringify(settings));
+
+    // Use requestIdleCallback if available, otherwise setTimeout
+    const saveToStorage = () => {
+      try {
+        localStorage.setItem(getStorageKey(tableId, "settings"), JSON.stringify(settings));
+      } catch (e) {
+        console.warn("Failed to save DataTable settings to localStorage:", e);
+      }
+    };
+
+    if (typeof requestIdleCallback !== "undefined") {
+      const id = requestIdleCallback(saveToStorage, { timeout: 1000 });
+      return () => cancelIdleCallback(id);
+    } else {
+      const id = setTimeout(saveToStorage, 0);
+      return () => clearTimeout(id);
+    }
   }, [tableId, state.hiddenColumns, state.columnWidths]);
 
-  // Save pin state
+  // Save pin state (using requestIdleCallback to avoid blocking UI)
   useEffect(() => {
     if (!tableId || externalPinState || typeof localStorage === "undefined") return;
 
-    if (Object.keys(state.columnPinState).length > 0) {
-      localStorage.setItem(
-        getStorageKey(tableId, "pins"),
-        JSON.stringify(state.columnPinState)
-      );
+    const savePinState = () => {
+      try {
+        if (Object.keys(state.columnPinState).length > 0) {
+          localStorage.setItem(
+            getStorageKey(tableId, "pins"),
+            JSON.stringify(state.columnPinState)
+          );
+        } else {
+          localStorage.removeItem(getStorageKey(tableId, "pins"));
+        }
+      } catch (e) {
+        console.warn("Failed to save DataTable pin state to localStorage:", e);
+      }
+    };
+
+    if (typeof requestIdleCallback !== "undefined") {
+      const id = requestIdleCallback(savePinState, { timeout: 1000 });
+      return () => cancelIdleCallback(id);
     } else {
-      localStorage.removeItem(getStorageKey(tableId, "pins"));
+      const id = setTimeout(savePinState, 0);
+      return () => clearTimeout(id);
     }
   }, [tableId, state.columnPinState, externalPinState]);
 
@@ -203,8 +259,7 @@ export function DataTableProvider<T extends { id: string }>({
 
   const controlled = useMemo(
     () => ({
-      sort: controlledSort,
-      sortState: controlledSortState,
+      sortState: externalSortState,
       filters: controlledFilters,
       search: searchValue,
       pinState: externalPinState,
@@ -212,7 +267,7 @@ export function DataTableProvider<T extends { id: string }>({
       selectedIds: externalSelectedIds,
       groupBy: externalGroupBy,
     }),
-    [controlledSort, controlledSortState, controlledFilters, searchValue, externalPinState, externalColumnOrder, externalSelectedIds, externalGroupBy]
+    [externalSortState, controlledFilters, searchValue, externalPinState, externalColumnOrder, externalSelectedIds, externalGroupBy]
   );
 
   const contextValue = useMemo<DataTableContextValue<T>>(
@@ -221,10 +276,8 @@ export function DataTableProvider<T extends { id: string }>({
       dispatch,
       config,
       controlled,
-      multiSort,
       maxSortColumns,
       onSortChange,
-      onMultiSortChange,
       onFilterChange,
       onSearchChange,
       onColumnPinChange,
@@ -238,10 +291,8 @@ export function DataTableProvider<T extends { id: string }>({
       state,
       config,
       controlled,
-      multiSort,
       maxSortColumns,
       onSortChange,
-      onMultiSortChange,
       onFilterChange,
       onSearchChange,
       onColumnPinChange,
@@ -254,9 +305,11 @@ export function DataTableProvider<T extends { id: string }>({
   );
 
   return (
-    <DataTableContext.Provider value={contextValue as DataTableContextValue}>
-      {children}
-    </DataTableContext.Provider>
+    <I18nProvider locale={locale}>
+      <DataTableContext.Provider value={contextValue as DataTableContextValue}>
+        {children}
+      </DataTableContext.Provider>
+    </I18nProvider>
   );
 }
 

@@ -46,51 +46,69 @@ export function prepareExportData<T extends { id: string }>(
 
 /**
  * Gets the formatted value for a cell
+ * Includes error handling to prevent single cell errors from breaking entire export
  */
 export function getCellValue<T extends { id: string }>(
   row: T,
   column: Column<T>,
   formatValue?: ExportOptions<T>["formatValue"]
 ): string {
-  const value = getNestedValue(row, String(column.key));
+  try {
+    const value = getNestedValue(row, String(column.key));
 
-  // Use custom formatter if provided
-  if (formatValue) {
-    return formatValue(value, column, row);
+    // Use custom formatter if provided
+    if (formatValue) {
+      try {
+        return formatValue(value, column, row);
+      } catch (formatError) {
+        console.warn(
+          `Export: Custom formatter failed for column "${String(column.key)}", row "${row.id}":`,
+          formatError
+        );
+        // Fall through to default formatting
+      }
+    }
+
+    // Handle null/undefined
+    if (value === null || value === undefined) {
+      return "";
+    }
+
+    // Handle Date objects
+    if (value instanceof Date) {
+      return value.toISOString().split("T")[0] ?? "";
+    }
+
+    // Handle arrays
+    if (Array.isArray(value)) {
+      return value.join(", ");
+    }
+
+    // Handle objects
+    if (typeof value === "object") {
+      return JSON.stringify(value);
+    }
+
+    // Handle booleans
+    if (typeof value === "boolean") {
+      return value ? "Yes" : "No";
+    }
+
+    return String(value);
+  } catch (error) {
+    console.warn(
+      `Export: Failed to get value for column "${String(column.key)}", row "${row.id}":`,
+      error
+    );
+    return ""; // Return empty string on error to not break the export
   }
-
-  // Handle null/undefined
-  if (value === null || value === undefined) {
-    return "";
-  }
-
-  // Handle Date objects
-  if (value instanceof Date) {
-    return value.toISOString().split("T")[0] ?? "";
-  }
-
-  // Handle arrays
-  if (Array.isArray(value)) {
-    return value.join(", ");
-  }
-
-  // Handle objects
-  if (typeof value === "object") {
-    return JSON.stringify(value);
-  }
-
-  // Handle booleans
-  if (typeof value === "boolean") {
-    return value ? "Yes" : "No";
-  }
-
-  return String(value);
 }
 
 // ─── DOWNLOAD FILE ──────────────────────────────────────────────────────────
 
 /**
  * Triggers a file download in the browser
+ * Uses a delayed cleanup to ensure the download has time to start
  */
 export function downloadFile(
   content: Blob | string,
@@ -108,9 +126,12 @@ export function downloadFile(
   document.body.appendChild(link);
   link.click();
 
-  // Cleanup
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  // Cleanup after a short delay to ensure download has started
+  // This fixes an issue where the URL could be revoked before the download begins
+  setTimeout(() => {
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, 150);
 }
 
 // ─── ESCAPE FUNCTIONS ───────────────────────────────────────────────────────

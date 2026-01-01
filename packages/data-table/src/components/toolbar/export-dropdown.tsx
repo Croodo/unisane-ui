@@ -10,35 +10,36 @@ import {
 import type { ExportFormat } from "../../utils/export";
 import type { ExportHandler } from "./types";
 import { ToolbarDropdownButton, SegmentedDropdownButton } from "./buttons";
+import { useI18n } from "../../i18n";
 
 // ─── EXPORT FORMAT CONFIG ───────────────────────────────────────────────────
 
 interface FormatConfig {
-  label: string;
+  labelKey: "exportCsv" | "exportExcel" | "exportPdf" | "exportJson";
   icon: string;
-  description: string;
+  descriptionKey: "exportCsvDesc" | "exportExcelDesc" | "exportPdfDesc" | "exportJsonDesc";
 }
 
 const FORMAT_CONFIG: Record<ExportFormat, FormatConfig> = {
   csv: {
-    label: "CSV",
+    labelKey: "exportCsv",
     icon: "csv",
-    description: "Comma-separated values",
+    descriptionKey: "exportCsvDesc",
   },
   excel: {
-    label: "Excel",
+    labelKey: "exportExcel",
     icon: "table_chart",
-    description: "Microsoft Excel (.xlsx)",
+    descriptionKey: "exportExcelDesc",
   },
   pdf: {
-    label: "PDF",
+    labelKey: "exportPdf",
     icon: "picture_as_pdf",
-    description: "Portable Document Format",
+    descriptionKey: "exportPdfDesc",
   },
   json: {
-    label: "JSON",
+    labelKey: "exportJson",
     icon: "data_object",
-    description: "JavaScript Object Notation",
+    descriptionKey: "exportJsonDesc",
   },
 };
 
@@ -59,6 +60,7 @@ export function ExportDropdown({
   isFirst = false,
   isLast = false,
 }: ExportDropdownProps) {
+  const { t } = useI18n();
   const { onExport, formats = DEFAULT_FORMATS, exporting } = handler;
 
   const isExporting = exporting !== null && exporting !== undefined;
@@ -71,7 +73,7 @@ export function ExportDropdown({
     />
   ) : (
     <ToolbarDropdownButton
-      label="Export"
+      label={t("export")}
       icon={isExporting ? "hourglass_empty" : "download"}
       as="div"
     />
@@ -101,9 +103,9 @@ export function ExportDropdown({
               }
             >
               <div className="flex flex-col">
-                <span>{config.label}</span>
+                <span>{t(config.labelKey)}</span>
                 <span className="text-label-small text-on-surface-variant">
-                  {config.description}
+                  {t(config.descriptionKey)}
                 </span>
               </div>
             </DropdownMenuItem>

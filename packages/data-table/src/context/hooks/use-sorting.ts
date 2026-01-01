@@ -2,67 +2,43 @@
 
 import { useCallback } from "react";
 import { useDataTableContext } from "../provider";
-import type { SortDirection, MultiSortState } from "../../types";
+import type { MultiSortState } from "../../types";
 
 /**
  * Hook for sorting functionality
+ * Supports both single-sort and multi-sort modes
  */
 export function useSorting() {
   const {
     state,
     dispatch,
     controlled,
-    multiSort: multiSortEnabled,
     maxSortColumns,
     onSortChange,
-    onMultiSortChange,
   } = useDataTableContext();
 
-  // Legacy single-sort values (for backward compatibility)
-  const sortKey = controlled.sort?.key ?? state.sortKey;
-  const sortDirection = controlled.sort?.direction ?? state.sortDirection;
-
-  // Multi-sort state (ensure always an array)
+  // Get current sort state (controlled or internal)
   const sortState: MultiSortState = controlled.sortState ?? state.sortState ?? [];
 
-  // Legacy single-sort setter
+  // Set sort state directly
   const setSort = useCallback(
-    (key: string | null, direction: SortDirection) => {
-      if (controlled.sort) {
-        onSortChange?.(key, direction);
-      } else {
-        dispatch({ type: "SET_SORT", key, direction });
-        onSortChange?.(key, direction);
-      }
-    },
-    [controlled.sort, onSortChange, dispatch]
-  );
-
-  // Multi-sort setter
-  const setMultiSort = useCallback(
     (newSortState: MultiSortState) => {
-      if (controlled.sortState) {
-        onMultiSortChange?.(newSortState);
+      if (controlled.sortState !== undefined) {
+        // Controlled mode - notify parent
+        onSortChange?.(newSortState);
       } else {
-        dispatch({ type: "SET_MULTI_SORT", sortState: newSortState });
-        onMultiSortChange?.(newSortState);
-      }
-
-      // Also notify legacy callback with primary sort
-      if (newSortState.length > 0) {
-        const primary = newSortState[0]!;
-        onSortChange?.(primary.key, primary.direction);
-      } else {
-        onSortChange?.(null, null);
+        // Uncontrolled mode - update internal state
+        dispatch({ type: "SET_SORT", sortState: newSortState });
+        onSortChange?.(newSortState);
       }
     },
-    [controlled.sortState, onMultiSortChange, onSortChange, dispatch]
+    [controlled.sortState, onSortChange, dispatch]
   );
 
   // Add or cycle a column in multi-sort (Shift+Click behavior)
   const addSort = useCallback(
     (key: string) => {
-      if (controlled.sortState) {
+      if (controlled.sortState !== undefined) {
         // Calculate new state for controlled mode
         const existingIndex = controlled.sortState.findIndex((s) => s.key === key);
         let newState: MultiSortState;
@@ -81,95 +57,62 @@ export function useSorting() {
             newState = controlled.sortState.filter((_, i) => i !== existingIndex);
           }
         }
-        onMultiSortChange?.(newState);
-        // Notify legacy callback
-        if (newState.length > 0) {
-          const primary = newState[0]!;
-          onSortChange?.(primary.key, primary.direction);
-        } else {
-          onSortChange?.(null, null);
-        }
+        onSortChange?.(newState);
       } else {
         dispatch({ type: "ADD_SORT", key, maxColumns: maxSortColumns });
-        // Callbacks will be handled by the state change
       }
     },
-    [controlled.sortState, onMultiSortChange, onSortChange, dispatch, maxSortColumns]
+    [controlled.sortState, onSortChange, dispatch, maxSortColumns]
   );
 
-  // Remove a column from multi-sort
+  // Remove a column from sort
   const removeSort = useCallback(
     (key: string) => {
-      if (controlled.sortState) {
+      if (controlled.sortState !== undefined) {
         const newState = controlled.sortState.filter((s) => s.key !== key);
-        onMultiSortChange?.(newState);
-        if (newState.length > 0) {
-          const primary = newState[0]!;
-          onSortChange?.(primary.key, primary.direction);
-        } else {
-          onSortChange?.(null, null);
-        }
+        onSortChange?.(newState);
       } else {
         dispatch({ type: "REMOVE_SORT", key });
       }
     },
-    [controlled.sortState, onMultiSortChange, onSortChange, dispatch]
+    [controlled.sortState, onSortChange, dispatch]
   );
 
   // Clear all sorts
   const clearSort = useCallback(() => {
-    if (controlled.sortState) {
-      onMultiSortChange?.([]);
-      onSortChange?.(null, null);
+    if (controlled.sortState !== undefined) {
+      onSortChange?.([]);
     } else {
       dispatch({ type: "CLEAR_SORT" });
-      onSortChange?.(null, null);
-      onMultiSortChange?.([]);
+      onSortChange?.([]);
     }
-  }, [controlled.sortState, onMultiSortChange, onSortChange, dispatch]);
+  }, [controlled.sortState, onSortChange, dispatch]);
 
-  // Unified cycle sort that respects multiSort mode
+  // Cycle sort for a column (asc -> desc -> none)
+  // addToMultiSort: if true, adds to existing sorts instead of replacing
   const cycleSort = useCallback(
     (key: string, addToMultiSort: boolean = false) => {
-      // If multiSort enabled and Shift held (addToMultiSort), use multi-sort
-      if (multiSortEnabled && addToMultiSort) {
+      if (addToMultiSort) {
+        // Multi-sort mode: add/cycle this column in the sort array
         addSort(key);
         return;
       }
 
-      // In multi-sort mode, check sortState for current column state
-      if (multiSortEnabled) {
-        const currentSort = sortState.find((s) => s.key === key);
+      // Single-sort mode: replace entire sort with just this column
+      const currentSort = sortState.find((s) => s.key === key);
 
-        if (!currentSort) {
-          // Not sorted - start with asc
-          setMultiSort([{ key, direction: "asc" }]);
-        } else if (currentSort.direction === "asc") {
-          // Currently asc - change to desc
-          setMultiSort([{ key, direction: "desc" }]);
-        } else {
-          // Currently desc - clear sort
-          clearSort();
-        }
-        return;
+      if (!currentSort) {
+        // Not sorted - start with asc
+        setSort([{ key, direction: "asc" }]);
+      } else if (currentSort.direction === "asc") {
+        // Currently asc - change to desc
+        setSort([{ key, direction: "desc" }]);
+      } else {
+        // Currently desc - clear sort
+        clearSort();
       }
-
-      // Legacy single-sort behavior
-      let nextKey: string | null = key;
-      let nextDir: SortDirection = "asc";
-
-      if (sortKey === key) {
-        if (sortDirection === "asc") {
-          nextDir = "desc";
-        } else if (sortDirection === "desc") {
-          nextKey = null;
-          nextDir = null;
-        }
-      }
-
-      setSort(nextKey, nextDir);
     },
-    [multiSortEnabled, sortKey, sortDirection, sortState, addSort, setSort, setMultiSort, clearSort]
+    [sortState, addSort, setSort, clearSort]
   );
 
   // Get sort info for a specific column
@@ -187,22 +130,31 @@ export function useSorting() {
     [sortState]
   );
 
+  // Check if a column is sorted
+  const isSorted = useCallback(
+    (key: string): boolean => {
+      return sortState.some((s) => s.key === key);
+    },
+    [sortState]
+  );
+
+  // Get the primary sort (first in array)
+  const primarySort = sortState.length > 0 ? sortState[0] : null;
+
   return {
-    // Legacy single-sort (backward compatible)
-    sortKey,
-    sortDirection,
-    setSort,
-    // Multi-sort
+    // Sort state
     sortState,
-    setMultiSort,
+    primarySort,
+    // Actions
+    setSort,
     addSort,
     removeSort,
     clearSort,
-    // Unified
     cycleSort,
+    // Helpers
     getSortInfo,
+    isSorted,
     // Config
-    multiSortEnabled,
     maxSortColumns,
   };
 }

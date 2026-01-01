@@ -3,13 +3,14 @@
 import React from "react";
 import type { ReactNode, RefObject, CSSProperties } from "react";
 import { Icon } from "@unisane/ui";
-import type { Column, ColumnGroup, PinPosition, ColumnMetaMap, InlineEditingController, SortDirection, MultiSortState, FilterValue } from "../types/index";
+import type { Column, ColumnGroup, PinPosition, ColumnMetaMap, InlineEditingController, MultiSortState, FilterValue } from "../types/index";
 import { Table } from "./table";
 import { TableColgroup } from "./colgroup";
 import { DataTableHeader } from "./header/index";
 import { DataTableRow } from "./row";
 import type { VirtualRow } from "../hooks";
 import type { Density } from "../constants/index";
+import { useI18n } from "../i18n";
 
 // ─── PROPS ──────────────────────────────────────────────────────────────────
 
@@ -48,9 +49,7 @@ interface VirtualizedBodyProps<T extends { id: string }> {
   getRowStyle: (vRow: VirtualRow<T>) => CSSProperties;
   inlineEditing?: InlineEditingController<T>;
   // Header props
-  sortKey: string | null;
-  sortDirection: SortDirection;
-  sortState?: MultiSortState;
+  sortState: MultiSortState;
   onSort: (key: string, addToMultiSort?: boolean) => void;
   allSelected: boolean;
   indeterminate: boolean;
@@ -74,10 +73,11 @@ interface VirtualizedBodyProps<T extends { id: string }> {
 // ─── LOADING STATE ──────────────────────────────────────────────────────────
 
 function LoadingState() {
+  const { t } = useI18n();
   return (
     <div className="flex flex-col items-center justify-center py-20">
       <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      <span className="text-body-medium text-on-surface-variant mt-3">Loading data...</span>
+      <span className="text-body-medium text-on-surface-variant mt-3">{t("loading")}</span>
     </div>
   );
 }
@@ -85,18 +85,19 @@ function LoadingState() {
 // ─── EMPTY STATE ────────────────────────────────────────────────────────────
 
 function EmptyState({
-  message = "No results found",
+  message,
   icon = "search_off",
 }: {
   message?: string;
   icon?: string;
 }) {
+  const { t } = useI18n();
   return (
     <div className="flex flex-col items-center justify-center py-16">
       <Icon symbol={icon} className="w-8 h-8 text-on-surface-variant mb-2" />
-      <span className="text-title-medium text-on-surface">{message}</span>
+      <span className="text-title-medium text-on-surface">{message ?? t("noResults")}</span>
       <span className="text-body-small text-on-surface-variant mt-1">
-        Try adjusting your search or filters
+        {t("noResultsHint")}
       </span>
     </div>
   );
@@ -135,8 +136,6 @@ export function VirtualizedBody<T extends { id: string }>({
   density = "standard",
   getRowStyle,
   inlineEditing,
-  sortKey,
-  sortDirection,
   sortState,
   onSort,
   allSelected,
@@ -174,8 +173,6 @@ export function VirtualizedBody<T extends { id: string }>({
               columns={columns}
               columnDefinitions={columnDefinitions}
               hasGroups={hasGroups}
-              sortKey={sortKey}
-              sortDirection={sortDirection}
               sortState={sortState}
               onSort={onSort}
               columnMeta={columnMeta}

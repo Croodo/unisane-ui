@@ -12,6 +12,8 @@ interface TableColgroupProps<T> {
   enableExpansion: boolean;
   /** Function to get effective pin position for a column */
   getEffectivePinPosition?: (col: Column<T>) => PinPosition;
+  /** Whether row reordering is enabled */
+  reorderableRows?: boolean;
 }
 
 // ─── COLGROUP COMPONENT ───────────────────────────────────────────────────
@@ -22,6 +24,7 @@ export function TableColgroup<T>({
   selectable,
   enableExpansion,
   getEffectivePinPosition,
+  reorderableRows = false,
 }: TableColgroupProps<T>) {
   // Find the last non-pinned column to make it flexible
   const lastNonPinnedIndex = getEffectivePinPosition
@@ -33,14 +36,19 @@ export function TableColgroup<T>({
 
   return (
     <colgroup>
+      {/* Drag handle column - fixed width */}
+      {reorderableRows && (
+        <col style={{ width: 40, minWidth: 40, maxWidth: 40 }} />
+      )}
+
       {/* Checkbox column - fixed width */}
       {selectable && (
-        <col style={{ width: `${COLUMN_WIDTHS.CHECKBOX}px`, minWidth: `${COLUMN_WIDTHS.CHECKBOX}px` }} />
+        <col style={{ width: COLUMN_WIDTHS.CHECKBOX, minWidth: COLUMN_WIDTHS.CHECKBOX, maxWidth: COLUMN_WIDTHS.CHECKBOX }} />
       )}
 
       {/* Expander column - fixed width */}
       {enableExpansion && (
-        <col style={{ width: `${COLUMN_WIDTHS.EXPANDER}px`, minWidth: `${COLUMN_WIDTHS.EXPANDER}px` }} />
+        <col style={{ width: COLUMN_WIDTHS.EXPANDER, minWidth: COLUMN_WIDTHS.EXPANDER, maxWidth: COLUMN_WIDTHS.EXPANDER }} />
       )}
 
       {/* Data columns */}

@@ -4,6 +4,7 @@ import React from "react";
 import { cn, Icon, Checkbox } from "@unisane/ui";
 import type { RowGroup, GroupHeaderProps, Column } from "../types/index";
 import { DENSITY_STYLES, type Density } from "../constants/index";
+import { useI18n } from "../i18n";
 
 // ─── GROUP ROW PROPS ─────────────────────────────────────────────────────────
 
@@ -41,6 +42,7 @@ function DefaultGroupHeader<T>({
   aggregations,
   depth,
 }: GroupHeaderProps<T> & { groupByKey?: string }) {
+  const { t, formatNumber } = useI18n();
   // Handle empty group case
   const isEmpty = rowCount === 0;
 
@@ -62,7 +64,11 @@ function DefaultGroupHeader<T>({
           ? "text-on-surface-variant/60 bg-on-surface/5"
           : "text-on-surface-variant bg-on-surface/8"
       )}>
-        {isEmpty ? "No items" : `${rowCount} ${rowCount === 1 ? "item" : "items"}`}
+        {isEmpty
+          ? t("groupEmpty")
+          : rowCount === 1
+            ? `1 ${t("groupItemSingular")}`
+            : t("groupItemPlural", { count: formatNumber(rowCount) })}
       </span>
 
       {/* Aggregations (if any and not empty) */}
@@ -73,9 +79,7 @@ function DefaultGroupHeader<T>({
               <span className="opacity-60">{key}:</span>
               <span className="font-medium">
                 {typeof value === "number"
-                  ? value.toLocaleString(undefined, {
-                      maximumFractionDigits: 2,
-                    })
+                  ? formatNumber(value)
                   : String(value ?? "-")}
               </span>
             </span>
@@ -86,7 +90,7 @@ function DefaultGroupHeader<T>({
       {/* Expand indicator text - only show if there are items to expand */}
       {!isEmpty && (
         <span className="text-label-small text-on-surface-variant ml-auto">
-          {isExpanded ? "Click to collapse" : "Click to expand"}
+          {isExpanded ? t("collapseGroup") : t("expandGroup")}
         </span>
       )}
     </div>
@@ -108,6 +112,7 @@ export function GroupRow<T extends { id: string }>({
   selectedRows,
   onSelectGroup,
 }: GroupRowProps<T>) {
+  const { t } = useI18n();
   const paddingClass = DENSITY_STYLES[density];
 
   // Calculate total colSpan
@@ -178,7 +183,7 @@ export function GroupRow<T extends { id: string }>({
                 checked={allSelected}
                 indeterminate={someSelected}
                 onChange={handleCheckboxChange}
-                aria-label={`Select all ${group.rows.length} rows in ${group.groupLabel}`}
+                aria-label={t("selectGroupRows", { count: group.rows.length, label: group.groupLabel })}
                 className="[&>div]:w-8 [&>div]:h-8"
               />
             </div>

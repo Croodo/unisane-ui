@@ -3,6 +3,7 @@
 import { cn, Icon } from "@unisane/ui";
 import type { BulkAction } from "../../types";
 import { useFiltering, useColumns, useGrouping } from "../../context";
+import { useI18n } from "../../i18n";
 
 // ─── SELECTION BAR ────────────────────────────────────────────────────────
 
@@ -17,17 +18,18 @@ export function SelectionBar({
   bulkActions: BulkAction[];
   onClearSelection?: () => void;
 }) {
+  const { t } = useI18n();
   return (
     <div className="flex items-center gap-4 w-full">
       <div className="flex items-center gap-2">
         <span className="text-body-medium font-semibold text-primary whitespace-nowrap">
-          {selectedCount} selected
+          {t("selectedCount", { count: selectedCount })}
         </span>
         {onClearSelection && (
           <button
             onClick={onClearSelection}
             className="inline-flex items-center justify-center w-6 h-6 hover:bg-primary/10 rounded text-primary/60 hover:text-primary transition-colors"
-            aria-label="Clear selection"
+            aria-label={t("deselectAll")}
           >
             <Icon symbol="close" className="text-[18px]" />
           </button>
@@ -82,6 +84,7 @@ export function TitleBar({
   endItem?: number;
   totalItems?: number;
 }) {
+  const { t, formatNumber } = useI18n();
   return (
     <>
       {title && (
@@ -94,10 +97,10 @@ export function TitleBar({
       )}
       <span className="text-body-small text-on-surface-variant">
         {startItem !== undefined && endItem !== undefined && totalItems !== undefined
-          ? `${startItem}-${endItem} of ${totalItems}`
+          ? t("rangeOfTotal", { start: formatNumber(startItem), end: formatNumber(endItem), total: formatNumber(totalItems) })
           : totalItems !== undefined
-          ? `${totalItems} items`
-          : "All items"}
+          ? t("itemCount", { count: totalItems })
+          : t("allItems")}
       </span>
     </>
   );
@@ -106,6 +109,7 @@ export function TitleBar({
 // ─── ACTIVE FILTERS BAR ────────────────────────────────────────────────────
 
 export function ActiveFiltersBar<T>() {
+  const { t } = useI18n();
   const { searchText, columnFilters, setSearch, removeFilter, clearAllFilters, hasActiveFilters } =
     useFiltering();
   const { columns } = useColumns<T>();
@@ -119,14 +123,14 @@ export function ActiveFiltersBar<T>() {
 
   return (
     <div className="flex items-center gap-2 px-3 py-2 bg-surface-container-low">
-      <span className="text-label-small text-on-surface-variant">Filters:</span>
+      <span className="text-label-small text-on-surface-variant">{t("filtersLabel")}:</span>
 
       {searchText && (
         <button
           onClick={() => setSearch("")}
           className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-label-small hover:bg-primary/20 transition-colors"
         >
-          Search: &quot;{searchText}&quot;
+          {t("searchLabel")}: &quot;{searchText}&quot;
           <Icon symbol="close" className="w-3 h-3" />
         </button>
       )}
@@ -146,7 +150,7 @@ export function ActiveFiltersBar<T>() {
         onClick={clearAllFilters}
         className="text-label-small text-error hover:underline ml-2"
       >
-        Clear all
+        {t("clearAll")}
       </button>
     </div>
   );
@@ -164,6 +168,7 @@ export interface GroupingPillsBarProps {
  * Shows grouping hierarchy with drag handles for reordering (future).
  */
 export function GroupingPillsBar<T>({ showEmpty = false }: GroupingPillsBarProps = {}) {
+  const { t } = useI18n();
   const { groupByArray, removeGroupBy, setGroupBy, isGrouped } = useGrouping();
   const { columns } = useColumns<T>();
 
@@ -179,7 +184,7 @@ export function GroupingPillsBar<T>({ showEmpty = false }: GroupingPillsBarProps
     <div className="flex items-center gap-2 px-3 py-2 bg-surface-container-low border-b border-outline-variant/30">
       <div className="flex items-center gap-1.5 text-on-surface-variant">
         <Icon symbol="account_tree" className="text-[16px]" />
-        <span className="text-label-small font-medium">Grouped by:</span>
+        <span className="text-label-small font-medium">{t("groupedByLabel")}:</span>
       </div>
 
       {isGrouped ? (
@@ -207,13 +212,13 @@ export function GroupingPillsBar<T>({ showEmpty = false }: GroupingPillsBarProps
               onClick={() => setGroupBy(null)}
               className="text-label-small text-error hover:underline ml-2"
             >
-              Clear all
+              {t("clearAll")}
             </button>
           )}
         </div>
       ) : (
         <span className="text-label-small text-on-surface-variant/60 italic">
-          None
+          {t("none")}
         </span>
       )}
     </div>
@@ -229,6 +234,7 @@ interface GroupingPillProps {
 }
 
 function GroupingPill({ label, level, onRemove }: GroupingPillProps) {
+  const { t } = useI18n();
   return (
     <span
       className={cn(
@@ -249,7 +255,7 @@ function GroupingPill({ label, level, onRemove }: GroupingPillProps) {
           onRemove();
         }}
         className="inline-flex items-center justify-center w-4 h-4 rounded-full hover:bg-on-secondary-container/10 transition-colors"
-        aria-label={`Remove ${label} grouping`}
+        aria-label={t("removeGroupingLabel", { label })}
       >
         <Icon symbol="close" className="text-[12px]" />
       </button>
@@ -277,6 +283,7 @@ export function FrozenColumnsIndicator({
   frozenRightCount,
   onUnfreezeAll,
 }: FrozenColumnsIndicatorProps) {
+  const { t } = useI18n();
   const totalFrozen = frozenLeftCount + frozenRightCount;
 
   if (totalFrozen === 0) return null;
@@ -292,15 +299,15 @@ export function FrozenColumnsIndicator({
       >
         <Icon symbol="push_pin" className="text-[14px] -rotate-45" />
         <span>
-          {frozenLeftCount > 0 && `${frozenLeftCount} left`}
+          {frozenLeftCount > 0 && t("frozenLeft", { count: frozenLeftCount })}
           {frozenLeftCount > 0 && frozenRightCount > 0 && ", "}
-          {frozenRightCount > 0 && `${frozenRightCount} right`}
+          {frozenRightCount > 0 && t("frozenRight", { count: frozenRightCount })}
         </span>
         {onUnfreezeAll && (
           <button
             onClick={onUnfreezeAll}
             className="inline-flex items-center justify-center w-4 h-4 rounded hover:bg-on-tertiary-container/10 transition-colors ml-0.5"
-            aria-label="Unfreeze all columns"
+            aria-label={t("unfreezeAll")}
           >
             <Icon symbol="close" className="text-[12px]" />
           </button>

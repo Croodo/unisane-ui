@@ -112,7 +112,7 @@ export function HeaderCell<T>({
         column.align === "center" && "text-center",
         column.align === "end" && "text-right",
         column.align !== "center" && column.align !== "end" && "text-left",
-        isSortable && "cursor-pointer select-none hover:bg-on-surface/5",
+        isSortable && "cursor-pointer select-none hover:bg-surface-container-low",
         // Draggable cursor when reorderable
         dragProps?.draggable && "cursor-grab active:cursor-grabbing",
         // Pinned columns: sticky with higher z-index (shadow applied via inline style)
@@ -131,11 +131,12 @@ export function HeaderCell<T>({
         right: pinPosition === "right" ? meta?.right : undefined,
         // Pinned column elevation shadow
         boxShadow: pinPosition === "left"
-          ? "4px 0 8px -3px rgba(0, 0, 0, 0.15)"
+          ? "4px 0 6px -2px rgba(0, 0, 0, 0.1)"
           : pinPosition === "right"
-          ? "-4px 0 8px -3px rgba(0, 0, 0, 0.15)"
+          ? "-4px 0 6px -2px rgba(0, 0, 0, 0.1)"
           : undefined,
       }}
+      scope="col"
       aria-sort={
         isSorted
           ? sortDirection === "asc"
@@ -153,53 +154,99 @@ export function HeaderCell<T>({
       onDragLeave={dragProps?.onDragLeave}
       onDrop={dragProps?.onDrop}
     >
+      {/* Main content area - text uses full width */}
       <div
+        onClick={isSortable ? onSort : undefined}
         className={cn(
-          "flex items-center gap-1",
+          "flex items-center gap-1.5 min-w-0",
           column.align === "center" && "justify-center",
           column.align === "end" && "justify-end"
         )}
       >
-        {/* Header text - clickable for sorting */}
-        <div
-          onClick={isSortable ? onSort : undefined}
-          className="flex items-center gap-1.5 flex-1 min-w-0"
-        >
-          {column.headerRender ? (
-            column.headerRender()
-          ) : (
-            <span className="truncate">{column.header}</span>
-          )}
+        {/* Header text - full width, no truncation by icons */}
+        {column.headerRender ? (
+          column.headerRender()
+        ) : (
+          <span className="truncate">{column.header}</span>
+        )}
 
-          {/* Sort indicator */}
-          {isSortable && (
-            <SortIndicator
-              isSorted={isSorted}
-              sortDirection={sortDirection}
-              sortPriority={sortPriority}
-            />
+        {/* Persistent state indicators (always visible when active) */}
+        <div className="flex items-center gap-0.5 shrink-0">
+          {/* Sort indicator - always visible when sorted */}
+          {isSorted && (
+            <span className="inline-flex items-center text-primary">
+              <Icon
+                symbol={sortDirection === "asc" ? "arrow_upward" : "arrow_downward"}
+                className="text-[16px]"
+              />
+              {sortPriority != null && sortPriority > 0 && (
+                <span className="text-[10px] font-semibold leading-none min-w-[10px]">
+                  {sortPriority}
+                </span>
+              )}
+            </span>
           )}
 
           {/* Filter active indicator */}
           {hasActiveFilter && (
-            <span className="inline-flex items-center justify-center shrink-0 w-[16px] h-[16px]">
-              <Icon symbol="filter_alt" className="text-[16px] text-primary" />
+            <span className="inline-flex items-center justify-center w-[16px] h-[16px]">
+              <Icon symbol="filter_alt" className="text-[14px] text-primary" />
             </span>
           )}
 
           {/* Pin indicator */}
           {pinPosition && (
-            <span className="inline-flex items-center justify-center shrink-0 w-[14px] h-[14px]">
+            <span className="inline-flex items-center justify-center w-[14px] h-[14px]">
               <Icon
                 symbol="push_pin"
                 className={cn(
-                  "text-[14px] text-primary",
+                  "text-[12px] text-primary",
                   pinPosition === "left" ? "-rotate-45" : "rotate-45"
                 )}
               />
             </span>
           )}
         </div>
+      </div>
+
+      {/* Hover actions - absolute positioned on right, uses surface-container-low for subtle elevation */}
+      <div
+        className={cn(
+          "absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-1 pl-2 pr-2",
+          "bg-surface-container-low",
+          "opacity-0 group-hover:opacity-100 transition-opacity duration-150",
+          "pointer-events-none group-hover:pointer-events-auto"
+        )}
+      >
+        {/* Sort button (on hover, when sortable but not yet sorted) */}
+        {isSortable && !isSorted && (
+          <button
+            onClick={onSort}
+            className="inline-flex items-center justify-center w-7 h-7 rounded-full text-on-surface-variant hover:bg-on-surface/8 hover:text-on-surface transition-colors"
+            aria-label="Sort column"
+          >
+            <Icon symbol="unfold_more" className="text-[18px]" />
+          </button>
+        )}
+
+        {/* Sort button (on hover, when already sorted - to cycle sort) */}
+        {isSortable && isSorted && (
+          <button
+            onClick={onSort}
+            className="inline-flex items-center justify-center w-7 h-7 rounded-full text-primary hover:bg-primary/8 transition-colors"
+            aria-label={sortDirection === "asc" ? "Sort descending" : "Clear sort"}
+          >
+            <Icon
+              symbol={sortDirection === "asc" ? "arrow_upward" : "arrow_downward"}
+              className="text-[18px]"
+            />
+            {sortPriority != null && sortPriority > 0 && (
+              <span className="text-[10px] font-semibold leading-none absolute -top-0.5 -right-0.5 bg-primary text-on-primary rounded-full w-3.5 h-3.5 flex items-center justify-center">
+                {sortPriority}
+              </span>
+            )}
+          </button>
+        )}
 
         {/* Column menu trigger */}
         {hasMenu && (
@@ -267,42 +314,3 @@ export function HeaderCell<T>({
   );
 }
 
-// ─── SORT INDICATOR ──────────────────────────────────────────────────────────
-
-interface SortIndicatorProps {
-  isSorted: boolean;
-  sortDirection: SortDirection;
-  /** Sort priority for multi-sort (1, 2, 3...) or null/undefined if single-sort */
-  sortPriority?: number | null;
-}
-
-function SortIndicator({ isSorted, sortDirection, sortPriority }: SortIndicatorProps) {
-  const showPriority = isSorted && sortPriority != null && sortPriority > 0;
-
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center justify-center shrink-0 transition-all duration-snappy",
-        // Adjust width for priority badge
-        showPriority ? "gap-0.5" : "w-[18px] h-[18px]",
-        isSorted ? "opacity-100 text-primary" : "opacity-0 group-hover:opacity-50"
-      )}
-    >
-      {isSorted && sortDirection === "asc" && (
-        <Icon symbol="arrow_upward" className="text-[18px]" />
-      )}
-      {isSorted && sortDirection === "desc" && (
-        <Icon symbol="arrow_downward" className="text-[18px]" />
-      )}
-      {!isSorted && (
-        <Icon symbol="unfold_more" className="text-[18px]" />
-      )}
-      {/* Multi-sort priority badge */}
-      {showPriority && (
-        <span className="text-[10px] font-semibold leading-none text-primary min-w-[12px] text-center">
-          {sortPriority}
-        </span>
-      )}
-    </span>
-  );
-}

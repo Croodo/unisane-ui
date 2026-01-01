@@ -9,6 +9,7 @@ import type {
   RowContextMenuItemOrSeparator,
   RowContextMenuRenderProps,
 } from "../types/index";
+import { useI18n } from "../i18n";
 
 // ─── CONTEXT MENU STATE ──────────────────────────────────────────────────────
 
@@ -315,10 +316,7 @@ export function RowContextMenu<T extends { id: string }>({
 
 // ─── DEFAULT CONTEXT MENU ITEMS ──────────────────────────────────────────────
 
-/**
- * Creates default context menu items for common row actions
- */
-export function createDefaultContextMenuItems<T extends { id: string }>(options: {
+interface CreateDefaultContextMenuItemsOptions<T extends { id: string }> {
   onView?: (row: T) => void;
   onEdit?: (row: T) => void;
   onDuplicate?: (row: T) => void;
@@ -326,13 +324,55 @@ export function createDefaultContextMenuItems<T extends { id: string }>(options:
   onCopyId?: (row: T) => void;
   onSelect?: (row: T) => void;
   isSelected?: (row: T) => boolean;
-}): RowContextMenuItemOrSeparator<T>[] {
+}
+
+/**
+ * Hook to create default context menu items with i18n support
+ */
+export function useDefaultContextMenuItems<T extends { id: string }>(
+  options: CreateDefaultContextMenuItemsOptions<T>
+): RowContextMenuItemOrSeparator<T>[] {
+  const { t } = useI18n();
+  // Wrap t to match the expected signature
+  const translate = (key: string) => t(key as keyof import("../i18n").DataTableStrings);
+  return createDefaultContextMenuItemsWithTranslator(options, translate);
+}
+
+/**
+ * Creates default context menu items for common row actions
+ * @deprecated Use useDefaultContextMenuItems hook for i18n support
+ */
+export function createDefaultContextMenuItems<T extends { id: string }>(
+  options: CreateDefaultContextMenuItemsOptions<T>
+): RowContextMenuItemOrSeparator<T>[] {
+  // Fallback to English labels for backwards compatibility
+  const fallbackT = (key: string) => {
+    const labels: Record<string, string> = {
+      viewDetails: "View details",
+      edit: "Edit",
+      duplicate: "Duplicate",
+      select: "Select",
+      copyId: "Copy ID",
+      delete: "Delete",
+    };
+    return labels[key] ?? key;
+  };
+  return createDefaultContextMenuItemsWithTranslator(options, fallbackT);
+}
+
+/**
+ * Internal function to create context menu items with a translator
+ */
+function createDefaultContextMenuItemsWithTranslator<T extends { id: string }>(
+  options: CreateDefaultContextMenuItemsOptions<T>,
+  t: (key: string) => string
+): RowContextMenuItemOrSeparator<T>[] {
   const items: RowContextMenuItemOrSeparator<T>[] = [];
 
   if (options.onView) {
     items.push({
       key: "view",
-      label: "View details",
+      label: t("viewDetails"),
       icon: "visibility",
       onClick: (row) => options.onView!(row),
     });
@@ -341,7 +381,7 @@ export function createDefaultContextMenuItems<T extends { id: string }>(options:
   if (options.onEdit) {
     items.push({
       key: "edit",
-      label: "Edit",
+      label: t("edit"),
       icon: "edit",
       onClick: (row) => options.onEdit!(row),
     });
@@ -350,7 +390,7 @@ export function createDefaultContextMenuItems<T extends { id: string }>(options:
   if (options.onDuplicate) {
     items.push({
       key: "duplicate",
-      label: "Duplicate",
+      label: t("duplicate"),
       icon: "content_copy",
       onClick: (row) => options.onDuplicate!(row),
     });
@@ -364,7 +404,7 @@ export function createDefaultContextMenuItems<T extends { id: string }>(options:
   if (options.onSelect) {
     items.push({
       key: "select",
-      label: options.isSelected ? "Deselect" : "Select",
+      label: t("select"),
       icon: options.isSelected ? "check_box" : "check_box_outline_blank",
       onClick: (row) => options.onSelect!(row),
     });
@@ -373,7 +413,7 @@ export function createDefaultContextMenuItems<T extends { id: string }>(options:
   if (options.onCopyId) {
     items.push({
       key: "copy-id",
-      label: "Copy ID",
+      label: t("copyId"),
       icon: "content_copy",
       onClick: (row) => options.onCopyId!(row),
     });
@@ -387,7 +427,7 @@ export function createDefaultContextMenuItems<T extends { id: string }>(options:
     }
     items.push({
       key: "delete",
-      label: "Delete",
+      label: t("delete"),
       icon: "delete",
       variant: "danger",
       onClick: (row) => options.onDelete!(row),

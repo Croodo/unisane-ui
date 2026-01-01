@@ -4,9 +4,11 @@ import React, { memo } from "react";
 import type { ReactNode } from "react";
 import { Icon } from "@unisane/ui";
 import type { Column, PinPosition, ColumnMetaMap, InlineEditingController, RowGroup, GroupHeaderProps, CellSelectionContext } from "../types/index";
+import type { RowDragProps } from "../hooks/ui/use-row-drag";
 import { DataTableRow } from "./row";
 import { GroupRow } from "./group-row";
 import type { Density } from "../constants/index";
+import { useI18n } from "../i18n";
 
 // ─── BODY PROPS ─────────────────────────────────────────────────────────────
 
@@ -54,11 +56,31 @@ interface DataTableBodyProps<T> {
   getCellSelectionContext?: (rowId: string, columnKey: string) => CellSelectionContext;
   /** Cell selection: handle cell click */
   onCellClick?: (rowId: string, columnKey: string, event: React.MouseEvent) => void;
+  /** Row reordering: whether drag-to-reorder is enabled */
+  reorderableRows?: boolean;
+  /** Row reordering: get drag props for a row */
+  getRowDragProps?: (rowId: string, rowIndex: number) => RowDragProps;
+  /** Row reordering: get drag handle props */
+  getDragHandleProps?: (rowId: string, rowIndex: number) => {
+    onMouseDown: (e: React.MouseEvent) => void;
+    onKeyDown: (e: React.KeyboardEvent) => void;
+    tabIndex: number;
+    role: string;
+    "aria-label": string;
+    "aria-grabbed": boolean | undefined;
+  };
+  /** Row reordering: check if row is being dragged */
+  isDraggingRow?: (id: string) => boolean;
+  /** Row reordering: check if row is a drop target */
+  isDropTarget?: (id: string) => boolean;
+  /** Row reordering: get drop position for a row */
+  getDropPosition?: (id: string) => "before" | "after" | null;
 }
 
 // ─── LOADING STATE ─────────────────────────────────────────────────────────
 
 function LoadingState({ colSpan }: { colSpan: number }) {
+  const { t } = useI18n();
   return (
     <tbody className="bg-surface">
       <tr>
@@ -68,7 +90,7 @@ function LoadingState({ colSpan }: { colSpan: number }) {
         >
           <div className="flex flex-col items-center justify-center gap-3">
             <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-            <span className="text-body-medium">Loading data...</span>
+            <span className="text-body-medium">{t("loading")}</span>
           </div>
         </td>
       </tr>
@@ -80,13 +102,14 @@ function LoadingState({ colSpan }: { colSpan: number }) {
 
 function EmptyState({
   colSpan,
-  message = "No results found",
+  message,
   icon = "search_off",
 }: {
   colSpan: number;
   message?: string;
   icon?: string;
 }) {
+  const { t } = useI18n();
   return (
     <tbody className="bg-surface">
       <tr>
@@ -96,9 +119,9 @@ function EmptyState({
         >
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <Icon symbol={icon} className="w-8 h-8 text-on-surface-variant mb-2" />
-            <span className="text-title-medium text-on-surface">{message}</span>
+            <span className="text-title-medium text-on-surface">{message ?? t("noResults")}</span>
             <span className="text-body-small text-on-surface-variant mt-1">
-              Try adjusting your search or filters
+              {t("noResultsHint")}
             </span>
           </div>
         </td>
@@ -142,9 +165,15 @@ function DataTableBodyInner<T extends { id: string }>({
   cellSelectionEnabled = false,
   getCellSelectionContext,
   onCellClick,
+  reorderableRows = false,
+  getRowDragProps,
+  getDragHandleProps,
+  isDraggingRow,
+  isDropTarget,
+  getDropPosition,
 }: DataTableBodyProps<T>) {
   // Calculate colspan
-  const colSpan = columns.length + (selectable ? 1 : 0) + (enableExpansion ? 1 : 0);
+  const colSpan = columns.length + (selectable ? 1 : 0) + (enableExpansion ? 1 : 0) + (reorderableRows ? 1 : 0);
 
   // Loading state
   if (isLoading) {
@@ -282,6 +311,12 @@ function DataTableBodyInner<T extends { id: string }>({
           cellSelectionEnabled={cellSelectionEnabled}
           getCellSelectionContext={getCellSelectionContext}
           onCellClick={onCellClick}
+          reorderableRows={reorderableRows}
+          isDragging={isDraggingRow?.(row.id)}
+          isDropTarget={isDropTarget?.(row.id)}
+          dropPosition={getDropPosition?.(row.id)}
+          rowDragProps={getRowDragProps?.(row.id, index)}
+          dragHandleProps={getDragHandleProps?.(row.id, index)}
         />
       ))}
     </tbody>

@@ -9,6 +9,8 @@ export const COLUMN_WIDTHS = {
   CHECKBOX: 48,
   /** Width for row expander column */
   EXPANDER: 40,
+  /** Width for drag handle column (row reordering) */
+  DRAG_HANDLE: 40,
   /** Minimum width for resizable columns */
   MIN_RESIZABLE: 50,
   /** Default column width when not specified */

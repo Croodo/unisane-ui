@@ -132,6 +132,7 @@ export {
   RowContextMenu,
   useRowContextMenu,
   createDefaultContextMenuItems,
+  useDefaultContextMenuItems,
 
   // Error handling
   DataTableErrorBoundary,
@@ -255,6 +256,27 @@ export {
   CellSelectionMode,
   type CellSelectionModeValue,
 } from "./constants/index";
+
+// ─── I18N ───────────────────────────────────────────────────────────────────
+export {
+  // Provider and hook
+  I18nProvider,
+  useI18n,
+  createTranslator,
+  defaultLocale,
+
+  // Locale registry
+  locales,
+  getLocaleStrings,
+  enStrings,
+  hiStrings,
+
+  // Types
+  type DataTableStrings,
+  type DataTableLocale,
+  type PartialDataTableLocale,
+  type I18nContextValue,
+} from "./i18n";
 
 // ─── ERRORS ────────────────────────────────────────────────────────────────
 export {

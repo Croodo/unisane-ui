@@ -178,6 +178,10 @@ export interface InlineEditingController<T> {
   cancelEdit: () => void;
   updateValue: (value: unknown) => void;
   commitEdit: () => Promise<boolean>;
+  /** Clear the current validation error without canceling edit */
+  clearError: () => void;
+  /** Retry the last failed save operation */
+  retryEdit: () => Promise<boolean>;
   isCellEditing: (rowId: string, columnKey: string) => boolean;
   getCellEditProps: (
     rowId: string,

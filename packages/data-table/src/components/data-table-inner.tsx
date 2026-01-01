@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useRef, useCallback } from "react";
+import React, { useMemo, useRef, useCallback, useEffect, useId } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { cn } from "@unisane/ui";
 import type { Column, BulkAction, ColumnMetaMap, InlineEditingController, RowGroup, GroupHeaderProps, CellSelectionContext } from "../types/index";
@@ -14,6 +14,7 @@ import { useProcessedData } from "../hooks/data/use-processed-data";
 import { useVirtualizedRows } from "../hooks/features/use-virtualized-rows";
 import { useKeyboardNavigation } from "../hooks/ui/use-keyboard-navigation";
 import { useDensityScale } from "../hooks/ui/use-density-scale";
+import { useRowDrag } from "../hooks/ui/use-row-drag";
 import {
   useSelection,
   useSorting,
@@ -25,6 +26,7 @@ import {
 } from "../context";
 import { ensureRowIds } from "../utils/ensure-row-ids";
 import { DENSITY_CONFIG, COLUMN_WIDTHS, type Density } from "../constants/index";
+import { useI18n } from "../i18n";
 
 // ─── INNER PROPS ───────────────────────────────────────────────────────────
 
@@ -64,6 +66,10 @@ export interface DataTableInnerProps<T extends { id: string }> {
   onCellClick?: (rowId: string, columnKey: string, event: React.MouseEvent) => void;
   /** Cell selection: handle keyboard navigation */
   onCellKeyDown?: (event: React.KeyboardEvent) => void;
+  /** Row reordering: whether drag-to-reorder is enabled */
+  reorderableRows?: boolean;
+  /** Row reordering: callback when row order changes */
+  onRowReorder?: (fromIndex: number, toIndex: number, newOrder: string[]) => void;
 }
 
 // ─── INNER COMPONENT ───────────────────────────────────────────────────────
@@ -95,11 +101,13 @@ export function DataTableInner<T extends { id: string }>({
   getCellSelectionContext,
   onCellClick,
   onCellKeyDown,
+  reorderableRows = false,
+  onRowReorder,
 }: DataTableInnerProps<T>) {
   // Context hooks
   const { selectedRows, expandedRows, selectAll, deselectAll, toggleSelect, toggleExpand } =
     useSelection();
-  const { sortKey, sortDirection, sortState, cycleSort } = useSorting();
+  const { sortState, cycleSort } = useSorting();
   const { searchText, columnFilters, setFilter } = useFiltering();
   const { page, pageSize } = usePagination();
   const {
@@ -115,8 +123,16 @@ export function DataTableInner<T extends { id: string }>({
   } = useColumns<T>();
   const { config } = useTableUI();
   const { groupBy, groupByArray, setGroupBy, isGrouped, isMultiLevel, toggleGroupExpand, isGroupExpanded, addGroupBy } = useGrouping();
+  const { t, formatNumber } = useI18n();
 
   const tableContainerRef = useRef<HTMLDivElement>(null);
+  const announcerRegionId = useId();
+  const announcementRef = useRef<string>("");
+
+  // Track previous values for change detection
+  const prevSortStateRef = useRef(sortState);
+  const prevSelectedCountRef = useRef(selectedRows.size);
+  const prevFilterCountRef = useRef(Object.keys(columnFilters).length + (searchText ? 1 : 0));
 
   // Computed values
   const effectiveSelectable = config.selectable || bulkActions.length > 0;
@@ -145,6 +161,7 @@ export function DataTableInner<T extends { id: string }>({
 
   const columnMeta = useMemo<ColumnMetaMap>(() => {
     const meta: ColumnMetaMap = {};
+    // Note: dragHandle is NOT sticky, so it doesn't contribute to left offset for pinned columns
     const expanderWidth = enableExpansion ? COLUMN_WIDTHS.EXPANDER : 0;
     let leftAcc = (effectiveSelectable ? COLUMN_WIDTHS.CHECKBOX : 0) + expanderWidth;
 
@@ -184,6 +201,7 @@ export function DataTableInner<T extends { id: string }>({
 
   // Calculate total table width for consistent header/body alignment
   const totalTableWidth = useMemo(() => {
+    const dragHandleWidth = reorderableRows && !isGrouped ? 40 : 0;
     const checkboxWidth = effectiveSelectable ? COLUMN_WIDTHS.CHECKBOX : 0;
     const expanderWidth = enableExpansion ? COLUMN_WIDTHS.EXPANDER : 0;
     const columnsWidth = sortedVisibleColumns.reduce((acc, col) => {
@@ -191,8 +209,8 @@ export function DataTableInner<T extends { id: string }>({
       const width = columnMeta[key]?.width ?? (typeof col.width === "number" ? col.width : 150);
       return acc + width;
     }, 0);
-    return checkboxWidth + expanderWidth + columnsWidth;
-  }, [effectiveSelectable, enableExpansion, sortedVisibleColumns, columnMeta]);
+    return dragHandleWidth + checkboxWidth + expanderWidth + columnsWidth;
+  }, [effectiveSelectable, enableExpansion, sortedVisibleColumns, columnMeta, reorderableRows, isGrouped]);
 
   // ─── DATA PROCESSING ──────────────────────────────────────────────────────
 
@@ -202,8 +220,6 @@ export function DataTableInner<T extends { id: string }>({
     data: safeData,
     searchText,
     columnFilters,
-    sortKey,
-    sortDirection,
     sortState,
     columns: columns as Column<T>[],
     disableLocalProcessing,
@@ -222,6 +238,27 @@ export function DataTableInner<T extends { id: string }>({
     const start = (safePage - 1) * pageSize;
     return processedData.slice(start, start + pageSize);
   }, [processedData, page, pageSize, config.paginationMode, config.mode]);
+
+  // ─── ROW DRAG-TO-REORDER ─────────────────────────────────────────────────────
+
+  const handleRowReorder = useCallback(
+    (fromIndex: number, toIndex: number, newOrder: string[]) => {
+      onRowReorder?.(fromIndex, toIndex, newOrder);
+    },
+    [onRowReorder]
+  );
+
+  const {
+    getRowDragProps,
+    getDragHandleProps,
+    isDraggingRow,
+    isDropTarget,
+    getDropPosition,
+  } = useRowDrag({
+    enabled: reorderableRows && !isGrouped, // Disable when grouped
+    data: paginatedData,
+    onReorder: handleRowReorder,
+  });
 
   // ─── ROW GROUPING ───────────────────────────────────────────────────────────
 
@@ -498,14 +535,79 @@ export function DataTableInner<T extends { id: string }>({
   // ─── STATUS ANNOUNCEMENTS ─────────────────────────────────────────────────
 
   const statusMessage = useMemo(() => {
-    if (isLoading) return "Loading data...";
-    if (paginatedData.length === 0) return "No results found";
+    if (isLoading) return t("loading");
+    if (paginatedData.length === 0) return t("noResults");
     const selectedCount = selectedRows.size;
+    const rangeInfo = t("rangeOfTotal", {
+      start: formatNumber(1),
+      end: formatNumber(paginatedData.length),
+      total: formatNumber(processedData.length),
+    });
     if (selectedCount > 0) {
-      return `${selectedCount} row${selectedCount === 1 ? "" : "s"} selected. Showing ${paginatedData.length} of ${processedData.length} rows.`;
+      return `${t("selectedCount", { count: selectedCount })}. ${rangeInfo}`;
     }
-    return `Showing ${paginatedData.length} of ${processedData.length} rows.`;
-  }, [isLoading, paginatedData.length, processedData.length, selectedRows.size]);
+    return rangeInfo;
+  }, [isLoading, paginatedData.length, processedData.length, selectedRows.size, t, formatNumber]);
+
+  // ─── LIVE REGION ANNOUNCEMENTS ─────────────────────────────────────────────
+
+  // Helper to announce changes to screen readers
+  const announce = useCallback((message: string) => {
+    const region = document.getElementById(announcerRegionId);
+    if (region && message) {
+      // Add non-breaking space for repeated messages to force re-announcement
+      const finalMessage = message === announcementRef.current
+        ? `${message}\u00A0`
+        : message;
+      announcementRef.current = message;
+      region.textContent = finalMessage;
+      // Clear after delay to allow for new announcements
+      setTimeout(() => {
+        region.textContent = "";
+      }, 1000);
+    }
+  }, [announcerRegionId]);
+
+  // Announce sort changes
+  useEffect(() => {
+    const prevSort = prevSortStateRef.current;
+    prevSortStateRef.current = sortState;
+
+    // Skip initial render
+    if (prevSort === sortState) return;
+
+    // Check if sort changed
+    if (sortState.length > 0) {
+      const firstSort = sortState[0];
+      if (firstSort) {
+        // Find column header for the sorted column
+        const sortedColumn = columns.find((c) => String(c.key) === firstSort.key);
+        const columnName = sortedColumn?.header ?? firstSort.key;
+        const message = firstSort.direction === "asc"
+          ? t("srSortedAsc", { column: columnName })
+          : t("srSortedDesc", { column: columnName });
+        announce(message);
+      }
+    } else if (prevSort.length > 0) {
+      announce(t("srNotSorted"));
+    }
+  }, [sortState, columns, t, announce]);
+
+  // Announce filter changes
+  useEffect(() => {
+    const currentFilterCount = Object.keys(columnFilters).length + (searchText ? 1 : 0);
+    const prevFilterCount = prevFilterCountRef.current;
+    prevFilterCountRef.current = currentFilterCount;
+
+    // Skip initial render
+    if (prevFilterCount === currentFilterCount) return;
+
+    if (currentFilterCount > prevFilterCount) {
+      announce(t("srFilterApplied", { count: currentFilterCount }));
+    } else if (currentFilterCount === 0 && prevFilterCount > 0) {
+      announce(t("srFilterCleared"));
+    }
+  }, [columnFilters, searchText, t, announce]);
 
   // ─── RENDER ───────────────────────────────────────────────────────────────
 
@@ -536,7 +638,7 @@ export function DataTableInner<T extends { id: string }>({
       {...keyboardProps}
       onKeyDown={handleKeyDown}
     >
-      {/* Screen reader announcements */}
+      {/* Screen reader status (polite) */}
       <div
         role="status"
         aria-live="polite"
@@ -545,6 +647,14 @@ export function DataTableInner<T extends { id: string }>({
       >
         {statusMessage}
       </div>
+      {/* Screen reader announcements for state changes (assertive) */}
+      <div
+        id={announcerRegionId}
+        role="log"
+        aria-live="assertive"
+        aria-atomic="true"
+        className="sr-only"
+      />
       {/* Single table container with synchronized header/body */}
       <TableContainer ref={tableContainerRef}>
         {isVirtualized ? (
@@ -579,8 +689,6 @@ export function DataTableInner<T extends { id: string }>({
             density={density}
             getRowStyle={getRowStyle}
             inlineEditing={inlineEditing}
-            sortKey={sortKey}
-            sortDirection={sortDirection}
             sortState={sortState}
             onSort={handleSort}
             allSelected={allSelected}
@@ -599,20 +707,27 @@ export function DataTableInner<T extends { id: string }>({
             tableWidth={totalTableWidth}
           />
         ) : (
-          <Table style={{ minWidth: `${totalTableWidth}px` }}>
+          <Table
+            style={{ minWidth: `${totalTableWidth}px` }}
+            aria-rowcount={totalItems ?? processedData.length}
+            aria-colcount={sortedVisibleColumns.length + (effectiveSelectable ? 1 : 0) + (enableExpansion ? 1 : 0)}
+            aria-label={t("srTableDescription", {
+              rowCount: totalItems ?? processedData.length,
+              columnCount: sortedVisibleColumns.length,
+            })}
+          >
             <TableColgroup
               columns={sortedVisibleColumns}
               columnMeta={columnMeta}
               selectable={effectiveSelectable}
               enableExpansion={enableExpansion}
               getEffectivePinPosition={getEffectivePinPosition}
+              reorderableRows={reorderableRows && !isGrouped}
             />
             <DataTableHeader
               columns={sortedVisibleColumns}
               columnDefinitions={config.columnDefinitions}
               hasGroups={config.hasGroups}
-              sortKey={sortKey}
-              sortDirection={sortDirection}
               sortState={sortState}
               onSort={handleSort}
               columnMeta={columnMeta}
@@ -639,6 +754,7 @@ export function DataTableInner<T extends { id: string }>({
               groupByArray={groupByArray}
               onGroupBy={setGroupBy}
               onAddGroupBy={addGroupBy}
+              reorderableRows={reorderableRows && !isGrouped}
             />
             <DataTableBody
               data={paginatedData}
@@ -673,6 +789,12 @@ export function DataTableInner<T extends { id: string }>({
               cellSelectionEnabled={cellSelectionEnabled}
               getCellSelectionContext={getCellSelectionContext}
               onCellClick={onCellClick}
+              reorderableRows={reorderableRows && !isGrouped}
+              getRowDragProps={getRowDragProps}
+              getDragHandleProps={getDragHandleProps}
+              isDraggingRow={isDraggingRow}
+              isDropTarget={isDropTarget}
+              getDropPosition={getDropPosition}
             />
             <DataTableFooter
               data={processedData}
@@ -685,6 +807,7 @@ export function DataTableInner<T extends { id: string }>({
               density={density}
               showSummary={config.showSummary}
               summaryLabel={config.summaryLabel}
+              reorderableRows={reorderableRows && !isGrouped}
             />
           </Table>
         )}

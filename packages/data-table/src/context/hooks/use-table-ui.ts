@@ -15,7 +15,6 @@ export function useTableUI() {
   );
 
   return {
-    isMobile: state.isMobile,
     config,
     resetAll,
     hasCustomizations:

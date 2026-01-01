@@ -3,8 +3,11 @@
 import React, { memo, type ReactNode, type CSSProperties } from "react";
 import { cn, Icon, Checkbox } from "@unisane/ui";
 import type { Column, PinPosition, ColumnMetaMap, CellContext, InlineEditingController, CellSelectionContext } from "../types/index";
+import type { RowDragProps } from "../hooks/ui/use-row-drag";
 import { getNestedValue } from "../utils/get-nested-value";
 import { DENSITY_STYLES, type Density } from "../constants/index";
+import { useI18n } from "../i18n";
+import { DragHandle } from "./drag-handle";
 
 // ─── ROW PROPS ──────────────────────────────────────────────────────────────
 
@@ -47,6 +50,25 @@ interface DataTableRowProps<T> {
   getCellSelectionContext?: (rowId: string, columnKey: string) => CellSelectionContext;
   /** Cell selection: handle cell click */
   onCellClick?: (rowId: string, columnKey: string, event: React.MouseEvent) => void;
+  /** Row reordering: whether drag-to-reorder is enabled */
+  reorderableRows?: boolean;
+  /** Row reordering: whether this row is being dragged */
+  isDragging?: boolean;
+  /** Row reordering: whether this row is a drop target */
+  isDropTarget?: boolean;
+  /** Row reordering: drop position relative to this row */
+  dropPosition?: "before" | "after" | null;
+  /** Row reordering: drag props for the row element */
+  rowDragProps?: RowDragProps;
+  /** Row reordering: drag handle props */
+  dragHandleProps?: {
+    onMouseDown: (e: React.MouseEvent) => void;
+    onKeyDown: (e: React.KeyboardEvent) => void;
+    tabIndex: number;
+    role: string;
+    "aria-label": string;
+    "aria-grabbed": boolean | undefined;
+  };
 }
 
 // ─── ROW COMPONENT ──────────────────────────────────────────────────────────
@@ -81,7 +103,14 @@ function DataTableRowInner<T extends { id: string }>({
   cellSelectionEnabled = false,
   getCellSelectionContext,
   onCellClick,
+  reorderableRows = false,
+  isDragging = false,
+  isDropTarget = false,
+  dropPosition = null,
+  rowDragProps,
+  dragHandleProps,
 }: DataTableRowProps<T>) {
+  const { t } = useI18n();
   const isOddRow = rowIndex % 2 === 1;
   const paddingClass = DENSITY_STYLES[density];
 
@@ -126,6 +155,13 @@ function DataTableRowInner<T extends { id: string }>({
 
   const bgClass = getBgClass();
 
+  // Sticky cell background - includes drop target state
+  const getStickyBgClass = () => {
+    if (isDropTarget) return "bg-primary/5";
+    return bgClass;
+  };
+  const stickyBgClass = getStickyBgClass();
+
   return (
     <>
       <tr
@@ -138,32 +174,79 @@ function DataTableRowInner<T extends { id: string }>({
           bgClass,
           onRowClick && "cursor-pointer",
           !isSelected && !isActive && "hover:bg-surface-container-low",
-          isFocused && "ring-2 ring-inset ring-primary/50"
+          isFocused && "ring-2 ring-inset ring-primary/50",
+          // Drag state styling
+          isDragging && "opacity-50 scale-[0.98]",
+          // Drop target highlight
+          isDropTarget && "bg-primary/5"
         )}
         style={style}
         data-index={dataIndex}
         aria-selected={isSelected || isFocused}
         id={`data-table-row-${row.id}`}
+        {...rowDragProps}
       >
+        {/* Drag handle column - fixed 40px width, scrolls with content */}
+        {reorderableRows && (
+          <td
+            className={cn(
+              "relative",
+              bgClass,
+              !isSelected && !isActive && !isDropTarget && "group-hover:bg-surface-container-low",
+              "transition-colors",
+              !isLastRow && "border-b border-outline-variant/50",
+              showColumnBorders && "border-r border-outline-variant/50"
+            )}
+            style={{ width: 40, minWidth: 40, maxWidth: 40 }}
+          >
+            {/* Drop indicator line - spans full table width */}
+            {isDropTarget && dropPosition && (
+              <div
+                className={cn(
+                  "absolute left-0 z-50 pointer-events-none",
+                  "h-0.5 bg-primary",
+                  dropPosition === "before" ? "top-0 -translate-y-1/2" : "bottom-0 translate-y-1/2"
+                )}
+                style={{ width: "calc(100vw - var(--scrollbar-width, 0px))", maxWidth: "9999px" }}
+                aria-hidden="true"
+              >
+                {/* Circle indicator at the start */}
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-primary border-2 border-surface" />
+              </div>
+            )}
+            <div className="flex items-center justify-center h-full">
+              <DragHandle
+                size="sm"
+                isDragging={isDragging}
+                {...dragHandleProps}
+              />
+            </div>
+          </td>
+        )}
+
         {/* Checkbox column - NO padding, fixed 48px width */}
         {selectable && (
           <td
             className={cn(
               "sticky left-0 z-20 isolate",
-              bgClass,
-              !isSelected && !isActive && "group-hover:bg-surface-container-low",
+              stickyBgClass,
+              !isSelected && !isActive && !isDropTarget && "group-hover:bg-surface-container-low",
               "transition-colors",
               !isLastRow && "border-b border-outline-variant/50",
               // Only show border-r if there are no more sticky columns after this
               showColumnBorders && !enableExpansion && !hasPinnedLeftData && "border-r border-outline-variant/50"
             )}
-            style={{ width: 48, minWidth: 48, maxWidth: 48 }}
+            style={{
+              width: 48,
+              minWidth: 48,
+              maxWidth: 48,
+            }}
           >
             <div className="flex items-center justify-center h-full">
               <Checkbox
                 checked={isSelected}
                 onChange={() => onSelect(row.id, !isSelected)}
-                aria-label={`Select row ${row.id}`}
+                aria-label={t("selectRowLabel", { id: row.id })}
                 className="[&>div]:w-8 [&>div]:h-8"
               />
             </div>
@@ -175,8 +258,8 @@ function DataTableRowInner<T extends { id: string }>({
           <td
             className={cn(
               "sticky z-20 isolate text-center",
-              bgClass,
-              !isSelected && !isActive && "group-hover:bg-surface-container-low",
+              stickyBgClass,
+              !isSelected && !isActive && !isDropTarget && "group-hover:bg-surface-container-low",
               "transition-colors",
               !isLastRow && "border-b border-outline-variant/50",
               // Only show border-r if there are no pinned-left data columns after this
@@ -186,7 +269,7 @@ function DataTableRowInner<T extends { id: string }>({
               width: 40,
               minWidth: 40,
               maxWidth: 40,
-              left: selectable ? 48 : 0
+              left: selectable ? 48 : 0,
             }}
           >
             {canExpand && (
@@ -198,7 +281,7 @@ function DataTableRowInner<T extends { id: string }>({
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 )}
                 aria-expanded={isExpanded}
-                aria-label={isExpanded ? "Collapse row" : "Expand row"}
+                aria-label={isExpanded ? t("collapseRow") : t("expandRow")}
               >
                 <Icon
                   symbol={isExpanded ? "expand_less" : "expand_more"}
@@ -285,9 +368,9 @@ function DataTableRowInner<T extends { id: string }>({
               key={key}
               className={cn(
                 "text-body-medium text-on-surface whitespace-nowrap overflow-hidden text-ellipsis",
-                // All cells use dynamic bgClass for proper selection state
-                bgClass,
-                !isSelected && !isActive && "group-hover:bg-surface-container-low",
+                // Pinned cells use stickyBgClass for drop target state, others use bgClass
+                pinPosition ? stickyBgClass : bgClass,
+                !isSelected && !isActive && !isDropTarget && "group-hover:bg-surface-container-low",
                 "transition-colors",
                 !isLastRow && "border-b border-outline-variant/50",
                 col.align === "center" && "text-center",
@@ -304,22 +387,22 @@ function DataTableRowInner<T extends { id: string }>({
                 isEditing && "overflow-visible z-[3]",
                 // Cell selection styling
                 cellSelectionEnabled && "cursor-cell select-none",
-                cellSelectionCtx?.isSelected && "bg-secondary-container/50",
-                cellSelectionCtx?.isActive && "ring-1 ring-inset ring-primary",
-                // Range edge borders (Excel-like selection border)
-                cellSelectionCtx?.isSelected && cellSelectionCtx.isRangeEdge.top && "border-t-2 border-t-primary",
-                cellSelectionCtx?.isSelected && cellSelectionCtx.isRangeEdge.right && "border-r-2 border-r-primary",
-                cellSelectionCtx?.isSelected && cellSelectionCtx.isRangeEdge.bottom && "border-b-2 border-b-primary",
-                cellSelectionCtx?.isSelected && cellSelectionCtx.isRangeEdge.left && "border-l-2 border-l-primary"
+                cellSelectionCtx?.isSelected && "bg-secondary-container/30",
+                cellSelectionCtx?.isActive && "outline outline-1 outline-primary -outline-offset-1",
+                // Range edge borders (Excel-like selection border) - subtle borders
+                cellSelectionCtx?.isSelected && cellSelectionCtx.isRangeEdge.top && "border-t border-t-primary/70",
+                cellSelectionCtx?.isSelected && cellSelectionCtx.isRangeEdge.right && "border-r border-r-primary/70",
+                cellSelectionCtx?.isSelected && cellSelectionCtx.isRangeEdge.bottom && "border-b border-b-primary/70",
+                cellSelectionCtx?.isSelected && cellSelectionCtx.isRangeEdge.left && "border-l border-l-primary/70"
               )}
               style={{
                 left: pinPosition === "left" ? meta?.left : undefined,
                 right: pinPosition === "right" ? meta?.right : undefined,
                 // Pinned column elevation shadow
                 boxShadow: pinPosition === "left"
-                  ? "4px 0 8px -3px rgba(0, 0, 0, 0.15)"
+                  ? "4px 0 6px -2px rgba(0, 0, 0, 0.1)"
                   : pinPosition === "right"
-                  ? "-4px 0 8px -3px rgba(0, 0, 0, 0.15)"
+                  ? "-4px 0 6px -2px rgba(0, 0, 0, 0.1)"
                   : undefined,
               }}
               onClick={cellSelectionEnabled ? handleCellClick : undefined}
@@ -337,18 +420,31 @@ function DataTableRowInner<T extends { id: string }>({
       {/* Expanded content */}
       {isExpanded && renderExpandedRow && (
         <tr className="bg-surface-container-lowest animate-in slide-in-from-top-1 duration-snappy">
+          {/* Drag handle placeholder - scrolls with content */}
+          {reorderableRows && (
+            <td
+              className="bg-surface-container-lowest border-b border-outline-variant/50"
+              style={{ width: 40, minWidth: 40, maxWidth: 40 }}
+            />
+          )}
           {selectable && (
             <td
-              className="sticky left-0 z-20 isolate bg-surface-container-lowest"
-              style={{ width: 48 }}
+              className="sticky left-0 z-20 isolate bg-surface-container-lowest border-b border-outline-variant/50"
+              style={{
+                width: 48,
+                minWidth: 48,
+                maxWidth: 48,
+              }}
             />
           )}
           {enableExpansion && (
             <td
-              className="sticky z-20 isolate bg-surface-container-lowest"
+              className="sticky z-20 isolate bg-surface-container-lowest border-b border-outline-variant/50"
               style={{
                 left: selectable ? 48 : 0,
                 width: 40,
+                minWidth: 40,
+                maxWidth: 40,
               }}
             />
           )}
@@ -389,6 +485,12 @@ export const DataTableRow = memo(DataTableRowInner, (prev, next) => {
     prev.groupDepth === next.groupDepth &&
     prev.cellSelectionEnabled === next.cellSelectionEnabled &&
     prev.getCellSelectionContext === next.getCellSelectionContext &&
-    prev.onCellClick === next.onCellClick
+    prev.onCellClick === next.onCellClick &&
+    prev.reorderableRows === next.reorderableRows &&
+    prev.isDragging === next.isDragging &&
+    prev.isDropTarget === next.isDropTarget &&
+    prev.dropPosition === next.dropPosition &&
+    prev.rowDragProps === next.rowDragProps &&
+    prev.dragHandleProps === next.dragHandleProps
   );
 }) as typeof DataTableRowInner;

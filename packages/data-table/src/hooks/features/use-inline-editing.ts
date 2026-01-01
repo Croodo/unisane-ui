@@ -104,6 +104,12 @@ export function useInlineEditing<T extends { id: string }>({
     originalValueRef.current = null;
   }, [editingCell, onCancelEdit]);
 
+  // Clear validation error without canceling edit
+  // Useful for allowing retry after a failed save
+  const clearError = useCallback(() => {
+    setValidationError(null);
+  }, []);
+
   // Update pending value (while typing)
   const updateValue = useCallback(
     (value: unknown) => {
@@ -133,7 +139,13 @@ export function useInlineEditing<T extends { id: string }>({
       }
     }
 
-    // Find the row
+    // Find the row - handle undefined/null data gracefully
+    if (!data || !Array.isArray(data)) {
+      console.warn("useInlineEditing: data is not available or not an array");
+      cancelEdit();
+      return false;
+    }
+
     const row = data.find((r) => r.id === editingCell.rowId);
     if (!row) {
       cancelEdit();
@@ -167,6 +179,13 @@ export function useInlineEditing<T extends { id: string }>({
       setIsSaving(false);
     }
   }, [editingCell, pendingValue, data, onCellChange, cancelEdit, validateCell]);
+
+  // Retry the last failed save operation
+  // Clears the error and tries to commit again
+  const retryEdit = useCallback(async (): Promise<boolean> => {
+    setValidationError(null);
+    return commitEdit();
+  }, [commitEdit]);
 
   // Check if a specific cell is being edited
   const isCellEditing = useCallback(
@@ -253,6 +272,8 @@ export function useInlineEditing<T extends { id: string }>({
     cancelEdit,
     updateValue,
     commitEdit,
+    clearError,
+    retryEdit,
     isCellEditing,
     getCellEditProps,
     getInputProps,

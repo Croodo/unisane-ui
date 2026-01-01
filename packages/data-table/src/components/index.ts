@@ -13,6 +13,7 @@ export {
   RowContextMenu,
   useRowContextMenu,
   createDefaultContextMenuItems,
+  useDefaultContextMenuItems,
   type RowContextMenuProps,
   type ContextMenuState,
   type UseRowContextMenuOptions,
@@ -20,3 +21,4 @@ export {
 } from "./row-context-menu";
 export { VirtualizedBody } from "./virtualized-body";
 export { DataTableErrorBoundary, DataTableErrorDisplay } from "./error-boundary";
+export { DragHandle, type DragHandleProps } from "./drag-handle";

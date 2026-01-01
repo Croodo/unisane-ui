@@ -3,6 +3,7 @@
 import React, { memo, useState, useMemo } from "react";
 import { cn, Button, Icon, Popover } from "@unisane/ui";
 import { usePagination } from "../context";
+import { useI18n } from "../i18n";
 
 // ─── PAGE SIZE OPTIONS ─────────────────────────────────────────────────────
 
@@ -42,17 +43,18 @@ function PaginationInfo({
   totalItems?: number;
   currentCount?: number;
 }) {
+  const { t, formatNumber } = useI18n();
   const start = (page - 1) * pageSize + 1;
   const end = Math.min(page * pageSize, totalItems ?? currentCount ?? 0);
   const total = totalItems ?? currentCount ?? 0;
 
   if (total === 0) {
-    return <span className="text-body-small text-on-surface-variant">No items</span>;
+    return <span className="text-body-small text-on-surface-variant">{t("noItems")}</span>;
   }
 
   return (
     <span className="text-body-small text-on-surface-variant">
-      {start}-{end} of {total.toLocaleString()}
+      {t("rangeOfTotal", { start: formatNumber(start), end: formatNumber(end), total: formatNumber(total) })}
     </span>
   );
 }
@@ -68,6 +70,7 @@ function PageSizeSelector({
   pageSizeOptions: number[];
   onChange: (size: number) => void;
 }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
 
   const popoverContent = (
@@ -85,7 +88,7 @@ function PageSizeSelector({
             pageSize === size && "bg-primary/8 text-primary"
           )}
         >
-          {size} per page
+          {t("perPage", { count: size })}
         </button>
       ))}
     </div>
@@ -97,7 +100,7 @@ function PageSizeSelector({
       onOpenChange={setOpen}
       trigger={
         <div className="inline-flex items-center gap-1 px-3 py-1.5 text-body-medium text-on-surface hover:bg-on-surface/8 rounded-xl transition-colors cursor-pointer">
-          {pageSize} per page
+          {t("perPage", { count: pageSize })}
           <Icon symbol="arrow_drop_down" className="w-5 h-5" />
         </div>
       }
@@ -125,6 +128,7 @@ function OffsetPagination({
   setPageSize: (size: number) => void;
   pageSizeOptions: number[];
 }) {
+  const { t } = useI18n();
   const canGoPrev = page > 1;
   const canGoNext = page < totalPages;
 
@@ -145,7 +149,7 @@ function OffsetPagination({
             size="sm"
             onClick={() => setPage(1)}
             disabled={!canGoPrev}
-            aria-label="First page"
+            aria-label={t("previous")}
           >
             <Icon symbol="first_page" className="w-5 h-5" />
           </Button>
@@ -155,13 +159,13 @@ function OffsetPagination({
             size="sm"
             onClick={() => setPage(page - 1)}
             disabled={!canGoPrev}
-            aria-label="Previous page"
+            aria-label={t("previous")}
           >
             <Icon symbol="chevron_left" className="w-5 h-5" />
           </Button>
 
           <span className="text-body-small text-on-surface px-2 min-w-[80px] text-center">
-            Page {page} of {totalPages}
+            {t("pageOfTotal", { page, totalPages })}
           </span>
 
           <Button
@@ -169,7 +173,7 @@ function OffsetPagination({
             size="sm"
             onClick={() => setPage(page + 1)}
             disabled={!canGoNext}
-            aria-label="Next page"
+            aria-label={t("next")}
           >
             <Icon symbol="chevron_right" className="w-5 h-5" />
           </Button>
@@ -179,7 +183,7 @@ function OffsetPagination({
             size="sm"
             onClick={() => setPage(totalPages)}
             disabled={!canGoNext}
-            aria-label="Last page"
+            aria-label={t("next")}
           >
             <Icon symbol="last_page" className="w-5 h-5" />
           </Button>
@@ -204,14 +208,14 @@ function CursorPagination({
   setPageSize: (size: number) => void;
   pageSizeOptions: number[];
 }) {
+  const { t, formatNumber } = useI18n();
   const hasPrev = !!cursor.prevCursor;
   const hasNext = !!cursor.nextCursor;
 
   return (
     <div className="flex items-center justify-between gap-4 px-4 py-2 bg-surface-container-low">
       <span className="text-body-small text-on-surface-variant">
-        {currentCount?.toLocaleString() ?? 0} items
-        {cursor.pageIndex && ` (page ${cursor.pageIndex})`}
+        {t("cursorPagination", { count: formatNumber(currentCount ?? 0), page: cursor.pageIndex ?? 1 })}
       </span>
 
       <div className="flex items-center gap-2">
@@ -227,10 +231,10 @@ function CursorPagination({
             size="sm"
             onClick={cursor.onPrev}
             disabled={!hasPrev}
-            aria-label="Previous page"
+            aria-label={t("previous")}
           >
             <Icon symbol="chevron_left" className="w-5 h-5" />
-            Previous
+            {t("previous")}
           </Button>
 
           <Button
@@ -238,9 +242,9 @@ function CursorPagination({
             size="sm"
             onClick={cursor.onNext}
             disabled={!hasNext}
-            aria-label="Next page"
+            aria-label={t("next")}
           >
-            Next
+            {t("next")}
             <Icon symbol="chevron_right" className="w-5 h-5" />
           </Button>
         </div>

@@ -1,21 +1,24 @@
 "use client";
 
 import { useMemo } from "react";
-import type { Column, FilterState, SortDirection, MultiSortState, FilterValue } from "../../types";
+import type { Column, FilterState, MultiSortState, FilterValue } from "../../types";
 import { getNestedValue } from "../../utils/get-nested-value";
+import { useDebounce } from "../utilities/use-debounce";
 
 interface UseProcessedDataOptions<T> {
   data: T[];
   searchText: string;
   columnFilters: FilterState;
-  /** @deprecated Use sortState instead for multi-sort */
-  sortKey: string | null;
-  /** @deprecated Use sortState instead for multi-sort */
-  sortDirection: SortDirection;
-  /** Multi-sort state - takes precedence over sortKey/sortDirection */
-  sortState?: MultiSortState;
+  /** Sort state - array of sort items for multi-sort support */
+  sortState: MultiSortState;
   columns: Column<T>[];
   disableLocalProcessing?: boolean;
+  /**
+   * Debounce delay for search text in milliseconds.
+   * Helps prevent excessive recalculations on every keystroke.
+   * @default 0 (no debounce)
+   */
+  searchDebounceMs?: number;
 }
 
 /**
@@ -26,12 +29,14 @@ export function useProcessedData<T extends { id: string }>({
   data,
   searchText,
   columnFilters,
-  sortKey,
-  sortDirection,
-  sortState = [],
+  sortState,
   columns,
   disableLocalProcessing = false,
+  searchDebounceMs = 0,
 }: UseProcessedDataOptions<T>): T[] {
+  // Debounce search text to prevent excessive recalculations on every keystroke
+  const debouncedSearchText = useDebounce(searchText, searchDebounceMs);
+
   return useMemo(() => {
     // Guard against undefined data
     if (!data) {
@@ -46,8 +51,8 @@ export function useProcessedData<T extends { id: string }>({
     let result = [...data];
 
     // ─── SEARCH ───────────────────────────────────────────────────────────────
-    if (searchText.trim()) {
-      const searchLower = searchText.toLowerCase().trim();
+    if (debouncedSearchText.trim()) {
+      const searchLower = debouncedSearchText.toLowerCase().trim();
       result = result.filter((row) => {
         // Search across all columns
         return columns.some((col) => {
@@ -80,18 +85,10 @@ export function useProcessedData<T extends { id: string }>({
     }
 
     // ─── SORTING ──────────────────────────────────────────────────────────────
-    // Determine effective sort state (prefer sortState array over legacy sortKey/sortDirection)
-    const effectiveSortState: MultiSortState =
-      sortState.length > 0
-        ? sortState
-        : sortKey && sortDirection
-          ? [{ key: sortKey, direction: sortDirection }]
-          : [];
-
-    if (effectiveSortState.length > 0) {
+    if (sortState.length > 0) {
       result.sort((a, b) => {
         // Compare by each sort column in order (primary first, then secondary, etc.)
-        for (const sortItem of effectiveSortState) {
+        for (const sortItem of sortState) {
           // Find the column for custom sort function
           const sortColumn = columns.find((col) => String(col.key) === sortItem.key);
 
@@ -123,7 +120,7 @@ export function useProcessedData<T extends { id: string }>({
     }
 
     return result;
-  }, [data, searchText, columnFilters, sortKey, sortDirection, sortState, columns, disableLocalProcessing]);
+  }, [data, debouncedSearchText, columnFilters, sortState, columns, disableLocalProcessing]);
 }
 
 /**

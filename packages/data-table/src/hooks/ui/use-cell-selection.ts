@@ -12,18 +12,35 @@ import type {
 // ─── UTILITIES ──────────────────────────────────────────────────────────────
 
 /**
+ * Separator for cell keys. Using a double pipe which is unlikely to appear
+ * in row IDs or column keys. This fixes the bug where IDs containing ":"
+ * would break the parseKey function.
+ */
+const CELL_KEY_SEPARATOR = "||";
+
+/**
  * Create a cell key for Set storage
+ * Uses a safe separator that won't conflict with typical ID formats
  */
 function cellKey(rowId: string, columnKey: string): string {
-  return `${rowId}:${columnKey}`;
+  return `${rowId}${CELL_KEY_SEPARATOR}${columnKey}`;
 }
 
 /**
  * Parse a cell key back to position
+ * Uses indexOf to find the first separator, ensuring correct parsing
+ * even if the separator appears in the columnKey (unlikely but safe)
  */
 function parseKey(key: string): CellPosition {
-  const [rowId, columnKey] = key.split(":");
-  return { rowId: rowId!, columnKey: columnKey! };
+  const separatorIndex = key.indexOf(CELL_KEY_SEPARATOR);
+  if (separatorIndex === -1) {
+    // Fallback for malformed keys - should not happen in normal usage
+    console.warn(`Invalid cell key format: ${key}`);
+    return { rowId: key, columnKey: "" };
+  }
+  const rowId = key.slice(0, separatorIndex);
+  const columnKey = key.slice(separatorIndex + CELL_KEY_SEPARATOR.length);
+  return { rowId, columnKey };
 }
 
 // ─── HOOK ───────────────────────────────────────────────────────────────────
@@ -69,10 +86,23 @@ export function useCellSelection<T extends { id: string }>({
 
   /**
    * Get all cells in a rectangular range between two positions
+   * Uses refs for latest data to avoid stale closure issues
    */
   const getCellsInRange = useCallback(
     (start: CellPosition, end: CellPosition): Set<string> => {
       const cells = new Set<string>();
+
+      // Use refs for latest data/columnKeys to avoid stale indices
+      const currentData = dataRef.current;
+      const currentColumnKeys = columnKeysRef.current;
+
+      // Validate inputs
+      if (!currentData || !Array.isArray(currentData) || currentData.length === 0) {
+        return cells;
+      }
+      if (!currentColumnKeys || !Array.isArray(currentColumnKeys) || currentColumnKeys.length === 0) {
+        return cells;
+      }
 
       const startRowIdx = rowIndexMap.get(start.rowId) ?? -1;
       const endRowIdx = rowIndexMap.get(end.rowId) ?? -1;
@@ -88,12 +118,16 @@ export function useCellSelection<T extends { id: string }>({
       const minCol = Math.min(startColIdx, endColIdx);
       const maxCol = Math.max(startColIdx, endColIdx);
 
-      for (let rowIdx = minRow; rowIdx <= maxRow; rowIdx++) {
-        const row = data[rowIdx];
+      // Clamp to actual data bounds
+      const safeMaxRow = Math.min(maxRow, currentData.length - 1);
+      const safeMaxCol = Math.min(maxCol, currentColumnKeys.length - 1);
+
+      for (let rowIdx = minRow; rowIdx <= safeMaxRow; rowIdx++) {
+        const row = currentData[rowIdx];
         if (!row) continue;
 
-        for (let colIdx = minCol; colIdx <= maxCol; colIdx++) {
-          const colKey = columnKeys[colIdx];
+        for (let colIdx = minCol; colIdx <= safeMaxCol; colIdx++) {
+          const colKey = currentColumnKeys[colIdx];
           if (colKey) {
             cells.add(cellKey(row.id, colKey));
           }

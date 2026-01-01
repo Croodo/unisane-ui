@@ -2,10 +2,19 @@
 
 import React, { memo } from "react";
 import { cn, Checkbox } from "@unisane/ui";
-import type { Column, ColumnGroup, SortDirection, MultiSortState, PinPosition, ColumnMetaMap, FilterValue } from "../../types";
+import type {
+  Column,
+  ColumnGroup,
+  SortDirection,
+  MultiSortState,
+  PinPosition,
+  ColumnMetaMap,
+  FilterValue,
+} from "../../types";
 import { isColumnGroup } from "../../types";
 import { DENSITY_STYLES, type Density } from "../../constants";
 import { useColumnDrag } from "../../hooks/ui/use-column-drag";
+import { useI18n } from "../../i18n";
 import { HeaderCell } from "./header-cell";
 import { GroupHeaderRow } from "./group-header-row";
 
@@ -24,12 +33,8 @@ export interface DataTableHeaderProps<T> {
   columnDefinitions?: Array<Column<T> | ColumnGroup<T>>;
   /** Whether column groups exist */
   hasGroups?: boolean;
-  /** @deprecated Use sortState instead */
-  sortKey: string | null;
-  /** @deprecated Use sortState instead */
-  sortDirection: SortDirection;
   /** Multi-sort state */
-  sortState?: MultiSortState;
+  sortState: MultiSortState;
   /** Sort handler - receives key and whether Shift was held (for multi-sort) */
   onSort: (key: string, addToMultiSort?: boolean) => void;
   columnMeta: ColumnMetaMap;
@@ -63,6 +68,8 @@ export interface DataTableHeaderProps<T> {
   onGroupBy?: (key: string | string[] | null) => void;
   /** Callback to add a column to multi-level grouping */
   onAddGroupBy?: (key: string) => void;
+  /** Whether row drag-to-reorder is enabled */
+  reorderableRows?: boolean;
 }
 
 // ─── HEADER COMPONENT ───────────────────────────────────────────────────────
@@ -71,9 +78,7 @@ function DataTableHeaderInner<T extends { id: string }>({
   columns,
   columnDefinitions,
   hasGroups = false,
-  sortKey,
-  sortDirection,
-  sortState = [],
+  sortState,
   onSort,
   columnMeta,
   getEffectivePinPosition,
@@ -99,50 +104,59 @@ function DataTableHeaderInner<T extends { id: string }>({
   groupByArray = [],
   onGroupBy,
   onAddGroupBy,
+  reorderableRows = false,
 }: DataTableHeaderProps<T>) {
+  const { t } = useI18n();
   const paddingClass = DENSITY_STYLES[density];
 
   // Column drag-to-reorder
-  const { getDragProps, isDraggingColumn, isDropTarget, getDropPosition } = useColumnDrag({
-    enabled: reorderable,
-    onReorder: (fromKey, toKey) => onColumnReorder?.(fromKey, toKey),
-  });
+  const { getDragProps, isDraggingColumn, isDropTarget, getDropPosition } =
+    useColumnDrag({
+      enabled: reorderable,
+      onReorder: (fromKey, toKey) => onColumnReorder?.(fromKey, toKey),
+    });
 
   // Helper to get sort info from sortState
-  const getSortInfo = (key: string): { isSorted: boolean; direction: SortDirection; priority: number | null } => {
-    // First check sortState (multi-sort)
-    if (sortState.length > 0) {
-      const index = sortState.findIndex((s) => s.key === key);
-      if (index === -1) {
-        return { isSorted: false, direction: null, priority: null };
-      }
-      return {
-        isSorted: true,
-        direction: sortState[index]!.direction,
-        priority: sortState.length > 1 ? index + 1 : null,
-      };
+  const getSortInfo = (
+    key: string
+  ): {
+    isSorted: boolean;
+    direction: SortDirection;
+    priority: number | null;
+  } => {
+    const index = sortState.findIndex((s) => s.key === key);
+    if (index === -1) {
+      return { isSorted: false, direction: null, priority: null };
     }
-    // Fall back to legacy single-sort
-    if (sortKey === key) {
-      return { isSorted: true, direction: sortDirection, priority: null };
-    }
-    return { isSorted: false, direction: null, priority: null };
+    return {
+      isSorted: true,
+      direction: sortState[index]!.direction,
+      priority: sortState.length > 1 ? index + 1 : null,
+    };
   };
 
   // Get columns that are children of groups (for second row when groups exist)
-  const groupChildColumns = hasGroups && columnDefinitions
-    ? columnDefinitions.flatMap((def) =>
-        isColumnGroup(def) ? def.children : []
-      )
-    : [];
+  const groupChildColumns =
+    hasGroups && columnDefinitions
+      ? columnDefinitions.flatMap((def) =>
+          isColumnGroup(def) ? def.children : []
+        )
+      : [];
 
   // Determine pinned column info for border logic
   const columnsToRender = hasGroups ? groupChildColumns : columns;
-  const pinnedLeftColumns = columnsToRender.filter((col) => getEffectivePinPosition(col) === "left");
-  const pinnedRightColumns = columnsToRender.filter((col) => getEffectivePinPosition(col) === "right");
+  const pinnedLeftColumns = columnsToRender.filter(
+    (col) => getEffectivePinPosition(col) === "left"
+  );
+  const pinnedRightColumns = columnsToRender.filter(
+    (col) => getEffectivePinPosition(col) === "right"
+  );
   const hasPinnedLeftData = pinnedLeftColumns.length > 0;
-  const lastPinnedLeftKey = hasPinnedLeftData ? String(pinnedLeftColumns[pinnedLeftColumns.length - 1]!.key) : null;
-  const firstPinnedRightKey = pinnedRightColumns.length > 0 ? String(pinnedRightColumns[0]!.key) : null;
+  const lastPinnedLeftKey = hasPinnedLeftData
+    ? String(pinnedLeftColumns[pinnedLeftColumns.length - 1]!.key)
+    : null;
+  const firstPinnedRightKey =
+    pinnedRightColumns.length > 0 ? String(pinnedRightColumns[0]!.key) : null;
 
   return (
     <thead className={cn("sticky top-0 z-30", headerOffsetClassName)}>
@@ -160,6 +174,19 @@ function DataTableHeaderInner<T extends { id: string }>({
 
       {/* Main header row (or child columns row if groups exist) */}
       <tr>
+        {/* Drag handle column - scrolls with content, not sticky */}
+        {reorderableRows && (
+          <th
+            className={cn(
+              "bg-surface border-b border-outline-variant/50",
+              showColumnBorders && "border-r border-outline-variant/50"
+            )}
+            style={{ width: 40, minWidth: 40, maxWidth: 40 }}
+          >
+            <span className="sr-only">Reorder rows</span>
+          </th>
+        )}
+
         {/* Checkbox column - only render if no groups (groups use rowSpan) */}
         {selectable && !hasGroups && (
           <th
@@ -167,16 +194,23 @@ function DataTableHeaderInner<T extends { id: string }>({
               "bg-surface border-b border-outline-variant/50",
               "sticky left-0 z-20 isolate",
               // Only show border-r if there are no more sticky columns after this
-              showColumnBorders && !enableExpansion && !hasPinnedLeftData && "border-r border-outline-variant/50"
+              showColumnBorders &&
+                !enableExpansion &&
+                !hasPinnedLeftData &&
+                "border-r border-outline-variant/50"
             )}
-            style={{ width: 48, minWidth: 48, maxWidth: 48 }}
+            style={{
+              width: 48,
+              minWidth: 48,
+              maxWidth: 48,
+            }}
           >
             <div className="flex items-center justify-center h-full">
               <Checkbox
                 checked={allSelected}
                 indeterminate={indeterminate}
                 onChange={(e) => onSelectAll(e.target.checked)}
-                aria-label="Select all rows"
+                aria-label={t("selectAll")}
                 className="[&>div]:w-8 [&>div]:h-8"
               />
             </div>
@@ -190,16 +224,23 @@ function DataTableHeaderInner<T extends { id: string }>({
               "bg-surface border-b border-outline-variant/50",
               "sticky left-0 z-20 isolate",
               // Only show border-r if there are no more sticky columns after this
-              showColumnBorders && !enableExpansion && !hasPinnedLeftData && "border-r border-outline-variant/50"
+              showColumnBorders &&
+                !enableExpansion &&
+                !hasPinnedLeftData &&
+                "border-r border-outline-variant/50"
             )}
-            style={{ width: 48, minWidth: 48, maxWidth: 48 }}
+            style={{
+              width: 48,
+              minWidth: 48,
+              maxWidth: 48,
+            }}
           >
             <div className="flex items-center justify-center h-full">
               <Checkbox
                 checked={allSelected}
                 indeterminate={indeterminate}
                 onChange={(e) => onSelectAll(e.target.checked)}
-                aria-label="Select all rows"
+                aria-label={t("selectAll")}
                 className="[&>div]:w-8 [&>div]:h-8"
               />
             </div>
@@ -213,7 +254,9 @@ function DataTableHeaderInner<T extends { id: string }>({
               "bg-surface border-b border-outline-variant/50",
               "sticky z-20 isolate",
               // Only show border-r if there are no pinned-left data columns after this
-              showColumnBorders && !hasPinnedLeftData && "border-r border-outline-variant/50"
+              showColumnBorders &&
+                !hasPinnedLeftData &&
+                "border-r border-outline-variant/50"
             )}
             style={{
               width: 40,
@@ -237,7 +280,8 @@ function DataTableHeaderInner<T extends { id: string }>({
           const isLastColumn = index === columnsToCheck.length - 1;
 
           // Only allow reordering non-pinned columns
-          const canReorder = reorderable && col.reorderable !== false && !pinPosition;
+          const canReorder =
+            reorderable && col.reorderable !== false && !pinPosition;
 
           return (
             <HeaderCell
@@ -279,4 +323,6 @@ function DataTableHeaderInner<T extends { id: string }>({
   );
 }
 
-export const DataTableHeader = memo(DataTableHeaderInner) as typeof DataTableHeaderInner;
+export const DataTableHeader = memo(
+  DataTableHeaderInner
+) as typeof DataTableHeaderInner;

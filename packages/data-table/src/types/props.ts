@@ -3,7 +3,6 @@
 
 import type { ReactNode, CSSProperties } from "react";
 import type {
-  SortDirection,
   MultiSortState,
   FilterState,
   FilterValue,
@@ -23,10 +22,6 @@ import type { BulkAction, InlineEditingController } from "./features";
  */
 export interface DataTableHeaderRenderProps<T> {
   columns: Column<T>[];
-  /** @deprecated Use sortState instead */
-  sortKey: string | null;
-  /** @deprecated Use sortState instead */
-  sortDirection: SortDirection;
   /** Multi-sort state - array of sort items in priority order */
   sortState: MultiSortState;
   onSort: (key: string, addToMultiSort?: boolean) => void;
@@ -138,6 +133,12 @@ export interface DataTableProps<T extends { id: string }> {
   /** Determine if row can expand */
   getRowCanExpand?: (row: T) => boolean;
 
+  // ─── Row Reordering ───
+  /** Enable row drag-to-reorder */
+  reorderableRows?: boolean;
+  /** Callback when row order changes (returns new order of row IDs) */
+  onRowReorder?: (fromIndex: number, toIndex: number, newOrder: string[]) => void;
+
   // ─── Events ───
   /** Callback when row is clicked */
   onRowClick?: (row: T, event: React.MouseEvent) => void;
@@ -153,10 +154,8 @@ export interface DataTableProps<T extends { id: string }> {
    * Return array of row IDs to mark selected.
    */
   onSelectAllFiltered?: () => Promise<string[]>;
-  /** Callback when sort changes (single-sort mode, for backward compatibility) */
-  onSortChange?: (key: string | null, direction: SortDirection) => void;
-  /** Callback when multi-sort state changes */
-  onMultiSortChange?: (sortState: MultiSortState) => void;
+  /** Callback when sort state changes */
+  onSortChange?: (sortState: MultiSortState) => void;
   /** Callback when filters change */
   onFilterChange?: (filters: FilterState) => void;
   /** Callback when search changes */
@@ -169,14 +168,8 @@ export interface DataTableProps<T extends { id: string }> {
   // ─── Controlled State ───
   /** Controlled selected row IDs */
   selectedIds?: string[];
-  /** Controlled sort key (single-sort mode, for backward compatibility) */
-  sortKey?: string | null;
-  /** Controlled sort direction (single-sort mode) */
-  sortDirection?: SortDirection;
-  /** Controlled multi-sort state */
+  /** Controlled sort state - array of sort items for multi-sort support */
   sortState?: MultiSortState;
-  /** Enable multi-column sorting (Shift+Click to add columns) */
-  multiSort?: boolean;
   /** Maximum number of sort columns (default: 3) */
   maxSortColumns?: number;
   /** Controlled filters */
@@ -255,9 +248,8 @@ export interface RemoteDataTableProps<T> {
   onSearchChange: (val: string) => void;
   filters: FilterState;
   onFilterChange: (filters: FilterState) => void;
-  sortKey: string | null;
-  sortDirection: SortDirection;
-  onSortChange: (key: string | null, direction: SortDirection) => void;
+  sortState: MultiSortState;
+  onSortChange: (sortState: MultiSortState) => void;
   cursorPagination: CursorPagination;
   totalCount?: number;
 }

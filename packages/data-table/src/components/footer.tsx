@@ -31,6 +31,8 @@ export interface DataTableFooterProps<T> {
   summaryLabel?: string;
   /** Custom summary renderer for specific columns */
   customSummaryRenderer?: Record<string, (data: T[]) => ReactNode>;
+  /** Whether row reordering is enabled (adds drag handle column) */
+  reorderableRows?: boolean;
 }
 
 // ─── FOOTER COMPONENT ────────────────────────────────────────────────────────
@@ -47,6 +49,7 @@ function DataTableFooterInner<T extends { id: string }>({
   showSummary,
   summaryLabel = "Summary",
   customSummaryRenderer,
+  reorderableRows = false,
 }: DataTableFooterProps<T>) {
   if (!showSummary) {
     return null;
@@ -77,6 +80,7 @@ function DataTableFooterInner<T extends { id: string }>({
         lastPinnedLeftKey={lastPinnedLeftKey}
         firstPinnedRightKey={firstPinnedRightKey}
         customSummaryRenderer={customSummaryRenderer}
+        reorderableRows={reorderableRows}
       />
     </tfoot>
   );

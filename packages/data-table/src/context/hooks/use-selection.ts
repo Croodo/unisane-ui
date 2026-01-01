@@ -1,49 +1,86 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useDataTableContext } from "../provider";
 
 /**
  * Hook for row selection functionality
+ *
+ * Fixed: Race condition where onSelectionChange was called before reducer updated.
+ * Now uses useEffect to fire callbacks after state changes are committed.
  */
 export function useSelection() {
   const { state, dispatch, controlled, onSelectionChange, onSelectAllFiltered } = useDataTableContext();
 
+  // Track if we're in controlled mode to avoid duplicate callbacks
+  const isControlled = controlled.selectedIds !== undefined;
+
+  // Track previous selection to detect changes (for uncontrolled mode callback)
+  const prevSelectionRef = useRef<Set<string>>(state.selectedRows);
+
+  // Track if this is the initial mount to skip the first effect
+  const isInitialMount = useRef(true);
+
   // Use controlled state if provided
-  const selectedRows = controlled.selectedIds
+  const selectedRows = isControlled
     ? new Set(controlled.selectedIds)
     : state.selectedRows;
 
+  // Fire onSelectionChange callback when uncontrolled state changes
+  // This ensures the callback is fired AFTER the reducer has updated
+  useEffect(() => {
+    // Skip initial mount
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      prevSelectionRef.current = state.selectedRows;
+      return;
+    }
+
+    // Skip if controlled (parent manages state and callbacks)
+    if (isControlled) return;
+
+    // Check if selection actually changed
+    const prev = prevSelectionRef.current;
+    const current = state.selectedRows;
+
+    // Compare sets - check if they're different
+    const hasChanged = prev.size !== current.size ||
+      [...current].some(id => !prev.has(id)) ||
+      [...prev].some(id => !current.has(id));
+
+    if (hasChanged && onSelectionChange) {
+      onSelectionChange(Array.from(current));
+    }
+
+    prevSelectionRef.current = current;
+  }, [state.selectedRows, isControlled, onSelectionChange]);
+
   const selectRow = useCallback(
     (id: string) => {
-      if (controlled.selectedIds) {
-        const next = [...controlled.selectedIds, id];
+      if (isControlled) {
+        // Controlled: notify parent immediately, parent updates selectedIds prop
+        const next = [...controlled.selectedIds!, id];
         onSelectionChange?.(next);
       } else {
-        // Create the new state first, then dispatch and notify with correct state
-        const newSelection = new Set(state.selectedRows);
-        newSelection.add(id);
+        // Uncontrolled: dispatch to reducer, useEffect will fire callback
         dispatch({ type: "SELECT_ROW", id });
-        onSelectionChange?.(Array.from(newSelection));
       }
     },
-    [dispatch, controlled.selectedIds, onSelectionChange, state.selectedRows]
+    [dispatch, isControlled, controlled.selectedIds, onSelectionChange]
   );
 
   const deselectRow = useCallback(
     (id: string) => {
-      if (controlled.selectedIds) {
-        const next = controlled.selectedIds.filter((i) => i !== id);
+      if (isControlled) {
+        // Controlled: notify parent immediately
+        const next = controlled.selectedIds!.filter((i) => i !== id);
         onSelectionChange?.(next);
       } else {
-        // Create the new state first, then dispatch and notify with correct state
-        const newSelection = new Set(state.selectedRows);
-        newSelection.delete(id);
+        // Uncontrolled: dispatch to reducer, useEffect will fire callback
         dispatch({ type: "DESELECT_ROW", id });
-        onSelectionChange?.(Array.from(newSelection));
       }
     },
-    [dispatch, controlled.selectedIds, onSelectionChange, state.selectedRows]
+    [dispatch, isControlled, controlled.selectedIds, onSelectionChange]
   );
 
   const toggleSelect = useCallback(
@@ -60,24 +97,24 @@ export function useSelection() {
 
   const selectAll = useCallback(
     (ids: string[]) => {
-      if (controlled.selectedIds) {
+      if (isControlled) {
         onSelectionChange?.(ids);
       } else {
+        // Uncontrolled: dispatch to reducer, useEffect will fire callback
         dispatch({ type: "SELECT_ALL", ids });
-        onSelectionChange?.(ids);
       }
     },
-    [dispatch, controlled.selectedIds, onSelectionChange]
+    [dispatch, isControlled, onSelectionChange]
   );
 
   const deselectAll = useCallback(() => {
-    if (controlled.selectedIds) {
+    if (isControlled) {
       onSelectionChange?.([]);
     } else {
+      // Uncontrolled: dispatch to reducer, useEffect will fire callback
       dispatch({ type: "DESELECT_ALL" });
-      onSelectionChange?.([]);
     }
-  }, [dispatch, controlled.selectedIds, onSelectionChange]);
+  }, [dispatch, isControlled, onSelectionChange]);
 
   /**
    * Select all rows across the entire filtered dataset (server-backed).
@@ -91,18 +128,18 @@ export function useSelection() {
 
     try {
       const ids = await onSelectAllFiltered();
-      if (controlled.selectedIds) {
+      if (isControlled) {
         onSelectionChange?.(ids);
       } else {
+        // Uncontrolled: dispatch to reducer, useEffect will fire callback
         dispatch({ type: "SELECT_ALL", ids });
-        onSelectionChange?.(ids);
       }
       return ids;
     } catch (error) {
       console.error("Failed to select all filtered rows:", error);
       return null;
     }
-  }, [onSelectAllFiltered, controlled.selectedIds, onSelectionChange, dispatch]);
+  }, [onSelectAllFiltered, isControlled, onSelectionChange, dispatch]);
 
   const toggleExpand = useCallback(
     (id: string) => dispatch({ type: "TOGGLE_EXPAND", id }),

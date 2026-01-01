@@ -28,7 +28,7 @@ export const Table = forwardRef<HTMLTableElement, TableProps>(
       aria-rowcount={rowCount}
       aria-colcount={colCount}
       className={cn(
-        "w-full border-separate border-spacing-0",
+        "w-full border-separate border-spacing-0 table-fixed",
         className
       )}
       {...props}

@@ -1,5 +1,5 @@
 import type { DataTableState, DataTableAction } from "./types";
-import type { SortDirection, MultiSortState } from "../types/index";
+import type { MultiSortState } from "../types/index";
 import { DEFAULT_PAGE_SIZE } from "../constants/index";
 
 export function createInitialState(options?: {
@@ -8,8 +8,6 @@ export function createInitialState(options?: {
   return {
     selectedRows: new Set(),
     expandedRows: new Set(),
-    sortKey: null,
-    sortDirection: null,
     sortState: [],
     searchText: "",
     columnFilters: {},
@@ -21,26 +19,36 @@ export function createInitialState(options?: {
     columnWidths: {},
     columnPinState: {},
     columnOrder: [],
-    isMobile: false,
     // Row Grouping
     groupBy: null,
     expandedGroups: new Set(),
   };
 }
 
-function cycleSort(currentKey: string | null, currentDir: SortDirection, newKey: string): { key: string | null; direction: SortDirection } {
-  if (currentKey !== newKey) {
-    return { key: newKey, direction: "asc" };
+/**
+ * Cycle sort direction for a column: asc -> desc -> null -> asc
+ * Works with sortState array (uses first item if exists)
+ */
+function cycleSortState(
+  currentState: MultiSortState,
+  newKey: string
+): MultiSortState {
+  const existing = currentState.find((s) => s.key === newKey);
+
+  if (!existing) {
+    // New column - start with ascending (single-sort: replace)
+    return [{ key: newKey, direction: "asc" }];
   }
 
-  // Cycle: asc -> desc -> null
-  if (currentDir === "asc") {
-    return { key: newKey, direction: "desc" };
+  // Cycle through: asc -> desc -> null
+  switch (existing.direction) {
+    case "asc":
+      return [{ key: newKey, direction: "desc" }];
+    case "desc":
+      return []; // Clear sort
+    default:
+      return [{ key: newKey, direction: "asc" }];
   }
-  if (currentDir === "desc") {
-    return { key: null, direction: null };
-  }
-  return { key: newKey, direction: "asc" };
 }
 
 /**
@@ -49,7 +57,7 @@ function cycleSort(currentKey: string | null, currentDir: SortDirection, newKey:
  * - If column already asc: change to desc
  * - If column already desc: remove from sort state
  */
-function addOrCycleMultiSort(
+function addOrCycleSortColumn(
   currentState: MultiSortState,
   key: string,
   maxColumns: number = 3
@@ -77,17 +85,6 @@ function addOrCycleMultiSort(
 
   // Direction is desc - remove from sort state
   return currentState.filter((_, i) => i !== existingIndex);
-}
-
-/**
- * Sync sortState to legacy sortKey/sortDirection (first item in array)
- */
-function syncLegacySort(sortState: MultiSortState): { key: string | null; direction: SortDirection } {
-  if (sortState.length === 0) {
-    return { key: null, direction: null };
-  }
-  const first = sortState[0]!;
-  return { key: first.key, direction: first.direction };
 }
 
 export function dataTableReducer(
@@ -146,72 +143,41 @@ export function dataTableReducer(
       return { ...state, expandedRows: next };
     }
 
-    // ─── SORTING (Single-sort for backward compatibility) ─────────────────────
-    case "SET_SORT": {
-      // Also update sortState to stay in sync
-      const sortState: MultiSortState =
-        action.key && action.direction
-          ? [{ key: action.key, direction: action.direction }]
-          : [];
-      return {
-        ...state,
-        sortKey: action.key,
-        sortDirection: action.direction,
-        sortState,
-        pagination: { ...state.pagination, page: 1 },
-      };
-    }
-
-    case "CYCLE_SORT": {
-      const { key, direction } = cycleSort(state.sortKey, state.sortDirection, action.key);
-      // Also update sortState to stay in sync
-      const sortState: MultiSortState =
-        key && direction ? [{ key, direction }] : [];
-      return {
-        ...state,
-        sortKey: key,
-        sortDirection: direction,
-        sortState,
-        pagination: { ...state.pagination, page: 1 },
-      };
-    }
-
-    // ─── MULTI-SORT ───────────────────────────────────────────────────────────
-    case "SET_MULTI_SORT": {
-      const { key, direction } = syncLegacySort(action.sortState);
+    // ─── SORTING ─────────────────────────────────────────────────────────────
+    case "SET_SORT":
       return {
         ...state,
         sortState: action.sortState,
-        sortKey: key,
-        sortDirection: direction,
+        pagination: { ...state.pagination, page: 1 },
+      };
+
+    case "CYCLE_SORT": {
+      const newSortState = cycleSortState(state.sortState, action.key);
+      return {
+        ...state,
+        sortState: newSortState,
         pagination: { ...state.pagination, page: 1 },
       };
     }
 
     case "ADD_SORT": {
-      const newSortState = addOrCycleMultiSort(
+      const newSortState = addOrCycleSortColumn(
         state.sortState,
         action.key,
         action.maxColumns ?? 3
       );
-      const { key, direction } = syncLegacySort(newSortState);
       return {
         ...state,
         sortState: newSortState,
-        sortKey: key,
-        sortDirection: direction,
         pagination: { ...state.pagination, page: 1 },
       };
     }
 
     case "REMOVE_SORT": {
       const newSortState = state.sortState.filter((s) => s.key !== action.key);
-      const { key, direction } = syncLegacySort(newSortState);
       return {
         ...state,
         sortState: newSortState,
-        sortKey: key,
-        sortDirection: direction,
         pagination: { ...state.pagination, page: 1 },
       };
     }
@@ -220,8 +186,6 @@ export function dataTableReducer(
       return {
         ...state,
         sortState: [],
-        sortKey: null,
-        sortDirection: null,
         pagination: { ...state.pagination, page: 1 },
       };
 
@@ -425,14 +389,10 @@ export function dataTableReducer(
     case "COLLAPSE_ALL_GROUPS":
       return { ...state, expandedGroups: new Set() };
 
-    // ─── UI ──────────────────────────────────────────────────────────────────
-    case "SET_MOBILE":
-      return { ...state, isMobile: action.isMobile };
-
     // ─── BULK ────────────────────────────────────────────────────────────────
     case "RESET_ALL": {
       const initial = createInitialState({ pageSize: state.pagination.pageSize });
-      return { ...initial, sortState: [] };
+      return initial;
     }
 
     case "HYDRATE":

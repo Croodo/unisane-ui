@@ -5,14 +5,17 @@ import type { Density } from "../../types";
 import { useColumns } from "../../context";
 import { ToolbarDropdownButton, SegmentedDropdownButton } from "./buttons";
 import type { ToolbarAction, ToolbarDropdown } from "./types";
+import { useI18n } from "../../i18n";
 
 // ─── DENSITY OPTIONS ────────────────────────────────────────────────────────
 
-const densityOptions: { value: Density; label: string; icon: string }[] = [
-  { value: "compact", label: "Compact", icon: "density_small" },
-  { value: "dense", label: "Dense", icon: "density_medium" },
-  { value: "standard", label: "Standard", icon: "density_medium" },
-  { value: "comfortable", label: "Comfortable", icon: "density_large" },
+type DensityLabelKey = "densityCompact" | "densityDense" | "densityStandard" | "densityComfortable";
+
+const densityOptions: { value: Density; labelKey: DensityLabelKey; icon: string }[] = [
+  { value: "compact", labelKey: "densityCompact", icon: "density_small" },
+  { value: "dense", labelKey: "densityDense", icon: "density_medium" },
+  { value: "standard", labelKey: "densityStandard", icon: "density_medium" },
+  { value: "comfortable", labelKey: "densityComfortable", icon: "density_large" },
 ];
 
 // ─── COLUMN VISIBILITY DROPDOWN ─────────────────────────────────────────────
@@ -26,6 +29,7 @@ export function ColumnVisibilityDropdown<T>({
   isFirst?: boolean;
   isLast?: boolean;
 }) {
+  const { t } = useI18n();
   const { columns, hiddenColumns, toggleVisibility } = useColumns<T>();
 
   const hasHiddenColumns = hiddenColumns.size > 0;
@@ -40,7 +44,7 @@ export function ColumnVisibilityDropdown<T>({
     />
   ) : (
     <ToolbarDropdownButton
-      label="Columns"
+      label={t("columns")}
       icon="view_column"
       active={hasHiddenColumns}
       badge={hiddenColumns.size}
@@ -87,6 +91,7 @@ export function DensityDropdown({
   isFirst?: boolean;
   isLast?: boolean;
 }) {
+  const { t } = useI18n();
   const isActive = density !== "standard";
 
   const trigger = segmented ? (
@@ -97,7 +102,7 @@ export function DensityDropdown({
       isLast={isLast}
     />
   ) : (
-    <ToolbarDropdownButton label="Density" icon="density_medium" active={isActive} as="div" />
+    <ToolbarDropdownButton label={t("density")} icon="density_medium" active={isActive} as="div" />
   );
 
   return (
@@ -112,7 +117,7 @@ export function DensityDropdown({
             checked={density === option.value}
             onCheckedChange={() => onDensityChange?.(option.value)}
           >
-            {option.label}
+            {t(option.labelKey)}
           </DropdownMenuRadioItem>
         ))}
       </DropdownMenuContent>
@@ -123,13 +128,15 @@ export function DensityDropdown({
 // ─── MORE ACTIONS DROPDOWN ─────────────────────────────────────────────────
 
 export function MoreActionsDropdown({ actions }: { actions: ToolbarAction[] }) {
+  const { t } = useI18n();
+
   if (actions.length === 0) return null;
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outlined" size="sm" className="h-9 gap-2 rounded border border-outline-variant">
-          <span>More</span>
+          <span>{t("moreActions")}</span>
           <Icon symbol="arrow_drop_down" className="w-5 h-5 text-on-surface-variant" />
         </Button>
       </DropdownMenuTrigger>

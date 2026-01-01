@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useEffect } from "react";
 import { cn } from "@unisane/ui";
+import { useI18n } from "../../i18n";
 
 export interface ResizeHandleProps {
   columnKey: string;
@@ -18,6 +19,7 @@ export function ResizeHandle({
   maxWidth = 800,
   onResize,
 }: ResizeHandleProps) {
+  const { t } = useI18n();
   // Store cleanup function ref to prevent memory leaks
   const cleanupRef = useRef<(() => void) | null>(null);
 
@@ -83,7 +85,7 @@ export function ResizeHandle({
         "hover:w-3 hover:bg-primary/20 active:bg-primary/40 transition-all",
         "z-10"
       )}
-      title="Drag to resize column"
+      title={t("resizeColumn")}
       aria-hidden="true"
     />
   );

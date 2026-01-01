@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { cn, Icon } from "@unisane/ui";
 import type { Column, PinPosition, ColumnMetaMap } from "../types/index";
 import { DENSITY_STYLES, COLUMN_WIDTHS, type Density } from "../constants/index";
+import { useI18n } from "../i18n";
 
 // ─── SUMMARY TYPES ───────────────────────────────────────────────────────────
 
@@ -66,16 +67,20 @@ export function calculateSummary<T>(
 
 /**
  * Format a summary value for display
+ * Note: For locale-aware formatting, use the formatNumber from useI18n hook
  */
 export function formatSummaryValue(
   value: number | null,
-  calculation: SummaryCalculation
+  calculation: SummaryCalculation,
+  formatNumber?: (value: number) => string
 ): string {
   if (value === null) return "—";
 
+  const formatter = formatNumber ?? ((v: number) => v.toLocaleString());
+
   switch (calculation) {
     case "count":
-      return value.toLocaleString();
+      return formatter(value);
     case "average":
       return value.toLocaleString(undefined, {
         minimumFractionDigits: 2,
@@ -92,22 +97,20 @@ export function formatSummaryValue(
 }
 
 /**
- * Get label for summary type
+ * Get i18n key for summary type label
  */
-function getSummaryLabel(type: SummaryCalculation): string {
+function getSummaryLabelKey(type: SummaryCalculation): "summaryTotal" | "summaryAverage" | "summaryCount" | "summaryMin" | "summaryMax" {
   switch (type) {
     case "sum":
-      return "Total";
+      return "summaryTotal";
     case "average":
-      return "Avg";
+      return "summaryAverage";
     case "count":
-      return "Count";
+      return "summaryCount";
     case "min":
-      return "Min";
+      return "summaryMin";
     case "max":
-      return "Max";
-    default:
-      return "";
+      return "summaryMax";
   }
 }
 
@@ -138,6 +141,8 @@ export interface SummaryRowProps<T> {
   firstPinnedRightKey?: string | null;
   /** Custom summary renderer for specific columns */
   customSummaryRenderer?: Record<string, (data: T[]) => ReactNode>;
+  /** Whether row reordering is enabled (adds drag handle column) */
+  reorderableRows?: boolean;
 }
 
 // ─── SUMMARY CELL ────────────────────────────────────────────────────────────
@@ -167,6 +172,7 @@ function SummaryCell<T>({
   isFirstPinnedRight,
   customRenderer,
 }: SummaryCellProps<T>) {
+  const { t, formatNumber } = useI18n();
   const summaryType = column.summary;
   const columnKey = String(column.key);
 
@@ -182,8 +188,8 @@ function SummaryCell<T>({
   } else if (summaryType) {
     // Use built-in calculation
     const value = calculateSummary(data, columnKey, summaryType);
-    const formatted = formatSummaryValue(value, summaryType);
-    const label = getSummaryLabel(summaryType);
+    const formatted = formatSummaryValue(value, summaryType, formatNumber);
+    const label = t(getSummaryLabelKey(summaryType));
 
     content = (
       <div className="flex flex-col gap-0.5">
@@ -243,12 +249,15 @@ function SummaryRowInner<T extends { id: string }>({
   enableExpansion,
   showColumnBorders,
   density = "standard",
-  label = "Summary",
+  label,
   lastPinnedLeftKey,
   firstPinnedRightKey,
   customSummaryRenderer = {},
+  reorderableRows = false,
 }: SummaryRowProps<T>) {
+  const { t } = useI18n();
   const paddingClass = DENSITY_STYLES[density];
+  const effectiveLabel = label ?? t("summary");
 
   // Check if any column has summary defined
   const hasSummary = columns.some(
@@ -259,28 +268,57 @@ function SummaryRowInner<T extends { id: string }>({
     return null;
   }
 
-  // Calculate sticky offsets for checkbox and expander columns
+  // Calculate sticky offsets for drag handle, checkbox and expander columns
+  const dragHandleWidth = reorderableRows ? COLUMN_WIDTHS.DRAG_HANDLE : 0;
   const checkboxWidth = selectable ? COLUMN_WIDTHS.CHECKBOX : 0;
   const expanderWidth = enableExpansion ? COLUMN_WIDTHS.EXPANDER : 0;
 
   return (
     <tr className="bg-surface-container-low">
+      {/* Drag handle placeholder */}
+      {reorderableRows && (
+        <td
+          className={cn(
+            "bg-surface-container-low border-t-2 border-outline-variant",
+            "sticky left-0 z-20 isolate",
+            paddingClass
+          )}
+          style={{
+            width: COLUMN_WIDTHS.DRAG_HANDLE,
+            minWidth: COLUMN_WIDTHS.DRAG_HANDLE,
+            maxWidth: COLUMN_WIDTHS.DRAG_HANDLE,
+          }}
+        >
+          {/* Summary label in first cell when drag handle is first */}
+          {!selectable && !enableExpansion && (
+            <div className="flex items-center gap-1.5">
+              <Icon symbol="functions" className="text-[18px] text-primary" />
+            </div>
+          )}
+        </td>
+      )}
+
       {/* Checkbox placeholder */}
       {selectable && (
         <td
           className={cn(
             "bg-surface-container-low border-t-2 border-outline-variant",
-            "sticky left-0 z-20 isolate",
+            "sticky z-20 isolate",
             paddingClass,
             showColumnBorders && !enableExpansion && !lastPinnedLeftKey && "border-r border-outline-variant/50"
           )}
-          style={{ width: COLUMN_WIDTHS.CHECKBOX, minWidth: COLUMN_WIDTHS.CHECKBOX }}
+          style={{
+            width: COLUMN_WIDTHS.CHECKBOX,
+            minWidth: COLUMN_WIDTHS.CHECKBOX,
+            maxWidth: COLUMN_WIDTHS.CHECKBOX,
+            left: dragHandleWidth,
+          }}
         >
           {/* Summary label in first cell */}
           <div className="flex items-center gap-1.5">
             <Icon symbol="functions" className="text-[18px] text-primary" />
             <span className="text-label-medium font-semibold text-on-surface">
-              {label}
+              {effectiveLabel}
             </span>
           </div>
         </td>
@@ -298,7 +336,8 @@ function SummaryRowInner<T extends { id: string }>({
           style={{
             width: COLUMN_WIDTHS.EXPANDER,
             minWidth: COLUMN_WIDTHS.EXPANDER,
-            left: checkboxWidth,
+            maxWidth: COLUMN_WIDTHS.EXPANDER,
+            left: dragHandleWidth + checkboxWidth,
           }}
         >
           {/* If no checkbox column, show label here */}
@@ -306,7 +345,7 @@ function SummaryRowInner<T extends { id: string }>({
             <div className="flex items-center gap-1.5">
               <Icon symbol="functions" className="text-[18px] text-primary" />
               <span className="text-label-medium font-semibold text-on-surface">
-                {label}
+                {effectiveLabel}
               </span>
             </div>
           )}
@@ -320,8 +359,8 @@ function SummaryRowInner<T extends { id: string }>({
         const pinPosition = getEffectivePinPosition(col);
         const isLastColumn = index === columns.length - 1;
 
-        // Show label in first data column if no checkbox/expander
-        const showLabel = !selectable && !enableExpansion && index === 0;
+        // Show label in first data column if no drag handle/checkbox/expander
+        const showLabel = !reorderableRows && !selectable && !enableExpansion && index === 0;
 
         // Check for custom renderer
         const customRenderer = customSummaryRenderer[key];
@@ -356,7 +395,7 @@ function SummaryRowInner<T extends { id: string }>({
               <div className="flex items-center gap-1.5">
                 <Icon symbol="functions" className="text-[18px] text-primary" />
                 <span className="text-label-medium font-semibold text-on-surface">
-                  {label}
+                  {effectiveLabel}
                 </span>
               </div>
             </td>
