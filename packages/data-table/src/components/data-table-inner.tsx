@@ -3,18 +3,26 @@
 import React, { useMemo, useRef, useCallback, useEffect, useId } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { cn } from "@unisane/ui";
-import type { Column, BulkAction, ColumnMetaMap, InlineEditingController, RowGroup, GroupHeaderProps, CellSelectionContext } from "../types/index";
+import type { Column, BulkAction, InlineEditingController, RowGroup, GroupHeaderProps, CellSelectionContext } from "../types/index";
 import { DataTableHeader } from "./header/index";
 import { DataTableBody } from "./body";
 import { DataTableFooter } from "./footer";
 import { VirtualizedBody } from "./virtualized-body";
-import { Table, TableContainer } from "./table";
 import { TableColgroup } from "./colgroup";
+import { CustomScrollbar } from "./custom-scrollbar";
+import {
+  SyncedScrollContainer,
+  StickyHeaderScrollContainer,
+  HeaderTable,
+  BodyTable,
+} from "./layout";
 import { useProcessedData } from "../hooks/data/use-processed-data";
 import { useVirtualizedRows } from "../hooks/features/use-virtualized-rows";
 import { useKeyboardNavigation } from "../hooks/ui/use-keyboard-navigation";
 import { useDensityScale } from "../hooks/ui/use-density-scale";
 import { useRowDrag } from "../hooks/ui/use-row-drag";
+import { useColumnLayout } from "../hooks/ui/use-column-layout";
+import { useAnnouncements } from "../hooks/ui/use-announcements";
 import {
   useSelection,
   useSorting,
@@ -25,7 +33,8 @@ import {
   useGrouping,
 } from "../context";
 import { ensureRowIds } from "../utils/ensure-row-ids";
-import { DENSITY_CONFIG, COLUMN_WIDTHS, type Density } from "../constants/index";
+import { buildGroupedData } from "../utils/grouping";
+import { DENSITY_CONFIG, TIMING, type Density } from "../constants/index";
 import { useI18n } from "../i18n";
 
 // ─── INNER PROPS ───────────────────────────────────────────────────────────
@@ -52,8 +61,6 @@ export interface DataTableInnerProps<T extends { id: string }> {
   emptyIcon?: string;
   /** Inline editing controller from useInlineEditing hook */
   inlineEditing?: InlineEditingController<T>;
-  /** Tailwind class for sticky header offset */
-  headerOffsetClassName?: string;
   /** Estimated row height for virtualization (overrides density-based height) */
   estimateRowHeight?: number;
   /** Custom renderer for group headers */
@@ -94,7 +101,6 @@ export function DataTableInner<T extends { id: string }>({
   emptyMessage,
   emptyIcon,
   inlineEditing,
-  headerOffsetClassName,
   estimateRowHeight,
   renderGroupHeader,
   cellSelectionEnabled = false,
@@ -109,7 +115,7 @@ export function DataTableInner<T extends { id: string }>({
     useSelection();
   const { sortState, cycleSort } = useSorting();
   const { searchText, columnFilters, setFilter } = useFiltering();
-  const { page, pageSize } = usePagination();
+  const { page, pageSize, setPage } = usePagination();
   const {
     columns,
     visibleColumns,
@@ -120,14 +126,21 @@ export function DataTableInner<T extends { id: string }>({
     hideColumn,
     reorderColumn,
     reorderable,
+    observeContainer,
   } = useColumns<T>();
   const { config } = useTableUI();
   const { groupBy, groupByArray, setGroupBy, isGrouped, isMultiLevel, toggleGroupExpand, isGroupExpanded, addGroupBy } = useGrouping();
   const { t, formatNumber } = useI18n();
 
   const tableContainerRef = useRef<HTMLDivElement>(null);
+
+  // Observe container for accurate responsive width detection
+  useEffect(() => {
+    return observeContainer(tableContainerRef);
+  }, [observeContainer]);
   const announcerRegionId = useId();
   const announcementRef = useRef<string>("");
+  const announceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Track previous values for change detection
   const prevSortStateRef = useRef(sortState);
@@ -135,86 +148,33 @@ export function DataTableInner<T extends { id: string }>({
   const prevFilterCountRef = useRef(Object.keys(columnFilters).length + (searchText ? 1 : 0));
 
   // Computed values
-  const effectiveSelectable = config.selectable || bulkActions.length > 0;
-  const effectiveColumnBorders = config.columnBorders;
+  const effectiveSelectable = config.rowSelectionEnabled || bulkActions.length > 0;
+  const effectiveColumnBorders = config.showColumnDividers;
   const effectiveZebra = config.zebra;
   const enableExpansion = !!renderExpandedRow;
 
-  // ─── SORTED COLUMNS (pinned-left → unpinned → pinned-right) ────────────────
-  // This ensures pinned columns are rendered in correct DOM order for sticky positioning
-  const sortedVisibleColumns = useMemo(() => {
-    const pinnedLeft: Column<T>[] = [];
-    const unpinned: Column<T>[] = [];
-    const pinnedRight: Column<T>[] = [];
-
-    (visibleColumns as Column<T>[]).forEach((col) => {
-      const pin = getEffectivePinPosition(col);
-      if (pin === "left") pinnedLeft.push(col);
-      else if (pin === "right") pinnedRight.push(col);
-      else unpinned.push(col);
-    });
-
-    return [...pinnedLeft, ...unpinned, ...pinnedRight];
-  }, [visibleColumns, getEffectivePinPosition]);
-
-  // ─── COLUMN METADATA ──────────────────────────────────────────────────────
-
-  const columnMeta = useMemo<ColumnMetaMap>(() => {
-    const meta: ColumnMetaMap = {};
-    // Note: dragHandle is NOT sticky, so it doesn't contribute to left offset for pinned columns
-    const expanderWidth = enableExpansion ? COLUMN_WIDTHS.EXPANDER : 0;
-    let leftAcc = (effectiveSelectable ? COLUMN_WIDTHS.CHECKBOX : 0) + expanderWidth;
-
-    // Initialize all column widths (use sorted columns for consistency)
-    sortedVisibleColumns.forEach((col) => {
-      const key = String(col.key);
-      meta[key] = {
-        width:
-          columnWidths[key] ??
-          (typeof col.width === "number" ? col.width : 150),
-      };
-    });
-
-    // Calculate left positions for left-pinned columns
-    sortedVisibleColumns.forEach((col) => {
-      const key = String(col.key);
-      const target = meta[key];
-      if (getEffectivePinPosition(col) === "left" && target) {
-        target.left = leftAcc;
-        leftAcc += target.width;
-      }
-    });
-
-    // Calculate right positions for right-pinned columns
-    let rightAcc = 0;
-    [...sortedVisibleColumns].reverse().forEach((col) => {
-      const key = String(col.key);
-      const target = meta[key];
-      if (getEffectivePinPosition(col) === "right" && target) {
-        target.right = rightAcc;
-        rightAcc += target.width;
-      }
-    });
-
-    return meta;
-  }, [sortedVisibleColumns, columnWidths, enableExpansion, getEffectivePinPosition, effectiveSelectable]);
-
-  // Calculate total table width for consistent header/body alignment
-  const totalTableWidth = useMemo(() => {
-    const dragHandleWidth = reorderableRows && !isGrouped ? 40 : 0;
-    const checkboxWidth = effectiveSelectable ? COLUMN_WIDTHS.CHECKBOX : 0;
-    const expanderWidth = enableExpansion ? COLUMN_WIDTHS.EXPANDER : 0;
-    const columnsWidth = sortedVisibleColumns.reduce((acc, col) => {
-      const key = String(col.key);
-      const width = columnMeta[key]?.width ?? (typeof col.width === "number" ? col.width : 150);
-      return acc + width;
-    }, 0);
-    return dragHandleWidth + checkboxWidth + expanderWidth + columnsWidth;
-  }, [effectiveSelectable, enableExpansion, sortedVisibleColumns, columnMeta, reorderableRows, isGrouped]);
+  // ─── COLUMN LAYOUT ──────────────────────────────────────────────────────────
+  // Use extracted hook for all pin-related calculations (eliminates duplication)
+  const {
+    sortedVisibleColumns,
+    columnMeta,
+    totalTableWidth,
+    pinnedLeftWidth,
+    pinnedRightWidth,
+  } = useColumnLayout({
+    visibleColumns: visibleColumns as Column<T>[],
+    columnWidths,
+    getEffectivePinPosition,
+    selectable: effectiveSelectable,
+    enableExpansion,
+    reorderableRows,
+    isGrouped,
+  });
 
   // ─── DATA PROCESSING ──────────────────────────────────────────────────────
 
-  const safeData = useMemo(() => ensureRowIds(data), [data]) as T[];
+  // ensureRowIds returns T[] when T already extends { id: string }
+  const safeData = useMemo(() => ensureRowIds(data), [data]);
 
   const processedData = useProcessedData<T>({
     data: safeData,
@@ -238,6 +198,17 @@ export function DataTableInner<T extends { id: string }>({
     const start = (safePage - 1) * pageSize;
     return processedData.slice(start, start + pageSize);
   }, [processedData, page, pageSize, config.paginationMode, config.mode]);
+
+  // Sync page state when filtering reduces data below current page
+  useEffect(() => {
+    if (config.paginationMode === "cursor" || config.mode === "remote") {
+      return; // Skip for cursor/remote mode - server handles pagination
+    }
+    const totalPages = Math.max(1, Math.ceil(processedData.length / Math.max(pageSize, 1)));
+    if (page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [processedData.length, pageSize, page, setPage, config.paginationMode, config.mode]);
 
   // ─── ROW DRAG-TO-REORDER ─────────────────────────────────────────────────────
 
@@ -523,7 +494,7 @@ export function DataTableInner<T extends { id: string }>({
     [paginatedData]
   );
 
-  const { focusedIndex, getContainerProps, isFocused } = useKeyboardNavigation({
+  const { focusedIndex, getContainerProps } = useKeyboardNavigation({
     rowCount: paginatedData.length,
     onSelect: effectiveSelectable ? handleKeyboardSelect : undefined,
     onActivate: onRowClick ? handleKeyboardActivate : undefined,
@@ -555,18 +526,39 @@ export function DataTableInner<T extends { id: string }>({
   const announce = useCallback((message: string) => {
     const region = document.getElementById(announcerRegionId);
     if (region && message) {
+      // Clear any pending timeout
+      if (announceTimeoutRef.current) {
+        clearTimeout(announceTimeoutRef.current);
+      }
+
       // Add non-breaking space for repeated messages to force re-announcement
       const finalMessage = message === announcementRef.current
         ? `${message}\u00A0`
         : message;
       announcementRef.current = message;
       region.textContent = finalMessage;
+
       // Clear after delay to allow for new announcements
-      setTimeout(() => {
-        region.textContent = "";
-      }, 1000);
+      announceTimeoutRef.current = setTimeout(() => {
+        // Check if region still exists before modifying (component may have unmounted)
+        const currentRegion = document.getElementById(announcerRegionId);
+        if (currentRegion) {
+          currentRegion.textContent = "";
+        }
+        announceTimeoutRef.current = null;
+      }, TIMING.ANNOUNCEMENT_CLEAR_MS);
     }
   }, [announcerRegionId]);
+
+  // Cleanup announcement timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (announceTimeoutRef.current) {
+        clearTimeout(announceTimeoutRef.current);
+        announceTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   // Announce sort changes
   useEffect(() => {
@@ -627,11 +619,43 @@ export function DataTableInner<T extends { id: string }>({
     [cellSelectionEnabled, onCellKeyDown, keyboardProps]
   );
 
+  // Common header props for both virtualized and non-virtualized modes
+  const headerProps = {
+    columns: sortedVisibleColumns,
+    columnDefinitions: config.columnDefinitions,
+    hasGroups: config.hasGroups,
+    sortState,
+    onSort: handleSort,
+    columnMeta,
+    getEffectivePinPosition,
+    selectable: effectiveSelectable,
+    allSelected,
+    indeterminate: isIndeterminate,
+    onSelectAll: handleSelectAll,
+    showColumnBorders: effectiveColumnBorders,
+    enableExpansion,
+    density,
+    resizable: config.resizable,
+    pinnable: config.pinnable,
+    reorderable,
+    onColumnPin: setColumnPin,
+    onColumnResize: setColumnWidth,
+    onColumnHide: hideColumn,
+    onColumnFilter: setFilter,
+    onColumnReorder: reorderColumn,
+    columnFilters,
+    groupingEnabled: config.groupingEnabled,
+    groupBy,
+    groupByArray,
+    onGroupBy: setGroupBy,
+    onAddGroupBy: addGroupBy,
+    reorderableRows: reorderableRows && !isGrouped,
+  };
+
   return (
     <div
       className={cn(
         "flex flex-col bg-surface isolate",
-        isFocused && "ring-2 ring-primary/20",
         className
       )}
       style={style}
@@ -655,8 +679,24 @@ export function DataTableInner<T extends { id: string }>({
         aria-atomic="true"
         className="sr-only"
       />
-      {/* Single table container with synchronized header/body */}
-      <TableContainer ref={tableContainerRef}>
+
+      {/* Sticky header - uses overflow:hidden + transform to avoid breaking sticky */}
+      <StickyHeaderScrollContainer className="sticky top-[var(--data-table-header-offset,0px)] z-20 bg-surface">
+        <HeaderTable tableWidth={totalTableWidth}>
+          <TableColgroup
+            columns={sortedVisibleColumns}
+            columnMeta={columnMeta}
+            selectable={effectiveSelectable}
+            enableExpansion={enableExpansion}
+            getEffectivePinPosition={getEffectivePinPosition}
+            reorderableRows={reorderableRows && !isGrouped}
+          />
+          <DataTableHeader {...headerProps} />
+        </HeaderTable>
+      </StickyHeaderScrollContainer>
+
+      {/* Scrollable body zone - synced horizontal scroll with header */}
+      <SyncedScrollContainer scrollId="body" ref={tableContainerRef}>
         {isVirtualized ? (
           <VirtualizedBody
             virtualContainerRef={virtualContainerRef}
@@ -703,12 +743,12 @@ export function DataTableInner<T extends { id: string }>({
             onColumnFilter={setFilter}
             onColumnReorder={reorderColumn}
             columnFilters={columnFilters}
-            headerOffsetClassName={headerOffsetClassName}
             tableWidth={totalTableWidth}
+            hideHeader={true}
           />
         ) : (
-          <Table
-            style={{ minWidth: `${totalTableWidth}px` }}
+          <BodyTable
+            tableWidth={totalTableWidth}
             aria-rowcount={totalItems ?? processedData.length}
             aria-colcount={sortedVisibleColumns.length + (effectiveSelectable ? 1 : 0) + (enableExpansion ? 1 : 0)}
             aria-label={t("srTableDescription", {
@@ -722,38 +762,6 @@ export function DataTableInner<T extends { id: string }>({
               selectable={effectiveSelectable}
               enableExpansion={enableExpansion}
               getEffectivePinPosition={getEffectivePinPosition}
-              reorderableRows={reorderableRows && !isGrouped}
-            />
-            <DataTableHeader
-              columns={sortedVisibleColumns}
-              columnDefinitions={config.columnDefinitions}
-              hasGroups={config.hasGroups}
-              sortState={sortState}
-              onSort={handleSort}
-              columnMeta={columnMeta}
-              getEffectivePinPosition={getEffectivePinPosition}
-              selectable={effectiveSelectable}
-              allSelected={allSelected}
-              indeterminate={isIndeterminate}
-              onSelectAll={handleSelectAll}
-              showColumnBorders={effectiveColumnBorders}
-              enableExpansion={enableExpansion}
-              density={density}
-              resizable={config.resizable}
-              pinnable={config.pinnable}
-              reorderable={reorderable}
-              onColumnPin={setColumnPin}
-              onColumnResize={setColumnWidth}
-              onColumnHide={hideColumn}
-              onColumnFilter={setFilter}
-              onColumnReorder={reorderColumn}
-              columnFilters={columnFilters}
-              headerOffsetClassName={headerOffsetClassName}
-              groupingEnabled={config.groupingEnabled}
-              groupBy={groupBy}
-              groupByArray={groupByArray}
-              onGroupBy={setGroupBy}
-              onAddGroupBy={addGroupBy}
               reorderableRows={reorderableRows && !isGrouped}
             />
             <DataTableBody
@@ -809,9 +817,17 @@ export function DataTableInner<T extends { id: string }>({
               summaryLabel={config.summaryLabel}
               reorderableRows={reorderableRows && !isGrouped}
             />
-          </Table>
+          </BodyTable>
         )}
-      </TableContainer>
+      </SyncedScrollContainer>
+
+      {/* Custom scrollbar that respects pinned columns */}
+      <CustomScrollbar
+        tableContainerRef={tableContainerRef}
+        pinnedLeftWidth={pinnedLeftWidth}
+        pinnedRightWidth={pinnedRightWidth}
+        dependencies={[sortedVisibleColumns, columnMeta, paginatedData.length]}
+      />
     </div>
   );
 }

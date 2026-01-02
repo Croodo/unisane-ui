@@ -12,6 +12,8 @@ export interface GroupHeaderRowProps<T> {
   showColumnBorders: boolean;
   paddingClass: string;
   hasPinnedLeftData: boolean;
+  /** Whether row drag-to-reorder is enabled (affects sticky positioning) */
+  reorderableRows?: boolean;
 }
 
 export function GroupHeaderRow<T>({
@@ -21,6 +23,7 @@ export function GroupHeaderRow<T>({
   showColumnBorders,
   paddingClass,
   hasPinnedLeftData,
+  reorderableRows = false,
 }: GroupHeaderRowProps<T>) {
   return (
     <tr>
@@ -28,12 +31,21 @@ export function GroupHeaderRow<T>({
       {selectable && (
         <th
           className={cn(
-            "bg-surface-container-low border-b border-outline-variant/50",
-            "sticky left-0 z-20 isolate",
+            "bg-surface border-b border-outline-variant/50",
+            "z-20",
             // Only show border-r if there are no more sticky columns after this
             showColumnBorders && !enableExpansion && !hasPinnedLeftData && "border-r border-outline-variant/50"
           )}
-          style={{ width: 48, minWidth: 48, maxWidth: 48 }}
+          style={{
+            width: 48,
+            minWidth: 48,
+            maxWidth: 48,
+            // Pinned left at position 0:
+            // Use max() to only start translating once scroll exceeds drag handle width
+            transform: reorderableRows
+              ? "translateX(max(0px, calc(var(--header-scroll-offset, 0px) - 40px)))"
+              : "translateX(var(--header-scroll-offset, 0px))",
+          }}
           rowSpan={2}
         />
       )}
@@ -42,8 +54,8 @@ export function GroupHeaderRow<T>({
       {enableExpansion && (
         <th
           className={cn(
-            "bg-surface-container-low border-b border-outline-variant/50",
-            "sticky z-20 isolate",
+            "bg-surface border-b border-outline-variant/50",
+            "z-20",
             // Only show border-r if there are no pinned-left data columns after this
             showColumnBorders && !hasPinnedLeftData && "border-r border-outline-variant/50"
           )}
@@ -51,7 +63,17 @@ export function GroupHeaderRow<T>({
             width: 40,
             minWidth: 40,
             maxWidth: 40,
-            left: selectable ? 48 : 0,
+            // Pinned left at position 48 (after checkbox) or 0:
+            // Use max() to only start translating once scroll exceeds the offset
+            transform: (() => {
+              const dragHandleWidth = reorderableRows ? 40 : 0;
+              const checkboxWidth = selectable ? 48 : 0;
+              const targetLeft = selectable ? 48 : 0;
+              const offset = dragHandleWidth + checkboxWidth - targetLeft;
+              return offset > 0
+                ? `translateX(max(0px, calc(var(--header-scroll-offset, 0px) - ${offset}px)))`
+                : "translateX(var(--header-scroll-offset, 0px))";
+            })(),
           }}
           rowSpan={2}
         />
@@ -66,7 +88,7 @@ export function GroupHeaderRow<T>({
               key={`group-${idx}`}
               colSpan={def.children.length}
               className={cn(
-                "bg-surface-container-low border-b border-outline-variant/50",
+                "bg-surface border-b border-outline-variant/50",
                 "text-label-medium font-semibold text-on-surface-variant text-center align-middle",
                 paddingClass,
                 showColumnBorders && !isLastGroup && "border-r border-outline-variant/50"
@@ -83,7 +105,7 @@ export function GroupHeaderRow<T>({
               key={String(def.key)}
               rowSpan={2}
               className={cn(
-                "bg-surface-container-low border-b border-outline-variant/50",
+                "bg-surface border-b border-outline-variant/50",
                 "text-label-large font-medium text-on-surface-variant align-middle",
                 paddingClass,
                 def.align === "center" && "text-center",

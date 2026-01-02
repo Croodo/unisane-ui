@@ -47,11 +47,23 @@ export function findDuplicateRowIds<T extends { id: string }>(data: T[]): string
  * @param data - Array of data rows
  * @param validateUnique - If true, validates that all IDs are unique after assignment (default: false)
  * @throws DuplicateRowIdError if validateUnique is true and duplicates are found
+ *
+ * @remarks
+ * When T already has an `id` property (T extends { id: string }), the return type
+ * is effectively T[] since (T & { id: string }) = T in that case.
  */
 export function ensureRowIds<T extends Record<string, unknown>>(
   data: T[],
+  validateUnique?: boolean
+): Array<T & { id: string }>;
+export function ensureRowIds<T extends { id: string }>(
+  data: T[],
+  validateUnique?: boolean
+): T[];
+export function ensureRowIds<T extends Record<string, unknown>>(
+  data: T[],
   validateUnique: boolean = false
-): (T & { id: string })[] {
+): Array<T & { id: string }> {
   const result = data.map((row, index) => {
     if (row.id !== undefined && row.id !== null) {
       return { ...row, id: String(row.id) };

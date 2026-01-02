@@ -1,7 +1,6 @@
 import React, { isValidElement, cloneElement } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn, Slot } from "@ui/lib/utils";
-import { Typography } from "../components/typography";
 import { Ripple } from "../components/ripple";
 
 const menuVariants = cva(
@@ -84,9 +83,9 @@ export const MenuItem: React.FC<MenuItemProps> = ({
     <>
       <Ripple disabled={disabled} />
       {icon && <div className="shrink-0 relative z-10 flex items-center justify-center size-icon-sm">{icon}</div>}
-      <Typography variant="bodyLarge" className="flex-1 relative z-10 font-medium">
+      <span className="flex-1 relative z-10 font-medium text-body-large">
         {asChild ? null : children}
-      </Typography>
+      </span>
       {trailingIcon && <div className="shrink-0 relative z-10 text-on-surface-variant flex items-center justify-center">{trailingIcon}</div>}
     </>
   );

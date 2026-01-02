@@ -129,7 +129,7 @@ function DataTableToolbarInner<T extends { id: string }>({
       {/* Main toolbar row */}
       <div
         className={cn(
-          "relative flex items-center justify-between gap-3 px-1 h-12 bg-surface transition-shadow",
+          "relative flex items-center justify-between gap-3 px-1 h-12 bg-surface border-b border-outline-variant/30 transition-shadow",
           hasSelection && "shadow-1"
         )}
       >
@@ -163,7 +163,7 @@ function DataTableToolbarInner<T extends { id: string }>({
               {hasFrozenColumns && (
                 <>
                   {(title || totalItems !== undefined || leftContent) && (
-                    <div className="h-6 w-px bg-outline-variant/50 hidden sm:block" />
+                    <div className="h-6 w-px bg-outline-variant/30 hidden sm:block" />
                   )}
                   <FrozenColumnsIndicator
                     frozenLeftCount={frozenLeftCount}
@@ -177,7 +177,7 @@ function DataTableToolbarInner<T extends { id: string }>({
               {hasActions && (
                 <>
                   {(title || totalItems !== undefined || leftContent) && (
-                    <div className="h-6 w-px bg-outline-variant/50 hidden sm:block" />
+                    <div className="h-6 w-px bg-outline-variant/30 hidden sm:block" />
                   )}
                   <div className="flex items-center gap-2">
                     {actions.map((action) => (
@@ -213,7 +213,7 @@ function DataTableToolbarInner<T extends { id: string }>({
           {/* Group expand/collapse toggle */}
           {isGrouped && !hasSelection && onToggleAllGroups && (
             <>
-              <div className="h-6 w-px bg-outline-variant/50 hidden sm:block" />
+              <div className="h-6 w-px bg-outline-variant/30 hidden sm:block" />
               <CompactIconButton
                 icon={allGroupsExpanded ? "unfold_less" : "unfold_more"}
                 label={
@@ -228,7 +228,7 @@ function DataTableToolbarInner<T extends { id: string }>({
 
           {/* Divider before controls */}
           {segmentedItems.length > 0 && (
-            <div className="h-6 w-px bg-outline-variant/50 hidden sm:block" />
+            <div className="h-6 w-px bg-outline-variant/30 hidden sm:block" />
           )}
 
           {/* Segmented controls */}

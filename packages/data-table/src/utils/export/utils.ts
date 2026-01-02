@@ -61,10 +61,12 @@ export function getCellValue<T extends { id: string }>(
       try {
         return formatValue(value, column, row);
       } catch (formatError) {
-        console.warn(
-          `Export: Custom formatter failed for column "${String(column.key)}", row "${row.id}":`,
-          formatError
-        );
+        if (process.env.NODE_ENV !== "production") {
+          console.warn(
+            `Export: Custom formatter failed for column "${String(column.key)}", row "${row.id}":`,
+            formatError
+          );
+        }
         // Fall through to default formatting
       }
     }
@@ -96,10 +98,12 @@ export function getCellValue<T extends { id: string }>(
 
     return String(value);
   } catch (error) {
-    console.warn(
-      `Export: Failed to get value for column "${String(column.key)}", row "${row.id}":`,
-      error
-    );
+    if (process.env.NODE_ENV !== "production") {
+      console.warn(
+        `Export: Failed to get value for column "${String(column.key)}", row "${row.id}":`,
+        error
+      );
+    }
     return ""; // Return empty string on error to not break the export
   }
 }

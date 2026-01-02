@@ -4,7 +4,7 @@ import React, { memo } from "react";
 import type { ReactNode } from "react";
 import { cn, Icon } from "@unisane/ui";
 import type { Column, PinPosition, ColumnMetaMap } from "../types/index";
-import { DENSITY_STYLES, COLUMN_WIDTHS, type Density } from "../constants/index";
+import { COLUMN_WIDTHS, type Density } from "../constants/index";
 import { useI18n } from "../i18n";
 
 // ─── SUMMARY TYPES ───────────────────────────────────────────────────────────
@@ -192,11 +192,11 @@ function SummaryCell<T>({
     const label = t(getSummaryLabelKey(summaryType));
 
     content = (
-      <div className="flex flex-col gap-0.5">
-        <span className="text-label-small text-on-surface-variant uppercase tracking-wider">
-          {label}
+      <div className="flex items-center gap-1.5">
+        <span className="text-label-small text-on-surface-variant">
+          {label}:
         </span>
-        <span className="text-body-medium font-semibold text-on-surface">
+        <span className="text-label-small font-semibold text-on-surface">
           {formatted}
         </span>
       </div>
@@ -256,7 +256,8 @@ function SummaryRowInner<T extends { id: string }>({
   reorderableRows = false,
 }: SummaryRowProps<T>) {
   const { t } = useI18n();
-  const paddingClass = DENSITY_STYLES[density];
+  // Use compact padding for summary row regardless of table density
+  const paddingClass = "py-1.5 px-3";
   const effectiveLabel = label ?? t("summary");
 
   // Check if any column has summary defined
@@ -273,6 +274,13 @@ function SummaryRowInner<T extends { id: string }>({
   const checkboxWidth = selectable ? COLUMN_WIDTHS.CHECKBOX : 0;
   const expanderWidth = enableExpansion ? COLUMN_WIDTHS.EXPANDER : 0;
 
+  // Determine which cell should show the icon
+  // Priority: drag handle > checkbox > expander
+  // Only the first available cell shows the icon
+  const showIconInDragHandle = reorderableRows;
+  const showIconInCheckbox = selectable && !reorderableRows;
+  const showIconInExpander = enableExpansion && !selectable && !reorderableRows;
+
   return (
     <tr className="bg-surface-container-low">
       {/* Drag handle placeholder */}
@@ -280,8 +288,7 @@ function SummaryRowInner<T extends { id: string }>({
         <td
           className={cn(
             "bg-surface-container-low border-t-2 border-outline-variant",
-            "sticky left-0 z-20 isolate",
-            paddingClass
+            "sticky left-0 z-20 isolate"
           )}
           style={{
             width: COLUMN_WIDTHS.DRAG_HANDLE,
@@ -289,10 +296,9 @@ function SummaryRowInner<T extends { id: string }>({
             maxWidth: COLUMN_WIDTHS.DRAG_HANDLE,
           }}
         >
-          {/* Summary label in first cell when drag handle is first */}
-          {!selectable && !enableExpansion && (
-            <div className="flex items-center gap-1.5">
-              <Icon symbol="functions" className="text-[18px] text-primary" />
+          {showIconInDragHandle && (
+            <div className="flex items-center justify-center h-full">
+              <Icon symbol="functions" className="text-[16px] text-primary" />
             </div>
           )}
         </td>
@@ -304,7 +310,6 @@ function SummaryRowInner<T extends { id: string }>({
           className={cn(
             "bg-surface-container-low border-t-2 border-outline-variant",
             "sticky z-20 isolate",
-            paddingClass,
             showColumnBorders && !enableExpansion && !lastPinnedLeftKey && "border-r border-outline-variant/50"
           )}
           style={{
@@ -314,13 +319,11 @@ function SummaryRowInner<T extends { id: string }>({
             left: dragHandleWidth,
           }}
         >
-          {/* Summary label in first cell */}
-          <div className="flex items-center gap-1.5">
-            <Icon symbol="functions" className="text-[18px] text-primary" />
-            <span className="text-label-medium font-semibold text-on-surface">
-              {effectiveLabel}
-            </span>
-          </div>
+          {showIconInCheckbox && (
+            <div className="flex items-center justify-center h-full">
+              <Icon symbol="functions" className="text-[16px] text-primary" />
+            </div>
+          )}
         </td>
       )}
 
@@ -330,7 +333,6 @@ function SummaryRowInner<T extends { id: string }>({
           className={cn(
             "bg-surface-container-low border-t-2 border-outline-variant",
             "sticky z-20 isolate",
-            paddingClass,
             showColumnBorders && !lastPinnedLeftKey && "border-r border-outline-variant/50"
           )}
           style={{
@@ -340,13 +342,9 @@ function SummaryRowInner<T extends { id: string }>({
             left: dragHandleWidth + checkboxWidth,
           }}
         >
-          {/* If no checkbox column, show label here */}
-          {!selectable && (
-            <div className="flex items-center gap-1.5">
-              <Icon symbol="functions" className="text-[18px] text-primary" />
-              <span className="text-label-medium font-semibold text-on-surface">
-                {effectiveLabel}
-              </span>
+          {showIconInExpander && (
+            <div className="flex items-center justify-center h-full">
+              <Icon symbol="functions" className="text-[16px] text-primary" />
             </div>
           )}
         </td>
@@ -359,14 +357,17 @@ function SummaryRowInner<T extends { id: string }>({
         const pinPosition = getEffectivePinPosition(col);
         const isLastColumn = index === columns.length - 1;
 
-        // Show label in first data column if no drag handle/checkbox/expander
-        const showLabel = !reorderableRows && !selectable && !enableExpansion && index === 0;
-
         // Check for custom renderer
         const customRenderer = customSummaryRenderer[key];
 
-        // If this is the label column and no summary, show label
-        if (showLabel && !col.summary && !customRenderer) {
+        // Show label in first data column that doesn't have a summary
+        // The icon is shown in checkbox/expander cells, so we only need the text label here
+        const isFirstColumn = index === 0;
+        const hasNoSummary = !col.summary && !customRenderer;
+        const needsLabelInFirstCol = isFirstColumn && hasNoSummary;
+
+        // If this is the first column and it has no summary, show the label
+        if (needsLabelInFirstCol) {
           return (
             <td
               key={key}
@@ -392,12 +393,9 @@ function SummaryRowInner<T extends { id: string }>({
                     : undefined,
               }}
             >
-              <div className="flex items-center gap-1.5">
-                <Icon symbol="functions" className="text-[18px] text-primary" />
-                <span className="text-label-medium font-semibold text-on-surface">
-                  {effectiveLabel}
-                </span>
-              </div>
+              <span className="text-label-small font-semibold text-on-surface">
+                {effectiveLabel}
+              </span>
             </td>
           );
         }

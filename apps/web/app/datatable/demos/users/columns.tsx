@@ -1,9 +1,51 @@
 "use client";
 
 import { Avatar, Icon } from "@unisane/ui";
-import type { Column } from "@unisane/data-table";
+import { createActionsColumn, type Column, type RowContextMenuItemOrSeparator } from "@unisane/data-table";
 import type { User } from "./types";
 import { departments } from "./types";
+
+// ─── USER ACTION ITEMS ────────────────────────────────────────────────────────
+
+export function createUserActionItems(
+  onEdit: (user: User) => void,
+  onDelete: (user: User) => void
+): RowContextMenuItemOrSeparator<User>[] {
+  return [
+    {
+      key: "view",
+      label: "View details",
+      icon: "visibility",
+      onClick: (row) => alert(`${row.name}\n${row.email}\n${row.department}`)
+    },
+    {
+      key: "edit",
+      label: "Edit user",
+      icon: "edit",
+      onClick: onEdit
+    },
+    { type: "separator" },
+    {
+      key: "delete",
+      label: "Delete",
+      icon: "delete",
+      variant: "danger",
+      onClick: onDelete
+    },
+  ];
+}
+
+// ─── CREATE ACTIONS COLUMN ────────────────────────────────────────────────────
+
+export function createUserActionsColumn(
+  onEdit: (user: User) => void,
+  onDelete: (user: User) => void
+): Column<User> {
+  return createActionsColumn<User>({
+    items: createUserActionItems(onEdit, onDelete),
+    pinned: "right",
+  });
+}
 
 // ─── STATUS BADGE ────────────────────────────────────────────────────────────
 

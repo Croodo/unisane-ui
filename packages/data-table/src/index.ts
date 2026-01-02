@@ -39,6 +39,14 @@ export type {
   UseCellSelectionOptions,
   UseCellSelectionReturn,
 
+  // Tree Data types
+  TreeDataConfig,
+  TreeExpanderProps as TreeExpanderPropsType,
+  FlattenedTreeRow,
+  TreeDataState,
+  TreeSelectionMode,
+  TreeRowContext,
+
   // Controller types
   InlineEditingController,
   EditingCell,
@@ -101,9 +109,99 @@ export {
   // Cell selection
   useCellSelection,
 
+  // Tree data
+  useTreeData,
+  type UseTreeDataOptions,
+  type UseTreeDataReturn,
+
+  // Infinite scroll
+  useInfiniteScroll,
+  type UseInfiniteScrollOptions,
+  type UseInfiniteScrollReturn,
+
+  // Selection persistence
+  useSelectionPersistence,
+  type UseSelectionPersistenceOptions,
+  type UseSelectionPersistenceReturn,
+
+  // Clipboard paste
+  useClipboardPaste,
+  type ParsedClipboardData,
+  type PasteCellUpdate,
+  type PasteValidationResult,
+  type PasteResult,
+  type UseClipboardPasteOptions,
+  type UseClipboardPasteReturn,
+
+  // Edit history (undo/redo)
+  useEditHistory,
+  type EditHistoryEntry,
+  type EditChange,
+  type UndoRedoResult,
+  type UseEditHistoryOptions,
+  type UseEditHistoryReturn,
+
+  // Filter presets
+  useFilterPresets,
+  type FilterPreset,
+  type FilterPresetInput,
+  type UseFilterPresetsOptions,
+  type UseFilterPresetsReturn,
+
+  // Compound filters (AND/OR)
+  useCompoundFilters,
+  type FilterLogicOperator,
+  type FilterComparisonOperator,
+  type FilterCondition,
+  type FilterGroup,
+  type CompoundFilter,
+  type UseCompoundFiltersOptions,
+  type UseCompoundFiltersReturn,
+
+  // Column spanning
+  useColumnSpan,
+  type ColumnSpan,
+  type CellSpanInfo,
+  type ColumnSpanFn,
+  type UseColumnSpanOptions,
+  type UseColumnSpanReturn,
+
+  // Sticky group headers
+  useStickyGroupHeaders,
+  type StickyGroupHeader,
+  type GroupPosition,
+  type UseStickyGroupHeadersOptions,
+  type UseStickyGroupHeadersReturn,
+
   // Debouncing
   useDebounce,
   useDebouncedCallback,
+
+  // RTL support
+  useRTL,
+  useRTLContext,
+  RTLProvider,
+  arrowKeyToLogical,
+  arrowKeyToPhysical,
+  tabToLogical,
+  type Direction,
+  type LogicalDirection,
+  type PhysicalDirection,
+  type LogicalPinPosition,
+  type RTLContextValue,
+  type UseRTLOptions,
+  type UseRTLReturn,
+  type RTLProviderProps,
+
+  // Action dialog management
+  useActionDialog,
+  useConfirmAction,
+  type ActionDialogType,
+  type ActionDialogState,
+  type UseActionDialogOptions,
+  type UseActionDialogReturn,
+  type ConfirmActionOptions,
+  type UseConfirmActionReturn,
 } from "./hooks";
 
 // ─── COMPONENTS ────────────────────────────────────────────────────────────
@@ -116,6 +214,15 @@ export {
   TableRow,
   TableHeaderCell,
   TableCell,
+
+  // Layout components for split-table architecture (sticky header + synced scroll)
+  DataTableLayout,
+  StickyZone,
+  SyncedScrollContainer,
+  StickyHeaderScrollContainer,
+  HeaderTable,
+  BodyTable,
+  useScrollSync,
 
   // Data table components
   DataTableHeader,
@@ -134,9 +241,19 @@ export {
   createDefaultContextMenuItems,
   useDefaultContextMenuItems,
 
+  // Actions Cell
+  ActionsCell,
+  createActionsColumn,
+
   // Error handling
   DataTableErrorBoundary,
   DataTableErrorDisplay,
+
+  // Tree Data
+  TreeExpander,
+
+  // Infinite Scroll
+  InfiniteScrollLoader,
 } from "./components";
 
 export type {
@@ -146,6 +263,10 @@ export type {
   ContextMenuState,
   UseRowContextMenuOptions,
   UseRowContextMenuReturn,
+  ActionsCellProps,
+  CreateActionsColumnOptions,
+  TreeExpanderProps,
+  InfiniteScrollLoaderProps,
 } from "./components";
 
 export {

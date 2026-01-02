@@ -197,6 +197,14 @@ export interface DataTableStrings {
   /** Unfreeze all columns button label */
   unfreezeAll: string;
 
+  // ─── Column Sorting ───
+  /** Sort column aria-label (when not sorted) */
+  sortColumn: string;
+  /** Sort descending aria-label (when sorted ascending) */
+  sortDescending: string;
+  /** Clear sort aria-label (when sorted descending) */
+  clearSort: string;
+
   // ─── Column Resize ───
   /** Resize column tooltip */
   resizeColumn: string;
@@ -204,8 +212,188 @@ export interface DataTableStrings {
   // ─── Row Reorder ───
   /** Drag handle aria-label */
   dragRowHandle: string;
+  /** Drag handle aria-label with row index. Placeholder: {index} */
+  dragRowHandleLabel: string;
   /** Row moved announcement. Placeholders: {from}, {to} */
   srRowMoved: string;
+
+  // ─── Tree Data ───
+  /** Expand all tree nodes */
+  expandAllNodes: string;
+  /** Collapse all tree nodes */
+  collapseAllNodes: string;
+  /** Loading children indicator */
+  loadingChildren: string;
+  /** No children found message */
+  noChildren: string;
+  /** Tree node expanded announcement. Placeholder: {label} */
+  srNodeExpanded: string;
+  /** Tree node collapsed announcement. Placeholder: {label} */
+  srNodeCollapsed: string;
+
+  // ─── Infinite Scroll ───
+  /** Loading more items indicator */
+  loadingMore: string;
+  /** No more items to load */
+  endOfList: string;
+  /** Load more button label */
+  loadMore: string;
+  /** Screen reader announcement for loaded items. Placeholder: {count} */
+  srItemsLoaded: string;
+
+  // ─── Clipboard ───
+  /** Copy action */
+  copy: string;
+  /** Paste action */
+  paste: string;
+  /** Cut action */
+  cut: string;
+  /** Paste success message. Placeholder: {count} */
+  pasteSuccess: string;
+  /** Paste failed message */
+  pasteFailed: string;
+  /** Paste validation error. Placeholder: {count} */
+  pasteValidationError: string;
+  /** No data to paste message */
+  pasteNoData: string;
+  /** Screen reader announcement for copied cells. Placeholder: {count} */
+  srCellsCopied: string;
+  /** Screen reader announcement for pasted cells. Placeholder: {count} */
+  srCellsPasted: string;
+
+  // ─── Undo/Redo ───
+  /** Undo action */
+  undo: string;
+  /** Redo action */
+  redo: string;
+  /** Undo cell edit. Placeholder: {column} */
+  undoCellEdit: string;
+  /** Redo cell edit. Placeholder: {column} */
+  redoCellEdit: string;
+  /** Nothing to undo message */
+  nothingToUndo: string;
+  /** Nothing to redo message */
+  nothingToRedo: string;
+  /** Screen reader announcement for undo. Placeholder: {description} */
+  srUndone: string;
+  /** Screen reader announcement for redo. Placeholder: {description} */
+  srRedone: string;
+
+  // ─── Filter Presets ───
+  /** Presets label */
+  presets: string;
+  /** Save preset action */
+  savePreset: string;
+  /** Apply preset action */
+  applyPreset: string;
+  /** Delete preset action */
+  deletePreset: string;
+  /** Edit preset action */
+  editPreset: string;
+  /** Duplicate preset action */
+  duplicatePreset: string;
+  /** Preset name label */
+  presetName: string;
+  /** Preset name placeholder */
+  presetNamePlaceholder: string;
+  /** Quick filter label */
+  quickFilter: string;
+  /** Add to quick filters */
+  addQuickFilter: string;
+  /** Remove from quick filters */
+  removeQuickFilter: string;
+  /** Default preset indicator */
+  defaultPreset: string;
+  /** Custom preset indicator */
+  customPreset: string;
+  /** Import presets action */
+  importPresets: string;
+  /** Export presets action */
+  exportPresets: string;
+  /** Preset saved message. Placeholder: {name} */
+  presetSaved: string;
+  /** Preset deleted message. Placeholder: {name} */
+  presetDeleted: string;
+  /** Preset applied message. Placeholder: {name} */
+  presetApplied: string;
+  /** Max presets reached message. Placeholder: {max} */
+  maxPresetsReached: string;
+  /** Screen reader: preset applied. Placeholder: {name} */
+  srPresetApplied: string;
+  /** Screen reader: preset saved. Placeholder: {name} */
+  srPresetSaved: string;
+
+  // ─── Compound Filters ───
+  /** Filter builder title */
+  filterBuilder: string;
+  /** Add condition button */
+  addCondition: string;
+  /** Add group button */
+  addFilterGroup: string;
+  /** Remove condition button */
+  removeCondition: string;
+  /** Remove group button */
+  removeFilterGroup: string;
+  /** AND operator label */
+  operatorAnd: string;
+  /** OR operator label */
+  operatorOr: string;
+  /** Equals operator */
+  opEquals: string;
+  /** Not equals operator */
+  opNotEquals: string;
+  /** Contains operator */
+  opContains: string;
+  /** Not contains operator */
+  opNotContains: string;
+  /** Starts with operator */
+  opStartsWith: string;
+  /** Ends with operator */
+  opEndsWith: string;
+  /** Greater than operator */
+  opGreaterThan: string;
+  /** Less than operator */
+  opLessThan: string;
+  /** Between operator */
+  opBetween: string;
+  /** Is empty operator */
+  opIsEmpty: string;
+  /** Is not empty operator */
+  opIsNotEmpty: string;
+  /** In list operator */
+  opIn: string;
+  /** Not in list operator */
+  opNotIn: string;
+  /** Filter group label. Placeholder: {operator} */
+  filterGroupLabel: string;
+  /** Select column placeholder */
+  selectColumn: string;
+  /** Select operator placeholder */
+  selectOperator: string;
+  /** Enter value placeholder */
+  enterValue: string;
+
+  // ─── Column Spanning ───
+  /** Merge cells action */
+  mergeCells: string;
+  /** Unmerge cells action */
+  unmergeCells: string;
+  /** Span columns. Placeholder: {count} */
+  spanColumns: string;
+  /** Cell is merged/hidden */
+  cellMerged: string;
+  /** Screen reader: cell spans columns. Placeholder: {count} */
+  srCellSpansColumns: string;
+
+  // ─── Sticky Group Headers ───
+  /** Sticky header indicator */
+  stickyHeader: string;
+  /** Pinned group header. Placeholder: {label} */
+  pinnedGroupHeader: string;
+  /** Screen reader: group header is sticky. Placeholder: {label} */
+  srGroupHeaderSticky: string;
+  /** Screen reader: showing items in group. Placeholder: {label}, {count} */
+  srShowingGroupItems: string;
 
   // ─── Context Menu ───
   /** View details menu item */
@@ -220,6 +408,16 @@ export interface DataTableStrings {
   copyId: string;
   /** Delete menu item */
   delete: string;
+
+  // ─── Actions Cell ───
+  /** Actions button aria-label */
+  actions: string;
+
+  // ─── Row Numbers ───
+  /** Row number column header */
+  rowNumberHeader: string;
+  /** Screen reader: row number. Placeholder: {number} */
+  srRowNumber: string;
 
   // ─── Errors ───
   /** Error boundary title */

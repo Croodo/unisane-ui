@@ -64,10 +64,10 @@ interface VirtualizedBodyProps<T extends { id: string }> {
   onColumnFilter?: (key: string, value: FilterValue) => void;
   onColumnReorder?: (fromKey: string, toKey: string) => void;
   columnFilters?: Record<string, FilterValue>;
-  /** Tailwind class for sticky header offset */
-  headerOffsetClassName?: string;
   /** Total calculated table width for proper column resizing */
   tableWidth?: number;
+  /** Hide the header (when using split-table architecture with separate header) */
+  hideHeader?: boolean;
 }
 
 // ─── LOADING STATE ──────────────────────────────────────────────────────────
@@ -150,8 +150,8 @@ export function VirtualizedBody<T extends { id: string }>({
   onColumnFilter,
   onColumnReorder,
   columnFilters,
-  headerOffsetClassName,
   tableWidth,
+  hideHeader = false,
 }: VirtualizedBodyProps<T>) {
   return (
     <div ref={virtualContainerRef} style={{ height: "100%", overflow: "auto" }}>
@@ -169,32 +169,33 @@ export function VirtualizedBody<T extends { id: string }>({
               enableExpansion={enableExpansion}
               getEffectivePinPosition={getEffectivePinPosition}
             />
-            <DataTableHeader
-              columns={columns}
-              columnDefinitions={columnDefinitions}
-              hasGroups={hasGroups}
-              sortState={sortState}
-              onSort={onSort}
-              columnMeta={columnMeta}
-              getEffectivePinPosition={getEffectivePinPosition}
-              selectable={selectable}
-              allSelected={allSelected}
-              indeterminate={indeterminate}
-              onSelectAll={onSelectAll}
-              showColumnBorders={showColumnBorders}
-              enableExpansion={enableExpansion}
-              density={density}
-              resizable={resizable}
-              pinnable={pinnable}
-              reorderable={reorderable}
-              onColumnPin={onColumnPin}
-              onColumnResize={onColumnResize}
-              onColumnHide={onColumnHide}
-              onColumnFilter={onColumnFilter}
-              onColumnReorder={onColumnReorder}
-              columnFilters={columnFilters}
-              headerOffsetClassName={headerOffsetClassName}
-            />
+            {!hideHeader && (
+              <DataTableHeader
+                columns={columns}
+                columnDefinitions={columnDefinitions}
+                hasGroups={hasGroups}
+                sortState={sortState}
+                onSort={onSort}
+                columnMeta={columnMeta}
+                getEffectivePinPosition={getEffectivePinPosition}
+                selectable={selectable}
+                allSelected={allSelected}
+                indeterminate={indeterminate}
+                onSelectAll={onSelectAll}
+                showColumnBorders={showColumnBorders}
+                enableExpansion={enableExpansion}
+                density={density}
+                resizable={resizable}
+                pinnable={pinnable}
+                reorderable={reorderable}
+                onColumnPin={onColumnPin}
+                onColumnResize={onColumnResize}
+                onColumnHide={onColumnHide}
+                onColumnFilter={onColumnFilter}
+                onColumnReorder={onColumnReorder}
+                columnFilters={columnFilters}
+              />
+            )}
             <tbody className="bg-surface">
               {virtualRows.map((vRow, idx) => (
                 <DataTableRow

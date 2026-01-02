@@ -8,13 +8,42 @@ import type { FilterType, FilterOption, FilterRendererProps, FilterValue } from 
 
 /**
  * Context passed to cell render functions
+ *
+ * @template T - Row data type (defaults to Record<string, unknown> for flexibility)
+ * @template V - Cell value type (inferred from column key when possible)
+ *
+ * @example
+ * ```typescript
+ * // Basic usage
+ * const renderCell = (ctx: CellContext<User>) => {
+ *   return <span>{ctx.row.name}</span>;
+ * };
+ *
+ * // With value type
+ * const renderPrice = (ctx: CellContext<Product, number>) => {
+ *   return <span>${ctx.value.toFixed(2)}</span>;
+ * };
+ * ```
  */
-export interface CellContext<T = unknown> {
+export interface CellContext<T = Record<string, unknown>, V = unknown> {
+  /** The full row data object */
   row: T;
+  /** Zero-based row index in the current view (may differ from data index with pagination) */
   rowIndex: number;
+  /** Column key (matches Column.key) */
   columnKey: string;
+  /** The cell's value extracted from the row */
+  value: V;
+  /** Whether this row is selected */
   isSelected: boolean;
+  /** Whether this row is expanded (for expandable rows) */
   isExpanded: boolean;
+  /** Whether this cell is currently being edited (for inline editing) */
+  isEditing?: boolean;
+  /** Whether this cell has focus (for keyboard navigation) */
+  isFocused?: boolean;
+  /** Validation errors for this cell (if any) */
+  errors?: string[];
 }
 
 // ─── COLUMN GROUP ────────────────────────────────────────────────────────────
@@ -128,6 +157,12 @@ export interface Column<T> {
     | ((data: T[]) => ReactNode);
 
   // ─── Print ───
+  /**
+   * Whether to include this column in print output.
+   * Defaults to true. Set to false for columns like actions that shouldn't be printed.
+   */
+  printable?: boolean;
+
   /**
    * Custom value formatter for print output.
    * Use this when the rendered cell contains React components

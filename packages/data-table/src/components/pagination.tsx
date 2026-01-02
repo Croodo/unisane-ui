@@ -1,7 +1,7 @@
 "use client";
 
-import React, { memo, useState, useMemo } from "react";
-import { cn, Button, Icon, Popover } from "@unisane/ui";
+import React, { memo, useMemo } from "react";
+import { cn, Button, Icon } from "@unisane/ui";
 import { usePagination } from "../context";
 import { useI18n } from "../i18n";
 
@@ -70,42 +70,18 @@ function PageSizeSelector({
   pageSizeOptions: number[];
   onChange: (size: number) => void;
 }) {
-  const { t } = useI18n();
-  const [open, setOpen] = useState(false);
-
-  const popoverContent = (
-    <div className="p-1 min-w-[120px]">
-      {pageSizeOptions.map((size) => (
-        <button
-          key={size}
-          onClick={() => {
-            onChange(size);
-            setOpen(false);
-          }}
-          className={cn(
-            "flex items-center w-full px-3 py-2 rounded-md text-body-medium",
-            "hover:bg-on-surface/8 transition-colors",
-            pageSize === size && "bg-primary/8 text-primary"
-          )}
-        >
-          {t("perPage", { count: size })}
-        </button>
-      ))}
-    </div>
-  );
-
   return (
-    <Popover
-      open={open}
-      onOpenChange={setOpen}
-      trigger={
-        <div className="inline-flex items-center gap-1 px-3 py-1.5 text-body-medium text-on-surface hover:bg-on-surface/8 rounded-xl transition-colors cursor-pointer">
-          {t("perPage", { count: pageSize })}
-          <Icon symbol="arrow_drop_down" className="w-5 h-5" />
-        </div>
-      }
-      content={popoverContent}
-    />
+    <select
+      value={pageSize}
+      onChange={(e) => onChange(Number(e.target.value))}
+      className="h-8 px-2 text-body-small bg-surface border border-outline-variant rounded-sm text-on-surface cursor-pointer focus:outline-none focus:border-primary"
+    >
+      {pageSizeOptions.map((size) => (
+        <option key={size} value={size}>
+          {size}
+        </option>
+      ))}
+    </select>
   );
 }
 

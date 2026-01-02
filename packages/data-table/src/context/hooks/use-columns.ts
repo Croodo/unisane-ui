@@ -1,15 +1,23 @@
 "use client";
 
-import { useCallback, useMemo, useState, useEffect } from "react";
+import { useCallback, useMemo, useState, useEffect, useRef, type RefObject } from "react";
 import { useDataTableContext } from "../provider";
 import type { Column, PinPosition } from "../../types";
+import { RESPONSIVE } from "../../constants";
 
 /**
  * Hook for column management functionality
  */
 export function useColumns<T>() {
-  const { state, dispatch, config, controlled, onColumnPinChange, onColumnOrderChange } =
-    useDataTableContext<T>();
+  const {
+    state,
+    dispatch,
+    config,
+    controlled,
+    onColumnPinChange,
+    onColumnOrderChange,
+    onColumnVisibilityChange,
+  } = useDataTableContext<T>();
 
   const pinState = controlled.pinState ?? state.columnPinState;
   const columnOrder = controlled.columnOrder ?? state.columnOrder;
@@ -19,29 +27,79 @@ export function useColumns<T>() {
     typeof window !== "undefined" ? window.innerWidth : 1024
   );
 
-  // Update container width on resize (fallback for non-container contexts)
+  // Track if we're using container-based width (vs window fallback)
+  const isUsingContainerWidth = useRef(false);
+
+  // Update container width on window resize (fallback when no container is observed)
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const handleResize = () => setContainerWidth(window.innerWidth);
+    const handleResize = () => {
+      // Only use window width if we're not observing a container
+      if (!isUsingContainerWidth.current) {
+        setContainerWidth(window.innerWidth);
+      }
+    };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  /**
+   * Observe a container element for width changes using ResizeObserver.
+   * Call this from the component that has the container ref.
+   * Returns a cleanup function.
+   */
+  const observeContainer = useCallback((containerRef: RefObject<HTMLElement | null>) => {
+    if (typeof window === "undefined" || !containerRef.current) return () => {};
+
+    const element = containerRef.current;
+    isUsingContainerWidth.current = true;
+
+    // Set initial width
+    setContainerWidth(element.getBoundingClientRect().width);
+
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) {
+        // Use contentRect for accurate content width
+        setContainerWidth(entry.contentRect.width);
+      }
+    });
+
+    observer.observe(element);
+
+    return () => {
+      observer.disconnect();
+      isUsingContainerWidth.current = false;
+    };
+  }, []);
+
   const toggleVisibility = useCallback(
-    (key: string) => dispatch({ type: "TOGGLE_COLUMN_VISIBILITY", key }),
-    [dispatch]
+    (key: string) => {
+      dispatch({ type: "TOGGLE_COLUMN_VISIBILITY", key });
+      // Notify about visibility change (after state updates)
+      const newHiddenColumns = state.hiddenColumns.has(key)
+        ? [...state.hiddenColumns].filter((k) => k !== key)
+        : [...state.hiddenColumns, key];
+      onColumnVisibilityChange?.(newHiddenColumns);
+    },
+    [dispatch, state.hiddenColumns, onColumnVisibilityChange]
   );
 
   const hideColumn = useCallback(
-    (key: string) => dispatch({ type: "HIDE_COLUMN", key }),
-    [dispatch]
+    (key: string) => {
+      dispatch({ type: "HIDE_COLUMN", key });
+      if (!state.hiddenColumns.has(key)) {
+        onColumnVisibilityChange?.([...state.hiddenColumns, key]);
+      }
+    },
+    [dispatch, state.hiddenColumns, onColumnVisibilityChange]
   );
 
-  const showAllColumns = useCallback(
-    () => dispatch({ type: "SHOW_ALL_COLUMNS" }),
-    [dispatch]
-  );
+  const showAllColumns = useCallback(() => {
+    dispatch({ type: "SHOW_ALL_COLUMNS" });
+    onColumnVisibilityChange?.([]);
+  }, [dispatch, onColumnVisibilityChange]);
 
   const setColumnWidth = useCallback(
     (key: string, width: number) =>
@@ -121,11 +179,8 @@ export function useColumns<T>() {
     [controlled.columnOrder, onColumnOrderChange, dispatch]
   );
 
-  // Minimum width for pinning to be effective (below this, pins are ignored)
-  const MIN_WIDTH_FOR_PINNING = 640;
-
   // Check if pinning should be active based on container width
-  const isPinningEnabled = containerWidth >= MIN_WIDTH_FOR_PINNING;
+  const isPinningEnabled = containerWidth >= RESPONSIVE.MIN_WIDTH_FOR_PINNING;
 
   // Get effective pin position (user override > column definition)
   // Returns null on small screens to disable pinning
@@ -237,5 +292,7 @@ export function useColumns<T>() {
     responsivelyHiddenColumns,
     isColumnResponsivelyVisible,
     isPinningEnabled,
+    /** Observe a container element for accurate width detection */
+    observeContainer,
   };
 }

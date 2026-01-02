@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
+import { useI18n } from "../../i18n";
 
 // ─── TYPES ───────────────────────────────────────────────────────────────────
 
@@ -41,20 +42,22 @@ export interface RowDragProps {
   onDrop: (e: React.DragEvent) => void;
 }
 
+export interface DragHandleProps {
+  onMouseDown: (e: React.MouseEvent) => void;
+  onKeyDown: (e: React.KeyboardEvent) => void;
+  tabIndex: number;
+  role: string;
+  "aria-label": string;
+  "aria-grabbed": boolean | undefined;
+}
+
 export interface UseRowDragReturn {
   /** Current drag state */
   dragState: RowDragState;
   /** Get drag props for a row */
   getRowDragProps: (rowId: string, rowIndex: number) => RowDragProps;
   /** Get drag handle props (for the drag handle element only) */
-  getDragHandleProps: (rowId: string, rowIndex: number) => {
-    onMouseDown: (e: React.MouseEvent) => void;
-    onKeyDown: (e: React.KeyboardEvent) => void;
-    tabIndex: number;
-    role: string;
-    "aria-label": string;
-    "aria-grabbed": boolean | undefined;
-  };
+  getDragHandleProps: (rowId: string, rowIndex: number) => DragHandleProps;
   /** Whether any row is being dragged */
   isDragging: boolean;
   /** Whether a specific row is being dragged */
@@ -70,6 +73,91 @@ export interface UseRowDragReturn {
 }
 
 const DRAG_DATA_TYPE = "text/x-datatable-row";
+
+// ─── DRAG IMAGE STYLES ───────────────────────────────────────────────────────
+// CSS class name for the drag image element - extracted from inline styles (3.0.6)
+const DRAG_IMAGE_CLASS = "unisane-dt-drag-image";
+
+/**
+ * Injects CSS styles for the drag image once per page load.
+ * Uses design system CSS variables for theming support.
+ */
+const injectDragImageStyles = (() => {
+  let injected = false;
+  return () => {
+    if (injected || typeof document === "undefined") return;
+    injected = true;
+
+    const styleId = "unisane-dt-drag-styles";
+    if (document.getElementById(styleId)) return;
+
+    const style = document.createElement("style");
+    style.id = styleId;
+    style.textContent = `
+      .${DRAG_IMAGE_CLASS} {
+        position: fixed;
+        left: -9999px;
+        top: -9999px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        background: var(--md-sys-color-surface-container-high, #e6e0e9);
+        color: var(--md-sys-color-on-surface, #1d1b20);
+        border-radius: 12px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 500;
+        z-index: 9999;
+        pointer-events: none;
+        white-space: nowrap;
+      }
+      .${DRAG_IMAGE_CLASS}__icon {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        opacity: 0.6;
+      }
+      .${DRAG_IMAGE_CLASS}__line {
+        width: 12px;
+        height: 2px;
+        background: currentColor;
+        border-radius: 1px;
+      }
+    `;
+    document.head.appendChild(style);
+  };
+})();
+
+/**
+ * Creates a drag image element with proper styling.
+ * Uses CSS classes instead of inline styles for better maintainability.
+ */
+function createDragImage(rowIndex: number): HTMLDivElement {
+  injectDragImageStyles();
+
+  const dragImage = document.createElement("div");
+  dragImage.className = DRAG_IMAGE_CLASS;
+
+  // Add drag indicator icon (grip lines)
+  const iconSpan = document.createElement("span");
+  iconSpan.className = `${DRAG_IMAGE_CLASS}__icon`;
+  for (let i = 0; i < 3; i++) {
+    const line = document.createElement("span");
+    line.className = `${DRAG_IMAGE_CLASS}__line`;
+    iconSpan.appendChild(line);
+  }
+
+  // Add row indicator text
+  const textSpan = document.createElement("span");
+  textSpan.textContent = `Row ${rowIndex + 1}`;
+
+  dragImage.appendChild(iconSpan);
+  dragImage.appendChild(textSpan);
+
+  return dragImage;
+}
 
 // ─── HOOK ────────────────────────────────────────────────────────────────────
 
@@ -99,6 +187,7 @@ export function useRowDrag<T extends { id: string }>({
   data,
   onReorder,
 }: UseRowDragOptions<T>): UseRowDragReturn {
+  const { t } = useI18n();
   const [dragState, setDragState] = useState<RowDragState>({
     draggingId: null,
     draggingIndex: null,
@@ -112,15 +201,34 @@ export function useRowDrag<T extends { id: string }>({
   // Track if drag started from handle
   const dragFromHandleRef = useRef(false);
 
+  // ─── HANDLER CACHING (3.0.5) ─────────────────────────────────────────────────
+  // Cache row drag props to avoid creating new handler functions on each call
+  const rowDragPropsCache = useRef(new Map<string, RowDragProps>());
+  const cacheVersionRef = useRef(0);
+
+  // Helper to safely remove drag image from DOM
+  const removeDragImage = useCallback(() => {
+    if (dragImageRef.current) {
+      // Check if element is still in the DOM and has a parent
+      if (dragImageRef.current.parentNode) {
+        dragImageRef.current.parentNode.removeChild(dragImageRef.current);
+      }
+      dragImageRef.current = null;
+    }
+  }, []);
+
   // Cleanup drag image on unmount
   useEffect(() => {
     return () => {
-      if (dragImageRef.current) {
-        document.body.removeChild(dragImageRef.current);
-        dragImageRef.current = null;
-      }
+      removeDragImage();
     };
-  }, []);
+  }, [removeDragImage]);
+
+  // Invalidate cache when key dependencies change
+  useEffect(() => {
+    cacheVersionRef.current += 1;
+    rowDragPropsCache.current.clear();
+  }, [enabled, data.length]);
 
   // ─── REORDER HELPER ──────────────────────────────────────────────────────────
 
@@ -142,198 +250,32 @@ export function useRowDrag<T extends { id: string }>({
     [data, onReorder]
   );
 
-  // ─── DRAG HANDLERS ───────────────────────────────────────────────────────────
+  // ─── STABLE HANDLER REFS ─────────────────────────────────────────────────────
+  // Store handlers in refs to avoid recreating closures on each render
+  // while still accessing the latest state/props
 
-  const handleDragStart = useCallback(
-    (rowId: string, rowIndex: number) => (e: React.DragEvent) => {
-      if (!enabled) {
-        e.preventDefault();
-        return;
-      }
+  const stateRef = useRef(dragState);
+  stateRef.current = dragState;
 
-      // Only allow drag if started from handle
-      if (!dragFromHandleRef.current) {
-        e.preventDefault();
-        return;
-      }
+  const enabledRef = useRef(enabled);
+  enabledRef.current = enabled;
 
-      // Set drag data
-      e.dataTransfer.setData(DRAG_DATA_TYPE, JSON.stringify({ id: rowId, index: rowIndex }));
-      e.dataTransfer.effectAllowed = "move";
-
-      // Create custom drag image
-      const dragImage = document.createElement("div");
-      dragImage.style.cssText = `
-        position: fixed;
-        left: -9999px;
-        top: -9999px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 10px 14px;
-        background: var(--md-sys-color-surface-container-high, #e6e0e9);
-        color: var(--md-sys-color-on-surface, #1d1b20);
-        border-radius: 12px;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-        font-family: inherit;
-        font-size: 14px;
-        font-weight: 500;
-        z-index: 9999;
-        pointer-events: none;
-        white-space: nowrap;
-      `;
-
-      // Add drag indicator icon (grip lines)
-      const iconSpan = document.createElement("span");
-      iconSpan.style.cssText = `
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-        opacity: 0.6;
-      `;
-      for (let i = 0; i < 3; i++) {
-        const line = document.createElement("span");
-        line.style.cssText = `
-          width: 12px;
-          height: 2px;
-          background: currentColor;
-          border-radius: 1px;
-        `;
-        iconSpan.appendChild(line);
-      }
-
-      // Add row indicator text
-      const textSpan = document.createElement("span");
-      textSpan.textContent = `Row ${rowIndex + 1}`;
-
-      dragImage.appendChild(iconSpan);
-      dragImage.appendChild(textSpan);
-      document.body.appendChild(dragImage);
-      dragImageRef.current = dragImage;
-
-      e.dataTransfer.setDragImage(dragImage, 0, 0);
-
-      // Update state after a tick to allow browser to capture drag image
-      requestAnimationFrame(() => {
-        setDragState({
-          draggingId: rowId,
-          draggingIndex: rowIndex,
-          dragOverId: null,
-          dropPosition: null,
-        });
-      });
-    },
-    [enabled]
-  );
+  const reorderRowsRef = useRef(reorderRows);
+  reorderRowsRef.current = reorderRows;
 
   const handleDragEnd = useCallback(() => {
-    // Cleanup drag image
-    if (dragImageRef.current) {
-      document.body.removeChild(dragImageRef.current);
-      dragImageRef.current = null;
-    }
-
+    removeDragImage();
     dragFromHandleRef.current = false;
-
     setDragState({
       draggingId: null,
       draggingIndex: null,
       dragOverId: null,
       dropPosition: null,
     });
-  }, []);
+  }, [removeDragImage]);
 
-  const handleDragOver = useCallback(
-    (rowId: string) => (e: React.DragEvent) => {
-      if (!enabled || !dragState.draggingId) return;
-      if (dragState.draggingId === rowId) return;
-
-      // Check if this is a valid row drag
-      if (!e.dataTransfer.types.includes(DRAG_DATA_TYPE)) return;
-
-      e.preventDefault();
-      e.dataTransfer.dropEffect = "move";
-
-      // Calculate drop position based on mouse position
-      const rect = e.currentTarget.getBoundingClientRect();
-      const midpoint = rect.top + rect.height / 2;
-      const dropPosition: "before" | "after" = e.clientY < midpoint ? "before" : "after";
-
-      setDragState((prev) => ({
-        ...prev,
-        dragOverId: rowId,
-        dropPosition,
-      }));
-    },
-    [enabled, dragState.draggingId]
-  );
-
-  const handleDragEnter = useCallback(
-    (rowId: string) => (e: React.DragEvent) => {
-      if (!enabled || !dragState.draggingId) return;
-      if (dragState.draggingId === rowId) return;
-
-      if (!e.dataTransfer.types.includes(DRAG_DATA_TYPE)) return;
-
-      e.preventDefault();
-    },
-    [enabled, dragState.draggingId]
-  );
-
-  const handleDragLeave = useCallback(
-    (rowId: string) => (e: React.DragEvent) => {
-      const relatedTarget = e.relatedTarget as Node | null;
-      const currentTarget = e.currentTarget as Node;
-
-      if (relatedTarget && currentTarget.contains(relatedTarget)) {
-        return;
-      }
-
-      if (dragState.dragOverId === rowId) {
-        setDragState((prev) => ({
-          ...prev,
-          dragOverId: null,
-          dropPosition: null,
-        }));
-      }
-    },
-    [dragState.dragOverId]
-  );
-
-  const handleDrop = useCallback(
-    (rowId: string, rowIndex: number) => (e: React.DragEvent) => {
-      e.preventDefault();
-
-      try {
-        const dragData = JSON.parse(e.dataTransfer.getData(DRAG_DATA_TYPE));
-        const fromIndex = dragData.index;
-        const fromId = dragData.id;
-
-        if (fromId === rowId) {
-          handleDragEnd();
-          return;
-        }
-
-        // Calculate target index based on drop position
-        let toIndex = rowIndex;
-        if (dragState.dropPosition === "after") {
-          toIndex = rowIndex + 1;
-        }
-
-        // Adjust if moving down
-        if (fromIndex < toIndex) {
-          toIndex -= 1;
-        }
-
-        reorderRows(fromIndex, toIndex);
-      } catch {
-        // Invalid drag data
-      }
-
-      handleDragEnd();
-    },
-    [dragState.dropPosition, reorderRows, handleDragEnd]
-  );
+  const handleDragEndRef = useRef(handleDragEnd);
+  handleDragEndRef.current = handleDragEnd;
 
   // ─── KEYBOARD HANDLERS ───────────────────────────────────────────────────────
 
@@ -357,45 +299,153 @@ export function useRowDrag<T extends { id: string }>({
     [data, reorderRows]
   );
 
-  // ─── PROP GETTERS ────────────────────────────────────────────────────────────
+  const moveRowUpRef = useRef(moveRowUp);
+  moveRowUpRef.current = moveRowUp;
+
+  const moveRowDownRef = useRef(moveRowDown);
+  moveRowDownRef.current = moveRowDown;
+
+  // ─── PROP GETTERS WITH STABLE HANDLERS ───────────────────────────────────────
 
   const getRowDragProps = useCallback(
-    (rowId: string, rowIndex: number): RowDragProps => ({
-      draggable: enabled,
-      onDragStart: handleDragStart(rowId, rowIndex),
-      onDragEnd: handleDragEnd,
-      onDragOver: handleDragOver(rowId),
-      onDragEnter: handleDragEnter(rowId),
-      onDragLeave: handleDragLeave(rowId),
-      onDrop: handleDrop(rowId, rowIndex),
-    }),
-    [enabled, handleDragStart, handleDragEnd, handleDragOver, handleDragEnter, handleDragLeave, handleDrop]
+    (rowId: string, rowIndex: number): RowDragProps => {
+      const cacheKey = `${rowId}-${rowIndex}-${cacheVersionRef.current}`;
+      const cached = rowDragPropsCache.current.get(cacheKey);
+      if (cached) return cached;
+
+      const props: RowDragProps = {
+        draggable: enabled,
+        onDragStart: (e: React.DragEvent) => {
+          if (!enabledRef.current) {
+            e.preventDefault();
+            return;
+          }
+
+          if (!dragFromHandleRef.current) {
+            e.preventDefault();
+            return;
+          }
+
+          e.dataTransfer.setData(DRAG_DATA_TYPE, JSON.stringify({ id: rowId, index: rowIndex }));
+          e.dataTransfer.effectAllowed = "move";
+
+          // Create custom drag image using CSS classes (3.0.6)
+          const dragImage = createDragImage(rowIndex);
+          document.body.appendChild(dragImage);
+          dragImageRef.current = dragImage;
+          e.dataTransfer.setDragImage(dragImage, 0, 0);
+
+          requestAnimationFrame(() => {
+            setDragState({
+              draggingId: rowId,
+              draggingIndex: rowIndex,
+              dragOverId: null,
+              dropPosition: null,
+            });
+          });
+        },
+        onDragEnd: () => handleDragEndRef.current(),
+        onDragOver: (e: React.DragEvent) => {
+          const state = stateRef.current;
+          if (!enabledRef.current || !state.draggingId) return;
+          if (state.draggingId === rowId) return;
+          if (!e.dataTransfer.types.includes(DRAG_DATA_TYPE)) return;
+
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "move";
+
+          const rect = e.currentTarget.getBoundingClientRect();
+          const midpoint = rect.top + rect.height / 2;
+          const dropPosition: "before" | "after" = e.clientY < midpoint ? "before" : "after";
+
+          setDragState((prev) => ({
+            ...prev,
+            dragOverId: rowId,
+            dropPosition,
+          }));
+        },
+        onDragEnter: (e: React.DragEvent) => {
+          const state = stateRef.current;
+          if (!enabledRef.current || !state.draggingId) return;
+          if (state.draggingId === rowId) return;
+          if (!e.dataTransfer.types.includes(DRAG_DATA_TYPE)) return;
+          e.preventDefault();
+        },
+        onDragLeave: (e: React.DragEvent) => {
+          const relatedTarget = e.relatedTarget as Node | null;
+          const currentTarget = e.currentTarget as Node;
+
+          if (relatedTarget && currentTarget.contains(relatedTarget)) {
+            return;
+          }
+
+          if (stateRef.current.dragOverId === rowId) {
+            setDragState((prev) => ({
+              ...prev,
+              dragOverId: null,
+              dropPosition: null,
+            }));
+          }
+        },
+        onDrop: (e: React.DragEvent) => {
+          e.preventDefault();
+
+          try {
+            const dragData = JSON.parse(e.dataTransfer.getData(DRAG_DATA_TYPE));
+            const fromIndex = dragData.index;
+            const fromId = dragData.id;
+
+            if (fromId === rowId) {
+              handleDragEndRef.current();
+              return;
+            }
+
+            let toIndex = rowIndex;
+            if (stateRef.current.dropPosition === "after") {
+              toIndex = rowIndex + 1;
+            }
+
+            if (fromIndex < toIndex) {
+              toIndex -= 1;
+            }
+
+            reorderRowsRef.current(fromIndex, toIndex);
+          } catch {
+            // Invalid drag data
+          }
+
+          handleDragEndRef.current();
+        },
+      };
+
+      rowDragPropsCache.current.set(cacheKey, props);
+      return props;
+    },
+    [enabled]
   );
 
   const getDragHandleProps = useCallback(
-    (rowId: string, rowIndex: number) => ({
-      onMouseDown: (e: React.MouseEvent) => {
-        // Mark that drag should be allowed from handle
+    (rowId: string, rowIndex: number): DragHandleProps => ({
+      onMouseDown: () => {
         dragFromHandleRef.current = true;
       },
       onKeyDown: (e: React.KeyboardEvent) => {
-        if (!enabled) return;
+        if (!enabledRef.current) return;
 
-        // Alt+ArrowUp/Down for keyboard reordering
         if (e.altKey && e.key === "ArrowUp") {
           e.preventDefault();
-          moveRowUp(rowId);
+          moveRowUpRef.current(rowId);
         } else if (e.altKey && e.key === "ArrowDown") {
           e.preventDefault();
-          moveRowDown(rowId);
+          moveRowDownRef.current(rowId);
         }
       },
       tabIndex: enabled ? 0 : -1,
       role: "button",
-      "aria-label": `Drag to reorder row ${rowIndex + 1}. Use Alt+Arrow keys to move.`,
+      "aria-label": t("dragRowHandleLabel", { index: rowIndex + 1 }),
       "aria-grabbed": dragState.draggingId === rowId ? true : undefined,
     }),
-    [enabled, dragState.draggingId, moveRowUp, moveRowDown]
+    [enabled, dragState.draggingId, t]
   );
 
   // ─── STATE HELPERS ───────────────────────────────────────────────────────────

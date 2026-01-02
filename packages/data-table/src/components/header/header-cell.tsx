@@ -5,6 +5,7 @@ import { cn, Icon } from "@unisane/ui";
 import type { Column, SortDirection, PinPosition, ColumnMetaMap, FilterValue } from "../../types";
 import { ResizeHandle } from "./resize-handle";
 import { ColumnMenu } from "./column-menu";
+import { useI18n } from "../../i18n";
 
 export interface HeaderCellProps<T> {
   column: Column<T>;
@@ -56,6 +57,8 @@ export interface HeaderCellProps<T> {
   onGroupBy?: (key: string | string[] | null) => void;
   /** Callback to add a column to multi-level grouping */
   onAddGroupBy?: (key: string) => void;
+  /** Whether row drag-to-reorder is enabled (affects sticky positioning) */
+  reorderableRows?: boolean;
 }
 
 export function HeaderCell<T>({
@@ -88,7 +91,9 @@ export function HeaderCell<T>({
   groupByArray = [],
   onGroupBy,
   onAddGroupBy,
+  reorderableRows = false,
 }: HeaderCellProps<T>) {
+  const { t } = useI18n();
   const hasFilterOptions = column.filterable !== false;
   // Grouping is only available for columns with explicit groupable: true OR columns with select filter (categorical data)
   const isGroupable = column.groupable === true || (column.groupable !== false && column.filterType === "select");
@@ -115,9 +120,9 @@ export function HeaderCell<T>({
         isSortable && "cursor-pointer select-none hover:bg-surface-container-low",
         // Draggable cursor when reorderable
         dragProps?.draggable && "cursor-grab active:cursor-grabbing",
-        // Pinned columns: sticky with higher z-index (shadow applied via inline style)
+        // Pinned columns: sticky positioning with higher z-index to stay above non-pinned
         // Non-pinned columns get z-0 to ensure they stack below pinned columns (z-20)
-        pinPosition ? "sticky z-20 isolate" : "z-0",
+        pinPosition ? "sticky z-20" : "z-0",
         // Column borders: show on non-pinned columns (except last), and on last pinned-left / first pinned-right
         showColumnBorders && !isLastColumn && !pinPosition && "border-r border-outline-variant/50",
         showColumnBorders && isLastPinnedLeft && "border-r border-outline-variant/50",
@@ -134,6 +139,13 @@ export function HeaderCell<T>({
           ? "4px 0 6px -2px rgba(0, 0, 0, 0.1)"
           : pinPosition === "right"
           ? "-4px 0 6px -2px rgba(0, 0, 0, 0.1)"
+          : undefined,
+        // Counter-translate for pinned columns in sticky header (when using split-table layout)
+        // Use max() to only start translating once scroll exceeds drag handle width (mimics sticky behavior)
+        transform: pinPosition
+          ? reorderableRows
+            ? "translateX(max(0px, calc(var(--header-scroll-offset, 0px) - 40px)))"
+            : "translateX(var(--header-scroll-offset, 0px))"
           : undefined,
       }}
       scope="col"
@@ -223,7 +235,7 @@ export function HeaderCell<T>({
           <button
             onClick={onSort}
             className="inline-flex items-center justify-center w-7 h-7 rounded-full text-on-surface-variant hover:bg-on-surface/8 hover:text-on-surface transition-colors"
-            aria-label="Sort column"
+            aria-label={t("sortColumn")}
           >
             <Icon symbol="unfold_more" className="text-[18px]" />
           </button>
@@ -234,7 +246,7 @@ export function HeaderCell<T>({
           <button
             onClick={onSort}
             className="inline-flex items-center justify-center w-7 h-7 rounded-full text-primary hover:bg-primary/8 transition-colors"
-            aria-label={sortDirection === "asc" ? "Sort descending" : "Clear sort"}
+            aria-label={sortDirection === "asc" ? t("sortDescending") : t("clearSort")}
           >
             <Icon
               symbol={sortDirection === "asc" ? "arrow_upward" : "arrow_downward"}
@@ -286,28 +298,6 @@ export function HeaderCell<T>({
             "absolute top-0 bottom-0 w-0.5 bg-primary z-30",
             dropPosition === "before" ? "left-0" : "right-0"
           )}
-        />
-      )}
-
-      {/* Freeze boundary indicator - shows on last pinned-left and first pinned-right columns */}
-      {isLastPinnedLeft && (
-        <div
-          className="absolute top-0 bottom-0 right-0 w-[3px] z-30 pointer-events-none"
-          style={{
-            background: "linear-gradient(to right, var(--color-primary) 0%, transparent 100%)",
-            opacity: 0.4,
-          }}
-          aria-hidden="true"
-        />
-      )}
-      {isFirstPinnedRight && (
-        <div
-          className="absolute top-0 bottom-0 left-0 w-[3px] z-30 pointer-events-none"
-          style={{
-            background: "linear-gradient(to left, var(--color-primary) 0%, transparent 100%)",
-            opacity: 0.4,
-          }}
-          aria-hidden="true"
         />
       )}
     </th>

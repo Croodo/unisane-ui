@@ -113,12 +113,115 @@ export const enStrings: DataTableStrings = {
   frozenRight: "{count} right",
   unfreezeAll: "Unfreeze all columns",
 
+  // ─── Column Sorting ───
+  sortColumn: "Sort column",
+  sortDescending: "Sort descending",
+  clearSort: "Clear sort",
+
   // ─── Column Resize ───
   resizeColumn: "Drag to resize column",
 
   // ─── Row Reorder ───
   dragRowHandle: "Drag to reorder row. Use Alt+Arrow keys to move.",
+  dragRowHandleLabel: "Drag to reorder row {index}. Use Alt+Arrow keys to move.",
   srRowMoved: "Row moved from position {from} to position {to}",
+
+  // ─── Tree Data ───
+  expandAllNodes: "Expand all",
+  collapseAllNodes: "Collapse all",
+  loadingChildren: "Loading...",
+  noChildren: "No items",
+  srNodeExpanded: "Node {label} expanded",
+  srNodeCollapsed: "Node {label} collapsed",
+
+  // ─── Infinite Scroll ───
+  loadingMore: "Loading more...",
+  endOfList: "No more items",
+  loadMore: "Load more",
+  srItemsLoaded: "{count} items loaded",
+
+  // ─── Clipboard ───
+  copy: "Copy",
+  paste: "Paste",
+  cut: "Cut",
+  pasteSuccess: "{count} cell(s) pasted",
+  pasteFailed: "Paste failed",
+  pasteValidationError: "{count} cell(s) failed validation",
+  pasteNoData: "No data to paste",
+  srCellsCopied: "{count} cell(s) copied to clipboard",
+  srCellsPasted: "{count} cell(s) pasted",
+
+  // ─── Undo/Redo ───
+  undo: "Undo",
+  redo: "Redo",
+  undoCellEdit: "Undo {column} edit",
+  redoCellEdit: "Redo {column} edit",
+  nothingToUndo: "Nothing to undo",
+  nothingToRedo: "Nothing to redo",
+  srUndone: "Undone: {description}",
+  srRedone: "Redone: {description}",
+
+  // ─── Filter Presets ───
+  presets: "Presets",
+  savePreset: "Save as preset",
+  applyPreset: "Apply preset",
+  deletePreset: "Delete preset",
+  editPreset: "Edit preset",
+  duplicatePreset: "Duplicate preset",
+  presetName: "Preset name",
+  presetNamePlaceholder: "Enter preset name...",
+  quickFilter: "Quick filter",
+  addQuickFilter: "Add to quick filters",
+  removeQuickFilter: "Remove from quick filters",
+  defaultPreset: "Default",
+  customPreset: "Custom",
+  importPresets: "Import presets",
+  exportPresets: "Export presets",
+  presetSaved: "Preset \"{name}\" saved",
+  presetDeleted: "Preset \"{name}\" deleted",
+  presetApplied: "Preset \"{name}\" applied",
+  maxPresetsReached: "Maximum {max} presets reached",
+  srPresetApplied: "Filter preset {name} applied",
+  srPresetSaved: "Filter preset {name} saved",
+
+  // ─── Compound Filters ───
+  filterBuilder: "Filter Builder",
+  addCondition: "Add condition",
+  addFilterGroup: "Add group",
+  removeCondition: "Remove condition",
+  removeFilterGroup: "Remove group",
+  operatorAnd: "AND",
+  operatorOr: "OR",
+  opEquals: "equals",
+  opNotEquals: "not equals",
+  opContains: "contains",
+  opNotContains: "not contains",
+  opStartsWith: "starts with",
+  opEndsWith: "ends with",
+  opGreaterThan: "greater than",
+  opLessThan: "less than",
+  opBetween: "between",
+  opIsEmpty: "is empty",
+  opIsNotEmpty: "is not empty",
+  opIn: "in",
+  opNotIn: "not in",
+  filterGroupLabel: "Filter group ({operator})",
+  selectColumn: "Select column",
+  selectOperator: "Select operator",
+  enterValue: "Enter value",
+
+  // ─── Column Spanning ───
+  mergeCells: "Merge cells",
+  unmergeCells: "Unmerge cells",
+  spanColumns: "Span {count} columns",
+  cellMerged: "Cell merged",
+  srCellSpansColumns: "Cell spans {count} columns",
+
+  // ─── Sticky Group Headers ───
+  stickyHeader: "Sticky header",
+  pinnedGroupHeader: "Pinned: {label}",
+  srGroupHeaderSticky: "Group header {label} is pinned",
+  srShowingGroupItems: "Showing {count} items in {label}",
 
   // ─── Context Menu ───
   viewDetails: "View details",
@@ -127,6 +230,13 @@ export const enStrings: DataTableStrings = {
   select: "Select",
   copyId: "Copy ID",
   delete: "Delete",
+
+  // ─── Actions Cell ───
+  actions: "Actions",
+
+  // ─── Row Numbers ───
+  rowNumberHeader: "#",
+  srRowNumber: "Row {number}",
 
   // ─── Errors ───
   errorTitle: "Something went wrong",

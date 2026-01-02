@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useId } from "react";
+import { TIMING } from "../../constants";
 
 /**
  * Priority level for announcements
@@ -99,7 +100,7 @@ export function useAnnouncer(): UseAnnouncerReturn {
       clearTimeoutRef.current = setTimeout(() => {
         region.textContent = "";
         lastMessageRef.current = "";
-      }, 1000);
+      }, TIMING.ANNOUNCEMENT_CLEAR_MS);
     },
     [politeRegionId, assertiveRegionId]
   );

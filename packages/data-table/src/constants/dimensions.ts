@@ -18,6 +18,14 @@ export const COLUMN_WIDTHS = {
 } as const;
 
 /**
+ * Responsive breakpoints (in pixels)
+ */
+export const RESPONSIVE = {
+  /** Minimum container width to enable column pinning */
+  MIN_WIDTH_FOR_PINNING: 640,
+} as const;
+
+/**
  * Header dimensions
  */
 export const HEADER_DIMENSIONS = {
@@ -35,4 +43,20 @@ export const SCROLL_CONSTANTS = {
   DEBOUNCE_MS: 150,
   /** Minimum scroll threshold before triggering load more */
   THRESHOLD_PX: 200,
+  /** Custom scrollbar height in pixels */
+  SCROLLBAR_HEIGHT: 10,
+  /** Minimum scrollbar thumb width in pixels */
+  MIN_THUMB_WIDTH: 30,
+} as const;
+
+/**
+ * Timing constants for UI interactions (in milliseconds)
+ */
+export const TIMING = {
+  /** Delay for screen reader announcements to clear */
+  ANNOUNCEMENT_CLEAR_MS: 1000,
+  /** Focus delay after state change */
+  FOCUS_DELAY_MS: 100,
+  /** Print state reset delay */
+  PRINT_STATE_RESET_MS: 100,
 } as const;

@@ -1,9 +1,68 @@
 "use client";
 
 import { Icon } from "@unisane/ui";
-import type { Column } from "@unisane/data-table";
+import { createActionsColumn, type Column, type RowContextMenuItemOrSeparator } from "@unisane/data-table";
 import type { Product, ProductStatus, ProductVisibility, ProductCategory } from "./types";
 import { categories, statuses, visibilities, brands } from "./types";
+
+// ─── PRODUCT ACTION ITEMS ─────────────────────────────────────────────────────
+
+export function createProductActionItems(
+  onEdit: (product: Product) => void,
+  onDuplicate: (product: Product) => void,
+  onArchive: (product: Product) => void,
+  onDelete: (product: Product) => void
+): RowContextMenuItemOrSeparator<Product>[] {
+  return [
+    {
+      key: "view",
+      label: "View details",
+      icon: "visibility",
+      onClick: (row) => alert(`${row.name}\nSKU: ${row.sku}\nPrice: $${row.price}`)
+    },
+    {
+      key: "edit",
+      label: "Edit product",
+      icon: "edit",
+      onClick: onEdit
+    },
+    {
+      key: "duplicate",
+      label: "Duplicate",
+      icon: "content_copy",
+      onClick: onDuplicate
+    },
+    { type: "separator" },
+    {
+      key: "archive",
+      label: "Archive",
+      icon: "archive",
+      onClick: onArchive,
+      visible: (row) => row.status !== "archived"
+    },
+    {
+      key: "delete",
+      label: "Delete",
+      icon: "delete",
+      variant: "danger",
+      onClick: onDelete
+    },
+  ];
+}
+
+// ─── CREATE ACTIONS COLUMN ────────────────────────────────────────────────────
+
+export function createProductActionsColumn(
+  onEdit: (product: Product) => void,
+  onDuplicate: (product: Product) => void,
+  onArchive: (product: Product) => void,
+  onDelete: (product: Product) => void
+): Column<Product> {
+  return createActionsColumn<Product>({
+    items: createProductActionItems(onEdit, onDuplicate, onArchive, onDelete),
+    pinned: "right",
+  });
+}
 
 // ─── STATUS BADGE ────────────────────────────────────────────────────────────
 

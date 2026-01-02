@@ -65,7 +65,10 @@
     "build": "tsc -p tsconfig.json && tsc-alias -p tsconfig.json",
     "check-types": "tsc --noEmit",
     "dev": "tsc --watch",
-    "lint": "eslint src --max-warnings 0"
+    "lint": "eslint src --max-warnings 0",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "peerDependencies": {
     "@unisane/ui": "workspace:*",
@@ -73,13 +76,19 @@
     "react-dom": "^19"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.1",
+    "@testing-library/user-event": "^14.6.1",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.1",
     "@unisane/eslint-config": "workspace:*",
     "@unisane/typescript-config": "workspace:*",
+    "@vitejs/plugin-react": "^5.1.2",
     "eslint": "^9.39.1",
+    "happy-dom": "^20.0.11",
     "tsc-alias": "^1.8.10",
-    "typescript": "5.9.2"
+    "typescript": "5.9.2",
+    "vitest": "^4.0.16"
   },
   "dependencies": {
     "@tanstack/react-virtual": "^3.13.13",

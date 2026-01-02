@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useId } from "react";
+import { createPortal } from "react-dom";
 import { cn, Slot } from "@ui/lib/utils";
 import {
   Menu,
@@ -17,6 +18,7 @@ export interface DropdownMenuProps {
 export const DropdownMenu: React.FC<DropdownMenuProps> = ({ children }) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuId = useId();
+  const triggerRef = useRef<HTMLElement>(null);
 
   const childrenWithProps = React.Children.map(children, (child) => {
     if (React.isValidElement(child)) {
@@ -24,6 +26,7 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({ children }) => {
         isOpen,
         setIsOpen,
         menuId,
+        triggerRef,
       });
     }
     return child;
@@ -41,6 +44,7 @@ export interface DropdownMenuTriggerProps {
   menuId?: string;
   asChild?: boolean;
   className?: string;
+  triggerRef?: React.RefObject<HTMLElement>;
 }
 
 export const DropdownMenuTrigger: React.FC<DropdownMenuTriggerProps> = ({
@@ -50,7 +54,21 @@ export const DropdownMenuTrigger: React.FC<DropdownMenuTriggerProps> = ({
   menuId,
   asChild,
   className,
+  triggerRef,
 }) => {
+  const localRef = useRef<HTMLButtonElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // Sync ref to parent triggerRef
+  useEffect(() => {
+    if (triggerRef) {
+      const refToAssign = asChild ? wrapperRef.current : localRef.current;
+      if (refToAssign) {
+        (triggerRef as { current: HTMLElement | null }).current = refToAssign;
+      }
+    }
+  }, [triggerRef, asChild]);
+
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsOpen?.(!isOpen);
@@ -82,14 +100,17 @@ export const DropdownMenuTrigger: React.FC<DropdownMenuTriggerProps> = ({
   // asChild pattern: merge props into the child element
   if (asChild && React.isValidElement(children)) {
     return (
-      <Slot className={className} {...triggerProps}>
-        {children}
-      </Slot>
+      <div ref={wrapperRef} className="inline-flex">
+        <Slot className={className} {...triggerProps}>
+          {children}
+        </Slot>
+      </div>
     );
   }
 
   return (
     <button
+      ref={localRef}
       type="button"
       className={cn("inline-flex cursor-pointer", className)}
       {...triggerProps}
@@ -106,6 +127,10 @@ export interface DropdownMenuContentProps {
   menuId?: string;
   align?: "start" | "end";
   className?: string;
+  /** Use portal to render dropdown at document body level (helps with z-index issues) */
+  portal?: boolean;
+  /** Reference to the trigger element for portal positioning */
+  triggerRef?: React.RefObject<HTMLElement>;
 }
 
 export const DropdownMenuContent: React.FC<DropdownMenuContentProps> = ({
@@ -115,14 +140,35 @@ export const DropdownMenuContent: React.FC<DropdownMenuContentProps> = ({
   menuId,
   align = "start",
   className,
+  portal = false,
+  triggerRef,
 }) => {
   const ref = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState({ top: 0, left: 0 });
+
+  // Calculate position when using portal
+  useEffect(() => {
+    if (portal && isOpen && triggerRef?.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      const menuWidth = ref.current?.offsetWidth || 0;
+
+      setPosition({
+        top: rect.bottom + window.scrollY + 4,
+        left: align === "end"
+          ? rect.right + window.scrollX - menuWidth
+          : rect.left + window.scrollX,
+      });
+    }
+  }, [portal, isOpen, triggerRef, align]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (ref.current && !ref.current.contains(event.target as Node)) {
-        setIsOpen?.(false);
-      }
+      const target = event.target as Node;
+      // Don't close if clicking inside the menu
+      if (ref.current && ref.current.contains(target)) return;
+      // Don't close if clicking on the trigger (it has its own toggle logic)
+      if (triggerRef?.current && triggerRef.current.contains(target)) return;
+      setIsOpen?.(false);
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -140,21 +186,22 @@ export const DropdownMenuContent: React.FC<DropdownMenuContentProps> = ({
       document.removeEventListener("click", handleClickOutside);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen, setIsOpen]);
+  }, [isOpen, setIsOpen, triggerRef]);
 
   if (!isOpen) return null;
 
-  return (
+  const content = (
     <div
       ref={ref}
       id={menuId}
       role="menu"
       aria-orientation="vertical"
       className={cn(
-        "absolute z-popover mt-1",
+        portal ? "fixed z-popover" : "absolute z-popover mt-1",
         "animate-in fade-in-0 zoom-in-95 duration-snappy ease-emphasized",
-        align === "end" ? "right-0" : "left-0"
+        !portal && (align === "end" ? "right-0" : "left-0")
       )}
+      style={portal ? { top: position.top, left: position.left } : undefined}
     >
       <Menu
         open={true}
@@ -164,6 +211,12 @@ export const DropdownMenuContent: React.FC<DropdownMenuContentProps> = ({
       </Menu>
     </div>
   );
+
+  if (portal && typeof document !== "undefined") {
+    return createPortal(content, document.body);
+  }
+
+  return content;
 };
 
 export const DropdownMenuItem = MenuItem;

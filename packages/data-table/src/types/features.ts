@@ -274,3 +274,153 @@ export interface BulkAction {
   /** Disable when condition not met */
   disabled?: boolean | ((ids: string[]) => boolean);
 }
+
+// ─── TREE DATA ──────────────────────────────────────────────────────────────
+
+/**
+ * Configuration for tree data (hierarchical rows)
+ */
+export interface TreeDataConfig<T> {
+  /**
+   * Function to extract child rows from a parent row.
+   * Return an array of child rows, or undefined/empty array for leaf nodes.
+   */
+  getSubRows?: (row: T) => T[] | undefined;
+
+  /**
+   * Field name containing child rows (alternative to getSubRows).
+   * If both are provided, getSubRows takes precedence.
+   */
+  childrenField?: keyof T;
+
+  /**
+   * Whether tree nodes are expanded by default.
+   * @default false
+   */
+  defaultExpanded?: boolean;
+
+  /**
+   * Maximum depth level to auto-expand.
+   * Only applies when defaultExpanded is true.
+   * @default Infinity
+   */
+  autoExpandDepth?: number;
+
+  /**
+   * Whether to show expand/collapse indicators for leaf nodes.
+   * @default false
+   */
+  showLeafIndicator?: boolean;
+
+  /**
+   * Callback for lazy loading children when a node is expanded.
+   * If provided, nodes will show loading state while fetching.
+   */
+  onLoadChildren?: (row: T) => Promise<T[]>;
+
+  /**
+   * Callback when a tree node is expanded.
+   */
+  onNodeExpand?: (row: T, path: string[]) => void;
+
+  /**
+   * Callback when a tree node is collapsed.
+   */
+  onNodeCollapse?: (row: T, path: string[]) => void;
+
+  /**
+   * Indent size per level in pixels.
+   * @default 24
+   */
+  indentSize?: number;
+
+  /**
+   * Custom renderer for tree expander button.
+   */
+  renderExpander?: (props: TreeExpanderProps<T>) => ReactNode;
+}
+
+/**
+ * Props passed to custom tree expander renderer
+ */
+export interface TreeExpanderProps<T> {
+  /** The row data */
+  row: T;
+  /** Whether the node is expanded */
+  isExpanded: boolean;
+  /** Whether the node has children (can be expanded) */
+  hasChildren: boolean;
+  /** Whether children are currently loading */
+  isLoading: boolean;
+  /** Depth level (0 = root) */
+  level: number;
+  /** Toggle expand/collapse */
+  onToggle: () => void;
+}
+
+/**
+ * Flattened tree row for rendering (includes hierarchy metadata)
+ */
+export interface FlattenedTreeRow<T> {
+  /** Type discriminator */
+  type: "tree-row";
+  /** The original row data */
+  data: T;
+  /** Unique ID for this tree node */
+  nodeId: string;
+  /** Parent node ID (null for root nodes) */
+  parentId: string | null;
+  /** Depth level (0 = root) */
+  level: number;
+  /** Path of ancestor IDs from root to this node */
+  path: string[];
+  /** Whether this node has children */
+  hasChildren: boolean;
+  /** Whether this node is expanded */
+  isExpanded: boolean;
+  /** Whether children are currently loading (for lazy load) */
+  isLoading: boolean;
+  /** Whether this is the last child among its siblings */
+  isLastChild: boolean;
+  /** Indices of ancestors that are last children (for tree line rendering) */
+  lastChildIndices: number[];
+}
+
+/**
+ * State for tree data feature
+ */
+export interface TreeDataState {
+  /** Set of expanded tree node IDs */
+  expandedNodes: Set<string>;
+  /** Set of node IDs currently loading children */
+  loadingNodes: Set<string>;
+  /** Map of lazy-loaded children by parent node ID */
+  loadedChildren: Map<string, unknown[]>;
+}
+
+/**
+ * Tree selection mode for parent-child relationships
+ */
+export type TreeSelectionMode =
+  | "independent"      // Selection doesn't affect parent/children
+  | "cascade-down"     // Selecting parent selects all descendants
+  | "cascade-up"       // Selecting all children selects parent
+  | "cascade-both";    // Both cascading behaviors
+
+/**
+ * Context for tree row rendering
+ */
+export interface TreeRowContext<T> {
+  /** Current row's flattened tree data */
+  node: FlattenedTreeRow<T>;
+  /** Function to expand this node */
+  expand: () => void;
+  /** Function to collapse this node */
+  collapse: () => void;
+  /** Function to toggle this node */
+  toggle: () => void;
+  /** Function to expand all descendants */
+  expandAll: () => void;
+  /** Function to collapse all descendants */
+  collapseAll: () => void;
+}

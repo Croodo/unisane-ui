@@ -39,7 +39,14 @@ export const Table = forwardRef<HTMLTableElement, TableProps>(
 );
 Table.displayName = "Table";
 
-// ─── TABLE CONTAINER ────────────────────────────────────────────────────────
+// ─── TABLE SCROLL CONTAINER ─────────────────────────────────────────────────
+// This container wraps the entire table and handles horizontal scrolling.
+// The sticky header positioning is handled via CSS variable --data-table-header-offset.
+//
+// Layout Architecture:
+// - This container has overflow-x: auto for horizontal scroll
+// - The thead inside uses position: sticky with top offset from CSS variable
+// - Consumers wrap this in a parent that sets the CSS variable based on toolbar height
 
 interface TableContainerProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
@@ -50,15 +57,19 @@ export const TableContainer = forwardRef<HTMLDivElement, TableContainerProps>(
     <div
       ref={ref}
       className={cn(
-        "flex-1 overflow-auto relative bg-surface @container",
-        // Custom scrollbar for better UX
-        "scrollbar-thin scrollbar-thumb-outline-variant/50 scrollbar-track-transparent",
-        // Touch-friendly: show scrollbar on touch devices
-        "[@media(pointer:coarse)]:scrollbar-thin",
+        "relative bg-surface @container",
+        // Only horizontal scrolling - vertical is page scroll
+        // The table grows naturally with content
+        "overflow-x-auto",
+        // Hide native scrollbar - custom scrollbar component is used
+        "[&::-webkit-scrollbar]:hidden",
         className
       )}
-      // Container query support - @container class enables @container queries in children
-      style={style}
+      style={{
+        scrollbarWidth: "none", // Firefox
+        msOverflowStyle: "none", // IE/Edge
+        ...style,
+      }}
       {...props}
     >
       {children}
@@ -162,8 +173,9 @@ export const TableHeaderCell = forwardRef<
       align === "start" && "text-left",
       align === "center" && "text-center",
       align === "end" && "text-right",
-      pinned === "left" && "sticky z-[9] isolate",
-      pinned === "right" && "sticky z-[9] isolate",
+      // z-20 matches header cells for consistent stacking
+      pinned === "left" && "sticky z-20 isolate",
+      pinned === "right" && "sticky z-20 isolate",
       className
     )}
     {...props}
@@ -199,8 +211,9 @@ export const TableCell = forwardRef<HTMLTableCellElement, TableCellProps>(
         align === "start" && "text-left",
         align === "center" && "text-center",
         align === "end" && "text-right",
-        pinned === "left" && "sticky z-[9] isolate",
-        pinned === "right" && "sticky z-[9] isolate",
+        // z-20 matches header cells for consistent stacking
+        pinned === "left" && "sticky z-20 isolate",
+        pinned === "right" && "sticky z-20 isolate",
         className
       )}
       {...props}

@@ -2,6 +2,17 @@
 export { DataTable } from "./data-table";
 export { DataTableInner, type DataTableInnerProps } from "./data-table-inner";
 
+// Layout components for split-table architecture
+export {
+  DataTableLayout,
+  StickyZone,
+  SyncedScrollContainer,
+  StickyHeaderScrollContainer,
+  HeaderTable,
+  BodyTable,
+  useScrollSync,
+} from "./layout";
+
 // Table primitives
 export { Table, TableContainer, TableHead, TableBody, TableRow, TableHeaderCell, TableCell } from "./table";
 export { DataTableHeader, type DataTableHeaderProps } from "./header/index";
@@ -22,3 +33,12 @@ export {
 export { VirtualizedBody } from "./virtualized-body";
 export { DataTableErrorBoundary, DataTableErrorDisplay } from "./error-boundary";
 export { DragHandle, type DragHandleProps } from "./drag-handle";
+export { CustomScrollbar, type CustomScrollbarProps } from "./custom-scrollbar";
+export {
+  ActionsCell,
+  createActionsColumn,
+  type ActionsCellProps,
+  type CreateActionsColumnOptions,
+} from "./actions-cell";
+export { TreeExpander, type TreeExpanderProps } from "./tree-expander";
+export { InfiniteScrollLoader, type InfiniteScrollLoaderProps } from "./infinite-scroll-loader";

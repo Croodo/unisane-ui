@@ -228,7 +228,7 @@ function DataTableRowInner<T extends { id: string }>({
         {selectable && (
           <td
             className={cn(
-              "sticky left-0 z-20 isolate",
+              "sticky left-0 z-10 isolate",
               stickyBgClass,
               !isSelected && !isActive && !isDropTarget && "group-hover:bg-surface-container-low",
               "transition-colors",
@@ -257,7 +257,7 @@ function DataTableRowInner<T extends { id: string }>({
         {enableExpansion && (
           <td
             className={cn(
-              "sticky z-20 isolate text-center",
+              "sticky z-10 isolate text-center",
               stickyBgClass,
               !isSelected && !isActive && !isDropTarget && "group-hover:bg-surface-container-low",
               "transition-colors",
@@ -269,6 +269,7 @@ function DataTableRowInner<T extends { id: string }>({
               width: 40,
               minWidth: 40,
               maxWidth: 40,
+              // Position after checkbox (48px) if selectable, otherwise at 0
               left: selectable ? 48 : 0,
             }}
           >
@@ -307,6 +308,7 @@ function DataTableRowInner<T extends { id: string }>({
             row,
             rowIndex,
             columnKey: key,
+            value: rawValue,
             isSelected,
             isExpanded,
           };
@@ -314,6 +316,9 @@ function DataTableRowInner<T extends { id: string }>({
           // Check if this cell is editable and currently being edited
           const isEditable = col.editable && inlineEditing;
           const isEditing = isEditable && inlineEditing?.isCellEditing(row.id, key);
+
+          // Check if this is an actions column (needs overflow-visible for dropdown)
+          const isActionsColumn = key.startsWith("__actions");
           const editProps = isEditable ? inlineEditing?.getCellEditProps(row.id, key, rawValue) : null;
 
           // Get cell selection context if enabled
@@ -367,7 +372,9 @@ function DataTableRowInner<T extends { id: string }>({
             <td
               key={key}
               className={cn(
-                "text-body-medium text-on-surface whitespace-nowrap overflow-hidden text-ellipsis",
+                "text-body-medium text-on-surface whitespace-nowrap",
+                // Actions columns need overflow-visible for dropdown, others use overflow-hidden
+                isActionsColumn ? "overflow-visible" : "overflow-hidden text-ellipsis",
                 // Pinned cells use stickyBgClass for drop target state, others use bgClass
                 pinPosition ? stickyBgClass : bgClass,
                 !isSelected && !isActive && !isDropTarget && "group-hover:bg-surface-container-low",
@@ -376,15 +383,17 @@ function DataTableRowInner<T extends { id: string }>({
                 col.align === "center" && "text-center",
                 col.align === "end" && "text-right",
                 col.align !== "center" && col.align !== "end" && "text-left",
-                // Pinned columns: sticky with z-20 to match header (shadow applied via inline style)
-                pinPosition && "sticky z-20 isolate",
+                // Pinned columns: sticky with z-10 (below header z-20) (shadow applied via inline style)
+                // Actions columns skip 'isolate' to allow dropdown to escape stacking context
+                pinPosition && !isActionsColumn && "sticky z-10 isolate",
+                pinPosition && isActionsColumn && "sticky z-10",
                 // Column borders: show on non-pinned columns (except last), and on last pinned-left column
                 showColumnBorders && !isLastColumn && !pinPosition && "border-r border-outline-variant/50",
                 showColumnBorders && pinPosition === "left" && key === lastPinnedLeftKey && "border-r border-outline-variant/50",
                 showColumnBorders && pinPosition === "right" && key === firstPinnedRightKey && "border-l border-outline-variant/50",
                 paddingClass,
                 isEditable && !isEditing && "cursor-cell",
-                isEditing && "overflow-visible z-[3]",
+                (isEditing || isActionsColumn) && "overflow-visible z-[3]",
                 // Cell selection styling
                 cellSelectionEnabled && "cursor-cell select-none",
                 cellSelectionCtx?.isSelected && "bg-secondary-container/30",
@@ -429,7 +438,7 @@ function DataTableRowInner<T extends { id: string }>({
           )}
           {selectable && (
             <td
-              className="sticky left-0 z-20 isolate bg-surface-container-lowest border-b border-outline-variant/50"
+              className="sticky left-0 z-10 isolate bg-surface-container-lowest border-b border-outline-variant/50"
               style={{
                 width: 48,
                 minWidth: 48,
@@ -439,8 +448,9 @@ function DataTableRowInner<T extends { id: string }>({
           )}
           {enableExpansion && (
             <td
-              className="sticky z-20 isolate bg-surface-container-lowest border-b border-outline-variant/50"
+              className="sticky z-10 isolate bg-surface-container-lowest border-b border-outline-variant/50"
               style={{
+                // Position after checkbox (48px) if selectable, otherwise at 0
                 left: selectable ? 48 : 0,
                 width: 40,
                 minWidth: 40,

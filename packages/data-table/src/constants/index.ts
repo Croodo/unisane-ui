@@ -37,6 +37,8 @@ export {
   COLUMN_WIDTHS,
   HEADER_DIMENSIONS,
   SCROLL_CONSTANTS,
+  RESPONSIVE,
+  TIMING,
 } from "./dimensions";
 
 // ─── PAGINATION ──────────────────────────────────────────────────────────────

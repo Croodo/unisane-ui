@@ -280,10 +280,10 @@ function generatePrintHtml<T extends { id: string }>(
     ? data.filter((row) => selectedIds.has(row.id))
     : data;
 
-  // Filter columns if specified
-  const printColumns = columnKeys
-    ? columns.filter((col) => columnKeys.includes(String(col.key)))
-    : columns;
+  // Filter columns: exclude non-printable columns and apply columnKeys filter
+  const printColumns = columns
+    .filter((col) => col.printable !== false) // Exclude columns explicitly marked as non-printable
+    .filter((col) => !columnKeys || columnKeys.includes(String(col.key)));
 
   // Generate header
   let headerContent = "";
@@ -559,7 +559,9 @@ export function usePrint<T extends { id: string }>(
   const printSelected = useCallback(
     (printOptions?: PrintOptions) => {
       if (!selectedIds || selectedIds.size === 0) {
-        console.warn("No rows selected for printing");
+        if (process.env.NODE_ENV !== "production") {
+          console.warn("No rows selected for printing");
+        }
         return;
       }
 

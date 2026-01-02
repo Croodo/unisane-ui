@@ -56,8 +56,6 @@ export interface DataTableHeaderProps<T> {
   onColumnFilter?: (key: string, value: FilterValue) => void;
   onColumnReorder?: (fromKey: string, toKey: string) => void;
   columnFilters?: Record<string, FilterValue>;
-  /** Tailwind class for sticky header offset */
-  headerOffsetClassName?: string;
   /** Whether grouping is enabled */
   groupingEnabled?: boolean;
   /** Current column(s) being grouped by (supports multi-level) */
@@ -98,7 +96,6 @@ function DataTableHeaderInner<T extends { id: string }>({
   onColumnFilter,
   onColumnReorder,
   columnFilters = {},
-  headerOffsetClassName,
   groupingEnabled = false,
   groupBy,
   groupByArray = [],
@@ -159,7 +156,7 @@ function DataTableHeaderInner<T extends { id: string }>({
     pinnedRightColumns.length > 0 ? String(pinnedRightColumns[0]!.key) : null;
 
   return (
-    <thead className={cn("sticky top-0 z-30", headerOffsetClassName)}>
+    <thead className="bg-surface">
       {/* Group header row (only if groups exist) */}
       {hasGroups && columnDefinitions && (
         <GroupHeaderRow
@@ -169,6 +166,7 @@ function DataTableHeaderInner<T extends { id: string }>({
           showColumnBorders={showColumnBorders}
           paddingClass={paddingClass}
           hasPinnedLeftData={hasPinnedLeftData}
+          reorderableRows={reorderableRows}
         />
       )}
 
@@ -192,7 +190,7 @@ function DataTableHeaderInner<T extends { id: string }>({
           <th
             className={cn(
               "bg-surface border-b border-outline-variant/50",
-              "sticky left-0 z-20 isolate",
+              "z-20",
               // Only show border-r if there are no more sticky columns after this
               showColumnBorders &&
                 !enableExpansion &&
@@ -203,6 +201,12 @@ function DataTableHeaderInner<T extends { id: string }>({
               width: 48,
               minWidth: 48,
               maxWidth: 48,
+              // Pinned left at position 0:
+              // Use max() to only start translating once scroll exceeds drag handle width
+              // This mimics sticky behavior: stays in DOM position until scroll catches up
+              transform: reorderableRows
+                ? "translateX(max(0px, calc(var(--header-scroll-offset, 0px) - 40px)))"
+                : "translateX(var(--header-scroll-offset, 0px))",
             }}
           >
             <div className="flex items-center justify-center h-full">
@@ -222,7 +226,7 @@ function DataTableHeaderInner<T extends { id: string }>({
           <th
             className={cn(
               "bg-surface border-b border-outline-variant/50",
-              "sticky left-0 z-20 isolate",
+              "z-20",
               // Only show border-r if there are no more sticky columns after this
               showColumnBorders &&
                 !enableExpansion &&
@@ -233,6 +237,11 @@ function DataTableHeaderInner<T extends { id: string }>({
               width: 48,
               minWidth: 48,
               maxWidth: 48,
+              // Pinned left at position 0:
+              // Use max() to only start translating once scroll exceeds drag handle width
+              transform: reorderableRows
+                ? "translateX(max(0px, calc(var(--header-scroll-offset, 0px) - 40px)))"
+                : "translateX(var(--header-scroll-offset, 0px))",
             }}
           >
             <div className="flex items-center justify-center h-full">
@@ -252,7 +261,7 @@ function DataTableHeaderInner<T extends { id: string }>({
           <th
             className={cn(
               "bg-surface border-b border-outline-variant/50",
-              "sticky z-20 isolate",
+              "z-20",
               // Only show border-r if there are no pinned-left data columns after this
               showColumnBorders &&
                 !hasPinnedLeftData &&
@@ -262,7 +271,21 @@ function DataTableHeaderInner<T extends { id: string }>({
               width: 40,
               minWidth: 40,
               maxWidth: 40,
-              left: selectable ? 48 : 0,
+              // Pinned left at position 48 (after checkbox) or 0 (if no checkbox):
+              // Use max() to only start translating once scroll exceeds the offset
+              transform: (() => {
+                // Calculate the offset to subtract from natural position
+                // Natural position = dragHandle(40 if exists) + checkbox(48 if exists)
+                const dragHandleWidth = reorderableRows ? 40 : 0;
+                const checkboxWidth = selectable ? 48 : 0;
+                // Target position = checkbox width (48 if exists, 0 otherwise)
+                const targetLeft = selectable ? 48 : 0;
+                // Offset to subtract = natural position - target position
+                const offset = dragHandleWidth + checkboxWidth - targetLeft;
+                return offset > 0
+                  ? `translateX(max(0px, calc(var(--header-scroll-offset, 0px) - ${offset}px)))`
+                  : "translateX(var(--header-scroll-offset, 0px))";
+              })(),
             }}
           >
             <span className="sr-only">Expand row</span>
@@ -315,6 +338,7 @@ function DataTableHeaderInner<T extends { id: string }>({
               groupByArray={groupByArray}
               onGroupBy={onGroupBy}
               onAddGroupBy={onAddGroupBy}
+              reorderableRows={reorderableRows}
             />
           );
         })}

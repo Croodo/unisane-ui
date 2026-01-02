@@ -141,7 +141,9 @@ export function useInlineEditing<T extends { id: string }>({
 
     // Find the row - handle undefined/null data gracefully
     if (!data || !Array.isArray(data)) {
-      console.warn("useInlineEditing: data is not available or not an array");
+      if (process.env.NODE_ENV !== "production") {
+        console.warn("useInlineEditing: data is not available or not an array");
+      }
       cancelEdit();
       return false;
     }

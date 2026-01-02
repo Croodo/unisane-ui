@@ -35,7 +35,9 @@ function parseKey(key: string): CellPosition {
   const separatorIndex = key.indexOf(CELL_KEY_SEPARATOR);
   if (separatorIndex === -1) {
     // Fallback for malformed keys - should not happen in normal usage
-    console.warn(`Invalid cell key format: ${key}`);
+    if (process.env.NODE_ENV !== "production") {
+      console.warn(`Invalid cell key format: ${key}`);
+    }
     return { rowId: key, columnKey: "" };
   }
   const rowId = key.slice(0, separatorIndex);

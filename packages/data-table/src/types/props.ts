@@ -70,15 +70,39 @@ export interface DataTableProps<T extends { id: string }> {
   // ─── Visual Variants ───
   /** Display variant preset */
   variant?: TableVariant;
-  /** Enable row selection checkboxes */
+  /**
+   * Enable row selection checkboxes.
+   * @default false
+   */
+  rowSelectionEnabled?: boolean;
+  /**
+   * Enable row selection checkboxes.
+   * @deprecated Use `rowSelectionEnabled` instead. Will be removed in a future version.
+   */
   selectable?: boolean;
-  /** Show column border dividers */
+  /**
+   * Show column border dividers.
+   * When undefined, defaults based on variant (true for "grid", false otherwise).
+   */
+  showColumnDividers?: boolean;
+  /**
+   * Show column border dividers.
+   * @deprecated Use `showColumnDividers` instead. Will be removed in a future version.
+   */
   columnBorders?: boolean;
   /** Enable zebra striping */
   zebra?: boolean;
   /** Make header sticky */
   stickyHeader?: boolean;
-  /** Row density */
+  /**
+   * Row density - controls row height and padding.
+   * @default "standard"
+   */
+  rowDensity?: Density;
+  /**
+   * Row density - controls row height and padding.
+   * @deprecated Use `rowDensity` instead. Will be removed in a future version.
+   */
   density?: Density;
 
   // ─── Feature Toggles ───
@@ -98,6 +122,22 @@ export interface DataTableProps<T extends { id: string }> {
   showSummary?: boolean;
   /** Custom label for the summary row (defaults to "Summary") */
   summaryLabel?: string;
+  /**
+   * Show row numbers as the first column.
+   * Numbers continue across pages (e.g., page 2 starts at 11 if pageSize=10).
+   * @default false
+   */
+  showRowNumbers?: boolean;
+  /**
+   * Custom header text for the row number column.
+   * @default "#"
+   */
+  rowNumberHeader?: string;
+  /**
+   * Width of the row number column in pixels.
+   * @default 50
+   */
+  rowNumberWidth?: number;
 
   // ─── Pagination ───
   /** Pagination mode */
@@ -221,15 +261,21 @@ export interface DataTableProps<T extends { id: string }> {
 
   // ─── Layout ───
   /**
-   * Tailwind class for sticky header offset (e.g., "top-16" when there's a navbar).
-   * Applied to the table header for proper sticky positioning.
-   */
-  headerOffsetClassName?: string;
-  /**
    * Estimated row height in pixels for virtualization calculations.
    * Only used when virtualize is enabled. If not provided, uses density-based height.
    */
   estimateRowHeight?: number;
+
+  // ─── RTL Support ───
+  /**
+   * Text direction for RTL language support.
+   * When set to "rtl":
+   * - Pinned columns are flipped (left becomes right, right becomes left)
+   * - Keyboard navigation (arrow keys) is adjusted
+   * - Scroll positions are normalized across browsers
+   * @default "ltr"
+   */
+  dir?: "ltr" | "rtl";
 }
 
 // ─── REMOTE DATA PROPS ───────────────────────────────────────────────────────

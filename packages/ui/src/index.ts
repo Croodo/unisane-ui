@@ -203,6 +203,8 @@ export { Tooltip } from "./components/tooltip";
 export type { TooltipProps } from "./components/tooltip";
 export { Dialog } from "./components/dialog";
 export type { DialogProps } from "./components/dialog";
+export { ConfirmDialog } from "./components/confirm-dialog";
+export type { ConfirmDialogProps } from "./components/confirm-dialog";
 export { Combobox } from "./components/combobox";
 export type { ComboboxProps } from "./components/combobox";
 export {

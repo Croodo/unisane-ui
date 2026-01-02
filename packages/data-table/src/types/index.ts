@@ -6,11 +6,26 @@
 // Fundamental types: sort, filter, pagination, display variants
 
 export type {
+  // Branded types
+  Brand,
+  NonEmptyArray,
   // Sort
   SortDirection,
+  SortSource,
   SortItem,
   MultiSortState,
-  // Filter
+  // Filter (typed discriminated unions)
+  TextFilterValue,
+  NumberFilterValue,
+  NumberRangeFilterValue,
+  DateFilterValue,
+  DateRangeFilterValue,
+  SelectFilterValue,
+  MultiSelectFilterValue,
+  BooleanFilterValue,
+  TypedFilterValue,
+  TypedFilterState,
+  // Filter (legacy)
   FilterValue,
   FilterState,
   FilterType,
@@ -26,6 +41,9 @@ export type {
   PaginationState,
   CursorPagination,
 } from "./core";
+
+// Branded type utilities
+export { isNonEmpty, asNonEmpty, toNonEmpty } from "./core";
 
 // ─── COLUMN TYPES ────────────────────────────────────────────────────────────
 // Column definitions and utilities
@@ -67,6 +85,13 @@ export type {
   RowContextMenuRenderProps,
   // Bulk Actions
   BulkAction,
+  // Tree Data
+  TreeDataConfig,
+  TreeExpanderProps,
+  FlattenedTreeRow,
+  TreeDataState,
+  TreeSelectionMode,
+  TreeRowContext,
 } from "./features";
 
 // ─── COMPONENT PROPS ─────────────────────────────────────────────────────────

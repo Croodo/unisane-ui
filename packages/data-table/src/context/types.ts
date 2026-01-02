@@ -106,8 +106,10 @@ export interface DataTableConfig<T> {
   mode: "local" | "remote";
   paginationMode: "offset" | "cursor" | "none";
   variant: TableVariant;
-  selectable: boolean;
-  columnBorders: boolean;
+  /** Whether row selection is enabled */
+  rowSelectionEnabled: boolean;
+  /** Whether to show column dividers/borders */
+  showColumnDividers: boolean;
   zebra: boolean;
   stickyHeader: boolean;
   resizable: boolean;
@@ -119,12 +121,106 @@ export interface DataTableConfig<T> {
   showSummary: boolean;
   /** Label for the summary row */
   summaryLabel: string;
+  /** Text direction (ltr or rtl) */
+  dir: "ltr" | "rtl";
+}
+
+// ─── STATE SLICES ────────────────────────────────────────────────────────────
+// Split state into separate memoized slices to prevent unnecessary re-renders.
+
+export interface SelectionSlice {
+  selectedRows: Set<string>;
+  expandedRows: Set<string>;
+}
+
+export interface SortSlice {
+  sortState: MultiSortState;
+}
+
+export interface FilterSlice {
+  searchText: string;
+  columnFilters: FilterState;
+}
+
+export interface PaginationSlice {
+  pagination: PaginationState;
+}
+
+export interface ColumnSlice {
+  hiddenColumns: Set<string>;
+  columnWidths: Record<string, number>;
+  columnPinState: ColumnPinState;
+  columnOrder: string[];
+}
+
+export interface GroupingSlice {
+  groupBy: string | string[] | null;
+  expandedGroups: Set<string>;
+}
+
+export interface StateSlices {
+  selection: SelectionSlice;
+  sort: SortSlice;
+  filter: FilterSlice;
+  pagination: PaginationSlice;
+  column: ColumnSlice;
+  grouping: GroupingSlice;
+}
+
+// ─── CALLBACK TYPES ──────────────────────────────────────────────────────────
+
+/** Scroll event information */
+export interface ScrollEventInfo {
+  /** Horizontal scroll position */
+  scrollLeft: number;
+  /** Vertical scroll position */
+  scrollTop: number;
+  /** Total scrollable width */
+  scrollWidth: number;
+  /** Total scrollable height */
+  scrollHeight: number;
+  /** Visible container width */
+  clientWidth: number;
+  /** Visible container height */
+  clientHeight: number;
+}
+
+/** Error event information */
+export interface DataTableError {
+  /** Error type/category */
+  type: "render" | "data" | "export" | "filter" | "sort" | "selection" | "unknown";
+  /** Error message */
+  message: string;
+  /** Original error object if available */
+  error?: Error;
+  /** Additional context about where the error occurred */
+  context?: Record<string, unknown>;
+}
+
+export interface DataTableCallbacks {
+  onSortChange: ((sortState: MultiSortState) => void) | undefined;
+  onFilterChange: ((filters: FilterState) => void) | undefined;
+  onSearchChange: ((value: string) => void) | undefined;
+  onColumnPinChange: ((key: string, position: PinPosition) => void) | undefined;
+  onColumnOrderChange: ((order: string[]) => void) | undefined;
+  onSelectionChange: ((ids: string[]) => void) | undefined;
+  onGroupByChange: ((key: string | string[] | null) => void) | undefined;
+  onSelectAllFiltered: (() => Promise<string[]>) | undefined;
+  onPaginationChange: ((page: number, pageSize: number) => void) | undefined;
+  /** Callback when column visibility changes */
+  onColumnVisibilityChange: ((hiddenColumns: string[]) => void) | undefined;
+  /** Callback when table scrolls */
+  onScroll: ((info: ScrollEventInfo) => void) | undefined;
+  /** Global error handler for DataTable errors */
+  onError: ((error: DataTableError) => void) | undefined;
 }
 
 // ─── CONTEXT VALUE ──────────────────────────────────────────────────────────
 
 export interface DataTableContextValue<T = unknown> {
   state: DataTableState;
+  /** Memoized state slices for optimized re-renders */
+  stateSlices: StateSlices;
   dispatch: React.Dispatch<DataTableAction>;
   config: DataTableConfig<T>;
 
@@ -142,7 +238,7 @@ export interface DataTableContextValue<T = unknown> {
   // Multi-sort config
   maxSortColumns: number;
 
-  // Event callbacks
+  // Event callbacks (direct references for backward compatibility)
   onSortChange: ((sortState: MultiSortState) => void) | undefined;
   onFilterChange: ((filters: FilterState) => void) | undefined;
   onSearchChange: ((value: string) => void) | undefined;
@@ -154,6 +250,15 @@ export interface DataTableContextValue<T = unknown> {
   onSelectAllFiltered: (() => Promise<string[]>) | undefined;
   /** Callback when pagination changes (useful for sync when controlled sort/filter resets page) */
   onPaginationChange: ((page: number, pageSize: number) => void) | undefined;
+  /** Callback when column visibility changes */
+  onColumnVisibilityChange: ((hiddenColumns: string[]) => void) | undefined;
+  /** Callback when table scrolls */
+  onScroll: ((info: ScrollEventInfo) => void) | undefined;
+  /** Global error handler for DataTable errors */
+  onError: ((error: DataTableError) => void) | undefined;
+
+  /** Get stable callback references (avoids stale closure issues) */
+  getCallbacks: () => DataTableCallbacks;
 }
 
 // ─── PROVIDER PROPS ─────────────────────────────────────────────────────────
@@ -166,7 +271,13 @@ export interface DataTableProviderProps<T> {
   mode?: "local" | "remote";
   paginationMode?: "offset" | "cursor" | "none";
   variant?: TableVariant;
+  /** Enable row selection (checkboxes) */
+  rowSelectionEnabled?: boolean;
+  /** @deprecated Use `rowSelectionEnabled` instead. */
   selectable?: boolean;
+  /** Show column dividers/borders between cells */
+  showColumnDividers?: boolean;
+  /** @deprecated Use `showColumnDividers` instead. */
   columnBorders?: boolean;
   zebra?: boolean;
   stickyHeader?: boolean;
@@ -207,8 +318,28 @@ export interface DataTableProviderProps<T> {
   onSelectAllFiltered?: () => Promise<string[]>;
   /** Callback when pagination changes (useful for sync when controlled sort/filter resets page) */
   onPaginationChange?: (page: number, pageSize: number) => void;
+  /** Callback when column visibility changes (show/hide columns) */
+  onColumnVisibilityChange?: (hiddenColumns: string[]) => void;
+  /** Callback when table scrolls (useful for infinite scroll, lazy loading) */
+  onScroll?: (info: ScrollEventInfo) => void;
+  /**
+   * Global error handler for DataTable errors.
+   * Catches errors from rendering, data processing, exports, etc.
+   */
+  onError?: (error: DataTableError) => void;
 
   // ─── Internationalization ───
   /** Locale configuration for i18n support */
   locale?: PartialDataTableLocale;
+
+  // ─── RTL Support ───
+  /**
+   * Text direction for RTL language support.
+   * When set to "rtl":
+   * - Pinned columns are flipped (left becomes right, right becomes left)
+   * - Keyboard navigation (arrow keys) is adjusted
+   * - Scroll positions are normalized across browsers
+   * @default "ltr"
+   */
+  dir?: "ltr" | "rtl";
 }

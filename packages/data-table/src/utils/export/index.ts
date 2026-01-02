@@ -1,12 +1,43 @@
 // ─── EXPORT MODULE ──────────────────────────────────────────────────────────
 // Unified export functionality for DataTable
-// Supports: CSV, Excel (.xlsx), PDF, JSON
+// Supports: CSV, Excel (.xlsx), PDF, JSON, and custom plugins
 
 export * from "./types";
 export { exportToCSV, toCSVString } from "./csv";
 export { exportToExcel, toExcelBlob } from "./excel";
 export { exportToPDF, toPDFBlob } from "./pdf";
 export { exportToJSON, toJSONString } from "./json";
+
+// ─── PLUGIN SYSTEM ─────────────────────────────────────────────────────────
+export {
+  // Registry
+  getExportPluginRegistry,
+  createExportPluginRegistry,
+  ExportPluginRegistry,
+  // Data preparation
+  preparePluginExportData,
+  // Export functions
+  exportWithPlugin,
+  pluginToString,
+  // Hook
+  useExportPlugins,
+  // Plugin creators
+  createTextPlugin,
+  createBinaryPlugin,
+  // Types
+  type ExportCellValue,
+  type ExportData,
+  type ExportMetadata,
+  type ExportPlugin,
+  type ExportPluginBaseOptions,
+  type ExportPluginResult,
+  type ValidationResult,
+  type PluginRegistryConfig,
+  type ExportWithPluginOptions,
+  type ExportWithPluginResult,
+  type UseExportPluginsOptions,
+  type UseExportPluginsReturn,
+} from "./plugins";
 
 // ─── UNIFIED EXPORT FUNCTION ────────────────────────────────────────────────
 

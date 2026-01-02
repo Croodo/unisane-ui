@@ -369,6 +369,20 @@
         "ripple"
       ]
     },
+    "confirm-dialog": {
+      "name": "ConfirmDialog",
+      "type": "components:ui",
+      "description": "ConfirmDialog component",
+      "files": [
+        "components/confirm-dialog.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "dialog",
+        "button",
+        "icon"
+      ]
+    },
     "date-input": {
       "name": "DateInput",
       "type": "components:ui",

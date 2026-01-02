@@ -6,15 +6,25 @@ import {
   useReducer,
   useEffect,
   useMemo,
+  useRef,
+  useCallback,
 } from "react";
 import type {
   DataTableContextValue,
   DataTableProviderProps,
   DataTableConfig,
+  SelectionSlice,
+  SortSlice,
+  FilterSlice,
+  PaginationSlice,
+  ColumnSlice,
+  GroupingSlice,
+  StateSlices,
 } from "./types";
 import { dataTableReducer, createInitialState } from "./reducer";
 import { flattenColumns, hasColumnGroups } from "../types/index";
 import { I18nProvider } from "../i18n/index";
+import { resolveDeprecatedProp } from "../utils/deprecation";
 
 // ─── CONTEXT ────────────────────────────────────────────────────────────────
 
@@ -34,7 +44,10 @@ export function DataTableProvider<T extends { id: string }>({
   mode = "local",
   paginationMode = "offset",
   variant = "list",
-  selectable = false,
+  // New prop names with deprecated fallbacks
+  rowSelectionEnabled,
+  selectable,
+  showColumnDividers,
   columnBorders,
   zebra = false,
   stickyHeader = true,
@@ -64,17 +77,40 @@ export function DataTableProvider<T extends { id: string }>({
   onGroupByChange,
   onSelectAllFiltered,
   onPaginationChange,
+  onColumnVisibilityChange,
+  onScroll,
+  onError,
   locale,
+  dir = "ltr",
 }: DataTableProviderProps<T>) {
-  // Compute effective column borders based on variant
-  const effectiveColumnBorders = columnBorders ?? variant === "grid";
+  // Resolve deprecated props with warnings
+  const effectiveRowSelectionEnabled = resolveDeprecatedProp(
+    rowSelectionEnabled,
+    selectable,
+    "selectable",
+    "rowSelectionEnabled",
+    false,
+    "DataTableProvider"
+  );
+
+  const effectiveShowColumnDividers = resolveDeprecatedProp(
+    showColumnDividers,
+    columnBorders,
+    "columnBorders",
+    "showColumnDividers",
+    variant === "grid", // Default based on variant
+    "DataTableProvider"
+  );
 
   // Flatten columns and check for groups
   const flatColumns = useMemo(() => flattenColumns(columns), [columns]);
   const hasGroups = useMemo(() => hasColumnGroups(columns), [columns]);
 
-  // Validate columns on mount/change and warn about issues
+  // Validate columns on mount/change and warn about issues (development only)
   useEffect(() => {
+    // Skip validation in production for performance
+    if (process.env.NODE_ENV === "production") return;
+
     if (!columns || columns.length === 0) {
       console.warn("DataTable: No columns provided. Table will not render correctly.");
       return;
@@ -109,8 +145,8 @@ export function DataTableProvider<T extends { id: string }>({
       mode,
       paginationMode,
       variant,
-      selectable,
-      columnBorders: effectiveColumnBorders,
+      rowSelectionEnabled: effectiveRowSelectionEnabled,
+      showColumnDividers: effectiveShowColumnDividers,
       zebra,
       stickyHeader,
       resizable,
@@ -119,6 +155,7 @@ export function DataTableProvider<T extends { id: string }>({
       groupingEnabled,
       showSummary,
       summaryLabel,
+      dir,
     }),
     [
       tableId,
@@ -128,8 +165,8 @@ export function DataTableProvider<T extends { id: string }>({
       mode,
       paginationMode,
       variant,
-      selectable,
-      effectiveColumnBorders,
+      effectiveRowSelectionEnabled,
+      effectiveShowColumnDividers,
       zebra,
       stickyHeader,
       resizable,
@@ -138,6 +175,7 @@ export function DataTableProvider<T extends { id: string }>({
       groupingEnabled,
       showSummary,
       summaryLabel,
+      dir,
     ]
   );
 
@@ -270,37 +308,139 @@ export function DataTableProvider<T extends { id: string }>({
     [externalSortState, controlledFilters, searchValue, externalPinState, externalColumnOrder, externalSelectedIds, externalGroupBy]
   );
 
+  // ─── MEMOIZED STATE SLICES ─────────────────────────────────────────────────
+  // Each slice only updates when its specific state changes, preventing
+  // unnecessary re-renders in components that use specialized hooks.
+
+  const selectionSlice = useMemo<SelectionSlice>(
+    () => ({
+      selectedRows: state.selectedRows,
+      expandedRows: state.expandedRows,
+    }),
+    [state.selectedRows, state.expandedRows]
+  );
+
+  const sortSlice = useMemo<SortSlice>(
+    () => ({
+      sortState: state.sortState,
+    }),
+    [state.sortState]
+  );
+
+  const filterSlice = useMemo<FilterSlice>(
+    () => ({
+      searchText: state.searchText,
+      columnFilters: state.columnFilters,
+    }),
+    [state.searchText, state.columnFilters]
+  );
+
+  const paginationSlice = useMemo<PaginationSlice>(
+    () => ({
+      pagination: state.pagination,
+    }),
+    [state.pagination]
+  );
+
+  const columnSlice = useMemo<ColumnSlice>(
+    () => ({
+      hiddenColumns: state.hiddenColumns,
+      columnWidths: state.columnWidths,
+      columnPinState: state.columnPinState,
+      columnOrder: state.columnOrder,
+    }),
+    [state.hiddenColumns, state.columnWidths, state.columnPinState, state.columnOrder]
+  );
+
+  const groupingSlice = useMemo<GroupingSlice>(
+    () => ({
+      groupBy: state.groupBy,
+      expandedGroups: state.expandedGroups,
+    }),
+    [state.groupBy, state.expandedGroups]
+  );
+
+  // Combine slices into a single object for the context
+  const stateSlices = useMemo<StateSlices>(
+    () => ({
+      selection: selectionSlice,
+      sort: sortSlice,
+      filter: filterSlice,
+      pagination: paginationSlice,
+      column: columnSlice,
+      grouping: groupingSlice,
+    }),
+    [selectionSlice, sortSlice, filterSlice, paginationSlice, columnSlice, groupingSlice]
+  );
+
+  // Store callbacks in refs for stable references
+  const callbacksRef = useRef({
+    onSortChange,
+    onFilterChange,
+    onSearchChange,
+    onColumnPinChange,
+    onColumnOrderChange,
+    onSelectionChange,
+    onGroupByChange,
+    onSelectAllFiltered,
+    onPaginationChange,
+    onColumnVisibilityChange,
+    onScroll,
+    onError,
+  });
+
+  // Update refs when callbacks change (no re-render triggered)
+  useEffect(() => {
+    callbacksRef.current = {
+      onSortChange,
+      onFilterChange,
+      onSearchChange,
+      onColumnPinChange,
+      onColumnOrderChange,
+      onSelectionChange,
+      onGroupByChange,
+      onSelectAllFiltered,
+      onPaginationChange,
+      onColumnVisibilityChange,
+      onScroll,
+      onError,
+    };
+  });
+
+  // Stable callback getters that don't change reference
+  const getCallbacks = useCallback(() => callbacksRef.current, []);
+
   const contextValue = useMemo<DataTableContextValue<T>>(
     () => ({
       state,
+      stateSlices,
       dispatch,
       config,
       controlled,
       maxSortColumns,
-      onSortChange,
-      onFilterChange,
-      onSearchChange,
-      onColumnPinChange,
-      onColumnOrderChange,
-      onSelectionChange,
-      onGroupByChange,
-      onSelectAllFiltered,
-      onPaginationChange,
+      // Include direct callback references for backward compatibility
+      onSortChange: callbacksRef.current.onSortChange,
+      onFilterChange: callbacksRef.current.onFilterChange,
+      onSearchChange: callbacksRef.current.onSearchChange,
+      onColumnPinChange: callbacksRef.current.onColumnPinChange,
+      onColumnOrderChange: callbacksRef.current.onColumnOrderChange,
+      onSelectionChange: callbacksRef.current.onSelectionChange,
+      onGroupByChange: callbacksRef.current.onGroupByChange,
+      onSelectAllFiltered: callbacksRef.current.onSelectAllFiltered,
+      onPaginationChange: callbacksRef.current.onPaginationChange,
+      onColumnVisibilityChange: callbacksRef.current.onColumnVisibilityChange,
+      onScroll: callbacksRef.current.onScroll,
+      onError: callbacksRef.current.onError,
+      // Getter for stable callback access
+      getCallbacks,
     }),
     [
       state,
+      stateSlices,
       config,
       controlled,
       maxSortColumns,
-      onSortChange,
-      onFilterChange,
-      onSearchChange,
-      onColumnPinChange,
-      onColumnOrderChange,
-      onSelectionChange,
-      onGroupByChange,
-      onSelectAllFiltered,
-      onPaginationChange,
+      getCallbacks,
     ]
   );
 

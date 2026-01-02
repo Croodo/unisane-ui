@@ -111,7 +111,6 @@ export function DataTable<T extends { id: string }>({
   emptyIcon,
 
   // Layout
-  headerOffsetClassName,
   estimateRowHeight,
 }: DataTableProps<T>) {
   // Compute effective settings based on variant
@@ -162,7 +161,6 @@ export function DataTable<T extends { id: string }>({
         virtualizeThreshold={virtualizeThreshold}
         emptyMessage={emptyMessage}
         emptyIcon={emptyIcon}
-        headerOffsetClassName={headerOffsetClassName}
         estimateRowHeight={estimateRowHeight}
         reorderableRows={reorderableRows}
         onRowReorder={onRowReorder}

@@ -8,6 +8,26 @@ export {
 // Re-export error from errors module
 export { DuplicateRowIdError } from "../errors";
 
+// Deprecation utilities
+export {
+  DEPRECATED_PROPS,
+  warnDeprecatedProp,
+  resolveDeprecatedProp,
+  resolveDeprecatedProps,
+  clearDeprecationWarnings,
+  type WithDeprecatedProps,
+} from "./deprecation";
+
+// Grouping utilities
+export {
+  getNestedValue as getNestedGroupValue,
+  formatGroupLabel,
+  calculateAggregation,
+  buildNestedGroups,
+  buildGroupedData,
+  type BuildGroupsOptions,
+} from "./grouping";
+
 // Export module - CSV, Excel, PDF, JSON
 export {
   // Types
@@ -31,3 +51,17 @@ export {
   exportToJSON,
   toJSONString,
 } from "./export";
+
+// Logger utility - standardized error handling
+export {
+  createLogger,
+  logger,
+  devWarn,
+  logAndThrow,
+  logRecoverable,
+  withErrorLogging,
+  withErrorLoggingSync,
+  type LogLevel,
+  type LogContext,
+  type LoggerOptions,
+} from "./logger";

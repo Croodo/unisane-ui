@@ -93,7 +93,7 @@ export function TitleBar({
         </h2>
       )}
       {title && (startItem !== undefined || totalItems !== undefined) && (
-        <div className="h-6 w-px bg-outline-variant hidden sm:block" />
+        <div className="h-6 w-px bg-outline-variant/30 hidden sm:block" />
       )}
       <span className="text-body-small text-on-surface-variant">
         {startItem !== undefined && endItem !== undefined && totalItems !== undefined
@@ -122,7 +122,7 @@ export function ActiveFiltersBar<T>() {
   };
 
   return (
-    <div className="flex items-center gap-2 px-3 py-2 bg-surface-container-low">
+    <div className="flex items-center gap-2 px-3 py-2 bg-surface-container-low border-b border-outline-variant/30">
       <span className="text-label-small text-on-surface-variant">{t("filtersLabel")}:</span>
 
       {searchText && (
