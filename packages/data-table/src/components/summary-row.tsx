@@ -206,7 +206,7 @@ function SummaryCell<T>({
   return (
     <td
       className={cn(
-        "bg-surface-container-low border-t-2 border-outline-variant",
+        "bg-surface-container-low border-t-2 border-outline-variant/50",
         "text-on-surface whitespace-nowrap",
         paddingClass,
         column.align === "center" && "text-center",
@@ -287,7 +287,7 @@ function SummaryRowInner<T extends { id: string }>({
       {reorderableRows && (
         <td
           className={cn(
-            "bg-surface-container-low border-t-2 border-outline-variant",
+            "bg-surface-container-low border-t-2 border-outline-variant/50",
             "sticky left-0 z-20 isolate"
           )}
           style={{
@@ -308,7 +308,7 @@ function SummaryRowInner<T extends { id: string }>({
       {selectable && (
         <td
           className={cn(
-            "bg-surface-container-low border-t-2 border-outline-variant",
+            "bg-surface-container-low border-t-2 border-outline-variant/50",
             "sticky z-20 isolate",
             showColumnBorders && !enableExpansion && !lastPinnedLeftKey && "border-r border-outline-variant/50"
           )}
@@ -331,7 +331,7 @@ function SummaryRowInner<T extends { id: string }>({
       {enableExpansion && (
         <td
           className={cn(
-            "bg-surface-container-low border-t-2 border-outline-variant",
+            "bg-surface-container-low border-t-2 border-outline-variant/50",
             "sticky z-20 isolate",
             showColumnBorders && !lastPinnedLeftKey && "border-r border-outline-variant/50"
           )}
@@ -372,7 +372,7 @@ function SummaryRowInner<T extends { id: string }>({
             <td
               key={key}
               className={cn(
-                "bg-surface-container-low border-t-2 border-outline-variant",
+                "bg-surface-container-low border-t-2 border-outline-variant/50",
                 paddingClass,
                 pinPosition ? "sticky z-20 isolate" : "z-0",
                 showColumnBorders && !isLastColumn && !pinPosition && "border-r border-outline-variant/50",

@@ -19,10 +19,43 @@ export const COLUMN_WIDTHS = {
 
 /**
  * Responsive breakpoints (in pixels)
+ *
+ * Uses two query systems:
+ * - Container queries (@xs, @sm, @md, @lg, @xl) for table internals (columns, cells, scrolling)
+ * - Viewport queries (sm, md, lg, xl) for page-level UI (toolbar, pagination)
  */
 export const RESPONSIVE = {
   /** Minimum container width to enable column pinning */
   MIN_WIDTH_FOR_PINNING: 640,
+
+  /** Container query breakpoints (for table internals) */
+  CONTAINER: {
+    /** Extra small: < 480px - Mobile phone in portrait */
+    XS: 480,
+    /** Small: ≥ 480px - Large phone / small container */
+    SM: 480,
+    /** Medium: ≥ 768px - Tablet / enable sticky columns */
+    MD: 768,
+    /** Large: ≥ 1024px - Desktop */
+    LG: 1024,
+    /** Extra large: ≥ 1280px - Wide desktop */
+    XL: 1280,
+  },
+
+  /** Viewport query breakpoints (for toolbar, pagination) */
+  VIEWPORT: {
+    /** Small: ≥ 640px - Large phone */
+    SM: 640,
+    /** Medium: ≥ 768px - Tablet */
+    MD: 768,
+    /** Large: ≥ 1024px - Desktop */
+    LG: 1024,
+    /** Extra large: ≥ 1280px - Wide desktop */
+    XL: 1280,
+  },
+
+  /** Mobile threshold - below this, disable advanced features */
+  MOBILE_THRESHOLD: 768,
 } as const;
 
 /**
@@ -59,4 +92,20 @@ export const TIMING = {
   FOCUS_DELAY_MS: 100,
   /** Print state reset delay */
   PRINT_STATE_RESET_MS: 100,
+} as const;
+
+/**
+ * Touch target dimensions for accessibility (WCAG)
+ */
+export const TOUCH_TARGETS = {
+  /** Minimum touch target size in pixels (WCAG requirement) */
+  MIN_SIZE: 48,
+  /** Current sizes that need fixing */
+  CURRENT: {
+    CHECKBOX: 48, // ✓ Meets requirement
+    EXPANDER: 40, // ⚠️ Needs padding increase
+    DRAG_HANDLE: 40, // ⚠️ Needs padding increase
+    PAGINATION_BUTTON: 40, // ⚠️ Needs padding increase
+    PAGE_SIZE_SELECT: 32, // ⚠️ Needs height increase
+  },
 } as const;

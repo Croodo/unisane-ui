@@ -56,8 +56,9 @@ export const DragHandle = forwardRef<HTMLButtonElement, DragHandleProps>(
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
           "cursor-grab active:cursor-grabbing",
           "touch-none select-none",
-          size === "sm" && "w-6 h-6",
-          size === "md" && "w-8 h-8",
+          // Touch-friendly: min 44px touch target on mobile
+          size === "sm" && "w-10 h-10 sm:w-6 sm:h-6",
+          size === "md" && "w-10 h-10 sm:w-8 sm:h-8",
           isDragging && "opacity-50 cursor-grabbing",
           disabled && "opacity-30 cursor-not-allowed pointer-events-none",
           className

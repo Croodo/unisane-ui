@@ -2,7 +2,7 @@
 
 import { cn, Icon } from "@unisane/ui";
 import type { BulkAction } from "../../types";
-import { useFiltering, useColumns, useGrouping } from "../../context";
+import { useFiltering, useColumns, useGrouping, usePagination } from "../../context";
 import { useI18n } from "../../i18n";
 
 // ─── SELECTION BAR ────────────────────────────────────────────────────────
@@ -85,24 +85,37 @@ export function TitleBar({
   totalItems?: number;
 }) {
   const { t, formatNumber } = useI18n();
+
+  // Get pagination info from context to calculate range when not provided
+  const { page, pageSize } = usePagination();
+
+  // Calculate range from pagination context if totalItems is provided but range is not
+  const computedStart = startItem ?? (totalItems !== undefined ? (page - 1) * pageSize + 1 : undefined);
+  const computedEnd = endItem ?? (totalItems !== undefined ? Math.min(page * pageSize, totalItems) : undefined);
+
+  const hasRange = computedStart !== undefined && computedEnd !== undefined && totalItems !== undefined && totalItems > 0;
+  const showInfo = hasRange || (totalItems !== undefined && totalItems > 0);
+
   return (
-    <>
+    <div className="flex flex-col @md:flex-row @md:items-center gap-0.5 @md:gap-3 min-w-0">
       {title && (
         <h2 className="text-title-medium text-on-surface font-medium truncate">
           {title}
         </h2>
       )}
-      {title && (startItem !== undefined || totalItems !== undefined) && (
-        <div className="h-6 w-px bg-outline-variant/30 hidden sm:block" />
+      {title && showInfo && (
+        <div className="h-6 w-px bg-outline-variant/30 hidden @md:block" />
       )}
-      <span className="text-body-small text-on-surface-variant">
-        {startItem !== undefined && endItem !== undefined && totalItems !== undefined
-          ? t("rangeOfTotal", { start: formatNumber(startItem), end: formatNumber(endItem), total: formatNumber(totalItems) })
-          : totalItems !== undefined
-          ? t("itemCount", { count: totalItems })
-          : t("allItems")}
-      </span>
-    </>
+      {showInfo && (
+        <span className="text-body-small text-on-surface-variant whitespace-nowrap">
+          {hasRange
+            ? t("rangeOfTotal", { start: formatNumber(computedStart), end: formatNumber(computedEnd), total: formatNumber(totalItems) })
+            : totalItems !== undefined
+            ? t("itemCount", { count: totalItems })
+            : null}
+        </span>
+      )}
+    </div>
   );
 }
 
@@ -122,7 +135,7 @@ export function ActiveFiltersBar<T>() {
   };
 
   return (
-    <div className="flex items-center gap-2 px-3 py-2 bg-surface-container-low border-b border-outline-variant/30">
+    <div className="flex items-center gap-2 px-3 py-2 bg-surface-container-low border-b border-outline-variant/50">
       <span className="text-label-small text-on-surface-variant">{t("filtersLabel")}:</span>
 
       {searchText && (
@@ -181,7 +194,7 @@ export function GroupingPillsBar<T>({ showEmpty = false }: GroupingPillsBarProps
   };
 
   return (
-    <div className="flex items-center gap-2 px-3 py-2 bg-surface-container-low border-b border-outline-variant/30">
+    <div className="flex items-center gap-2 px-3 py-2 bg-surface-container-low border-b border-outline-variant/50">
       <div className="flex items-center gap-1.5 text-on-surface-variant">
         <Icon symbol="account_tree" className="text-[16px]" />
         <span className="text-label-small font-medium">{t("groupedByLabel")}:</span>

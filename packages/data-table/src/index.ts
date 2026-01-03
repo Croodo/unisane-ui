@@ -202,6 +202,11 @@ export {
   type UseActionDialogReturn,
   type ConfirmActionOptions,
   type UseConfirmActionReturn,
+
+  // Responsive density
+  useResponsiveDensity,
+  type UseResponsiveDensityOptions,
+  type UseResponsiveDensityReturn,
 } from "./hooks";
 
 // ─── COMPONENTS ────────────────────────────────────────────────────────────

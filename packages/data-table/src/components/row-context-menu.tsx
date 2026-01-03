@@ -240,7 +240,7 @@ export function RowContextMenu<T extends { id: string }>({
       className={cn(
         "fixed z-50 min-w-48 py-1",
         "bg-surface-container rounded-lg shadow-lg",
-        "border border-outline-variant/30",
+        "border border-outline-variant/50",
         "animate-in fade-in-0 zoom-in-95 duration-100"
       )}
       style={{

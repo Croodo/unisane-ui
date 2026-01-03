@@ -121,8 +121,9 @@ export function HeaderCell<T>({
         // Draggable cursor when reorderable
         dragProps?.draggable && "cursor-grab active:cursor-grabbing",
         // Pinned columns: sticky positioning with higher z-index to stay above non-pinned
+        // Only enable sticky on tablet+ (≥768px container width) - mobile scrolls everything together
         // Non-pinned columns get z-0 to ensure they stack below pinned columns (z-20)
-        pinPosition ? "sticky z-20" : "z-0",
+        pinPosition ? "@md:sticky z-20" : "z-0",
         // Column borders: show on non-pinned columns (except last), and on last pinned-left / first pinned-right
         showColumnBorders && !isLastColumn && !pinPosition && "border-r border-outline-variant/50",
         showColumnBorders && isLastPinnedLeft && "border-r border-outline-variant/50",

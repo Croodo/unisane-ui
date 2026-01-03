@@ -97,7 +97,7 @@ export const DataTableLayout = forwardRef<HTMLDivElement, DataTableLayoutProps>(
       <ScrollSyncContext.Provider value={contextValue}>
         <div
           ref={ref}
-          className={cn("relative bg-surface", className)}
+          className={cn("relative bg-surface border-t border-outline-variant/50", className)}
           {...props}
         >
           {children}
@@ -202,6 +202,31 @@ export const SyncedScrollContainer = forwardRef<HTMLDivElement, SyncedScrollCont
       setScrollLeft(e.currentTarget.scrollLeft);
     }, [setScrollLeft]);
 
+    // Inject scrollbar hiding styles on mount
+    useEffect(() => {
+      if (typeof document === "undefined") return;
+
+      const styleId = "datatable-scrollbar-styles";
+      if (document.getElementById(styleId)) return;
+
+      const style = document.createElement("style");
+      style.id = styleId;
+      style.textContent = `
+        @media (min-width: 768px) {
+          [data-datatable-scroll] {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+          }
+          [data-datatable-scroll]::-webkit-scrollbar {
+            display: none;
+          }
+        }
+      `;
+      document.head.appendChild(style);
+    }, []);
+
+    // Hide native scrollbar on desktop (tablet+), show on mobile for touch usability
+    // Custom scrollbar component is used on desktop instead
     return (
       <div
         ref={(node) => {
@@ -212,16 +237,13 @@ export const SyncedScrollContainer = forwardRef<HTMLDivElement, SyncedScrollCont
             ref.current = node;
           }
         }}
+        data-datatable-scroll
         className={cn(
           "overflow-x-auto",
-          // Hide scrollbar - we use custom scrollbar
-          "[&::-webkit-scrollbar]:hidden",
+          // Hide native scrollbar - uses global CSS for cross-browser support
+          // See: data-datatable-scroll attribute and injected styles
           className
         )}
-        style={{
-          scrollbarWidth: "none",
-          msOverflowStyle: "none",
-        }}
         onScroll={handleScroll}
         {...props}
       >

@@ -124,62 +124,133 @@ function DataTableToolbarInner<T extends { id: string }>({
     };
   };
 
+  // Build overflow actions for smaller containers (< @xl)
+  // Secondary actions (export, print, refresh) and user actions go in overflow
+  // Primary actions (filter, columns, density) are shown as icons directly
+  const overflowActions: Array<{
+    key: string;
+    label: string;
+    icon: string;
+    onClick: () => void;
+    disabled?: boolean;
+  }> = [];
+
+  // Add export action
+  if (onExport && !exportHandler) {
+    overflowActions.push({
+      key: "export",
+      label: t("export"),
+      icon: "download",
+      onClick: onExport,
+    });
+  }
+
+  // Add print action
+  if (printHandler) {
+    overflowActions.push({
+      key: "print",
+      label: t("print"),
+      icon: "print",
+      onClick: printHandler.onPrint,
+      disabled: printHandler.isPrinting,
+    });
+  } else if (onPrint) {
+    overflowActions.push({
+      key: "print",
+      label: t("print"),
+      icon: "print",
+      onClick: onPrint,
+    });
+  }
+
+  // Add refresh action
+  if (onRefresh) {
+    overflowActions.push({
+      key: "refresh",
+      label: t("refresh"),
+      icon: "refresh",
+      onClick: onRefresh,
+      disabled: refreshing,
+    });
+  }
+
+  // Add user-provided actions to overflow (shown inline at @xl+)
+  actions.forEach((action) => {
+    overflowActions.push({
+      key: action.key,
+      label: action.label,
+      icon: action.icon || "more_horiz",
+      onClick: action.onClick,
+      disabled: action.disabled,
+    });
+  });
+
+  // Add moreActions to overflow
+  moreActions.forEach((action) => {
+    overflowActions.push({
+      key: action.key,
+      label: action.label,
+      icon: action.icon || "more_horiz",
+      onClick: action.onClick,
+      disabled: action.disabled,
+    });
+  });
+
   return (
     <>
-      {/* Main toolbar row */}
-      <div
-        className={cn(
-          "relative flex items-center justify-between gap-3 px-1 h-12 bg-surface border-b border-outline-variant/30 transition-shadow",
-          hasSelection && "shadow-1"
-        )}
-      >
-        {/* Left section */}
-        <div className="flex items-center gap-3 min-w-0">
-          {hasSelection ? (
-            <SelectionBar
-              selectedCount={selectedCount}
-              selectedIds={selectedIds}
-              bulkActions={bulkActions}
-              onClearSelection={onClearSelection}
-            />
-          ) : (
-            <>
-              {/* Title and info */}
-              {(title || totalItems !== undefined) && (
-                <div className="flex items-center gap-3 shrink-0">
+      {/* Container query wrapper for responsive toolbar */}
+      <div className="@container w-full shrink-0 relative">
+        {/* Main toolbar row */}
+        <div
+          className={cn(
+            "relative flex items-center justify-between gap-2 @md:gap-3 px-2 @md:px-3 min-h-12 bg-surface border-b border-outline-variant/50 transition-shadow z-40",
+            hasSelection && "shadow-1"
+          )}
+        >
+          {/* Left section */}
+          <div className="flex items-center gap-2 @md:gap-3 min-w-0 flex-1">
+            {hasSelection ? (
+              <SelectionBar
+                selectedCount={selectedCount}
+                selectedIds={selectedIds}
+                bulkActions={bulkActions}
+                onClearSelection={onClearSelection}
+              />
+            ) : (
+              <>
+                {/* Title and info */}
+                {(title || totalItems !== undefined) && (
                   <TitleBar
                     title={title}
                     startItem={startItem}
                     endItem={endItem}
                     totalItems={totalItems}
                   />
-                </div>
-              )}
+                )}
 
-              {/* Custom left content */}
-              {leftContent}
+                {/* Custom left content - visible @md+ */}
+                {leftContent && (
+                  <div className="hidden @md:flex items-center">
+                    {leftContent}
+                  </div>
+                )}
 
-              {/* Frozen columns indicator */}
-              {hasFrozenColumns && (
-                <>
-                  {(title || totalItems !== undefined || leftContent) && (
-                    <div className="h-6 w-px bg-outline-variant/30 hidden sm:block" />
-                  )}
-                  <FrozenColumnsIndicator
-                    frozenLeftCount={frozenLeftCount}
-                    frozenRightCount={frozenRightCount}
-                    onUnfreezeAll={onUnfreezeAll}
-                  />
-                </>
-              )}
+                {/* Frozen columns indicator - visible @lg+ */}
+                {hasFrozenColumns && (
+                  <div className="hidden @lg:flex items-center gap-3">
+                    <div className="h-6 w-px bg-outline-variant/30" />
+                    <FrozenColumnsIndicator
+                      frozenLeftCount={frozenLeftCount}
+                      frozenRightCount={frozenRightCount}
+                      onUnfreezeAll={onUnfreezeAll}
+                    />
+                  </div>
+                )}
 
-              {/* Action buttons */}
-              {hasActions && (
-                <>
-                  {(title || totalItems !== undefined || leftContent) && (
-                    <div className="h-6 w-px bg-outline-variant/30 hidden sm:block" />
-                  )}
-                  <div className="flex items-center gap-2">
+                {/* Action buttons - visible @xl+ */}
+                {hasActions && (
+                  <div className="hidden @xl:flex items-center gap-2">
+                    <div className="h-6 w-px bg-outline-variant/30" />
                     {actions.map((action) => (
                       <ActionButton key={action.key} action={action} />
                     ))}
@@ -187,182 +258,230 @@ function DataTableToolbarInner<T extends { id: string }>({
                       <MoreActionsDropdown actions={moreActions} />
                     )}
                   </div>
-                </>
-              )}
-            </>
-          )}
-        </div>
+                )}
+              </>
+            )}
+          </div>
 
-        {/* Right section */}
-        <div className="flex items-center gap-2 shrink-0">
-          {/* Custom right content */}
-          {rightContent}
+          {/* Right section - progressive disclosure based on container width */}
+          <div className="flex items-center gap-1 @md:gap-2 shrink-0">
+            {/* Custom right content - visible @lg+ */}
+            {rightContent && (
+              <div className="hidden @lg:flex items-center">
+                {rightContent}
+              </div>
+            )}
 
-          {/* Labeled dropdowns */}
-          {hasDropdowns && !hasSelection && (
-            <div className="flex items-center gap-2">
-              {dropdowns.map((dropdown) => (
-                <LabeledDropdown key={dropdown.key} dropdown={dropdown} />
-              ))}
-            </div>
-          )}
+            {/* Labeled dropdowns - visible @xl+ */}
+            {hasDropdowns && !hasSelection && (
+              <div className="hidden @xl:flex items-center gap-2">
+                {dropdowns.map((dropdown) => (
+                  <LabeledDropdown key={dropdown.key} dropdown={dropdown} />
+                ))}
+              </div>
+            )}
 
-          {/* Search input */}
-          {searchable && !hasSelection && <SearchInput />}
+            {/* Search - icon on small, input on @3xl+ */}
+            {searchable && !hasSelection && <SearchInput />}
 
-          {/* Group expand/collapse toggle */}
-          {isGrouped && !hasSelection && onToggleAllGroups && (
-            <>
-              <div className="h-6 w-px bg-outline-variant/30 hidden sm:block" />
+            {/* PRIMARY ACTIONS - Always visible as icons, text labels on larger containers */}
+            {/* Filter - icon always visible, text label @xl+ */}
+            {showFilter && onFilterClick && !hasSelection && (
+              <>
+                {/* Icon only (< @xl) */}
+                <div className="@xl:hidden">
+                  <CompactIconButton
+                    icon="filter_list"
+                    label={t("filtersLabel")}
+                    onClick={onFilterClick}
+                    active={filtersActive}
+                  />
+                </div>
+                {/* With text label (@xl+) - shown in full controls section below */}
+              </>
+            )}
+
+            {/* Columns dropdown - compact icon on mobile */}
+            {showColumnToggle && !hasSelection && (
+              <div className="@xl:hidden">
+                <ColumnVisibilityDropdown compact />
+              </div>
+            )}
+
+            {/* Density dropdown - compact icon on mobile */}
+            {showDensityToggle && !hasSelection && (
+              <div className="@xl:hidden">
+                <DensityDropdown
+                  density={density}
+                  onDensityChange={onDensityChange}
+                  compact
+                />
+              </div>
+            )}
+
+            {/* Export dropdown - compact icon on mobile (when exportHandler is provided) */}
+            {exportHandler && !hasSelection && (
+              <div className="@xl:hidden">
+                <ExportDropdown handler={exportHandler} compact />
+              </div>
+            )}
+
+            {/* Group expand/collapse toggle - visible on all sizes */}
+            {isGrouped && !hasSelection && onToggleAllGroups && (
               <CompactIconButton
                 icon={allGroupsExpanded ? "unfold_less" : "unfold_more"}
-                label={
-                  allGroupsExpanded
-                    ? t("collapseAllGroups")
-                    : t("expandAllGroups")
-                }
+                label={allGroupsExpanded ? t("collapseAllGroups") : t("expandAllGroups")}
                 onClick={onToggleAllGroups}
               />
-            </>
-          )}
+            )}
 
-          {/* Divider before controls */}
-          {segmentedItems.length > 0 && (
-            <div className="h-6 w-px bg-outline-variant/30 hidden sm:block" />
-          )}
+            {/* Divider before secondary controls - visible @xl+ */}
+            {(hasExport || hasPrint || onRefresh) && (
+              <div className="h-6 w-px bg-outline-variant/30 hidden @xl:block" />
+            )}
 
-          {/* Segmented controls */}
-          {segmentedControls ? (
-            <div className="flex items-center">
-              {showFilter && (
-                <SegmentedIconButton
-                  icon="filter_list"
-                  label={t("filter")}
-                  onClick={onFilterClick}
-                  active={filtersActive}
-                  {...getSegmentedPosition("filter")}
-                />
-              )}
-              {showColumnToggle && (
-                <ColumnVisibilityDropdown
-                  segmented
-                  {...getSegmentedPosition("columns")}
-                />
-              )}
-              {showDensityToggle && (
-                <DensityDropdown
-                  density={density}
-                  onDensityChange={onDensityChange}
-                  segmented
-                  {...getSegmentedPosition("density")}
-                />
-              )}
-              {exportHandler ? (
-                <ExportDropdown
-                  handler={exportHandler}
-                  segmented
-                  {...getSegmentedPosition("export")}
-                />
-              ) : onExport ? (
-                <SegmentedIconButton
-                  icon="download"
-                  label={t("download")}
-                  onClick={onExport}
-                  {...getSegmentedPosition("export")}
-                />
-              ) : null}
-              {printHandler ? (
-                <SegmentedIconButton
-                  icon="print"
-                  label={t("print")}
-                  onClick={printHandler.onPrint}
-                  disabled={printHandler.isPrinting}
-                  {...getSegmentedPosition("print")}
-                />
-              ) : onPrint ? (
-                <SegmentedIconButton
-                  icon="print"
-                  label={t("print")}
-                  onClick={onPrint}
-                  {...getSegmentedPosition("print")}
-                />
-              ) : null}
-              {onRefresh && (
-                <SegmentedIconButton
-                  icon="refresh"
-                  label={t("refresh")}
-                  onClick={onRefresh}
-                  disabled={refreshing}
-                  {...getSegmentedPosition("refresh")}
-                />
-              )}
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              {showFilter && (
-                <ToolbarTextButton
-                  label={t("filtersLabel")}
-                  icon="filter_list"
-                  onClick={onFilterClick}
-                  active={filtersActive}
-                />
-              )}
-              {showColumnToggle && <ColumnVisibilityDropdown />}
-              {showDensityToggle && (
-                <DensityDropdown
-                  density={density}
-                  onDensityChange={onDensityChange}
-                />
-              )}
-              {exportHandler ? (
-                <ExportDropdown handler={exportHandler} />
-              ) : onExport ? (
-                <ToolbarTextButton
-                  label={t("export")}
-                  icon="download"
-                  onClick={onExport}
-                />
-              ) : null}
-              {printHandler ? (
-                <ToolbarTextButton
-                  label={t("print")}
-                  icon="print"
-                  onClick={printHandler.onPrint}
-                  disabled={printHandler.isPrinting}
-                />
-              ) : onPrint ? (
-                <ToolbarTextButton
-                  label={t("print")}
-                  icon="print"
-                  onClick={onPrint}
-                />
-              ) : null}
-              {onRefresh && (
-                <ToolbarTextButton
-                  label={t("refresh")}
-                  icon="refresh"
-                  onClick={onRefresh}
-                  disabled={refreshing}
-                />
-              )}
-            </div>
-          )}
+            {/* SECONDARY ACTIONS - In overflow on small, inline with text on @xl+ */}
 
-          {/* Custom icon actions */}
-          {hasIconActions && (
-            <div className="flex items-center gap-1">
-              {iconActions.map((action) => (
-                <CompactIconButton
-                  key={action.key}
-                  icon={action.icon}
-                  label={action.label}
-                  onClick={action.onClick}
-                  active={action.active}
-                  disabled={action.disabled}
-                />
-              ))}
-            </div>
-          )}
+            {/* @xl+: Secondary actions with text labels */}
+            {segmentedControls ? (
+              <div className="hidden @xl:flex items-center">
+                {showFilter && (
+                  <SegmentedIconButton
+                    icon="filter_list"
+                    label={t("filter")}
+                    onClick={onFilterClick}
+                    active={filtersActive}
+                    {...getSegmentedPosition("filter")}
+                  />
+                )}
+                {showColumnToggle && (
+                  <ColumnVisibilityDropdown
+                    segmented
+                    {...getSegmentedPosition("columns")}
+                  />
+                )}
+                {showDensityToggle && (
+                  <DensityDropdown
+                    density={density}
+                    onDensityChange={onDensityChange}
+                    segmented
+                    {...getSegmentedPosition("density")}
+                  />
+                )}
+                {exportHandler ? (
+                  <ExportDropdown
+                    handler={exportHandler}
+                    segmented
+                    {...getSegmentedPosition("export")}
+                  />
+                ) : onExport ? (
+                  <SegmentedIconButton
+                    icon="download"
+                    label={t("download")}
+                    onClick={onExport}
+                    {...getSegmentedPosition("export")}
+                  />
+                ) : null}
+                {printHandler ? (
+                  <SegmentedIconButton
+                    icon="print"
+                    label={t("print")}
+                    onClick={printHandler.onPrint}
+                    disabled={printHandler.isPrinting}
+                    {...getSegmentedPosition("print")}
+                  />
+                ) : onPrint ? (
+                  <SegmentedIconButton
+                    icon="print"
+                    label={t("print")}
+                    onClick={onPrint}
+                    {...getSegmentedPosition("print")}
+                  />
+                ) : null}
+                {onRefresh && (
+                  <SegmentedIconButton
+                    icon="refresh"
+                    label={t("refresh")}
+                    onClick={onRefresh}
+                    disabled={refreshing}
+                    {...getSegmentedPosition("refresh")}
+                  />
+                )}
+              </div>
+            ) : (
+              <div className="hidden @xl:flex items-center gap-2">
+                {showFilter && (
+                  <ToolbarTextButton
+                    label={t("filtersLabel")}
+                    icon="filter_list"
+                    onClick={onFilterClick}
+                    active={filtersActive}
+                  />
+                )}
+                {showColumnToggle && <ColumnVisibilityDropdown />}
+                {showDensityToggle && (
+                  <DensityDropdown
+                    density={density}
+                    onDensityChange={onDensityChange}
+                  />
+                )}
+                {exportHandler ? (
+                  <ExportDropdown handler={exportHandler} />
+                ) : onExport ? (
+                  <ToolbarTextButton
+                    label={t("export")}
+                    icon="download"
+                    onClick={onExport}
+                  />
+                ) : null}
+                {printHandler ? (
+                  <ToolbarTextButton
+                    label={t("print")}
+                    icon="print"
+                    onClick={printHandler.onPrint}
+                    disabled={printHandler.isPrinting}
+                  />
+                ) : onPrint ? (
+                  <ToolbarTextButton
+                    label={t("print")}
+                    icon="print"
+                    onClick={onPrint}
+                  />
+                ) : null}
+                {onRefresh && (
+                  <ToolbarTextButton
+                    label={t("refresh")}
+                    icon="refresh"
+                    onClick={onRefresh}
+                    disabled={refreshing}
+                  />
+                )}
+              </div>
+            )}
+
+            {/* < @xl: Secondary actions in overflow menu (vertical ellipsis icon) */}
+            {overflowActions.length > 0 && !hasSelection && (
+              <div className="@xl:hidden">
+                <MoreActionsDropdown actions={overflowActions} compact />
+              </div>
+            )}
+
+            {/* Custom icon actions - visible @md+ */}
+            {hasIconActions && (
+              <div className="hidden @md:flex items-center gap-1">
+                {iconActions.map((action) => (
+                  <CompactIconButton
+                    key={action.key}
+                    icon={action.icon}
+                    label={action.label}
+                    onClick={action.onClick}
+                    active={action.active}
+                    disabled={action.disabled}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
       <ActiveFiltersBar />

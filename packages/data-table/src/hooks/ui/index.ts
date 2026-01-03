@@ -5,6 +5,11 @@ export { useCellSelection } from "./use-cell-selection";
 export { useKeyboardNavigation } from "./use-keyboard-navigation";
 export { useColumnDrag } from "./use-column-drag";
 export { useDensityScale } from "./use-density-scale";
+export {
+  useResponsiveDensity,
+  type UseResponsiveDensityOptions,
+  type UseResponsiveDensityReturn,
+} from "./use-responsive-density";
 export { useAnnouncer, type AnnouncementPriority, type UseAnnouncerReturn } from "./use-announcer";
 export {
   useRowDrag,

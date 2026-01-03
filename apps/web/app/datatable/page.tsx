@@ -17,6 +17,7 @@ import {
   useCellSelection,
   usePrint,
   useActionDialog,
+  useResponsiveDensity,
   exportData,
   getNestedValue,
   enStrings,
@@ -221,6 +222,7 @@ function UsersTable({ data, setData, columns, features, density, onDensityChange
       <StickyZone>
         <DataTableToolbar
           title="Users"
+          totalItems={data.length}
           searchable
           selectedCount={selectedRows.size}
           selectedIds={selectedIds}
@@ -454,6 +456,7 @@ function ProductsTable({ data, setData, columns, features, density, onDensityCha
       <StickyZone>
         <DataTableToolbar
           title="Products"
+          totalItems={data.length}
           searchable
           selectedCount={selectedRows.size}
           selectedIds={selectedIds}
@@ -685,6 +688,7 @@ function InventoryTable({ data, setData, columns, features, density, onDensityCh
       <StickyZone>
         <DataTableToolbar
           title="Inventory"
+          totalItems={data.length}
           searchable
           selectedCount={selectedRows.size}
           selectedIds={selectedIds}
@@ -835,7 +839,10 @@ export default function DataTableDemoPage() {
   const [enableContextMenu, setEnableContextMenu] = useState(true);
   const [enableCellSelection, setEnableCellSelection] = useState(true);
   const [enableRowReorder, setEnableRowReorder] = useState(true);
-  const [density, setDensity] = useState<Density>("standard");
+  const { density, setDensity } = useResponsiveDensity({
+    defaultDensity: "standard",
+    mobileDensity: "compact",
+  });
   const [localeKey, setLocaleKey] = useState<LocaleKey>("en");
 
   const features = useMemo(
@@ -915,9 +922,8 @@ export default function DataTableDemoPage() {
       />
 
       {/* Demo Tabs */}
-      <div className="py-6">
-        <div className="max-w-[1600px] mx-auto px-6">
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "users" | "products" | "inventory")}>
+      <div className="pt-6">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "users" | "products" | "inventory")}>
             <TabsList className="mb-6">
               <TabsTrigger value="users" className="flex items-center gap-2">
                 <Icon symbol="group" className="w-5 h-5" />
@@ -934,7 +940,7 @@ export default function DataTableDemoPage() {
             </TabsList>
 
             <TabsContent value="users">
-              <div className="rounded-sm">
+              <div className="-mx-4 medium:-mx-6 expanded:-mx-12">
                 <DataTableProvider
                   tableId="users-demo-table"
                   columns={usersColumnsWithActions}
@@ -969,7 +975,7 @@ export default function DataTableDemoPage() {
             </TabsContent>
 
             <TabsContent value="products">
-              <div className="rounded-sm">
+              <div className="-mx-4 medium:-mx-6 expanded:-mx-12">
                 <DataTableProvider
                   tableId="products-demo-table"
                   columns={productsColumnsWithActions}
@@ -1004,7 +1010,7 @@ export default function DataTableDemoPage() {
             </TabsContent>
 
             <TabsContent value="inventory">
-              <div className="rounded-sm">
+              <div className="-mx-4 medium:-mx-6 expanded:-mx-12">
                 <DataTableProvider
                   tableId="inventory-demo-table"
                   columns={inventoryColumnsWithActions}
@@ -1038,10 +1044,9 @@ export default function DataTableDemoPage() {
               <StatCards stats={inventoryStats} />
             </TabsContent>
           </Tabs>
-        </div>
 
         {/* Features Documentation */}
-        <div className="max-w-[1600px] mx-auto px-6 mt-8 space-y-6">
+        <div className="mt-8 space-y-6">
           <Typography variant="headlineSmall" className="text-on-surface">
             Features Demonstrated
           </Typography>

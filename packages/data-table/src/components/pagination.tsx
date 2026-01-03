@@ -74,7 +74,7 @@ function PageSizeSelector({
     <select
       value={pageSize}
       onChange={(e) => onChange(Number(e.target.value))}
-      className="h-8 px-2 text-body-small bg-surface border border-outline-variant rounded-sm text-on-surface cursor-pointer focus:outline-none focus:border-primary"
+      className="h-11 px-3 text-body-small bg-surface border border-outline-variant rounded-sm text-on-surface cursor-pointer focus:outline-none focus:border-primary min-w-[60px]"
     >
       {pageSizeOptions.map((size) => (
         <option key={size} value={size}>
@@ -109,10 +109,20 @@ function OffsetPagination({
   const canGoNext = page < totalPages;
 
   return (
-    <div className="flex items-center justify-between gap-4 px-4 py-2 bg-surface-container-low">
-      <PaginationInfo page={page} pageSize={pageSize} totalItems={totalItems} />
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 py-2 bg-surface-container-low">
+      {/* Info - hidden on mobile, shown on tablet+ */}
+      <div className="hidden sm:block">
+        <PaginationInfo page={page} pageSize={pageSize} totalItems={totalItems} />
+      </div>
 
-      <div className="flex items-center gap-2">
+      {/* Controls - stacked on mobile, inline on tablet+ */}
+      <div className="flex items-center justify-between sm:justify-end gap-2">
+        {/* Page info on mobile (compact) */}
+        <span className="text-body-small text-on-surface-variant sm:hidden">
+          {page}/{totalPages}
+        </span>
+
+        {/* Page size selector - left of navigation buttons */}
         <PageSizeSelector
           pageSize={pageSize}
           pageSizeOptions={pageSizeOptions}
@@ -120,12 +130,14 @@ function OffsetPagination({
         />
 
         <div className="flex items-center gap-1">
+          {/* First page - hidden on mobile */}
           <Button
             variant="text"
             size="sm"
             onClick={() => setPage(1)}
             disabled={!canGoPrev}
             aria-label={t("previous")}
+            className="hidden sm:flex min-h-[44px] min-w-[44px]"
           >
             <Icon symbol="first_page" className="w-5 h-5" />
           </Button>
@@ -136,11 +148,13 @@ function OffsetPagination({
             onClick={() => setPage(page - 1)}
             disabled={!canGoPrev}
             aria-label={t("previous")}
+            className="min-h-[44px] min-w-[44px]"
           >
             <Icon symbol="chevron_left" className="w-5 h-5" />
           </Button>
 
-          <span className="text-body-small text-on-surface px-2 min-w-[80px] text-center">
+          {/* Page indicator - hidden on mobile (shown above), visible on tablet+ */}
+          <span className="hidden sm:block text-body-small text-on-surface px-2 min-w-[80px] text-center">
             {t("pageOfTotal", { page, totalPages })}
           </span>
 
@@ -150,16 +164,19 @@ function OffsetPagination({
             onClick={() => setPage(page + 1)}
             disabled={!canGoNext}
             aria-label={t("next")}
+            className="min-h-[44px] min-w-[44px]"
           >
             <Icon symbol="chevron_right" className="w-5 h-5" />
           </Button>
 
+          {/* Last page - hidden on mobile */}
           <Button
             variant="text"
             size="sm"
             onClick={() => setPage(totalPages)}
             disabled={!canGoNext}
             aria-label={t("next")}
+            className="hidden sm:flex min-h-[44px] min-w-[44px]"
           >
             <Icon symbol="last_page" className="w-5 h-5" />
           </Button>
@@ -189,12 +206,20 @@ function CursorPagination({
   const hasNext = !!cursor.nextCursor;
 
   return (
-    <div className="flex items-center justify-between gap-4 px-4 py-2 bg-surface-container-low">
-      <span className="text-body-small text-on-surface-variant">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 py-2 bg-surface-container-low">
+      {/* Info - hidden on mobile */}
+      <span className="hidden sm:block text-body-small text-on-surface-variant">
         {t("cursorPagination", { count: formatNumber(currentCount ?? 0), page: cursor.pageIndex ?? 1 })}
       </span>
 
-      <div className="flex items-center gap-2">
+      {/* Controls */}
+      <div className="flex items-center justify-between sm:justify-end gap-2">
+        {/* Mobile info */}
+        <span className="sm:hidden text-body-small text-on-surface-variant">
+          {t("cursorPagination", { count: formatNumber(currentCount ?? 0), page: cursor.pageIndex ?? 1 })}
+        </span>
+
+        {/* Page size selector - left of navigation buttons */}
         <PageSizeSelector
           pageSize={pageSize}
           pageSizeOptions={pageSizeOptions}
@@ -208,9 +233,10 @@ function CursorPagination({
             onClick={cursor.onPrev}
             disabled={!hasPrev}
             aria-label={t("previous")}
+            className="min-h-[44px]"
           >
             <Icon symbol="chevron_left" className="w-5 h-5" />
-            {t("previous")}
+            <span className="hidden sm:inline">{t("previous")}</span>
           </Button>
 
           <Button
@@ -219,8 +245,9 @@ function CursorPagination({
             onClick={cursor.onNext}
             disabled={!hasNext}
             aria-label={t("next")}
+            className="min-h-[44px]"
           >
-            {t("next")}
+            <span className="hidden sm:inline">{t("next")}</span>
             <Icon symbol="chevron_right" className="w-5 h-5" />
           </Button>
         </div>

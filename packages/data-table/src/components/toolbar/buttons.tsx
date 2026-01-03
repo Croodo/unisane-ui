@@ -31,7 +31,8 @@ export function ToolbarDropdownButton({
       onClick={onClick}
       disabled={Component === "button" ? disabled : undefined}
       className={cn(
-        "inline-flex items-center gap-2 h-9 px-3 transition-colors",
+        // Touch-friendly: min 44px on small containers, standard 36px on larger
+        "inline-flex items-center gap-2 min-h-[44px] @md:min-h-[36px] h-11 @md:h-9 px-3 transition-colors",
         "text-body-medium font-medium rounded border border-outline-variant",
         "text-on-surface hover:bg-on-surface/5",
         "disabled:opacity-50 disabled:pointer-events-none",
@@ -87,7 +88,8 @@ export function ToolbarTextButton({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "inline-flex items-center gap-2 h-9 px-3 transition-colors",
+        // Touch-friendly: min 44px on small containers, standard 36px on larger
+        "inline-flex items-center gap-2 min-h-[44px] @md:min-h-[36px] h-11 @md:h-9 px-3 transition-colors",
         "text-body-medium font-medium rounded border border-outline-variant",
         "text-on-surface hover:bg-on-surface/5",
         "disabled:opacity-50 disabled:pointer-events-none",
@@ -137,7 +139,8 @@ export function SegmentedDropdownButton({
   return (
     <div
       className={cn(
-        "flex items-center h-10 border border-outline-variant bg-surface transition-colors",
+        // Touch-friendly: min 44px on small containers, standard 40px on larger
+        "flex items-center min-h-[44px] @md:min-h-[40px] h-11 @md:h-10 border border-outline-variant bg-surface transition-colors",
         "hover:bg-on-surface/5",
         active && "border-primary/30",
         isFirst && "rounded-l-lg",
@@ -204,7 +207,8 @@ export function SegmentedIconButton({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "flex items-center justify-center h-10 px-3 border border-outline-variant bg-surface transition-colors",
+        // Touch-friendly: min 44px on small containers, standard 40px on larger
+        "flex items-center justify-center min-h-[44px] @md:min-h-[40px] h-11 @md:h-10 px-3 border border-outline-variant bg-surface transition-colors",
         "hover:bg-on-surface/5",
         "disabled:opacity-50 disabled:pointer-events-none",
         active && "bg-primary/8 border-primary/30 text-primary",
@@ -234,13 +238,14 @@ export function ActionButton({ action }: { action: ToolbarAction }) {
       onClick={action.onClick}
       disabled={action.disabled}
       className={cn(
-        "h-9 gap-2 text-body-medium font-medium rounded",
+        // Touch-friendly: min 44px on small containers, standard 36px on larger
+        "min-h-[44px] @md:min-h-[36px] h-11 @md:h-9 gap-2 text-body-medium font-medium rounded",
         isDanger && "border-error text-error hover:bg-error/8",
         !isPrimary && !isDanger && "border border-outline-variant"
       )}
     >
       {action.icon && <Icon symbol={action.icon} className="w-5 h-5" />}
-      <span className={action.iconOnly ? "hidden sm:inline" : undefined}>
+      <span className={action.iconOnly ? "hidden @md:inline" : undefined}>
         {action.label}
       </span>
     </Button>
@@ -267,7 +272,8 @@ export function CompactIconButton({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "flex items-center justify-center w-9 h-9 rounded-lg transition-colors",
+        // Touch-friendly: min 44px on small containers, standard 36px on larger
+        "flex items-center justify-center w-11 h-11 @md:w-9 @md:h-9 rounded-lg transition-colors",
         "text-on-surface-variant hover:text-on-surface hover:bg-on-surface/8",
         "disabled:opacity-50 disabled:pointer-events-none",
         active && "text-primary bg-primary/8"

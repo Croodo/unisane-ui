@@ -61,13 +61,11 @@ export const TableContainer = forwardRef<HTMLDivElement, TableContainerProps>(
         // Only horizontal scrolling - vertical is page scroll
         // The table grows naturally with content
         "overflow-x-auto",
-        // Hide native scrollbar - custom scrollbar component is used
-        "[&::-webkit-scrollbar]:hidden",
+        // Show native scrollbar on mobile for touch discoverability, hide on tablet+ where custom scrollbar is used
+        "@md:[&::-webkit-scrollbar]:hidden",
         className
       )}
       style={{
-        scrollbarWidth: "none", // Firefox
-        msOverflowStyle: "none", // IE/Edge
         ...style,
       }}
       {...props}
@@ -168,14 +166,15 @@ export const TableHeaderCell = forwardRef<
     aria-sort={sortDirection === "asc" ? "ascending" : sortDirection === "desc" ? "descending" : undefined}
     className={cn(
       "text-label-large font-medium text-on-surface-variant whitespace-nowrap",
-      "bg-surface-container-low border-b border-outline-variant",
+      "bg-surface-container-low border-b border-outline-variant/50",
       sortable && "cursor-pointer select-none hover:bg-surface-container",
       align === "start" && "text-left",
       align === "center" && "text-center",
       align === "end" && "text-right",
       // z-20 matches header cells for consistent stacking
-      pinned === "left" && "sticky z-20 isolate",
-      pinned === "right" && "sticky z-20 isolate",
+      // Only enable sticky on tablet+ (≥768px container width) - mobile scrolls everything together
+      pinned === "left" && "@md:sticky z-20 isolate",
+      pinned === "right" && "@md:sticky z-20 isolate",
       className
     )}
     {...props}
@@ -212,8 +211,9 @@ export const TableCell = forwardRef<HTMLTableCellElement, TableCellProps>(
         align === "center" && "text-center",
         align === "end" && "text-right",
         // z-20 matches header cells for consistent stacking
-        pinned === "left" && "sticky z-20 isolate",
-        pinned === "right" && "sticky z-20 isolate",
+        // Only enable sticky on tablet+ (≥768px container width) - mobile scrolls everything together
+        pinned === "left" && "@md:sticky z-20 isolate",
+        pinned === "right" && "@md:sticky z-20 isolate",
         className
       )}
       {...props}

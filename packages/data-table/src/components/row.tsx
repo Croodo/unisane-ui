@@ -228,7 +228,7 @@ function DataTableRowInner<T extends { id: string }>({
         {selectable && (
           <td
             className={cn(
-              "sticky left-0 z-10 isolate",
+              "@md:sticky left-0 z-10 isolate",
               stickyBgClass,
               !isSelected && !isActive && !isDropTarget && "group-hover:bg-surface-container-low",
               "transition-colors",
@@ -257,7 +257,7 @@ function DataTableRowInner<T extends { id: string }>({
         {enableExpansion && (
           <td
             className={cn(
-              "sticky z-10 isolate text-center",
+              "@md:sticky z-10 isolate text-center",
               stickyBgClass,
               !isSelected && !isActive && !isDropTarget && "group-hover:bg-surface-container-low",
               "transition-colors",
@@ -277,7 +277,8 @@ function DataTableRowInner<T extends { id: string }>({
               <button
                 onClick={() => onToggleExpand(row.id)}
                 className={cn(
-                  "p-1 rounded-full text-on-surface-variant transition-all",
+                  // Touch-friendly: min 44px touch target with padding trick
+                  "p-2 -m-1 rounded-full text-on-surface-variant transition-all",
                   "hover:bg-on-surface/8 hover:text-on-surface",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 )}
@@ -384,9 +385,10 @@ function DataTableRowInner<T extends { id: string }>({
                 col.align === "end" && "text-right",
                 col.align !== "center" && col.align !== "end" && "text-left",
                 // Pinned columns: sticky with z-10 (below header z-20) (shadow applied via inline style)
+                // Only enable sticky on tablet+ (≥768px container width) - mobile scrolls everything together
                 // Actions columns skip 'isolate' to allow dropdown to escape stacking context
-                pinPosition && !isActionsColumn && "sticky z-10 isolate",
-                pinPosition && isActionsColumn && "sticky z-10",
+                pinPosition && !isActionsColumn && "@md:sticky z-10 isolate",
+                pinPosition && isActionsColumn && "@md:sticky z-10",
                 // Column borders: show on non-pinned columns (except last), and on last pinned-left column
                 showColumnBorders && !isLastColumn && !pinPosition && "border-r border-outline-variant/50",
                 showColumnBorders && pinPosition === "left" && key === lastPinnedLeftKey && "border-r border-outline-variant/50",
@@ -438,7 +440,7 @@ function DataTableRowInner<T extends { id: string }>({
           )}
           {selectable && (
             <td
-              className="sticky left-0 z-10 isolate bg-surface-container-lowest border-b border-outline-variant/50"
+              className="@md:sticky left-0 z-10 isolate bg-surface-container-lowest border-b border-outline-variant/50"
               style={{
                 width: 48,
                 minWidth: 48,
@@ -448,7 +450,7 @@ function DataTableRowInner<T extends { id: string }>({
           )}
           {enableExpansion && (
             <td
-              className="sticky z-10 isolate bg-surface-container-lowest border-b border-outline-variant/50"
+              className="@md:sticky z-10 isolate bg-surface-container-lowest border-b border-outline-variant/50"
               style={{
                 // Position after checkbox (48px) if selectable, otherwise at 0
                 left: selectable ? 48 : 0,

@@ -41,6 +41,11 @@ export {
   DENSITY_SCALE_MAP,
 } from "./ui/use-density-scale";
 export {
+  useResponsiveDensity,
+  type UseResponsiveDensityOptions,
+  type UseResponsiveDensityReturn,
+} from "./ui/use-responsive-density";
+export {
   useRTL,
   useRTLContext,
   RTLProvider,

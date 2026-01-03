@@ -22,10 +22,13 @@ const densityOptions: { value: Density; labelKey: DensityLabelKey; icon: string 
 
 export function ColumnVisibilityDropdown<T>({
   segmented = false,
+  compact = false,
   isFirst = false,
   isLast = false,
 }: {
   segmented?: boolean;
+  /** Icon-only mode for mobile */
+  compact?: boolean;
   isFirst?: boolean;
   isLast?: boolean;
 }) {
@@ -42,6 +45,24 @@ export function ColumnVisibilityDropdown<T>({
       isFirst={isFirst}
       isLast={isLast}
     />
+  ) : compact ? (
+    <button
+      className={cn(
+        // Touch-friendly: 44px on mobile
+        "flex items-center justify-center w-11 h-11 rounded-lg transition-colors relative",
+        "text-on-surface-variant hover:text-on-surface hover:bg-on-surface/8",
+        hasHiddenColumns && "text-primary bg-primary/8"
+      )}
+      aria-label={t("columns")}
+      title={t("columns")}
+    >
+      <Icon symbol="view_column" className="w-5 h-5" />
+      {hasHiddenColumns && hiddenColumns.size > 0 && (
+        <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-primary text-on-primary text-[10px] font-medium rounded-full flex items-center justify-center">
+          {hiddenColumns.size}
+        </span>
+      )}
+    </button>
   ) : (
     <ToolbarDropdownButton
       label={t("columns")}
@@ -82,27 +103,46 @@ export function DensityDropdown({
   density,
   onDensityChange,
   segmented = false,
+  compact = false,
   isFirst = false,
   isLast = false,
 }: {
   density: Density;
   onDensityChange?: (density: Density) => void;
   segmented?: boolean;
+  /** Icon-only mode for mobile */
+  compact?: boolean;
   isFirst?: boolean;
   isLast?: boolean;
 }) {
   const { t } = useI18n();
   const isActive = density !== "standard";
 
+  // Get the icon for the current density
+  const currentIcon = densityOptions.find(o => o.value === density)?.icon ?? "density_medium";
+
   const trigger = segmented ? (
     <SegmentedDropdownButton
-      icon="density_medium"
+      icon={currentIcon}
       active={isActive}
       isFirst={isFirst}
       isLast={isLast}
     />
+  ) : compact ? (
+    <button
+      className={cn(
+        // Touch-friendly: 44px on mobile
+        "flex items-center justify-center w-11 h-11 rounded-lg transition-colors",
+        "text-on-surface-variant hover:text-on-surface hover:bg-on-surface/8",
+        isActive && "text-primary bg-primary/8"
+      )}
+      aria-label={t("density")}
+      title={t("density")}
+    >
+      <Icon symbol={currentIcon} className="w-5 h-5" />
+    </button>
   ) : (
-    <ToolbarDropdownButton label={t("density")} icon="density_medium" active={isActive} as="div" />
+    <ToolbarDropdownButton label={t("density")} icon={currentIcon} active={isActive} as="div" />
   );
 
   return (
@@ -127,18 +167,41 @@ export function DensityDropdown({
 
 // ─── MORE ACTIONS DROPDOWN ─────────────────────────────────────────────────
 
-export function MoreActionsDropdown({ actions }: { actions: ToolbarAction[] }) {
+export function MoreActionsDropdown({
+  actions,
+  compact = false,
+}: {
+  actions: ToolbarAction[];
+  /** Icon-only mode (vertical ellipsis) for mobile */
+  compact?: boolean;
+}) {
   const { t } = useI18n();
 
   if (actions.length === 0) return null;
 
+  const trigger = compact ? (
+    <button
+      className={cn(
+        // Touch-friendly: 44px on mobile
+        "flex items-center justify-center w-11 h-11 rounded-lg transition-colors",
+        "text-on-surface-variant hover:text-on-surface hover:bg-on-surface/8"
+      )}
+      aria-label={t("moreActions")}
+      title={t("moreActions")}
+    >
+      <Icon symbol="more_vert" className="w-5 h-5" />
+    </button>
+  ) : (
+    <Button variant="outlined" size="sm" className="h-9 gap-2 rounded border border-outline-variant">
+      <span>{t("moreActions")}</span>
+      <Icon symbol="arrow_drop_down" className="w-5 h-5 text-on-surface-variant" />
+    </Button>
+  );
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outlined" size="sm" className="h-9 gap-2 rounded border border-outline-variant">
-          <span>{t("moreActions")}</span>
-          <Icon symbol="arrow_drop_down" className="w-5 h-5 text-on-surface-variant" />
-        </Button>
+        {trigger}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-40">
         {actions.map((action) => {

@@ -183,11 +183,13 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
     }
   }, [tableContainerRef]);
 
-  // Always render the scrollbar container to maintain layout
+  // Render scrollbar container - hidden on mobile where native touch scrollbar is used
   return (
     <div
       className={cn(
-        "w-full relative bg-surface border-t border-outline-variant/30",
+        "w-full relative bg-surface border-t border-outline-variant/50",
+        // Hide on mobile (< @md) - native scrollbar used for touch usability
+        "hidden @md:block",
         className
       )}
       style={{ height: `${SCROLLBAR_HEIGHT}px` }}

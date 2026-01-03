@@ -53,62 +53,60 @@ export function DemoControls({
   localeOptions,
 }: DemoControlsProps) {
   return (
-    <div className="border-b border-outline-variant/30">
-      <div className="max-w-[1600px] mx-auto px-6 py-4">
-        <Typography variant="titleMedium" className="text-on-surface mb-4">
-          Feature Toggles
-        </Typography>
-        <div className="flex flex-wrap gap-6">
-          {features.map((feature) => (
-            <FeatureToggle
-              key={feature.label}
-              label={feature.label}
-              checked={feature.checked}
-              onChange={feature.onChange}
-            />
-          ))}
-        </div>
+    <div className="border-b border-outline-variant/30 -mx-4 medium:-mx-6 expanded:-mx-12 px-4 medium:px-6 expanded:px-12 py-4">
+      <Typography variant="titleMedium" className="text-on-surface mb-4">
+        Feature Toggles
+      </Typography>
+      <div className="flex flex-wrap gap-6">
+        {features.map((feature) => (
+          <FeatureToggle
+            key={feature.label}
+            label={feature.label}
+            checked={feature.checked}
+            onChange={feature.onChange}
+          />
+        ))}
+      </div>
 
-        <div className="mt-4 flex items-center gap-4 flex-wrap">
-          <div className="flex items-center gap-4">
-            <Typography variant="labelMedium" className="text-on-surface-variant">
-              Density:
-            </Typography>
-            <div className="flex gap-2">
-              {(["compact", "dense", "standard", "comfortable"] as const).map((d) => (
-                <Chip
-                  key={d}
-                  variant="filter"
-                  label={d.charAt(0).toUpperCase() + d.slice(1)}
-                  selected={density === d}
-                  onClick={() => onDensityChange(d)}
-                />
-              ))}
-            </div>
+      <div className="mt-4 flex items-center gap-4 flex-wrap">
+        <div className="flex items-center gap-4">
+          <Typography variant="labelMedium" className="text-on-surface-variant">
+            Density:
+          </Typography>
+          <div className="flex gap-2">
+            {(["compact", "dense", "standard", "comfortable"] as const).map((d) => (
+              <Chip
+                key={d}
+                variant="filter"
+                label={d.charAt(0).toUpperCase() + d.slice(1)}
+                selected={density === d}
+                onClick={() => onDensityChange(d)}
+              />
+            ))}
           </div>
-
-          {localeKey && onLocaleChange && localeOptions && (
-            <>
-              <div className="h-6 w-px bg-outline-variant hidden sm:block" />
-              <div className="flex items-center gap-4">
-                <Typography variant="labelMedium" className="text-on-surface-variant">
-                  Locale (i18n):
-                </Typography>
-                <div className="flex gap-2">
-                  {(Object.keys(localeOptions) as LocaleKey[]).map((key) => (
-                    <Chip
-                      key={key}
-                      variant="filter"
-                      label={localeOptions[key].label}
-                      selected={localeKey === key}
-                      onClick={() => onLocaleChange(key)}
-                    />
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
         </div>
+
+        {localeKey && onLocaleChange && localeOptions && (
+          <>
+            <div className="h-6 w-px bg-outline-variant hidden sm:block" />
+            <div className="flex items-center gap-4">
+              <Typography variant="labelMedium" className="text-on-surface-variant">
+                Locale (i18n):
+              </Typography>
+              <div className="flex gap-2">
+                {(Object.keys(localeOptions) as LocaleKey[]).map((key) => (
+                  <Chip
+                    key={key}
+                    variant="filter"
+                    label={localeOptions[key].label}
+                    selected={localeKey === key}
+                    onClick={() => onLocaleChange(key)}
+                  />
+                ))}
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

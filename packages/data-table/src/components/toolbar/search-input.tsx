@@ -9,16 +9,23 @@ import { useI18n } from "../../i18n";
 const SEARCH_DEBOUNCE_MS = 300;
 
 interface SearchInputProps {
-  /** Compact mode - icon only that expands on focus (for mobile) */
-  compact?: boolean;
   /** Additional class names */
   className?: string;
   /** Placeholder text - if not provided, uses i18n default */
   placeholder?: string;
 }
 
+/**
+ * Responsive search input component using container queries.
+ *
+ * Container breakpoints (based on parent @container):
+ * - < @3xl: Icon button that opens full-width overlay within toolbar
+ * - @3xl+: Fixed-width inline input field (240px)
+ *
+ * This follows the dataflow-extract ReviewHeader pattern where
+ * search adapts to container width, not viewport width.
+ */
 export function SearchInput({
-  compact = false,
   className,
   placeholder,
 }: SearchInputProps) {
@@ -29,14 +36,15 @@ export function SearchInput({
   const descriptionId = `${searchId}-desc`;
   // Local state for immediate UI feedback
   const [localValue, setLocalValue] = useState(searchText);
-  // Expanded state for compact mode
-  const [isExpanded, setIsExpanded] = useState(false);
+  // Overlay expanded state (for smaller containers)
+  const [isOverlayOpen, setIsOverlayOpen] = useState(false);
   // Debounced value for actual filtering
   const debouncedValue = useDebounce(localValue, SEARCH_DEBOUNCE_MS);
   // Track previous searchText to detect external clears
   const prevSearchTextRef = useRef(searchText);
   // Input ref for focus management
   const inputRef = useRef<HTMLInputElement>(null);
+  const overlayInputRef = useRef<HTMLInputElement>(null);
 
   // Sync debounced value to context
   useEffect(() => {
@@ -46,57 +54,53 @@ export function SearchInput({
   }, [debouncedValue, searchText, setSearch]);
 
   // Sync external changes (e.g., clear from filter chips)
-  // Only reset when searchText was externally changed to empty
   useEffect(() => {
-    // Check if searchText was externally cleared (not by us typing)
     if (prevSearchTextRef.current !== "" && searchText === "") {
       setLocalValue("");
     }
     prevSearchTextRef.current = searchText;
   }, [searchText]);
 
+  // Focus overlay input when expanded
+  useEffect(() => {
+    if (isOverlayOpen) {
+      setTimeout(() => overlayInputRef.current?.focus(), 50);
+    }
+  }, [isOverlayOpen]);
+
   const handleClear = useCallback(() => {
     setLocalValue("");
     setSearch("");
-    if (compact) {
-      setIsExpanded(false);
-    }
-  }, [compact, setSearch]);
+  }, [setSearch]);
 
-  const handleExpand = useCallback(() => {
-    setIsExpanded(true);
-    // Focus input after state update
-    setTimeout(() => inputRef.current?.focus(), 0);
+  const handleOverlayClose = useCallback(() => {
+    setIsOverlayOpen(false);
   }, []);
-
-  const handleBlur = useCallback(() => {
-    // Only collapse if empty
-    if (compact && !localValue) {
-      setIsExpanded(false);
-    }
-  }, [compact, localValue]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       e.stopPropagation();
       if (e.key === "Escape") {
-        if (compact) {
-          handleClear();
+        if (isOverlayOpen) {
+          handleOverlayClose();
         } else {
           inputRef.current?.blur();
         }
       }
     },
-    [compact, handleClear]
+    [isOverlayOpen, handleOverlayClose]
   );
 
-  // Compact mode: icon-only button that expands
-  if (compact && !isExpanded && !localValue) {
-    return (
+  // Check if there's an active search (to show indicator on icon)
+  const hasActiveSearch = searchText.length > 0;
+
+  return (
+    <>
+      {/* Small/Medium containers (< @3xl): Icon button that opens overlay */}
       <button
-        onClick={handleExpand}
+        onClick={() => setIsOverlayOpen(true)}
         className={cn(
-          "flex items-center justify-center w-10 h-10 rounded-lg",
+          "@3xl:hidden flex items-center justify-center w-11 h-11 rounded-lg relative",
           "text-on-surface-variant hover:text-on-surface hover:bg-on-surface/8",
           "transition-colors",
           className
@@ -104,64 +108,102 @@ export function SearchInput({
         aria-label={t("openSearch")}
       >
         <Icon symbol="search" className="w-5 h-5" />
+        {/* Active search indicator */}
+        {hasActiveSearch && (
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full" />
+        )}
       </button>
-    );
-  }
 
-  return (
-    <div
-      role="search"
-      aria-label={t("searchPlaceholder")}
-      className={cn(
-        "relative flex items-center h-9 bg-surface border border-outline-variant rounded ",
-        "focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/20",
-        "transition-all duration-200",
-        // Responsive width using container query from toolbar container
-        "w-56",
-        // Expanded compact mode
-        compact && isExpanded && "absolute right-0 top-0 z-10 w-64 shadow-lg",
-        className
+      {/* Search overlay (takes full toolbar width) - visible when isOverlayOpen */}
+      {isOverlayOpen && (
+        <div
+          className={cn(
+            "@3xl:hidden absolute left-0 right-0 top-0 bottom-0 bg-surface border-b-2 border-primary z-50 flex items-center px-3 gap-2",
+            "animate-in fade-in duration-150"
+          )}
+        >
+          <Icon symbol="search" className="w-5 h-5 text-on-surface-variant shrink-0" />
+          <input
+            ref={overlayInputRef}
+            type="text"
+            inputMode="search"
+            enterKeyHint="search"
+            placeholder={effectivePlaceholder}
+            value={localValue}
+            onChange={(e) => setLocalValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            aria-label={t("searchPlaceholder")}
+            className={cn(
+              "flex-1 min-w-0 h-full bg-transparent border-none outline-none",
+              "text-body-medium text-on-surface placeholder:text-on-surface-variant/70"
+            )}
+          />
+          {localValue && (
+            <button
+              onClick={handleClear}
+              className="px-2 py-1 rounded text-label-medium text-primary hover:bg-primary/8 transition-colors shrink-0"
+            >
+              {t("clear")}
+            </button>
+          )}
+          <button
+            onClick={handleOverlayClose}
+            className="flex items-center justify-center w-9 h-9 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-on-surface/8 transition-colors shrink-0"
+            aria-label={t("clearSearch")}
+          >
+            <Icon symbol="close" className="w-5 h-5" />
+          </button>
+        </div>
       )}
-    >
-      {/* Hidden description for screen readers */}
-      <span id={descriptionId} className="sr-only">
-        {effectivePlaceholder}
-      </span>
-      {/* Search icon - touch-friendly size */}
-      <span className="flex items-center justify-center w-10 h-full shrink-0" aria-hidden="true">
-        <Icon symbol="search" className="w-5 h-5 text-on-surface-variant" />
-      </span>
-      <input
-        id={searchId}
-        ref={inputRef}
-        type="text"
-        inputMode="search"
-        enterKeyHint="search"
-        placeholder={effectivePlaceholder}
-        value={localValue}
-        onChange={(e) => setLocalValue(e.target.value)}
-        onKeyDown={handleKeyDown}
-        onBlur={handleBlur}
-        aria-describedby={descriptionId}
+
+      {/* Large containers (@3xl+): Inline input field */}
+      <div
+        role="search"
         aria-label={t("searchPlaceholder")}
         className={cn(
-          "flex-1 min-w-0 h-full pr-2 text-body-medium bg-transparent",
-          "text-on-surface placeholder:text-on-surface-variant/70 outline-none"
+          "hidden @3xl:flex relative items-center h-9 bg-surface border border-outline-variant rounded",
+          "focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/20",
+          "transition-all duration-200 w-60",
+          className
         )}
-      />
-      {localValue && (
-        <button
-          onClick={handleClear}
+      >
+        <span id={descriptionId} className="sr-only">
+          {effectivePlaceholder}
+        </span>
+        <span className="flex items-center justify-center w-9 h-full shrink-0" aria-hidden="true">
+          <Icon symbol="search" className="w-5 h-5 text-on-surface-variant" />
+        </span>
+        <input
+          id={searchId}
+          ref={inputRef}
+          type="text"
+          inputMode="search"
+          enterKeyHint="search"
+          placeholder={effectivePlaceholder}
+          value={localValue}
+          onChange={(e) => setLocalValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          aria-describedby={descriptionId}
+          aria-label={t("searchPlaceholder")}
           className={cn(
-            "flex items-center justify-center w-10 h-full shrink-0",
-            "hover:bg-on-surface/8 transition-colors rounded-r-lg"
+            "flex-1 min-w-0 h-full pr-2 text-body-medium bg-transparent",
+            "text-on-surface placeholder:text-on-surface-variant/70 outline-none"
           )}
-          aria-label={t("clearSearch")}
-        >
-          <Icon symbol="close" className="w-5 h-5 text-on-surface-variant" />
-        </button>
-      )}
-    </div>
+        />
+        {localValue && (
+          <button
+            onClick={handleClear}
+            className={cn(
+              "flex items-center justify-center w-8 h-full shrink-0",
+              "hover:bg-on-surface/8 transition-colors rounded-r"
+            )}
+            aria-label={t("clearSearch")}
+          >
+            <Icon symbol="close" className="w-4 h-4 text-on-surface-variant" />
+          </button>
+        )}
+      </div>
+    </>
   );
 }
 

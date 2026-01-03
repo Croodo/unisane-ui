@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useId } from "react";
+import React, { useState, useRef, useEffect, useId, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import { Icon } from "@/primitives/icon";
 
@@ -21,6 +22,8 @@ interface SelectProps {
   className?: string;
   labelClassName?: string;
   placeholder?: string;
+  /** Use portal to render dropdown outside DOM hierarchy (escapes overflow:hidden) */
+  portal?: boolean;
 }
 
 export const Select: React.FC<SelectProps> = ({
@@ -34,10 +37,14 @@ export const Select: React.FC<SelectProps> = ({
   className,
   labelClassName,
   placeholder = "Select an option",
+  portal = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
   const listboxId = useId();
   const labelId = useId();
   const triggerId = useId();
@@ -46,19 +53,51 @@ export const Select: React.FC<SelectProps> = ({
   const selectedLabel = options[selectedIndex]?.label;
   const displayLabel = selectedLabel || (!label ? placeholder : "");
 
+  // Calculate dropdown position for portal mode
+  const updateDropdownPosition = useCallback(() => {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    setDropdownPosition({
+      top: rect.bottom + 4, // 4px gap
+      left: rect.left,
+      width: rect.width,
+    });
+  }, []);
+
+  useEffect(() => {
+    if (portal && isOpen) {
+      updateDropdownPosition();
+      window.addEventListener("scroll", updateDropdownPosition, true);
+      window.addEventListener("resize", updateDropdownPosition);
+      return () => {
+        window.removeEventListener("scroll", updateDropdownPosition, true);
+        window.removeEventListener("resize", updateDropdownPosition);
+      };
+    }
+  }, [portal, isOpen, updateDropdownPosition]);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
+      const target = event.target as Node;
+      const isOutsideContainer = containerRef.current && !containerRef.current.contains(target);
+      const isOutsideDropdown = dropdownRef.current && !dropdownRef.current.contains(target);
+
+      if (portal) {
+        // In portal mode, check both container and dropdown
+        if (isOutsideContainer && isOutsideDropdown) {
+          setIsOpen(false);
+        }
+      } else {
+        // In non-portal mode, just check container
+        if (isOutsideContainer) {
+          setIsOpen(false);
+        }
       }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [portal]);
 
   const getNextEnabledIndex = (startIndex: number, direction: 1 | -1) => {
     if (!options.length) return -1;
@@ -137,6 +176,7 @@ export const Select: React.FC<SelectProps> = ({
       className={cn("relative inline-flex flex-col w-full min-w-40", className)}
     >
       <button
+        ref={triggerRef}
         id={triggerId}
         type="button"
         onClick={() => !disabled && setIsOpen((prev) => !prev)}
@@ -224,8 +264,9 @@ export const Select: React.FC<SelectProps> = ({
         </div>
       </button>
 
-      {isOpen && !disabled && (
+      {isOpen && !disabled && !portal && (
         <div
+          ref={dropdownRef}
           id={listboxId}
           role="listbox"
           aria-labelledby={label ? labelId : undefined}
@@ -264,6 +305,56 @@ export const Select: React.FC<SelectProps> = ({
           )}
         </div>
       )}
+
+      {/* Portal mode dropdown */}
+      {isOpen && !disabled && portal && typeof document !== "undefined" &&
+        createPortal(
+          <div
+            ref={dropdownRef}
+            id={listboxId}
+            role="listbox"
+            aria-labelledby={label ? labelId : undefined}
+            className="fixed bg-surface border border-outline-variant rounded-sm shadow-2 py-1 max-h-70 overflow-y-auto z-9999 animate-in fade-in zoom-in-95 duration-snappy"
+            style={{
+              top: dropdownPosition.top,
+              left: dropdownPosition.left,
+              width: dropdownPosition.width,
+            }}
+          >
+            {options.length > 0 ? (
+              options.map((option, index) => {
+                const isDisabled = Boolean(option.disabled);
+                const isHighlighted = index === highlightedIndex;
+                return (
+                  <div
+                    key={option.value}
+                    id={`${listboxId}-option-${index}`}
+                    onClick={() => handleSelect(option.value, isDisabled)}
+                    onMouseEnter={() => setHighlightedIndex(index)}
+                    className={cn(
+                      "px-4 h-12 flex items-center text-body-large font-medium cursor-pointer transition-colors",
+                      isHighlighted && !isDisabled && "bg-surface-container-high",
+                      value === option.value
+                        ? "bg-primary/8 text-primary"
+                        : "text-on-surface hover:bg-surface-container-high",
+                      isDisabled && "opacity-38 cursor-not-allowed"
+                    )}
+                    role="option"
+                    aria-selected={value === option.value}
+                    aria-disabled={isDisabled}
+                  >
+                    {option.label}
+                  </div>
+                );
+              })
+            ) : (
+              <div className="px-4 py-3 text-label-medium text-on-surface-variant font-medium">
+                No Options Available
+              </div>
+            )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 };
