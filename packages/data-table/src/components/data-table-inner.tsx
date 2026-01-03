@@ -496,7 +496,11 @@ export function DataTableInner<T extends { id: string }>({
 
       {/* Sticky header - uses overflow:hidden + transform to avoid breaking sticky */}
       {/* Shadow is applied dynamically by StickyHeaderScrollContainer when header becomes stuck */}
-      <StickyHeaderScrollContainer className="sticky top-[var(--data-table-header-offset,0px)] z-20 bg-surface">
+      {/* Top offset = stickyOffset (from config) + data-table-header-offset (toolbar height) */}
+      <StickyHeaderScrollContainer
+        className="sticky z-20 bg-surface"
+        style={{ top: `calc(${config.stickyOffset} + var(--data-table-header-offset, 0px))` }}
+      >
         <HeaderTable
           tableWidth={totalTableWidth}
           style={isColumnVirtualized ? getScrollableContainerStyle() : undefined}

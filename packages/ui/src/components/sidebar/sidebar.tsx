@@ -601,8 +601,11 @@ export const SidebarInset = forwardRef<HTMLElement, SidebarInsetProps>(
         )}
         style={{
           marginLeft: !usesTopAppBar ? contentMargin : undefined,
+          // Expose app header height as CSS variable for sticky components (e.g., DataTable)
+          // On mobile/tablet, TopAppBar is 64px (h-16); on desktop, no fixed header
+          "--app-header-height": usesTopAppBar ? "64px" : "0px",
           ...style,
-        }}
+        } as React.CSSProperties}
         {...props}
       >
         {children}

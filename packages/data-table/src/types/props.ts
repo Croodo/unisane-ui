@@ -114,6 +114,23 @@ export interface DataTableProps<T extends { id: string }> {
   /** Make header sticky */
   stickyHeader?: boolean;
   /**
+   * Offset for sticky positioning (toolbar and header) in pixels or CSS value.
+   * Use this when the DataTable is rendered below a fixed/sticky navigation bar.
+   *
+   * @example
+   * // Fixed 64px header
+   * <DataTable stickyOffset={64} />
+   *
+   * // CSS variable from your layout
+   * <DataTable stickyOffset="var(--header-height)" />
+   *
+   * // Auto-detect from parent (falls back to CSS variable --app-header-height)
+   * <DataTable /> // Uses var(--app-header-height, 0px) automatically
+   *
+   * @default "var(--app-header-height, 0px)"
+   */
+  stickyOffset?: number | string;
+  /**
    * Row density - controls row height and padding.
    * @default "standard"
    */

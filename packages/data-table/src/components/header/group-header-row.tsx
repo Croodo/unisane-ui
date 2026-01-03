@@ -12,8 +12,6 @@ export interface GroupHeaderRowProps<T> {
   showColumnBorders: boolean;
   paddingClass: string;
   hasPinnedLeftData: boolean;
-  /** Whether row drag-to-reorder is enabled (affects sticky positioning) */
-  reorderableRows?: boolean;
 }
 
 export function GroupHeaderRow<T>({
@@ -23,7 +21,6 @@ export function GroupHeaderRow<T>({
   showColumnBorders,
   paddingClass,
   hasPinnedLeftData,
-  reorderableRows = false,
 }: GroupHeaderRowProps<T>) {
   return (
     <tr>
@@ -32,9 +29,10 @@ export function GroupHeaderRow<T>({
         <th
           className={cn(
             "bg-surface border-b border-outline-variant/50",
-            // relative is required for z-index to work on table cells
+            // Sticky positioning to stay at left edge when drag handle scrolls out
             // z-30 to stay above pinned data columns (z-20), isolate creates stacking context
-            "relative z-30 isolate",
+            // Only apply on tablet+ (@md) - mobile scrolls everything together
+            "@md:sticky @md:left-0 @md:z-30 @md:isolate",
             // Only show border-r if there are no more sticky columns after this
             showColumnBorders && !enableExpansion && !hasPinnedLeftData && "border-r border-outline-variant/50"
           )}
@@ -42,12 +40,6 @@ export function GroupHeaderRow<T>({
             width: 48,
             minWidth: 48,
             maxWidth: 48,
-            // Pinned left at position 0:
-            // Use max() to only start translating once scroll exceeds drag handle width
-            transform: reorderableRows
-              ? "translateX(max(0px, calc(var(--header-scroll-offset, 0px) - 40px)))"
-              : "translateX(var(--header-scroll-offset, 0px))",
-            // No elevation shadow - only pinned data columns get shadow
           }}
           rowSpan={2}
         />
@@ -58,9 +50,10 @@ export function GroupHeaderRow<T>({
         <th
           className={cn(
             "bg-surface border-b border-outline-variant/50",
-            // relative is required for z-index to work on table cells
+            // Sticky positioning to stay at left edge (after checkbox if present)
             // z-30 to stay above pinned data columns (z-20), isolate creates stacking context
-            "relative z-30 isolate",
+            // Only apply on tablet+ (@md) - mobile scrolls everything together
+            "@md:sticky @md:z-30 @md:isolate",
             // Only show border-r if there are no pinned-left data columns after this
             showColumnBorders && !hasPinnedLeftData && "border-r border-outline-variant/50"
           )}
@@ -68,18 +61,8 @@ export function GroupHeaderRow<T>({
             width: 40,
             minWidth: 40,
             maxWidth: 40,
-            // Pinned left at position 48 (after checkbox) or 0:
-            // Use max() to only start translating once scroll exceeds the offset
-            transform: (() => {
-              const dragHandleWidth = reorderableRows ? 40 : 0;
-              const checkboxWidth = selectable ? 48 : 0;
-              const targetLeft = selectable ? 48 : 0;
-              const offset = dragHandleWidth + checkboxWidth - targetLeft;
-              return offset > 0
-                ? `translateX(max(0px, calc(var(--header-scroll-offset, 0px) - ${offset}px)))`
-                : "translateX(var(--header-scroll-offset, 0px))";
-            })(),
-            // No elevation shadow - only pinned data columns get shadow
+            // Position after checkbox (48px) if selectable, otherwise at 0
+            left: selectable ? 48 : 0,
           }}
           rowSpan={2}
         />

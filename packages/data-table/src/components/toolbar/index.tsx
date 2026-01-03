@@ -289,9 +289,9 @@ function DataTableToolbarInner<T extends { id: string }>({
               </div>
             )}
 
-            {/* Density dropdown - compact icon on mobile */}
+            {/* Density dropdown - hidden on mobile (compact is forced), visible @md to @xl as icon */}
             {showDensityToggle && !hasSelection && (
-              <div className="@xl:hidden">
+              <div className="hidden @md:block @xl:hidden">
                 <DensityDropdown
                   density={density}
                   onDensityChange={onDensityChange}

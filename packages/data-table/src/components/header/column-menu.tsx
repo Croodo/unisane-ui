@@ -86,7 +86,7 @@ export function ColumnMenu<T>({
             <Icon symbol="more_vert" className="text-[18px]" />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="min-w-48">
+        <DropdownMenuContent align="end" portal className="min-w-48">
           {/* Filter options */}
           {hasFilterOptions && (
             <>

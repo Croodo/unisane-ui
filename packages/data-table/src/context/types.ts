@@ -113,6 +113,8 @@ export interface DataTableConfig<T> {
   showColumnDividers: boolean;
   zebra: boolean;
   stickyHeader: boolean;
+  /** Offset for sticky positioning (accounts for fixed headers) */
+  stickyOffset: string;
   resizable: boolean;
   pinnable: boolean;
   reorderable: boolean;
@@ -279,6 +281,12 @@ export interface DataTableProviderProps<T> {
   showColumnDividers?: boolean;
   zebra?: boolean;
   stickyHeader?: boolean;
+  /**
+   * Offset for sticky positioning (toolbar and header) in pixels or CSS value.
+   * Use this when the DataTable is rendered below a fixed/sticky navigation bar.
+   * @default "var(--app-header-height, 0px)"
+   */
+  stickyOffset?: number | string;
   resizable?: boolean;
   pinnable?: boolean;
   reorderable?: boolean;

@@ -2,6 +2,7 @@
 
 import React, { forwardRef, useRef, useEffect, useCallback, createContext, useContext, useState } from "react";
 import { cn } from "@unisane/ui";
+import { useOptionalDataTableContext } from "../context/provider";
 
 // ─── SCROLL SYNC CONTEXT ─────────────────────────────────────────────────────
 // Context to synchronize horizontal scroll between header and body tables
@@ -95,6 +96,27 @@ export const DataTableLayout = forwardRef<HTMLDivElement, DataTableLayoutProps>(
 
     return (
       <ScrollSyncContext.Provider value={contextValue}>
+        {/* SSR-safe scrollbar hiding styles */}
+        <style dangerouslySetInnerHTML={{ __html: `
+          /* Body scroll container: hide scrollbar on tablet+ (custom scrollbar used instead) */
+          @media (min-width: 768px) {
+            [data-datatable-scroll="body"] {
+              scrollbar-width: none;
+              -ms-overflow-style: none;
+            }
+            [data-datatable-scroll="body"]::-webkit-scrollbar {
+              display: none;
+            }
+          }
+          /* Header scroll container: always hide scrollbar (syncs with body) */
+          [data-datatable-scroll="header"] {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+          }
+          [data-datatable-scroll="header"]::-webkit-scrollbar {
+            display: none;
+          }
+        `}} />
         <div
           ref={ref}
           className={cn("relative bg-surface border-t border-outline-variant/50", className)}
@@ -115,11 +137,17 @@ DataTableLayout.displayName = "DataTableLayout";
 
 interface StickyZoneProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
+  /** Offset from the top for sticky positioning (e.g., to account for fixed headers) */
+  stickyOffset?: string;
 }
 
 export const StickyZone = forwardRef<HTMLDivElement, StickyZoneProps>(
-  ({ children, className, style, ...props }, ref) => {
+  ({ children, className, style, stickyOffset: stickyOffsetProp, ...props }, ref) => {
     const internalRef = useRef<HTMLDivElement>(null);
+
+    // Get stickyOffset from context if available, otherwise use prop or default
+    const context = useOptionalDataTableContext();
+    const stickyOffset = stickyOffsetProp ?? context?.config.stickyOffset ?? "var(--app-header-height, 0px)";
     const parentRef = useRef<HTMLElement | null>(null);
 
     // Measure height and update parent's CSS variable
@@ -163,10 +191,15 @@ export const StickyZone = forwardRef<HTMLDivElement, StickyZoneProps>(
           }
         }}
         className={cn(
-          "sticky top-0 z-30 bg-surface",
+          "sticky z-30 bg-surface",
           className
         )}
-        style={style}
+        style={{
+          // Use stickyOffset prop (defaults to --app-header-height CSS variable)
+          // This allows the DataTable to work with any layout's fixed header
+          top: stickyOffset,
+          ...style,
+        }}
         {...props}
       >
         {children}
@@ -202,28 +235,6 @@ export const SyncedScrollContainer = forwardRef<HTMLDivElement, SyncedScrollCont
       setScrollLeft(e.currentTarget.scrollLeft);
     }, [setScrollLeft]);
 
-    // Inject scrollbar hiding styles on mount
-    useEffect(() => {
-      if (typeof document === "undefined") return;
-
-      const styleId = "datatable-scrollbar-styles";
-      if (document.getElementById(styleId)) return;
-
-      const style = document.createElement("style");
-      style.id = styleId;
-      style.textContent = `
-        @media (min-width: 768px) {
-          [data-datatable-scroll] {
-            scrollbar-width: none;
-            -ms-overflow-style: none;
-          }
-          [data-datatable-scroll]::-webkit-scrollbar {
-            display: none;
-          }
-        }
-      `;
-      document.head.appendChild(style);
-    }, []);
 
     // Hide native scrollbar on desktop (tablet+), show on mobile for touch usability
     // Custom scrollbar component is used on desktop instead
@@ -237,7 +248,7 @@ export const SyncedScrollContainer = forwardRef<HTMLDivElement, SyncedScrollCont
             ref.current = node;
           }
         }}
-        data-datatable-scroll
+        data-datatable-scroll="body"
         className={cn(
           "overflow-x-auto",
           // Hide native scrollbar - uses global CSS for cross-browser support
@@ -256,9 +267,8 @@ SyncedScrollContainer.displayName = "SyncedScrollContainer";
 
 // ─── STICKY HEADER SCROLL CONTAINER ─────────────────────────────────────────
 // Special container for sticky header that syncs horizontal scroll with body.
-// Uses clip-path to clip horizontally while allowing vertical overflow for dropdowns.
-// Uses translateX to sync scroll position from the body container via context.
-// Sets --header-scroll-offset CSS variable so pinned cells can counter-translate.
+// Uses native overflow-x scroll (not transform) so position:sticky works on cells.
+// Uses clip-path to allow vertical overflow for dropdowns while clipping horizontally.
 // Adds elevation shadow when the header becomes "stuck" during vertical scroll.
 
 interface StickyHeaderScrollContainerProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -267,10 +277,24 @@ interface StickyHeaderScrollContainerProps extends React.HTMLAttributes<HTMLDivE
 
 export const StickyHeaderScrollContainer = forwardRef<HTMLDivElement, StickyHeaderScrollContainerProps>(
   ({ children, className, style, ...props }, ref) => {
-    const { scrollLeft } = useScrollSync();
+    const { scrollLeft, registerScrollElement, unregisterScrollElement } = useScrollSync();
     const [isStuck, setIsStuck] = useState(false);
     const sentinelRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+    // Register for scroll sync
+    useEffect(() => {
+      registerScrollElement("header", scrollContainerRef.current);
+      return () => unregisterScrollElement("header");
+    }, [registerScrollElement, unregisterScrollElement]);
+
+    // Sync scroll position from context (body drives the scroll)
+    useEffect(() => {
+      if (scrollContainerRef.current && scrollContainerRef.current.scrollLeft !== scrollLeft) {
+        scrollContainerRef.current.scrollLeft = scrollLeft;
+      }
+    }, [scrollLeft]);
 
     // Use Intersection Observer to detect when header becomes stuck
     // A sentinel element is placed just above the sticky header
@@ -317,23 +341,22 @@ export const StickyHeaderScrollContainer = forwardRef<HTMLDivElement, StickyHead
             }
           }}
           className={cn(
-            "relative overflow-x-clip transition-shadow duration-200",
+            "relative transition-shadow duration-200",
             isStuck && "shadow-[0_2px_4px_-1px_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.06)]",
             className
           )}
-          style={{
-            // clip-path clips horizontally but allows vertical overflow for dropdowns
-            clipPath: "inset(0 0 -100vh 0)",
-            // Provide scroll offset for pinned cells to counter-translate
-            "--header-scroll-offset": `${scrollLeft}px`,
-            ...style,
-          } as React.CSSProperties}
+          style={style}
           {...props}
         >
+          {/* Inner scrollable container - uses native scroll so sticky positioning works */}
+          {/* Scrollbar always hidden (syncs with body), uses CSS for cross-browser support */}
           <div
+            ref={scrollContainerRef}
+            data-datatable-scroll="header"
+            className="overflow-x-auto"
             style={{
-              transform: `translateX(-${scrollLeft}px)`,
-              willChange: "transform",
+              // clip-path clips horizontally but allows vertical overflow for dropdowns
+              clipPath: "inset(0 0 -100vh 0)",
             }}
           >
             {children}

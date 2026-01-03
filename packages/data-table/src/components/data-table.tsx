@@ -61,6 +61,7 @@ export function DataTable<T extends { id: string }>({
   showColumnDividers,
   zebra = false,
   stickyHeader = true,
+  stickyOffset,
   rowDensity = "standard",
 
   // Features
@@ -138,6 +139,7 @@ export function DataTable<T extends { id: string }>({
       showColumnDividers={effectiveShowColumnDividers}
       zebra={zebra}
       stickyHeader={stickyHeader}
+      stickyOffset={stickyOffset}
       resizable={resizable}
       pinnable={pinnable}
       initialPageSize={pageSize}

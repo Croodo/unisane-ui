@@ -51,6 +51,7 @@ export function DataTableProvider<T extends { id: string }>({
   showColumnDividers,
   zebra = false,
   stickyHeader = true,
+  stickyOffset,
   resizable = true,
   pinnable = true,
   reorderable = false,
@@ -125,6 +126,18 @@ export function DataTableProvider<T extends { id: string }>({
     }
   }, [columns, flatColumns]);
 
+  // Normalize stickyOffset to a CSS value string
+  const normalizedStickyOffset = useMemo(() => {
+    if (stickyOffset === undefined) {
+      // Default: use CSS variable that can be set by parent layout (e.g., SidebarInset)
+      return "var(--app-header-height, 0px)";
+    }
+    if (typeof stickyOffset === "number") {
+      return `${stickyOffset}px`;
+    }
+    return stickyOffset;
+  }, [stickyOffset]);
+
   const config: DataTableConfig<T> = useMemo(
     () => ({
       tableId,
@@ -138,6 +151,7 @@ export function DataTableProvider<T extends { id: string }>({
       showColumnDividers: effectiveShowColumnDividers,
       zebra,
       stickyHeader,
+      stickyOffset: normalizedStickyOffset,
       resizable,
       pinnable,
       reorderable,
@@ -158,6 +172,7 @@ export function DataTableProvider<T extends { id: string }>({
       effectiveShowColumnDividers,
       zebra,
       stickyHeader,
+      normalizedStickyOffset,
       resizable,
       pinnable,
       reorderable,
@@ -475,6 +490,15 @@ export function useDataTableContext<T = unknown>(): DataTableContextValue<T> {
     throw new Error("useDataTableContext must be used within a DataTableProvider");
   }
   return context as DataTableContextValue<T>;
+}
+
+/**
+ * Optional version of useDataTableContext that returns null if not inside a provider.
+ * Useful for layout components that may be used outside a DataTableProvider.
+ */
+export function useOptionalDataTableContext<T = unknown>(): DataTableContextValue<T> | null {
+  const context = useContext(DataTableContext);
+  return context as DataTableContextValue<T> | null;
 }
 
 // ─── RE-EXPORT SPECIALIZED HOOKS ────────────────────────────────────────────

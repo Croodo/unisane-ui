@@ -23,6 +23,7 @@ export { dataTableReducer, createInitialState } from "./reducer";
 export {
   DataTableProvider,
   useDataTableContext,
+  useOptionalDataTableContext,
   useSelection,
   useSorting,
   useFiltering,
