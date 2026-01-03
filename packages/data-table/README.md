@@ -878,29 +878,191 @@ import { RowContextMenu, createDefaultContextMenuItems } from "@unisane/data-tab
 
 ---
 
+## Performance Tuning
+
+### Column Memoization (Critical)
+
+**Always memoize your columns array** to prevent unnecessary re-renders:
+
+```tsx
+// ✅ Good - stable reference
+const columns = useMemo(() => [
+  { key: 'name', header: 'Name' },
+  { key: 'email', header: 'Email' },
+], []);
+
+// ❌ Bad - new array on every render (causes full table re-render)
+<DataTable columns={[{ key: 'name', header: 'Name' }]} />
+```
+
+### Virtualization
+
+Enable virtualization for datasets with 50+ rows:
+
+```tsx
+<DataTable
+  virtualize                    // Enable virtualization
+  virtualizeThreshold={50}      // Auto-enable when rows > threshold
+  estimateRowHeight={48}        // Helps with scroll calculations
+/>
+```
+
+### Remote Data for Large Datasets
+
+For 10,000+ rows, use server-side processing:
+
+```tsx
+<DataTable
+  mode="remote"                 // Server handles sorting/filtering
+  disableLocalProcessing        // Skip client-side data transforms
+/>
+```
+
+### Callback Memoization
+
+Memoize event handlers passed to DataTable:
+
+```tsx
+const handleRowClick = useCallback((row) => {
+  console.log(row);
+}, []);
+
+const handleSelectionChange = useCallback((ids) => {
+  setSelectedIds(ids);
+}, []);
+```
+
+### Custom Renderers
+
+Keep render functions simple:
+
+```tsx
+// ✅ Good - simple, fast
+render: (row) => row.status
+
+// ❌ Avoid - complex calculations in render
+render: (row) => {
+  const expensiveCalculation = heavyComputation(row);
+  return <ComplexComponent data={expensiveCalculation} />;
+}
+```
+
+### Summary
+
+| Dataset Size | Recommendation |
+|-------------|----------------|
+| < 50 rows | Default settings work well |
+| 50-1,000 rows | Enable `virtualize` |
+| 1,000-10,000 rows | Virtualize + memoize columns |
+| 10,000+ rows | Use `mode="remote"` with server-side processing |
+
+---
+
+## Security Considerations
+
+### Custom Renderers
+
+When using custom `render` functions, you are responsible for sanitizing output:
+
+```tsx
+// ⚠️ Dangerous - XSS vulnerability
+render: (row) => <div dangerouslySetInnerHTML={{ __html: row.userContent }} />
+
+// ✅ Safe - React auto-escapes content
+render: (row) => <div>{row.userContent}</div>
+```
+
+### Data Validation
+
+Always validate data on the server. Client-side validation (via `validateCell`) is for UX only:
+
+```tsx
+const inlineEditing = useInlineEditing({
+  validateCell: (rowId, key, value) => {
+    // Client-side validation (UX)
+    if (!value) return "Required";
+    return null;
+  },
+  onCellChange: async (rowId, key, value) => {
+    // Server validates again (security)
+    await api.updateCell(rowId, key, value);
+  },
+});
+```
+
+### Export Security
+
+When exporting data, be aware that:
+- CSV files can contain formula injection (cells starting with `=`, `+`, `-`, `@`)
+- PDF exports include all visible data
+- Consider filtering sensitive columns before export
+
+---
+
+## Error Handling
+
+### Error Boundary
+
+Wrap DataTable with the provided error boundary for graceful error handling:
+
+```tsx
+import { DataTableErrorBoundary } from "@unisane/data-table";
+
+<DataTableErrorBoundary
+  onError={(error, info) => {
+    // Log to error tracking service
+    Sentry.captureException(error, { extra: info });
+  }}
+  fallback={({ error, reset }) => (
+    <div>
+      <p>Something went wrong: {error.message}</p>
+      <button onClick={reset}>Try again</button>
+    </div>
+  )}
+>
+  <DataTable data={data} columns={columns} />
+</DataTableErrorBoundary>
+```
+
+### Inline Editing Errors
+
+Handle save failures gracefully:
+
+```tsx
+const inlineEditing = useInlineEditing({
+  onCellChange: async (rowId, key, value) => {
+    try {
+      await api.updateCell(rowId, key, value);
+    } catch (error) {
+      // Error message is shown in the cell
+      throw new Error("Failed to save. Please try again.");
+    }
+  },
+});
+```
+
+---
+
 ## Known Issues
 
-### Critical (To Be Fixed)
+### Resolved
 
-1. **Race condition in selection** - Rapid selections may cause stale state in controlled mode
-2. **Cell key parsing** - Row IDs containing `:` character break cell selection
-3. **Memory leak** - Window resize listener not properly cleaned up in `useColumns`
-4. **Sort sync bug** - Controlled `sortKey` and `sortState` can become inconsistent
+These issues from earlier versions have been fixed:
+- ✅ Cell key separator - now uses `||` separator that's safe for IDs with special characters
+- ✅ Deep equality performance - now uses optimized `dequal` library
+- ✅ Row re-render optimization - simplified memo comparison
 
-### Limitations
+### Current Limitations
 
-- No RTL (right-to-left) support
-- No built-in i18n (hardcoded English strings)
-- No tree data / hierarchical rows (use row expansion instead)
-- No row drag-to-reorder
-- No undo/redo for inline editing
-- Paste not supported (copy only)
+- **RTL Support** - Partial RTL support via `dir="rtl"` prop, but some features may not be fully RTL-aware
+- **Tree Data** - No hierarchical rows; use row expansion for nested content
+- **Column Virtualization** - Hook exists (`useVirtualizedColumns`) but not integrated into main component
 
-### Performance Considerations
+### Performance Notes
 
-- For datasets > 10,000 rows, always enable virtualization
-- Avoid complex render functions in frequently-updated columns
-- Use `mode="remote"` with server-side filtering/sorting for very large datasets
+- Search is debounced (300ms) to prevent excessive filtering
+- Pagination state syncs automatically when filtering reduces data
+- For 100K+ rows with "select all", consider the `useSparseSelection` hook
 
 ---
 

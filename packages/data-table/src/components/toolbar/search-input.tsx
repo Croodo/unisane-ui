@@ -13,6 +13,8 @@ interface SearchInputProps {
   className?: string;
   /** Placeholder text - if not provided, uses i18n default */
   placeholder?: string;
+  /** Whether to enable Cmd+K / Ctrl+K keyboard shortcut to focus search */
+  enableGlobalShortcut?: boolean;
 }
 
 /**
@@ -28,6 +30,7 @@ interface SearchInputProps {
 export function SearchInput({
   className,
   placeholder,
+  enableGlobalShortcut = true,
 }: SearchInputProps) {
   const { t } = useI18n();
   const { searchText, setSearch } = useFiltering();
@@ -45,6 +48,30 @@ export function SearchInput({
   // Input ref for focus management
   const inputRef = useRef<HTMLInputElement>(null);
   const overlayInputRef = useRef<HTMLInputElement>(null);
+
+  // Global keyboard shortcut: Cmd+K / Ctrl+K to focus search
+  useEffect(() => {
+    if (!enableGlobalShortcut) return;
+
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      // Check for Cmd+K (Mac) or Ctrl+K (Windows/Linux)
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+
+        // If on small screen (overlay mode), open the overlay
+        // Otherwise focus the inline input
+        const isSmallScreen = !window.matchMedia("(min-width: 1024px)").matches;
+        if (isSmallScreen) {
+          setIsOverlayOpen(true);
+        } else {
+          inputRef.current?.focus();
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleGlobalKeyDown);
+    return () => document.removeEventListener("keydown", handleGlobalKeyDown);
+  }, [enableGlobalShortcut]);
 
   // Sync debounced value to context
   useEffect(() => {

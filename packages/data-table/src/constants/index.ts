@@ -39,6 +39,11 @@ export {
   SCROLL_CONSTANTS,
   RESPONSIVE,
   TIMING,
+  // Cell identification utilities
+  CELL_ID_SEPARATOR,
+  createCellId,
+  parseCellId,
+  getCellSelector,
 } from "./dimensions";
 
 // ─── PAGINATION ──────────────────────────────────────────────────────────────

@@ -63,6 +63,7 @@ export const enStrings: DataTableStrings = {
   none: "None",
   selectGroupRows: "Select all {count} rows in {label}",
   removeGroupingLabel: "Remove {label} grouping",
+  groupApplied: "Grouped by {column}",
 
   // ─── Summary Row ───
   summary: "Summary",
@@ -82,6 +83,9 @@ export const enStrings: DataTableStrings = {
   exportPdfDesc: "Portable Document Format",
   exportJson: "JSON",
   exportJsonDesc: "JavaScript Object Notation",
+  exportStarted: "Exporting to {format}...",
+  exportSuccess: "Exported to {format} successfully",
+  exportFailed: "Export failed",
 
   // ─── Search ───
   searchPlaceholder: "Search...",
@@ -230,6 +234,11 @@ export const enStrings: DataTableStrings = {
   select: "Select",
   copyId: "Copy ID",
   delete: "Delete",
+
+  // ─── Inline Editing ───
+  cellNotEditable: "This cell is not editable",
+  cellUpdated: "Cell updated",
+  rowDeleted: "Row deleted",
 
   // ─── Actions Cell ───
   actions: "Actions",

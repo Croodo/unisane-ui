@@ -8,7 +8,8 @@ import {
   DataTablePagination,
   DataTableLayout,
   StickyZone,
-  useInlineEditing,
+  useInlineEditingWithFeedback,
+  useInlineEditingWithHistory,
   useSelection,
   useGrouping,
   useColumns,
@@ -29,7 +30,7 @@ import {
   type RowContextMenuItemOrSeparator,
   type PrintHandler,
 } from "@unisane/data-table";
-import { Typography, Tabs, TabsList, TabsTrigger, TabsContent, Icon, ConfirmDialog, Sheet, TextField, Button } from "@unisane/ui";
+import { Typography, Tabs, TabsList, TabsTrigger, TabsContent, Icon, ConfirmDialog, Sheet, TextField, Button, Tooltip, cn } from "@unisane/ui";
 
 // Components
 import { DemoHeader, DemoControls, StatCards, FeatureCard, type LocaleKey, type LocaleOption } from "./components";
@@ -42,6 +43,9 @@ import { type Product, generateProducts, productColumns, ProductExpandedRow, cre
 
 // Inventory Demo
 import { type InventoryItem, generateInventory, inventoryColumns, InventoryExpandedRow, createInventoryActionsColumn, createInventoryActionItems } from "./demos/inventory";
+
+// Financial Demo
+import { type Transaction, generateTransactions, transactionColumns, TransactionExpandedRow, createTransactionActionsColumn, createTransactionActionItems } from "./demos/financial";
 
 // ─── LOCALE OPTIONS ──────────────────────────────────────────────────────────
 
@@ -121,15 +125,19 @@ function UsersTable({ data, setData, columns, features, density, onDensityChange
     [print, printSelected, isPrinting, selectedRows.size]
   );
 
-  const inlineEditing = useInlineEditing<User>({
+  const inlineEditing = useInlineEditingWithFeedback<User>({
     data,
-    onCellChange: async (rowId, columnKey, newValue) => {
+    onCellChange: async (rowId: string, columnKey: string, newValue: unknown) => {
       await new Promise((resolve) => setTimeout(resolve, 300));
       setData((prev) => prev.map((row) => (row.id === rowId ? { ...row, [columnKey]: newValue } : row)));
     },
-    validateCell: (_rowId, columnKey, value) => {
-      if (columnKey === "salary" && (typeof value !== "number" || Number(value) < 0)) {
-        return "Salary must be a positive number";
+    validateCell: (_rowId: string, columnKey: string, value: unknown) => {
+      if (columnKey === "salary") {
+        const strValue = String(value).trim();
+        const numValue = Number(strValue);
+        if (strValue === "" || isNaN(numValue) || numValue < 0) {
+          return "Salary must be a positive number";
+        }
       }
       if (columnKey === "email" && typeof value === "string" && !value.includes("@")) {
         return "Invalid email address";
@@ -345,18 +353,26 @@ function ProductsTable({ data, setData, columns, features, density, onDensityCha
     [print, printSelected, isPrinting, selectedRows.size]
   );
 
-  const inlineEditing = useInlineEditing<Product>({
+  const inlineEditing = useInlineEditingWithFeedback<Product>({
     data,
-    onCellChange: async (rowId, columnKey, newValue) => {
+    onCellChange: async (rowId: string, columnKey: string, newValue: unknown) => {
       await new Promise((resolve) => setTimeout(resolve, 300));
       setData((prev) => prev.map((row) => (row.id === rowId ? { ...row, [columnKey]: newValue } : row)));
     },
-    validateCell: (_rowId, columnKey, value) => {
-      if (columnKey === "price" && (typeof value !== "number" || Number(value) < 0)) {
-        return "Price must be a positive number";
+    validateCell: (_rowId: string, columnKey: string, value: unknown) => {
+      if (columnKey === "price") {
+        const strValue = String(value).trim();
+        const numValue = Number(strValue);
+        if (strValue === "" || isNaN(numValue) || numValue < 0) {
+          return "Price must be a positive number";
+        }
       }
-      if (columnKey === "quantity" && (typeof value !== "number" || Number(value) < 0)) {
-        return "Quantity must be a positive number";
+      if (columnKey === "quantity") {
+        const strValue = String(value).trim();
+        const numValue = Number(strValue);
+        if (strValue === "" || isNaN(numValue) || numValue < 0) {
+          return "Quantity must be a positive number";
+        }
       }
       return null;
     },
@@ -579,18 +595,26 @@ function InventoryTable({ data, setData, columns, features, density, onDensityCh
     [print, printSelected, isPrinting, selectedRows.size]
   );
 
-  const inlineEditing = useInlineEditing<InventoryItem>({
+  const inlineEditing = useInlineEditingWithFeedback<InventoryItem>({
     data,
-    onCellChange: async (rowId, columnKey, newValue) => {
+    onCellChange: async (rowId: string, columnKey: string, newValue: unknown) => {
       await new Promise((resolve) => setTimeout(resolve, 300));
       setData((prev) => prev.map((row) => (row.id === rowId ? { ...row, [columnKey]: newValue } : row)));
     },
-    validateCell: (_rowId, columnKey, value) => {
-      if (columnKey === "costPrice" && (typeof value !== "number" || Number(value) < 0)) {
-        return "Cost price must be a positive number";
+    validateCell: (_rowId: string, columnKey: string, value: unknown) => {
+      if (columnKey === "costPrice") {
+        const strValue = String(value).trim();
+        const numValue = Number(strValue);
+        if (strValue === "" || isNaN(numValue) || numValue < 0) {
+          return "Cost price must be a positive number";
+        }
       }
-      if (columnKey === "sellingPrice" && (typeof value !== "number" || Number(value) < 0)) {
-        return "Selling price must be a positive number";
+      if (columnKey === "sellingPrice") {
+        const strValue = String(value).trim();
+        const numValue = Number(strValue);
+        if (strValue === "" || isNaN(numValue) || numValue < 0) {
+          return "Selling price must be a positive number";
+        }
       }
       return null;
     },
@@ -740,10 +764,290 @@ function InventoryTable({ data, setData, columns, features, density, onDensityCh
   );
 }
 
+// ─── FINANCIAL TABLE (WITH UNDO/REDO) ─────────────────────────────────────────
+
+interface FinancialTableProps {
+  data: Transaction[];
+  setData: React.Dispatch<React.SetStateAction<Transaction[]>>;
+  columns: Column<Transaction>[];
+  features: {
+    enableSelection: boolean;
+    enableExpansion: boolean;
+    enableContextMenu: boolean;
+    enableCellSelection: boolean;
+    enableRowReorder: boolean;
+  };
+  density: Density;
+  onDensityChange: (d: Density) => void;
+}
+
+function FinancialTable({ data, setData, columns, features, density, onDensityChange }: FinancialTableProps) {
+  const { selectedRows, deselectAll } = useSelection();
+  const selectedIds = Array.from(selectedRows);
+  const { isGrouped, groupByArray, expandedGroups, expandAllGroups, collapseAllGroups } = useGrouping();
+  const { pinnedLeftColumns, pinnedRightColumns, resetColumnPins } = useColumns<Transaction>();
+  const { menuState, handleRowContextMenu, closeMenu } = useRowContextMenu<Transaction>();
+
+  const columnKeys = useMemo(() => columns.map((col) => String(col.key)), [columns]);
+
+  const cellSelection = useCellSelection<Transaction>({
+    data,
+    columnKeys,
+    enabled: features.enableCellSelection,
+  });
+
+  const handleCopySelectedCells = useCallback(async () => {
+    if (cellSelection.state.selectedCells.size === 0) return;
+    const values = cellSelection.getSelectedValues((rowId, columnKey) => {
+      const row = data.find((r) => r.id === rowId);
+      if (!row) return "";
+      return String(getNestedValue(row, columnKey) ?? "");
+    });
+    const tsv = values.map((row) => row.join("\t")).join("\n");
+    await navigator.clipboard.writeText(tsv);
+  }, [cellSelection, data]);
+
+  const handleCellKeyDown = useCallback(
+    (event: React.KeyboardEvent) => {
+      // Let undo/redo pass through to inlineEditing handler
+      if ((event.ctrlKey || event.metaKey) && (event.key === "z" || event.key === "y")) {
+        return;
+      }
+      if ((event.ctrlKey || event.metaKey) && event.key === "c") {
+        event.preventDefault();
+        handleCopySelectedCells();
+        return;
+      }
+      cellSelection.handleCellKeyDown(event);
+    },
+    [cellSelection, handleCopySelectedCells]
+  );
+
+  const { print, printSelected, isPrinting } = usePrint<Transaction>({
+    data,
+    columns,
+    selectedIds: selectedRows,
+    defaultOptions: { title: "Financial Report", orientation: "landscape", includeTimestamp: true },
+  });
+
+  const printHandler: PrintHandler = useMemo(
+    () => ({
+      onPrint: () => print(),
+      onPrintSelected: selectedRows.size > 0 ? () => printSelected() : undefined,
+      isPrinting,
+    }),
+    [print, printSelected, isPrinting, selectedRows.size]
+  );
+
+  // ─── INLINE EDITING WITH UNDO/REDO ───────────────────────────────────────────
+  const inlineEditing = useInlineEditingWithHistory<Transaction>({
+    data,
+    onCellChange: async (rowId, columnKey, newValue) => {
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      setData((prev) => prev.map((row) => (row.id === rowId ? { ...row, [columnKey]: newValue } : row)));
+    },
+    validateCell: (_rowId, columnKey, value) => {
+      if (columnKey === "amount") {
+        const strValue = String(value).trim();
+        if (strValue === "" || isNaN(Number(strValue))) {
+          return "Amount must be a valid number";
+        }
+      }
+      if (columnKey === "description" && typeof value === "string" && value.length < 3) {
+        return "Description must be at least 3 characters";
+      }
+      return null;
+    },
+    maxHistorySize: 50,
+  });
+
+  const bulkActions: BulkAction[] = useMemo(
+    () => [
+      {
+        label: "Export",
+        icon: "download",
+        onClick: (ids) => {
+          const selected = data.filter((d) => ids.includes(d.id));
+          exportData({ format: "csv", data: selected, columns, filename: "selected-transactions" });
+        },
+      },
+      {
+        label: "Mark Completed",
+        icon: "check_circle",
+        onClick: (ids) => setData((prev) => prev.map((row) => (ids.includes(row.id) ? { ...row, status: "completed" as const } : row))),
+      },
+      {
+        label: "Mark Refunded",
+        icon: "undo",
+        onClick: (ids) => setData((prev) => prev.map((row) => (ids.includes(row.id) ? { ...row, status: "refunded" as const } : row))),
+      },
+      {
+        label: "Delete",
+        icon: "delete",
+        variant: "danger",
+        onClick: (ids) => {
+          if (confirm(`Delete ${ids.length} transactions?`)) {
+            setData((prev) => prev.filter((row) => !ids.includes(row.id)));
+          }
+        },
+      },
+    ],
+    [data, setData, columns]
+  );
+
+  const contextMenuItems: RowContextMenuItemOrSeparator<Transaction>[] = useMemo(
+    () => createTransactionActionItems(
+      (txn) => alert(`Viewing ${txn.reference}`),
+      (txn) => {
+        const newTxn = { ...txn, id: `txn-${Date.now()}`, reference: `${txn.reference}-COPY` };
+        setData((prev) => [newTxn, ...prev]);
+      },
+      (txn) => setData((prev) => prev.map((r) => (r.id === txn.id ? { ...r, status: "refunded" as const } : r))),
+      (txn) => setData((prev) => prev.filter((r) => r.id !== txn.id))
+    ),
+    [setData]
+  );
+
+  const groupIds = useMemo(() => {
+    if (!isGrouped || groupByArray.length === 0) return [];
+    const allGroupIds = new Set<string>();
+    const buildGroupIds = (rows: Transaction[], keys: string[], parentId: string | null) => {
+      if (keys.length === 0 || rows.length === 0) return;
+      const currentKey = keys[0]!;
+      const remainingKeys = keys.slice(1);
+      const groupMap = new Map<string, Transaction[]>();
+      for (const row of rows) {
+        const value = row[currentKey as keyof Transaction];
+        const valueKey = String(value ?? "__null__");
+        if (!groupMap.has(valueKey)) groupMap.set(valueKey, []);
+        groupMap.get(valueKey)!.push(row);
+      }
+      for (const [valueKey, groupRows] of groupMap) {
+        const groupId = parentId ? `${parentId}::${valueKey}` : valueKey;
+        allGroupIds.add(groupId);
+        buildGroupIds(groupRows, remainingKeys, groupId);
+      }
+    };
+    buildGroupIds(data, groupByArray, null);
+    return Array.from(allGroupIds);
+  }, [data, groupByArray, isGrouped]);
+
+  const allGroupsExpanded = isGrouped && groupIds.length > 0 && expandedGroups.size === groupIds.length;
+  const handleToggleAllGroups = useCallback(() => {
+    if (allGroupsExpanded) collapseAllGroups();
+    else expandAllGroups(groupIds);
+  }, [allGroupsExpanded, collapseAllGroups, expandAllGroups, groupIds]);
+
+  const handleRowReorder = useCallback(
+    (fromIndex: number, toIndex: number) => {
+      setData((prev) => {
+        const newData = [...prev];
+        const [movedItem] = newData.splice(fromIndex, 1);
+        if (movedItem) newData.splice(toIndex, 0, movedItem);
+        return newData;
+      });
+    },
+    [setData]
+  );
+
+  // Undo/Redo controls for toolbar left section
+  const undoRedoContent = (
+    <div className="flex items-center gap-1">
+      <Tooltip label={`Undo${inlineEditing.undoCount > 0 ? ` (${inlineEditing.undoCount})` : ""}`}>
+        <button
+          type="button"
+          onClick={() => inlineEditing.undo()}
+          disabled={!inlineEditing.canUndo}
+          className={cn(
+            "inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors",
+            "text-on-surface-variant hover:bg-on-surface/8 active:bg-on-surface/12",
+            "disabled:opacity-40 disabled:pointer-events-none"
+          )}
+          aria-label="Undo"
+        >
+          <Icon symbol="undo" className="w-5 h-5" />
+        </button>
+      </Tooltip>
+      <Tooltip label={`Redo${inlineEditing.redoCount > 0 ? ` (${inlineEditing.redoCount})` : ""}`}>
+        <button
+          type="button"
+          onClick={() => inlineEditing.redo()}
+          disabled={!inlineEditing.canRedo}
+          className={cn(
+            "inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors",
+            "text-on-surface-variant hover:bg-on-surface/8 active:bg-on-surface/12",
+            "disabled:opacity-40 disabled:pointer-events-none"
+          )}
+          aria-label="Redo"
+        >
+          <Icon symbol="redo" className="w-5 h-5" />
+        </button>
+      </Tooltip>
+    </div>
+  );
+
+  return (
+    <DataTableLayout>
+      <StickyZone>
+        <DataTableToolbar
+          title="Financial Transactions"
+          totalItems={data.length}
+          searchable
+          selectedCount={selectedRows.size}
+          selectedIds={selectedIds}
+          bulkActions={features.enableSelection ? bulkActions : []}
+          onClearSelection={deselectAll}
+          exportHandler={{
+            onExport: (format: ExportFormat) => exportData({ format, data, columns, filename: "financial-transactions" }),
+            formats: ["csv", "excel", "pdf", "json"],
+          }}
+          printHandler={printHandler}
+          density={density}
+          onDensityChange={onDensityChange}
+          isGrouped={isGrouped}
+          allGroupsExpanded={allGroupsExpanded}
+          onToggleAllGroups={handleToggleAllGroups}
+          showGroupingPills={isGrouped}
+          frozenLeftCount={pinnedLeftColumns.length}
+          frozenRightCount={pinnedRightColumns.length}
+          onUnfreezeAll={resetColumnPins}
+          leftContent={undoRedoContent}
+        />
+      </StickyZone>
+
+      <DataTableInner
+        data={data}
+        isLoading={false}
+        bulkActions={features.enableSelection ? bulkActions : []}
+        renderExpandedRow={features.enableExpansion ? (row) => <TransactionExpandedRow row={row} /> : undefined}
+        getRowCanExpand={features.enableExpansion ? () => true : undefined}
+        onRowContextMenu={features.enableContextMenu ? handleRowContextMenu : undefined}
+        density={density}
+        virtualize={false}
+        emptyMessage="No transactions found"
+        emptyIcon="receipt_long"
+        inlineEditing={inlineEditing}
+        cellSelectionEnabled={features.enableCellSelection}
+        getCellSelectionContext={features.enableCellSelection ? cellSelection.getCellSelectionContext : undefined}
+        onCellClick={features.enableCellSelection ? cellSelection.handleCellClick : undefined}
+        onCellKeyDown={features.enableCellSelection ? handleCellKeyDown : undefined}
+        reorderableRows={features.enableRowReorder}
+        onRowReorder={handleRowReorder}
+      />
+
+      {features.enableContextMenu && (
+        <RowContextMenu state={menuState} onClose={closeMenu} items={contextMenuItems} selectedIds={selectedIds} />
+      )}
+
+      <DataTablePagination totalItems={data.length} />
+    </DataTableLayout>
+  );
+}
+
 // ─── MAIN DEMO PAGE ──────────────────────────────────────────────────────────
 
 export default function DataTableDemoPage() {
-  const [activeTab, setActiveTab] = useState<"users" | "products" | "inventory">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "products" | "inventory" | "financial">("users");
 
   // Users data
   const [usersData, setUsersData] = useState<User[]>(() => generateUsers(150));
@@ -753,6 +1057,9 @@ export default function DataTableDemoPage() {
 
   // Inventory data
   const [inventoryData, setInventoryData] = useState<InventoryItem[]>(() => generateInventory(300));
+
+  // Financial data
+  const [financialData, setFinancialData] = useState<Transaction[]>(() => generateTransactions(200));
 
   // ─── Action Dialog State (Best Practice Pattern) ────────────────────────────
   // Using useActionDialog hook to manage edit/delete dialogs with type safety
@@ -823,6 +1130,20 @@ export default function DataTableDemoPage() {
       (item) => setInventoryData((prev) => prev.filter((r) => r.id !== item.id))
     );
     return [...inventoryColumns, actionsColumn];
+  }, []);
+
+  // Create columns with actions for Financial
+  const financialColumnsWithActions = useMemo(() => {
+    const actionsColumn = createTransactionActionsColumn(
+      (txn) => alert(`Viewing ${txn.reference}`),
+      (txn) => {
+        const newTxn = { ...txn, id: `txn-${Date.now()}`, reference: `${txn.reference}-COPY` };
+        setFinancialData((prev) => [newTxn, ...prev]);
+      },
+      (txn) => setFinancialData((prev) => prev.map((r) => (r.id === txn.id ? { ...r, status: "refunded" as const } : r))),
+      (txn) => setFinancialData((prev) => prev.filter((r) => r.id !== txn.id))
+    );
+    return [...transactionColumns, actionsColumn];
   }, []);
 
   // Feature toggles
@@ -905,6 +1226,17 @@ export default function DataTableDemoPage() {
     [inventoryData]
   );
 
+  const financialStats = useMemo(() => {
+    const revenue = financialData.filter((t) => t.amount > 0).reduce((sum, t) => sum + t.amount, 0);
+    const expenses = financialData.filter((t) => t.amount < 0).reduce((sum, t) => sum + Math.abs(t.amount), 0);
+    return [
+      { title: "Transactions", value: financialData.length },
+      { title: "Revenue", value: (revenue / 1000).toFixed(1), prefix: "$", suffix: "K" },
+      { title: "Expenses", value: (expenses / 1000).toFixed(1), prefix: "$", suffix: "K" },
+      { title: "Net", value: ((revenue - expenses) / 1000).toFixed(1), prefix: "$", suffix: "K" },
+    ];
+  }, [financialData]);
+
   return (
     <div className="min-h-screen">
       <DemoHeader
@@ -923,7 +1255,7 @@ export default function DataTableDemoPage() {
 
       {/* Demo Tabs */}
       <div className="pt-6">
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "users" | "products" | "inventory")}>
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "users" | "products" | "inventory" | "financial")}>
             <TabsList className="mb-6">
               <TabsTrigger value="users" className="flex items-center gap-2">
                 <Icon symbol="group" className="w-5 h-5" />
@@ -934,8 +1266,12 @@ export default function DataTableDemoPage() {
                 Products Catalog
               </TabsTrigger>
               <TabsTrigger value="inventory" className="flex items-center gap-2">
-                <Icon symbol="receipt_long" className="w-5 h-5" />
+                <Icon symbol="warehouse" className="w-5 h-5" />
                 Inventory & Billing
+              </TabsTrigger>
+              <TabsTrigger value="financial" className="flex items-center gap-2">
+                <Icon symbol="account_balance" className="w-5 h-5" />
+                Financial (Undo/Redo)
               </TabsTrigger>
             </TabsList>
 
@@ -947,8 +1283,8 @@ export default function DataTableDemoPage() {
                   mode="local"
                   paginationMode="offset"
                   variant={enableColumnBorders ? "grid" : "list"}
-                  selectable={enableSelection}
-                  columnBorders={enableColumnBorders}
+                  rowSelectionEnabled={enableSelection}
+                  showColumnDividers={enableColumnBorders}
                   zebra={enableZebra}
                   stickyHeader
                   resizable={enableResizable}
@@ -982,8 +1318,8 @@ export default function DataTableDemoPage() {
                   mode="local"
                   paginationMode="offset"
                   variant={enableColumnBorders ? "grid" : "list"}
-                  selectable={enableSelection}
-                  columnBorders={enableColumnBorders}
+                  rowSelectionEnabled={enableSelection}
+                  showColumnDividers={enableColumnBorders}
                   zebra={enableZebra}
                   stickyHeader
                   resizable={enableResizable}
@@ -1017,8 +1353,8 @@ export default function DataTableDemoPage() {
                   mode="local"
                   paginationMode="offset"
                   variant={enableColumnBorders ? "grid" : "list"}
-                  selectable={enableSelection}
-                  columnBorders={enableColumnBorders}
+                  rowSelectionEnabled={enableSelection}
+                  showColumnDividers={enableColumnBorders}
                   zebra={enableZebra}
                   stickyHeader
                   resizable={enableResizable}
@@ -1042,6 +1378,41 @@ export default function DataTableDemoPage() {
                 </DataTableProvider>
               </div>
               <StatCards stats={inventoryStats} />
+            </TabsContent>
+
+            <TabsContent value="financial">
+              <div className="-mx-4 medium:-mx-6 expanded:-mx-12">
+                <DataTableProvider
+                  tableId="financial-demo-table"
+                  columns={financialColumnsWithActions}
+                  mode="local"
+                  paginationMode="offset"
+                  variant={enableColumnBorders ? "grid" : "list"}
+                  rowSelectionEnabled={enableSelection}
+                  showColumnDividers={enableColumnBorders}
+                  zebra={enableZebra}
+                  stickyHeader
+                  resizable={enableResizable}
+                  pinnable={enablePinnable}
+                  reorderable={enableReorderable}
+                  groupingEnabled={enableGrouping}
+                  showSummary={enableSummary}
+                  summaryLabel="Totals"
+                  maxSortColumns={enableMultiSort ? 3 : 1}
+                  initialPageSize={25}
+                  locale={LOCALE_OPTIONS[localeKey].locale}
+                >
+                  <FinancialTable
+                    data={financialData}
+                    setData={setFinancialData}
+                    columns={financialColumnsWithActions}
+                    features={tableFeatures}
+                    density={density}
+                    onDensityChange={setDensity}
+                  />
+                </DataTableProvider>
+              </div>
+              <StatCards stats={financialStats} />
             </TabsContent>
           </Tabs>
 

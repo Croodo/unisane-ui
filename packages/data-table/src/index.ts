@@ -105,6 +105,12 @@ export {
 
   // Inline editing
   useInlineEditing,
+  useInlineEditingWithHistory,
+  useInlineEditingWithFeedback,
+  type UseInlineEditingWithHistoryOptions,
+  type UseInlineEditingWithHistoryReturn,
+  type UseInlineEditingWithFeedbackOptions,
+  type UseInlineEditingWithFeedbackReturn,
 
   // Cell selection
   useCellSelection,
@@ -126,27 +132,36 @@ export {
 
   // Clipboard paste
   useClipboardPaste,
+  useClipboardPasteWithFeedback,
   type ParsedClipboardData,
   type PasteCellUpdate,
   type PasteValidationResult,
   type PasteResult,
   type UseClipboardPasteOptions,
   type UseClipboardPasteReturn,
+  type UseClipboardPasteWithFeedbackOptions,
+  type UseClipboardPasteWithFeedbackReturn,
 
   // Edit history (undo/redo)
   useEditHistory,
+  useEditHistoryWithFeedback,
   type EditHistoryEntry,
   type EditChange,
   type UndoRedoResult,
   type UseEditHistoryOptions,
   type UseEditHistoryReturn,
+  type UseEditHistoryWithFeedbackOptions,
+  type UseEditHistoryWithFeedbackReturn,
 
   // Filter presets
   useFilterPresets,
+  useFilterPresetsWithFeedback,
   type FilterPreset,
   type FilterPresetInput,
   type UseFilterPresetsOptions,
   type UseFilterPresetsReturn,
+  type UseFilterPresetsWithFeedbackOptions,
+  type UseFilterPresetsWithFeedbackReturn,
 
   // Compound filters (AND/OR)
   useCompoundFilters,
@@ -403,6 +418,20 @@ export {
   type PartialDataTableLocale,
   type I18nContextValue,
 } from "./i18n";
+
+// ─── FEEDBACK ────────────────────────────────────────────────────────────────
+export {
+  // Provider and hook
+  FeedbackProvider,
+  useFeedback,
+
+  // Types
+  type FeedbackOptions,
+  type FeedbackType,
+  type FeedbackParams,
+  type FeedbackContextValue,
+  type FeedbackProviderProps,
+} from "./feedback";
 
 // ─── ERRORS ────────────────────────────────────────────────────────────────
 export {

@@ -1,15 +1,16 @@
 "use client";
 
-import React, { useMemo, useRef, useCallback, useEffect, useId } from "react";
+import React, { useMemo, useRef, useCallback, useEffect } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { cn } from "@unisane/ui";
-import type { Column, BulkAction, InlineEditingController, RowGroup, GroupHeaderProps, CellSelectionContext } from "../types/index";
+import type { Column, BulkAction, InlineEditingController, GroupHeaderProps, CellSelectionContext, RowActivationEvent } from "../types/index";
 import { DataTableHeader } from "./header/index";
 import { DataTableBody } from "./body";
 import { DataTableFooter } from "./footer";
 import { VirtualizedBody } from "./virtualized-body";
 import { TableColgroup } from "./colgroup";
 import { CustomScrollbar } from "./custom-scrollbar";
+import { StatusAnnouncer } from "./status-announcer";
 import {
   SyncedScrollContainer,
   StickyHeaderScrollContainer,
@@ -17,7 +18,9 @@ import {
   BodyTable,
 } from "./layout";
 import { useProcessedData } from "../hooks/data/use-processed-data";
+import { useGroupedData } from "../hooks/data/use-grouped-data";
 import { useVirtualizedRows } from "../hooks/features/use-virtualized-rows";
+import { useVirtualizedColumns } from "../hooks/features/use-virtualized-columns";
 import { useKeyboardNavigation } from "../hooks/ui/use-keyboard-navigation";
 import { useDensityScale } from "../hooks/ui/use-density-scale";
 import { useRowDrag } from "../hooks/ui/use-row-drag";
@@ -33,8 +36,8 @@ import {
   useGrouping,
 } from "../context";
 import { ensureRowIds } from "../utils/ensure-row-ids";
-import { buildGroupedData } from "../utils/grouping";
-import { DENSITY_CONFIG, TIMING, type Density } from "../constants/index";
+import { getTotalPages, clampPage } from "../utils/pagination";
+import { DENSITY_CONFIG, type Density } from "../constants/index";
 import { useI18n } from "../i18n";
 
 // ─── INNER PROPS ───────────────────────────────────────────────────────────
@@ -49,7 +52,7 @@ export interface DataTableInnerProps<T extends { id: string }> {
   style?: CSSProperties;
   totalItems?: number;
   disableLocalProcessing?: boolean;
-  onRowClick?: (row: T, event: React.MouseEvent) => void;
+  onRowClick?: (row: T, activation: RowActivationEvent) => void;
   /** Callback when row is right-clicked (context menu) */
   onRowContextMenu?: (row: T, event: React.MouseEvent) => void;
   onRowHover?: (row: T | null) => void;
@@ -57,6 +60,10 @@ export interface DataTableInnerProps<T extends { id: string }> {
   density?: Density;
   virtualize?: boolean;
   virtualizeThreshold?: number;
+  /** Enable column virtualization for wide tables */
+  virtualizeColumns?: boolean;
+  /** Column count threshold before column virtualization kicks in */
+  virtualizeColumnsThreshold?: number;
   emptyMessage?: string;
   emptyIcon?: string;
   /** Inline editing controller from useInlineEditing hook */
@@ -98,6 +105,8 @@ export function DataTableInner<T extends { id: string }>({
   density = "standard",
   virtualize = true,
   virtualizeThreshold = 50,
+  virtualizeColumns = false,
+  virtualizeColumnsThreshold = 20,
   emptyMessage,
   emptyIcon,
   inlineEditing,
@@ -139,14 +148,16 @@ export function DataTableInner<T extends { id: string }>({
   useEffect(() => {
     return observeContainer(tableContainerRef);
   }, [observeContainer]);
-  const announcerRegionId = useId();
-  const announcementRef = useRef<string>("");
-  const announceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Track previous values for change detection
-  const prevSortStateRef = useRef(sortState);
-  const prevSelectedCountRef = useRef(selectedRows.size);
-  const prevFilterCountRef = useRef(Object.keys(columnFilters).length + (searchText ? 1 : 0));
+  // ─── SCREEN READER ANNOUNCEMENTS ─────────────────────────────────────────────
+  // Use extracted hook for announcements (handles sort/filter changes automatically)
+  const { announcerRegionId } = useAnnouncements({
+    sortState,
+    columns: columns as Column<T>[],
+    columnFilters,
+    searchText,
+    selectedCount: selectedRows.size,
+  });
 
   // Computed values
   const effectiveSelectable = config.rowSelectionEnabled || bulkActions.length > 0;
@@ -172,6 +183,33 @@ export function DataTableInner<T extends { id: string }>({
     isGrouped,
   });
 
+  // ─── COLUMN VIRTUALIZATION ─────────────────────────────────────────────────
+  // Helper to get pin position by column key (for virtualized columns hook)
+  const getEffectivePinPositionByKey = useCallback(
+    (columnKey: string) => getEffectivePinPosition({ key: columnKey } as Column<T>),
+    [getEffectivePinPosition]
+  );
+
+  const {
+    virtualColumns,
+    scrollableColumns,
+    isVirtualized: isColumnVirtualized,
+    leftPadding: columnLeftPadding,
+    rightPadding: columnRightPadding,
+    onScroll: onColumnScroll,
+    getScrollableContainerStyle,
+  } = useVirtualizedColumns({
+    columns: sortedVisibleColumns,
+    columnMeta,
+    getEffectivePinPosition: getEffectivePinPositionByKey,
+    scrollContainerRef: tableContainerRef,
+    enabled: virtualizeColumns,
+    threshold: virtualizeColumnsThreshold,
+  });
+
+  // Use virtualized columns when enabled, otherwise use all columns
+  const effectiveColumns = isColumnVirtualized ? virtualColumns.map(vc => vc.column) : sortedVisibleColumns;
+
   // ─── DATA PROCESSING ──────────────────────────────────────────────────────
 
   // ensureRowIds returns T[] when T already extends { id: string }
@@ -194,8 +232,8 @@ export function DataTableInner<T extends { id: string }>({
     if (config.paginationMode === "cursor" || config.mode === "remote") {
       return processedData;
     }
-    const totalPages = Math.max(1, Math.ceil(processedData.length / Math.max(pageSize, 1)));
-    const safePage = Math.min(page, totalPages);
+    const totalPages = getTotalPages(processedData.length, pageSize);
+    const safePage = clampPage(page, totalPages);
     const start = (safePage - 1) * pageSize;
     return processedData.slice(start, start + pageSize);
   }, [processedData, page, pageSize, config.paginationMode, config.mode]);
@@ -205,7 +243,7 @@ export function DataTableInner<T extends { id: string }>({
     if (config.paginationMode === "cursor" || config.mode === "remote") {
       return; // Skip for cursor/remote mode - server handles pagination
     }
-    const totalPages = Math.max(1, Math.ceil(processedData.length / Math.max(pageSize, 1)));
+    const totalPages = getTotalPages(processedData.length, pageSize);
     if (page > totalPages) {
       setPage(totalPages);
     }
@@ -233,144 +271,15 @@ export function DataTableInner<T extends { id: string }>({
   });
 
   // ─── ROW GROUPING ───────────────────────────────────────────────────────────
+  // Use extracted hook for memoized grouping (eliminates duplication with utils/grouping.ts)
 
-  // Helper to get nested value for grouping
-  const getNestedValue = useCallback((obj: T, path: string): unknown => {
-    const keys = path.split(".");
-    let value: unknown = obj;
-    for (const key of keys) {
-      if (value == null) return undefined;
-      value = (value as Record<string, unknown>)[key];
-    }
-    return value;
-  }, []);
-
-  // Calculate aggregation for a set of rows
-  const calculateAggregation = useCallback(
-    (rows: T[], columnKey: string, aggregationType: "sum" | "average" | "count" | "min" | "max"): number | null => {
-      const values = rows
-        .map((row) => {
-          const val = getNestedValue(row, columnKey);
-          return typeof val === "number" ? val : null;
-        })
-        .filter((v): v is number => v !== null);
-
-      if (values.length === 0) return null;
-
-      switch (aggregationType) {
-        case "sum":
-          return values.reduce((acc, v) => acc + v, 0);
-        case "average":
-          return values.reduce((acc, v) => acc + v, 0) / values.length;
-        case "count":
-          return values.length;
-        case "min":
-          return Math.min(...values);
-        case "max":
-          return Math.max(...values);
-        default:
-          return null;
-      }
-    },
-    [getNestedValue]
-  );
-
-  // Get columns with aggregations configured
-  const aggregationColumns = useMemo(() => {
-    return (columns as Column<T>[]).filter((col) => col.aggregation);
-  }, [columns]);
-
-  // Helper to create a group label from a value
-  const formatGroupLabel = useCallback((value: unknown): string => {
-    if (value == null) return "(Empty)";
-    if (typeof value === "boolean") return value ? "Yes" : "No";
-    return String(value);
-  }, []);
-
-  // Recursive function to build nested groups
-  const buildNestedGroups = useCallback(
-    (
-      rows: T[],
-      groupByKeys: string[],
-      depth: number,
-      parentGroupId: string | null
-    ): RowGroup<T>[] => {
-      if (groupByKeys.length === 0 || rows.length === 0) {
-        return [];
-      }
-
-      const currentKey = groupByKeys[0]!;
-      const remainingKeys = groupByKeys.slice(1);
-      const isDeepestLevel = remainingKeys.length === 0;
-
-      // Group rows by the current groupBy column value
-      const groupMap = new Map<string, T[]>();
-      const groupValues = new Map<string, unknown>();
-
-      for (const row of rows) {
-        const value = getNestedValue(row, currentKey);
-        const valueKey = String(value ?? "__null__");
-
-        if (!groupMap.has(valueKey)) {
-          groupMap.set(valueKey, []);
-          groupValues.set(valueKey, value);
-        }
-        groupMap.get(valueKey)!.push(row);
-      }
-
-      // Convert to array and sort alphabetically
-      const groupEntries = Array.from(groupMap.entries());
-      groupEntries.sort(([a], [b]) => a.localeCompare(b));
-
-      // Build group objects
-      return groupEntries.map(([valueKey, groupRows]) => {
-        // Create compound group ID for nested groups
-        const groupId = parentGroupId ? `${parentGroupId}::${valueKey}` : valueKey;
-        const groupValue = groupValues.get(valueKey) as string | number | boolean | null;
-        const groupLabel = formatGroupLabel(groupValue);
-
-        // Calculate aggregations for columns that have aggregation configured
-        const aggregations: Record<string, unknown> = {};
-        for (const col of aggregationColumns) {
-          const key = String(col.key);
-          const result = calculateAggregation(groupRows, key, col.aggregation!);
-          if (result !== null) {
-            aggregations[col.header] = result;
-          }
-        }
-
-        // Recursively build child groups if not at deepest level
-        const childGroups = isDeepestLevel
-          ? undefined
-          : buildNestedGroups(groupRows, remainingKeys, depth + 1, groupId);
-
-        return {
-          type: "group" as const,
-          groupId,
-          groupValue,
-          groupLabel,
-          // Only include rows at the deepest level
-          rows: isDeepestLevel ? groupRows : [],
-          isExpanded: isGroupExpanded(groupId),
-          aggregations,
-          depth,
-          groupByKey: currentKey,
-          childGroups,
-          parentGroupId,
-        };
-      });
-    },
-    [getNestedValue, formatGroupLabel, isGroupExpanded, aggregationColumns, calculateAggregation]
-  );
-
-  // Build grouped data structure (supports multi-level)
-  const groupedRows = useMemo((): RowGroup<T>[] => {
-    if (!isGrouped || groupByArray.length === 0) {
-      return [];
-    }
-
-    return buildNestedGroups(paginatedData, groupByArray, 0, null);
-  }, [paginatedData, groupByArray, isGrouped, buildNestedGroups]);
+  const { groupedData: groupedRows } = useGroupedData({
+    data: paginatedData,
+    groupByKeys: groupByArray,
+    isGroupExpanded,
+    columns: columns as Column<T>[],
+    enabled: isGrouped,
+  });
 
   // ─── VIRTUALIZATION ───────────────────────────────────────────────────────
 
@@ -463,24 +372,11 @@ export function DataTableInner<T extends { id: string }>({
   );
 
   const handleKeyboardActivate = useCallback(
-    (index: number) => {
+    (index: number, event: React.KeyboardEvent) => {
       const row = paginatedData[index];
       if (row && onRowClick) {
-        // Create a synthetic keyboard event since activation came from keyboard
-        // Using KeyboardEvent is more accurate than faking a MouseEvent
-        const nativeEvent = new KeyboardEvent("keydown", { key: "Enter" });
-        const syntheticEvent = {
-          type: "keydown",
-          key: "Enter",
-          target: document.activeElement,
-          currentTarget: document.activeElement,
-          preventDefault: () => nativeEvent.preventDefault(),
-          stopPropagation: () => nativeEvent.stopPropagation(),
-          nativeEvent,
-          // Flag to indicate keyboard activation
-          detail: 0, // 0 indicates keyboard, non-zero indicates mouse clicks
-        } as unknown as React.MouseEvent;
-        onRowClick(row, syntheticEvent);
+        // Pass the actual keyboard event with proper discriminated union type
+        onRowClick(row, { source: "keyboard", event });
       }
     },
     [paginatedData, onRowClick]
@@ -521,87 +417,6 @@ export function DataTableInner<T extends { id: string }>({
     return rangeInfo;
   }, [isLoading, paginatedData.length, processedData.length, selectedRows.size, t, formatNumber]);
 
-  // ─── LIVE REGION ANNOUNCEMENTS ─────────────────────────────────────────────
-
-  // Helper to announce changes to screen readers
-  const announce = useCallback((message: string) => {
-    const region = document.getElementById(announcerRegionId);
-    if (region && message) {
-      // Clear any pending timeout
-      if (announceTimeoutRef.current) {
-        clearTimeout(announceTimeoutRef.current);
-      }
-
-      // Add non-breaking space for repeated messages to force re-announcement
-      const finalMessage = message === announcementRef.current
-        ? `${message}\u00A0`
-        : message;
-      announcementRef.current = message;
-      region.textContent = finalMessage;
-
-      // Clear after delay to allow for new announcements
-      announceTimeoutRef.current = setTimeout(() => {
-        // Check if region still exists before modifying (component may have unmounted)
-        const currentRegion = document.getElementById(announcerRegionId);
-        if (currentRegion) {
-          currentRegion.textContent = "";
-        }
-        announceTimeoutRef.current = null;
-      }, TIMING.ANNOUNCEMENT_CLEAR_MS);
-    }
-  }, [announcerRegionId]);
-
-  // Cleanup announcement timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (announceTimeoutRef.current) {
-        clearTimeout(announceTimeoutRef.current);
-        announceTimeoutRef.current = null;
-      }
-    };
-  }, []);
-
-  // Announce sort changes
-  useEffect(() => {
-    const prevSort = prevSortStateRef.current;
-    prevSortStateRef.current = sortState;
-
-    // Skip initial render
-    if (prevSort === sortState) return;
-
-    // Check if sort changed
-    if (sortState.length > 0) {
-      const firstSort = sortState[0];
-      if (firstSort) {
-        // Find column header for the sorted column
-        const sortedColumn = columns.find((c) => String(c.key) === firstSort.key);
-        const columnName = sortedColumn?.header ?? firstSort.key;
-        const message = firstSort.direction === "asc"
-          ? t("srSortedAsc", { column: columnName })
-          : t("srSortedDesc", { column: columnName });
-        announce(message);
-      }
-    } else if (prevSort.length > 0) {
-      announce(t("srNotSorted"));
-    }
-  }, [sortState, columns, t, announce]);
-
-  // Announce filter changes
-  useEffect(() => {
-    const currentFilterCount = Object.keys(columnFilters).length + (searchText ? 1 : 0);
-    const prevFilterCount = prevFilterCountRef.current;
-    prevFilterCountRef.current = currentFilterCount;
-
-    // Skip initial render
-    if (prevFilterCount === currentFilterCount) return;
-
-    if (currentFilterCount > prevFilterCount) {
-      announce(t("srFilterApplied", { count: currentFilterCount }));
-    } else if (currentFilterCount === 0 && prevFilterCount > 0) {
-      announce(t("srFilterCleared"));
-    }
-  }, [columnFilters, searchText, t, announce]);
-
   // ─── RENDER ───────────────────────────────────────────────────────────────
 
   const keyboardProps = getContainerProps();
@@ -622,7 +437,7 @@ export function DataTableInner<T extends { id: string }>({
 
   // Common header props for both virtualized and non-virtualized modes
   const headerProps = {
-    columns: sortedVisibleColumns,
+    columns: effectiveColumns,
     columnDefinitions: config.columnDefinitions,
     hasGroups: config.hasGroups,
     sortState,
@@ -653,40 +468,41 @@ export function DataTableInner<T extends { id: string }>({
     reorderableRows: reorderableRows && !isGrouped,
   };
 
+  // Extract keyboard props but override role for proper semantics
+  const { role: _keyboardRole, ...restKeyboardProps } = keyboardProps;
+
   return (
     <div
       ref={dataTableRootRef}
+      {...restKeyboardProps}
+      role="region"
+      aria-label={t("srTableDescription", {
+        rowCount: totalItems ?? processedData.length,
+        columnCount: effectiveColumns.length,
+      })}
+      aria-busy={isLoading}
       className={cn(
         "flex flex-col bg-surface isolate",
         className
       )}
       style={style}
-      {...keyboardProps}
       onKeyDown={handleKeyDown}
     >
-      {/* Screen reader status (polite) */}
-      <div
-        role="status"
-        aria-live="polite"
-        aria-atomic="true"
-        className="sr-only"
-      >
-        {statusMessage}
-      </div>
-      {/* Screen reader announcements for state changes (assertive) */}
-      <div
-        id={announcerRegionId}
-        role="log"
-        aria-live="assertive"
-        aria-atomic="true"
-        className="sr-only"
+      {/* Screen reader status and announcements */}
+      <StatusAnnouncer
+        statusMessage={statusMessage}
+        announcerRegionId={announcerRegionId}
       />
 
       {/* Sticky header - uses overflow:hidden + transform to avoid breaking sticky */}
+      {/* Shadow is applied dynamically by StickyHeaderScrollContainer when header becomes stuck */}
       <StickyHeaderScrollContainer className="sticky top-[var(--data-table-header-offset,0px)] z-20 bg-surface">
-        <HeaderTable tableWidth={totalTableWidth}>
+        <HeaderTable
+          tableWidth={totalTableWidth}
+          style={isColumnVirtualized ? getScrollableContainerStyle() : undefined}
+        >
           <TableColgroup
-            columns={sortedVisibleColumns}
+            columns={effectiveColumns}
             columnMeta={columnMeta}
             selectable={effectiveSelectable}
             enableExpansion={enableExpansion}
@@ -708,7 +524,7 @@ export function DataTableInner<T extends { id: string }>({
             emptyIcon={emptyIcon}
             getInnerContainerStyle={getInnerContainerStyle}
             virtualRows={virtualRows}
-            columns={sortedVisibleColumns}
+            columns={effectiveColumns}
             columnDefinitions={config.columnDefinitions}
             hasGroups={config.hasGroups}
             columnMeta={columnMeta}
@@ -751,15 +567,16 @@ export function DataTableInner<T extends { id: string }>({
         ) : (
           <BodyTable
             tableWidth={totalTableWidth}
+            style={isColumnVirtualized ? getScrollableContainerStyle() : undefined}
             aria-rowcount={totalItems ?? processedData.length}
-            aria-colcount={sortedVisibleColumns.length + (effectiveSelectable ? 1 : 0) + (enableExpansion ? 1 : 0)}
+            aria-colcount={effectiveColumns.length + (effectiveSelectable ? 1 : 0) + (enableExpansion ? 1 : 0)}
             aria-label={t("srTableDescription", {
               rowCount: totalItems ?? processedData.length,
-              columnCount: sortedVisibleColumns.length,
+              columnCount: effectiveColumns.length,
             })}
           >
             <TableColgroup
-              columns={sortedVisibleColumns}
+              columns={effectiveColumns}
               columnMeta={columnMeta}
               selectable={effectiveSelectable}
               enableExpansion={enableExpansion}
@@ -768,7 +585,7 @@ export function DataTableInner<T extends { id: string }>({
             />
             <DataTableBody
               data={paginatedData}
-              columns={sortedVisibleColumns}
+              columns={effectiveColumns}
               columnMeta={columnMeta}
               getEffectivePinPosition={getEffectivePinPosition}
               selectedRows={selectedRows}
@@ -799,6 +616,7 @@ export function DataTableInner<T extends { id: string }>({
               cellSelectionEnabled={cellSelectionEnabled}
               getCellSelectionContext={getCellSelectionContext}
               onCellClick={onCellClick}
+              onCellKeyDown={onCellKeyDown}
               reorderableRows={reorderableRows && !isGrouped}
               getRowDragProps={getRowDragProps}
               getDragHandleProps={getDragHandleProps}
@@ -808,7 +626,7 @@ export function DataTableInner<T extends { id: string }>({
             />
             <DataTableFooter
               data={processedData}
-              columns={sortedVisibleColumns}
+              columns={effectiveColumns}
               columnMeta={columnMeta}
               getEffectivePinPosition={getEffectivePinPosition}
               selectable={effectiveSelectable}
@@ -828,7 +646,7 @@ export function DataTableInner<T extends { id: string }>({
         tableContainerRef={tableContainerRef}
         pinnedLeftWidth={pinnedLeftWidth}
         pinnedRightWidth={pinnedRightWidth}
-        dependencies={[sortedVisibleColumns, columnMeta, paginatedData.length]}
+        dependencies={[effectiveColumns, columnMeta, paginatedData.length]}
         dataTableRef={dataTableRootRef}
       />
     </div>

@@ -34,6 +34,8 @@ export interface UseColumnLayoutReturn<T> {
   pinnedLeftWidth: number;
   /** Width of all right-pinned columns */
   pinnedRightWidth: number;
+  /** Whether all columns are hidden (edge case) */
+  allColumnsHidden: boolean;
 }
 
 /**
@@ -174,12 +176,23 @@ export function useColumnLayout<T>({
     isGrouped,
   ]);
 
+  // Detect edge case where all columns are hidden
+  const allColumnsHidden = sortedVisibleColumns.length === 0;
+
+  // Warn in development if all columns are hidden
+  if (process.env.NODE_ENV !== "production" && allColumnsHidden) {
+    console.warn(
+      "DataTable: All columns are hidden. Consider showing at least one column."
+    );
+  }
+
   return {
     sortedVisibleColumns,
     columnMeta,
     totalTableWidth,
     pinnedLeftWidth,
     pinnedRightWidth,
+    allColumnsHidden,
   };
 }
 

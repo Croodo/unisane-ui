@@ -109,3 +109,48 @@ export const TOUCH_TARGETS = {
     PAGE_SIZE_SELECT: 32, // ⚠️ Needs height increase
   },
 } as const;
+
+// ─── CELL IDENTIFICATION ─────────────────────────────────────────────────────
+
+/**
+ * Separator for data-cell-id attribute values.
+ * Uses double pipe `||` which is unlikely to appear in row IDs or column keys.
+ * This prevents issues with IDs containing common characters like `:` or `-`.
+ */
+export const CELL_ID_SEPARATOR = "||";
+
+/**
+ * Create a cell ID string for the data-cell-id attribute
+ * @param rowId - The row's unique identifier
+ * @param columnKey - The column's key
+ * @returns A string suitable for use as data-cell-id attribute value
+ */
+export function createCellId(rowId: string, columnKey: string): string {
+  return `${rowId}${CELL_ID_SEPARATOR}${columnKey}`;
+}
+
+/**
+ * Parse a cell ID string back into row and column identifiers
+ * @param cellId - The data-cell-id attribute value
+ * @returns Object with rowId and columnKey, or null if invalid
+ */
+export function parseCellId(cellId: string): { rowId: string; columnKey: string } | null {
+  const separatorIndex = cellId.indexOf(CELL_ID_SEPARATOR);
+  if (separatorIndex === -1) {
+    return null;
+  }
+  return {
+    rowId: cellId.slice(0, separatorIndex),
+    columnKey: cellId.slice(separatorIndex + CELL_ID_SEPARATOR.length),
+  };
+}
+
+/**
+ * Create a CSS selector to find a cell by its row and column
+ * @param rowId - The row's unique identifier
+ * @param columnKey - The column's key
+ * @returns A CSS selector string
+ */
+export function getCellSelector(rowId: string, columnKey: string): string {
+  return `[data-cell-id="${createCellId(rowId, columnKey)}"]`;
+}

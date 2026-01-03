@@ -1,11 +1,11 @@
 "use client";
 
-import React, { memo, type ReactNode, type CSSProperties } from "react";
+import React, { memo, useState, useCallback, useEffect, type ReactNode, type CSSProperties } from "react";
 import { cn, Icon, Checkbox } from "@unisane/ui";
-import type { Column, PinPosition, ColumnMetaMap, CellContext, InlineEditingController, CellSelectionContext } from "../types/index";
+import type { Column, PinPosition, ColumnMetaMap, CellContext, InlineEditingController, CellSelectionContext, RowActivationEvent } from "../types/index";
 import type { RowDragProps } from "../hooks/ui/use-row-drag";
 import { getNestedValue } from "../utils/get-nested-value";
-import { DENSITY_STYLES, type Density } from "../constants/index";
+import { DENSITY_STYLES, type Density, createCellId } from "../constants/index";
 import { useI18n } from "../i18n";
 import { DragHandle } from "./drag-handle";
 
@@ -28,7 +28,7 @@ interface DataTableRowProps<T> {
   canExpand: boolean;
   onSelect: (id: string, checked: boolean) => void;
   onToggleExpand: (id: string) => void;
-  onRowClick?: (row: T, event: React.MouseEvent) => void;
+  onRowClick?: (row: T, activation: RowActivationEvent) => void;
   /** Callback when row is right-clicked (context menu) */
   onRowContextMenu?: (row: T, event: React.MouseEvent) => void;
   onRowHover?: (row: T | null) => void;
@@ -50,6 +50,8 @@ interface DataTableRowProps<T> {
   getCellSelectionContext?: (rowId: string, columnKey: string) => CellSelectionContext;
   /** Cell selection: handle cell click */
   onCellClick?: (rowId: string, columnKey: string, event: React.MouseEvent) => void;
+  /** Cell selection: handle keyboard navigation */
+  onCellKeyDown?: (event: React.KeyboardEvent) => void;
   /** Row reordering: whether drag-to-reorder is enabled */
   reorderableRows?: boolean;
   /** Row reordering: whether this row is being dragged */
@@ -103,6 +105,7 @@ function DataTableRowInner<T extends { id: string }>({
   cellSelectionEnabled = false,
   getCellSelectionContext,
   onCellClick,
+  onCellKeyDown,
   reorderableRows = false,
   isDragging = false,
   isDropTarget = false,
@@ -113,6 +116,22 @@ function DataTableRowInner<T extends { id: string }>({
   const { t } = useI18n();
   const isOddRow = rowIndex % 2 === 1;
   const paddingClass = DENSITY_STYLES[density];
+
+  // State for showing "not editable" tooltip on non-editable cells
+  const [notEditableCell, setNotEditableCell] = useState<string | null>(null);
+
+  // Clear the tooltip after a delay
+  useEffect(() => {
+    if (notEditableCell) {
+      const timer = setTimeout(() => setNotEditableCell(null), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [notEditableCell]);
+
+  // Show "not editable" feedback when user tries to edit a non-editable cell
+  const showNotEditableFeedback = useCallback((columnKey: string) => {
+    setNotEditableCell(columnKey);
+  }, []);
 
   // Determine pinned column info for border logic
   const pinnedLeftColumns = columns.filter((col) => getEffectivePinPosition(col) === "left");
@@ -134,7 +153,7 @@ function DataTableRowInner<T extends { id: string }>({
     ) {
       return;
     }
-    onRowClick?.(row, e);
+    onRowClick?.(row, { source: "mouse", event: e });
   };
 
   const handleContextMenu = (e: React.MouseEvent) => {
@@ -170,10 +189,13 @@ function DataTableRowInner<T extends { id: string }>({
         onMouseEnter={onRowHover ? () => onRowHover(row) : undefined}
         onMouseLeave={onRowHover ? () => onRowHover(null) : undefined}
         className={cn(
-          "group transition-colors duration-snappy",
+          "group/row group transition-colors duration-snappy",
           bgClass,
           onRowClick && "cursor-pointer",
           !isSelected && !isActive && "hover:bg-surface-container-low",
+          // Elevate row slightly on hover so tooltips appear above other rows
+          // z-[5] is lower than sticky header (z-20) so row won't overlap header
+          "hover:z-[5]",
           isFocused && "ring-2 ring-inset ring-primary/50",
           // Drag state styling
           isDragging && "opacity-50 scale-[0.98]",
@@ -228,7 +250,8 @@ function DataTableRowInner<T extends { id: string }>({
         {selectable && (
           <td
             className={cn(
-              "@md:sticky left-0 z-10 isolate",
+              // z-[15] to stay above pinned data columns (z-10) but below sticky header (z-20)
+              "@md:sticky left-0 z-[15] isolate",
               stickyBgClass,
               !isSelected && !isActive && !isDropTarget && "group-hover:bg-surface-container-low",
               "transition-colors",
@@ -257,7 +280,8 @@ function DataTableRowInner<T extends { id: string }>({
         {enableExpansion && (
           <td
             className={cn(
-              "@md:sticky z-10 isolate text-center",
+              // z-[15] to stay above pinned data columns (z-10) but below sticky header (z-20)
+              "@md:sticky z-[15] isolate text-center",
               stickyBgClass,
               !isSelected && !isActive && !isDropTarget && "group-hover:bg-surface-container-low",
               "transition-colors",
@@ -333,26 +357,33 @@ function DataTableRowInner<T extends { id: string }>({
             const inputProps = inlineEditing.getInputProps();
             const inputType = col.inputType ?? "text";
             content = (
-              <div className="relative -mx-2 -my-1">
+              <>
                 <input
                   {...inputProps}
                   type={inputType}
                   step={inputType === "number" ? "any" : undefined}
                   className={cn(
-                    "w-full px-2 py-1 text-body-medium rounded-sm",
-                    "border bg-surface text-on-surface",
-                    "focus:outline-none focus:ring-2",
+                    "absolute inset-0 w-full h-full text-body-medium",
+                    "border-2 bg-surface text-on-surface",
+                    "focus:outline-none",
+                    col.align === "center" && "text-center",
+                    col.align === "end" && "text-right pr-4",
+                    col.align !== "center" && col.align !== "end" && "text-left pl-4",
                     inlineEditing.validationError
-                      ? "border-error focus:ring-error/20"
-                      : "border-primary focus:ring-primary/20"
+                      ? "border-error"
+                      : "border-primary"
                   )}
                 />
                 {inlineEditing.validationError && (
-                  <div className="absolute top-full left-0 mt-1 text-label-small text-error bg-error-container px-2 py-0.5 rounded z-[3] whitespace-nowrap">
+                  <div
+                    id={inlineEditing.getErrorMessageId()}
+                    role="alert"
+                    className="absolute top-full left-0 mt-1 text-label-small text-error bg-error-container px-2 py-0.5 rounded z-[5] whitespace-nowrap"
+                  >
                     {inlineEditing.validationError}
                   </div>
                 )}
-              </div>
+              </>
             );
           } else {
             content = col.render
@@ -368,6 +399,43 @@ function DataTableRowInner<T extends { id: string }>({
             }
           };
 
+          // Combined keyboard handler: cell selection takes priority, then inline editing
+          const handleCellKeyDown = (e: React.KeyboardEvent) => {
+            // Cell selection keyboard handler takes priority
+            if (cellSelectionEnabled && onCellKeyDown) {
+              onCellKeyDown(e);
+              // If cell selection handled it (e.g., navigation keys), don't pass to inline editing
+              if (e.defaultPrevented) return;
+            }
+            // Then inline editing (Enter to start edit, etc.)
+            if (isEditable) {
+              editProps?.onKeyDown?.(e);
+            } else if (inlineEditing && !col.editable) {
+              // Show "not editable" feedback when user tries to edit a non-editable cell
+              const isEditAttempt =
+                e.key === "Enter" ||
+                e.key === "F2" ||
+                ((e.metaKey || e.ctrlKey) && e.key === "e") ||
+                (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey);
+              if (isEditAttempt) {
+                showNotEditableFeedback(key);
+              }
+            }
+          };
+
+          // Handle double-click for non-editable cells
+          const handleDoubleClick = () => {
+            if (isEditable) {
+              editProps?.onDoubleClick?.();
+            } else if (inlineEditing && !col.editable) {
+              // Show feedback when user tries to edit a non-editable cell
+              showNotEditableFeedback(key);
+            }
+          };
+
+          // Check if this cell should show the "not editable" tooltip
+          const showNotEditableTooltip = notEditableCell === key;
+
           // Width is handled by colgroup - only set left/right for pinned columns
           return (
             <td
@@ -375,7 +443,8 @@ function DataTableRowInner<T extends { id: string }>({
               className={cn(
                 "text-body-medium text-on-surface whitespace-nowrap",
                 // Actions columns need overflow-visible for dropdown, others use overflow-hidden
-                isActionsColumn ? "overflow-visible" : "overflow-hidden text-ellipsis",
+                // Use group-hover/row to allow overflow on hover for tooltips
+                isActionsColumn ? "overflow-visible" : "overflow-hidden text-ellipsis group-hover/row:overflow-visible",
                 // Pinned cells use stickyBgClass for drop target state, others use bgClass
                 pinPosition ? stickyBgClass : bgClass,
                 !isSelected && !isActive && !isDropTarget && "group-hover:bg-surface-container-low",
@@ -395,7 +464,9 @@ function DataTableRowInner<T extends { id: string }>({
                 showColumnBorders && pinPosition === "right" && key === firstPinnedRightKey && "border-l border-outline-variant/50",
                 paddingClass,
                 isEditable && !isEditing && "cursor-cell",
-                (isEditing || isActionsColumn) && "overflow-visible z-[3]",
+                isEditing && "relative overflow-visible z-[3] !p-0",
+                !isEditing && isActionsColumn && "overflow-visible z-[3]",
+                showNotEditableTooltip && "relative overflow-visible",
                 // Cell selection styling
                 cellSelectionEnabled && "cursor-cell select-none",
                 cellSelectionCtx?.isSelected && "bg-secondary-container/30",
@@ -417,12 +488,21 @@ function DataTableRowInner<T extends { id: string }>({
                   : undefined,
               }}
               onClick={cellSelectionEnabled ? handleCellClick : undefined}
-              onDoubleClick={editProps?.onDoubleClick}
-              onKeyDown={editProps?.onKeyDown}
+              onDoubleClick={(inlineEditing || editProps) ? handleDoubleClick : undefined}
+              onKeyDown={(cellSelectionEnabled || isEditable || inlineEditing) ? handleCellKeyDown : undefined}
               tabIndex={isEditable || cellSelectionEnabled ? 0 : undefined}
-              data-cell-id={cellSelectionEnabled ? `${row.id}:${key}` : undefined}
+              data-cell-id={(cellSelectionEnabled || isEditable) ? createCellId(row.id, key) : undefined}
             >
               {content}
+              {/* "Not editable" tooltip */}
+              {showNotEditableTooltip && (
+                <div
+                  role="tooltip"
+                  className="absolute top-full left-1/2 -translate-x-1/2 mt-1 text-label-small text-on-surface-variant bg-surface-container-high px-2 py-1 rounded shadow-1 z-50 whitespace-nowrap animate-in fade-in slide-in-from-top-1 duration-150"
+                >
+                  {t("cellNotEditable")}
+                </div>
+              )}
             </td>
           );
         })}
@@ -474,35 +554,79 @@ function DataTableRowInner<T extends { id: string }>({
   );
 }
 
+/**
+ * Memoized row component with optimized comparison.
+ *
+ * We compare:
+ * 1. Row data and state (must re-render if changed)
+ * 2. Visual config props (density, zebra, etc.)
+ * 3. Structural props (columns, columnMeta)
+ *
+ * We intentionally skip comparing callback props (onSelect, onRowClick, etc.)
+ * because:
+ * - They should be stable references from parent (via useCallback)
+ * - If parent re-renders, row will re-render anyway
+ * - Comparing function references is cheap (===) but often causes false negatives
+ */
 export const DataTableRow = memo(DataTableRowInner, (prev, next) => {
-  return (
-    prev.row === next.row &&
-    prev.isSelected === next.isSelected &&
-    prev.isExpanded === next.isExpanded &&
-    prev.isActive === next.isActive &&
-    prev.isFocused === next.isFocused &&
-    prev.rowIndex === next.rowIndex &&
-    prev.isLastRow === next.isLastRow &&
-    prev.columnMeta === next.columnMeta &&
-    prev.columns === next.columns &&
-    prev.density === next.density &&
-    prev.zebra === next.zebra &&
-    prev.selectable === next.selectable &&
-    prev.showColumnBorders === next.showColumnBorders &&
-    prev.style === next.style &&
-    prev["data-index"] === next["data-index"] &&
-    prev.inlineEditing === next.inlineEditing &&
-    prev.onRowHover === next.onRowHover &&
-    prev.onRowContextMenu === next.onRowContextMenu &&
-    prev.groupDepth === next.groupDepth &&
-    prev.cellSelectionEnabled === next.cellSelectionEnabled &&
-    prev.getCellSelectionContext === next.getCellSelectionContext &&
-    prev.onCellClick === next.onCellClick &&
-    prev.reorderableRows === next.reorderableRows &&
-    prev.isDragging === next.isDragging &&
-    prev.isDropTarget === next.isDropTarget &&
-    prev.dropPosition === next.dropPosition &&
-    prev.rowDragProps === next.rowDragProps &&
-    prev.dragHandleProps === next.dragHandleProps
-  );
+  // Fast path: if row data changed, definitely re-render
+  if (prev.row !== next.row) return false;
+
+  // Row state changes
+  if (
+    prev.isSelected !== next.isSelected ||
+    prev.isExpanded !== next.isExpanded ||
+    prev.isActive !== next.isActive ||
+    prev.isFocused !== next.isFocused
+  ) {
+    return false;
+  }
+
+  // Position and index changes
+  if (
+    prev.rowIndex !== next.rowIndex ||
+    prev.isLastRow !== next.isLastRow ||
+    prev["data-index"] !== next["data-index"]
+  ) {
+    return false;
+  }
+
+  // Visual configuration changes
+  if (
+    prev.density !== next.density ||
+    prev.zebra !== next.zebra ||
+    prev.selectable !== next.selectable ||
+    prev.showColumnBorders !== next.showColumnBorders ||
+    prev.cellSelectionEnabled !== next.cellSelectionEnabled ||
+    prev.reorderableRows !== next.reorderableRows ||
+    prev.groupDepth !== next.groupDepth
+  ) {
+    return false;
+  }
+
+  // Drag state changes (high-frequency updates during drag)
+  if (
+    prev.isDragging !== next.isDragging ||
+    prev.isDropTarget !== next.isDropTarget ||
+    prev.dropPosition !== next.dropPosition
+  ) {
+    return false;
+  }
+
+  // Structural changes (reference equality is intentional - parent should memoize)
+  if (
+    prev.columns !== next.columns ||
+    prev.columnMeta !== next.columnMeta ||
+    prev.style !== next.style
+  ) {
+    return false;
+  }
+
+  // Inline editing controller change (reference check)
+  if (prev.inlineEditing !== next.inlineEditing) {
+    return false;
+  }
+
+  // All checks passed - props are equal
+  return true;
 }) as typeof DataTableRowInner;

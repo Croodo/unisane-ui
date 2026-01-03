@@ -92,12 +92,17 @@ export type {
   TreeDataState,
   TreeSelectionMode,
   TreeRowContext,
+  // Sparse Selection
+  SparseSelectionMode,
+  SparseSelectionState,
+  SparseSelectionController,
 } from "./features";
 
 // ─── COMPONENT PROPS ─────────────────────────────────────────────────────────
 // Props for DataTable and render callbacks
 
 export type {
+  RowActivationEvent,
   DataTableHeaderRenderProps,
   DataTableToolbarRenderProps,
   DataTableProps,

@@ -3,7 +3,7 @@
 import React from "react";
 import type { ReactNode, RefObject, CSSProperties } from "react";
 import { Icon } from "@unisane/ui";
-import type { Column, ColumnGroup, PinPosition, ColumnMetaMap, InlineEditingController, MultiSortState, FilterValue } from "../types/index";
+import type { Column, ColumnGroup, PinPosition, ColumnMetaMap, InlineEditingController, MultiSortState, FilterValue, RowActivationEvent } from "../types/index";
 import { Table } from "./table";
 import { TableColgroup } from "./colgroup";
 import { DataTableHeader } from "./header/index";
@@ -41,7 +41,7 @@ interface VirtualizedBodyProps<T extends { id: string }> {
   renderExpandedRow?: (row: T) => ReactNode;
   onSelect: (id: string, checked: boolean) => void;
   onToggleExpand: (id: string) => void;
-  onRowClick?: (row: T, event: React.MouseEvent) => void;
+  onRowClick?: (row: T, activation: RowActivationEvent) => void;
   /** Callback when row is right-clicked (context menu) */
   onRowContextMenu?: (row: T, event: React.MouseEvent) => void;
   onRowHover?: (row: T | null) => void;

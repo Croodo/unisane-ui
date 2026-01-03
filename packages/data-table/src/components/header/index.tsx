@@ -190,7 +190,9 @@ function DataTableHeaderInner<T extends { id: string }>({
           <th
             className={cn(
               "bg-surface border-b border-outline-variant/50",
-              "z-20",
+              // relative is required for z-index to work on table cells
+              // z-30 to stay above pinned data columns (z-20), isolate creates stacking context
+              "relative z-30 isolate",
               // Only show border-r if there are no more sticky columns after this
               showColumnBorders &&
                 !enableExpansion &&
@@ -207,6 +209,7 @@ function DataTableHeaderInner<T extends { id: string }>({
               transform: reorderableRows
                 ? "translateX(max(0px, calc(var(--header-scroll-offset, 0px) - 40px)))"
                 : "translateX(var(--header-scroll-offset, 0px))",
+              // No elevation shadow - only pinned data columns get shadow
             }}
           >
             <div className="flex items-center justify-center h-full">
@@ -226,7 +229,9 @@ function DataTableHeaderInner<T extends { id: string }>({
           <th
             className={cn(
               "bg-surface border-b border-outline-variant/50",
-              "z-20",
+              // relative is required for z-index to work on table cells
+              // z-30 to stay above pinned data columns (z-20), isolate creates stacking context
+              "relative z-30 isolate",
               // Only show border-r if there are no more sticky columns after this
               showColumnBorders &&
                 !enableExpansion &&
@@ -242,6 +247,7 @@ function DataTableHeaderInner<T extends { id: string }>({
               transform: reorderableRows
                 ? "translateX(max(0px, calc(var(--header-scroll-offset, 0px) - 40px)))"
                 : "translateX(var(--header-scroll-offset, 0px))",
+              // No elevation shadow - only pinned data columns get shadow
             }}
           >
             <div className="flex items-center justify-center h-full">
@@ -261,7 +267,9 @@ function DataTableHeaderInner<T extends { id: string }>({
           <th
             className={cn(
               "bg-surface border-b border-outline-variant/50",
-              "z-20",
+              // relative is required for z-index to work on table cells
+              // z-30 to stay above pinned data columns (z-20), isolate creates stacking context
+              "relative z-30 isolate",
               // Only show border-r if there are no pinned-left data columns after this
               showColumnBorders &&
                 !hasPinnedLeftData &&
@@ -286,6 +294,7 @@ function DataTableHeaderInner<T extends { id: string }>({
                   ? `translateX(max(0px, calc(var(--header-scroll-offset, 0px) - ${offset}px)))`
                   : "translateX(var(--header-scroll-offset, 0px))";
               })(),
+              // No elevation shadow - only pinned data columns get shadow
             }}
           >
             <span className="sr-only">Expand row</span>

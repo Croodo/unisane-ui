@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useCallback } from "react";
 import {
   cn,
   Icon,
@@ -12,6 +13,7 @@ import type { ExportFormat } from "../../utils/export";
 import type { ExportHandler } from "./types";
 import { ToolbarDropdownButton, SegmentedDropdownButton } from "./buttons";
 import { useI18n } from "../../i18n";
+import { useFeedback } from "../../feedback";
 
 // ─── EXPORT FORMAT CONFIG ───────────────────────────────────────────────────
 
@@ -65,10 +67,25 @@ export function ExportDropdown({
   isLast = false,
 }: ExportDropdownProps) {
   const { t } = useI18n();
+  const { feedback } = useFeedback();
   const { onExport, formats = DEFAULT_FORMATS, exporting } = handler;
 
   const isExporting = exporting !== null && exporting !== undefined;
   const iconSymbol = isExporting ? "hourglass_empty" : "download";
+
+  // Wrap onExport to add feedback
+  const handleExport = useCallback(
+    async (format: ExportFormat) => {
+      try {
+        feedback("exportStarted", { format: format.toUpperCase() });
+        await onExport(format);
+        feedback("exportSuccess", { format: format.toUpperCase() });
+      } catch {
+        feedback("exportFailed");
+      }
+    },
+    [onExport, feedback]
+  );
 
   const trigger = segmented ? (
     <SegmentedDropdownButton
@@ -110,7 +127,7 @@ export function ExportDropdown({
           return (
             <DropdownMenuItem
               key={format}
-              onClick={() => onExport(format)}
+              onClick={() => handleExport(format)}
               disabled={isExporting}
               icon={
                 isCurrentExporting ? (

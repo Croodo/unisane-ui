@@ -158,38 +158,44 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
   }, [dataTableRef, hasOverflow]);
 
   // Listen for scroll and resize to update sticky state
+  // Consolidated: Use requestAnimationFrame to throttle updates and prevent excessive calls
   useEffect(() => {
     if (!dataTableRef?.current) return;
 
-    // Initial check after a frame to ensure layout is ready
-    requestAnimationFrame(updateStickyState);
+    let rafId: number | null = null;
 
-    // Listen to window scroll and resize
-    window.addEventListener("scroll", updateStickyState, { passive: true, capture: true });
-    window.addEventListener("resize", updateStickyState, { passive: true });
-
-    // Also listen to scroll events on any scrollable parent containers
-    // Use capture phase to catch scrolls before they bubble
-    document.addEventListener("scroll", updateStickyState, { passive: true, capture: true });
-
-    // Also observe the DataTable for size changes
-    const observer = new ResizeObserver(updateStickyState);
-    observer.observe(dataTableRef.current);
-
-    // Use IntersectionObserver as a fallback to detect visibility changes
-    const intersectionObserver = new IntersectionObserver(
-      () => {
+    // Throttled update using requestAnimationFrame
+    const throttledUpdate = () => {
+      if (rafId !== null) return; // Already scheduled
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
         updateStickyState();
-      },
-      { threshold: [0, 0.1, 0.5, 0.9, 1] }
-    );
+      });
+    };
+
+    // Initial check
+    throttledUpdate();
+
+    // Single scroll listener on window with capture to catch all scrolls
+    // This handles both window scroll and parent container scrolls
+    window.addEventListener("scroll", throttledUpdate, { passive: true, capture: true });
+    window.addEventListener("resize", throttledUpdate, { passive: true });
+
+    // ResizeObserver for DataTable size changes
+    const resizeObserver = new ResizeObserver(throttledUpdate);
+    resizeObserver.observe(dataTableRef.current);
+
+    // IntersectionObserver for visibility changes (minimal thresholds)
+    const intersectionObserver = new IntersectionObserver(throttledUpdate, {
+      threshold: [0, 1],
+    });
     intersectionObserver.observe(dataTableRef.current);
 
     return () => {
-      window.removeEventListener("scroll", updateStickyState, { capture: true } as EventListenerOptions);
-      window.removeEventListener("resize", updateStickyState);
-      document.removeEventListener("scroll", updateStickyState, { capture: true } as EventListenerOptions);
-      observer.disconnect();
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      window.removeEventListener("scroll", throttledUpdate, { capture: true } as EventListenerOptions);
+      window.removeEventListener("resize", throttledUpdate);
+      resizeObserver.disconnect();
       intersectionObserver.disconnect();
     };
   }, [dataTableRef, updateStickyState]);

@@ -53,6 +53,12 @@ export interface UseCellSelectionOptions<T extends { id: string }> {
   rangeSelect?: boolean;
   /** Enable cell selection feature (default: false) */
   enabled?: boolean;
+  /** Callback to announce messages for screen readers */
+  onAnnounce?: (message: string, priority?: "polite" | "assertive") => void;
+  /** Column display names for announcements (key -> display name) */
+  columnDisplayNames?: Record<string, string>;
+  /** Callback to get cell value for copy operations */
+  getCellValue?: (rowId: string, columnKey: string) => unknown;
 }
 
 /**

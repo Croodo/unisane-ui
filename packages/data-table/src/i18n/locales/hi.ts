@@ -63,6 +63,7 @@ export const hiStrings: DataTableStrings = {
   none: "कोई नहीं",
   selectGroupRows: "{label} में सभी {count} पंक्तियाँ चुनें",
   removeGroupingLabel: "{label} समूहीकरण हटाएं",
+  groupApplied: "{column} के अनुसार समूहित",
 
   // ─── Summary Row ───
   summary: "सारांश",
@@ -82,6 +83,9 @@ export const hiStrings: DataTableStrings = {
   exportPdfDesc: "पोर्टेबल डॉक्यूमेंट फ़ॉर्मेट",
   exportJson: "JSON",
   exportJsonDesc: "जावास्क्रिप्ट ऑब्जेक्ट नोटेशन",
+  exportStarted: "{format} में निर्यात हो रहा है...",
+  exportSuccess: "{format} में सफलतापूर्वक निर्यात हुआ",
+  exportFailed: "निर्यात विफल",
 
   // ─── Search ───
   searchPlaceholder: "खोजें...",
@@ -230,6 +234,11 @@ export const hiStrings: DataTableStrings = {
   select: "चुनें",
   copyId: "आईडी कॉपी करें",
   delete: "हटाएं",
+
+  // ─── Inline Editing ───
+  cellNotEditable: "इस सेल को संपादित नहीं किया जा सकता",
+  cellUpdated: "सेल अपडेट हुआ",
+  rowDeleted: "पंक्ति हटाई गई",
 
   // ─── Actions Cell ───
   actions: "कार्रवाई",

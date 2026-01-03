@@ -65,9 +65,7 @@ function DataTableToolbarInner<T extends { id: string }>({
   selectedIds = [],
   bulkActions = [],
   onClearSelection,
-  onExport,
   exportHandler,
-  onPrint,
   printHandler,
   onRefresh,
   refreshing = false,
@@ -101,8 +99,8 @@ function DataTableToolbarInner<T extends { id: string }>({
   const hasActions = actions.length > 0 || moreActions.length > 0;
   const hasDropdowns = dropdowns.length > 0;
   const hasIconActions = iconActions.length > 0;
-  const hasExport = onExport !== undefined || exportHandler !== undefined;
-  const hasPrint = onPrint !== undefined || printHandler !== undefined;
+  const hasExport = exportHandler !== undefined;
+  const hasPrint = printHandler !== undefined;
   const hasFrozenColumns = frozenLeftCount > 0 || frozenRightCount > 0;
 
   // Calculate segmented button positions
@@ -135,16 +133,6 @@ function DataTableToolbarInner<T extends { id: string }>({
     disabled?: boolean;
   }> = [];
 
-  // Add export action
-  if (onExport && !exportHandler) {
-    overflowActions.push({
-      key: "export",
-      label: t("export"),
-      icon: "download",
-      onClick: onExport,
-    });
-  }
-
   // Add print action
   if (printHandler) {
     overflowActions.push({
@@ -153,13 +141,6 @@ function DataTableToolbarInner<T extends { id: string }>({
       icon: "print",
       onClick: printHandler.onPrint,
       disabled: printHandler.isPrinting,
-    });
-  } else if (onPrint) {
-    overflowActions.push({
-      key: "print",
-      label: t("print"),
-      icon: "print",
-      onClick: onPrint,
     });
   }
 
@@ -368,21 +349,14 @@ function DataTableToolbarInner<T extends { id: string }>({
                     {...getSegmentedPosition("density")}
                   />
                 )}
-                {exportHandler ? (
+                {exportHandler && (
                   <ExportDropdown
                     handler={exportHandler}
                     segmented
                     {...getSegmentedPosition("export")}
                   />
-                ) : onExport ? (
-                  <SegmentedIconButton
-                    icon="download"
-                    label={t("download")}
-                    onClick={onExport}
-                    {...getSegmentedPosition("export")}
-                  />
-                ) : null}
-                {printHandler ? (
+                )}
+                {printHandler && (
                   <SegmentedIconButton
                     icon="print"
                     label={t("print")}
@@ -390,14 +364,7 @@ function DataTableToolbarInner<T extends { id: string }>({
                     disabled={printHandler.isPrinting}
                     {...getSegmentedPosition("print")}
                   />
-                ) : onPrint ? (
-                  <SegmentedIconButton
-                    icon="print"
-                    label={t("print")}
-                    onClick={onPrint}
-                    {...getSegmentedPosition("print")}
-                  />
-                ) : null}
+                )}
                 {onRefresh && (
                   <SegmentedIconButton
                     icon="refresh"
@@ -425,29 +392,17 @@ function DataTableToolbarInner<T extends { id: string }>({
                     onDensityChange={onDensityChange}
                   />
                 )}
-                {exportHandler ? (
+                {exportHandler && (
                   <ExportDropdown handler={exportHandler} />
-                ) : onExport ? (
-                  <ToolbarTextButton
-                    label={t("export")}
-                    icon="download"
-                    onClick={onExport}
-                  />
-                ) : null}
-                {printHandler ? (
+                )}
+                {printHandler && (
                   <ToolbarTextButton
                     label={t("print")}
                     icon="print"
                     onClick={printHandler.onPrint}
                     disabled={printHandler.isPrinting}
                   />
-                ) : onPrint ? (
-                  <ToolbarTextButton
-                    label={t("print")}
-                    icon="print"
-                    onClick={onPrint}
-                  />
-                ) : null}
+                )}
                 {onRefresh && (
                   <ToolbarTextButton
                     label={t("refresh")}

@@ -32,7 +32,9 @@ export function GroupHeaderRow<T>({
         <th
           className={cn(
             "bg-surface border-b border-outline-variant/50",
-            "z-20",
+            // relative is required for z-index to work on table cells
+            // z-30 to stay above pinned data columns (z-20), isolate creates stacking context
+            "relative z-30 isolate",
             // Only show border-r if there are no more sticky columns after this
             showColumnBorders && !enableExpansion && !hasPinnedLeftData && "border-r border-outline-variant/50"
           )}
@@ -45,6 +47,7 @@ export function GroupHeaderRow<T>({
             transform: reorderableRows
               ? "translateX(max(0px, calc(var(--header-scroll-offset, 0px) - 40px)))"
               : "translateX(var(--header-scroll-offset, 0px))",
+            // No elevation shadow - only pinned data columns get shadow
           }}
           rowSpan={2}
         />
@@ -55,7 +58,9 @@ export function GroupHeaderRow<T>({
         <th
           className={cn(
             "bg-surface border-b border-outline-variant/50",
-            "z-20",
+            // relative is required for z-index to work on table cells
+            // z-30 to stay above pinned data columns (z-20), isolate creates stacking context
+            "relative z-30 isolate",
             // Only show border-r if there are no pinned-left data columns after this
             showColumnBorders && !hasPinnedLeftData && "border-r border-outline-variant/50"
           )}
@@ -74,6 +79,7 @@ export function GroupHeaderRow<T>({
                 ? `translateX(max(0px, calc(var(--header-scroll-offset, 0px) - ${offset}px)))`
                 : "translateX(var(--header-scroll-offset, 0px))";
             })(),
+            // No elevation shadow - only pinned data columns get shadow
           }}
           rowSpan={2}
         />

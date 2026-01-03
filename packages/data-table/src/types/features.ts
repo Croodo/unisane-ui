@@ -200,7 +200,10 @@ export interface InlineEditingController<T> {
     autoFocus: boolean;
     disabled: boolean;
     "aria-invalid": boolean;
+    "aria-describedby": string | undefined;
   };
+  /** Get the ID for the error message element (for aria-describedby linking) */
+  getErrorMessageId: () => string | undefined;
 }
 
 // ─── CONTEXT MENU ────────────────────────────────────────────────────────────
@@ -423,4 +426,66 @@ export interface TreeRowContext<T> {
   expandAll: () => void;
   /** Function to collapse all descendants */
   collapseAll: () => void;
+}
+
+// ─── SPARSE SELECTION ────────────────────────────────────────────────────────
+
+/**
+ * Selection mode for sparse selection.
+ * - "none": Nothing selected
+ * - "some": Specific IDs are selected
+ * - "all_except": All rows are selected except specific IDs
+ */
+export type SparseSelectionMode = "none" | "some" | "all_except";
+
+/**
+ * Sparse selection state for handling large datasets efficiently.
+ * Instead of storing all selected IDs (which can be 100K+),
+ * we track whether we're in "select all" mode and store only exceptions.
+ */
+export interface SparseSelectionState {
+  /** Current selection mode */
+  mode: SparseSelectionMode;
+  /** IDs in the exception set (selected if mode=some, deselected if mode=all_except) */
+  ids: Set<string>;
+  /** Total row count (needed for "all except" mode) */
+  totalCount: number;
+}
+
+/**
+ * Controller interface for sparse selection.
+ * This is the shape returned by useSparseSelection hook.
+ * Using this with DataTable enables O(1) select-all for large datasets.
+ */
+export interface SparseSelectionController {
+  /** Current selection state */
+  state: SparseSelectionState;
+  /** Number of selected rows */
+  selectedCount: number;
+  /** Check if a specific row is selected */
+  isSelected: (id: string) => boolean;
+  /** Check if all rows are selected */
+  isAllSelected: boolean;
+  /** Check if some (but not all) rows are selected */
+  isIndeterminate: boolean;
+  /** Select a single row */
+  select: (id: string) => void;
+  /** Deselect a single row */
+  deselect: (id: string) => void;
+  /** Toggle a single row */
+  toggle: (id: string) => void;
+  /** Select multiple rows */
+  selectMany: (ids: string[]) => void;
+  /** Deselect multiple rows */
+  deselectMany: (ids: string[]) => void;
+  /** Select all rows (O(1) operation) */
+  selectAll: () => void;
+  /** Deselect all rows (O(1) operation) */
+  deselectAll: () => void;
+  /** Toggle select all */
+  toggleAll: () => void;
+  /** Get all selected IDs (use sparingly for large datasets) */
+  getSelectedIds: (allIds: string[]) => string[];
+  /** Reset selection to initial state */
+  reset: () => void;
 }

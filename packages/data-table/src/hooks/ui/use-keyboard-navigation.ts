@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { DEFAULT_KEYBOARD_PAGE_SIZE } from "../../constants";
 
 export interface UseKeyboardNavigationOptions {
@@ -10,8 +10,8 @@ export interface UseKeyboardNavigationOptions {
   onFocusChange?: (index: number | null) => void;
   /** Callback when row is selected via keyboard */
   onSelect?: (index: number) => void;
-  /** Callback when row is activated (Enter key) */
-  onActivate?: (index: number) => void;
+  /** Callback when row is activated (Enter key). Event is passed for proper typing. */
+  onActivate?: (index: number, event: React.KeyboardEvent) => void;
   /** Whether keyboard navigation is enabled */
   enabled?: boolean;
   /** Container element ref for scoping events */
@@ -86,6 +86,9 @@ export function useKeyboardNavigation({
   const [focusedIndex, setFocusedIndexState] = useState<number | null>(null);
   const [isFocused, setIsFocused] = useState(false);
 
+  // Track previous row count to prevent focus loop
+  const prevRowCountRef = useRef(rowCount);
+
   // Update focused index and notify parent
   const setFocusedIndex = useCallback(
     (index: number | null) => {
@@ -99,11 +102,18 @@ export function useKeyboardNavigation({
   );
 
   // Reset focus when row count changes and focus is out of bounds
+  // Uses ref to prevent potential focus loop if setFocusedIndex indirectly affects rowCount
   useEffect(() => {
-    if (focusedIndex !== null && focusedIndex >= rowCount) {
-      setFocusedIndex(rowCount > 0 ? rowCount - 1 : null);
+    // Only act if row count actually changed
+    if (prevRowCountRef.current !== rowCount) {
+      prevRowCountRef.current = rowCount;
+
+      if (focusedIndex !== null && focusedIndex >= rowCount) {
+        setFocusedIndexState(rowCount > 0 ? rowCount - 1 : null);
+        onFocusChange?.(rowCount > 0 ? rowCount - 1 : null);
+      }
     }
-  }, [rowCount, focusedIndex, setFocusedIndex]);
+  }, [rowCount, focusedIndex, onFocusChange]);
 
   // Handle keyboard events
   const handleKeyDown = useCallback(
@@ -155,7 +165,7 @@ export function useKeyboardNavigation({
         case "Enter":
           e.preventDefault();
           if (focusedIndex !== null && onActivate) {
-            onActivate(focusedIndex);
+            onActivate(focusedIndex, e);
           }
           break;
 
@@ -195,10 +205,10 @@ export function useKeyboardNavigation({
     };
   }, [enabled, focusedIndex, handleKeyDown, handleFocus, handleBlur, getRowId]);
 
-  // Get row props
+  // Get row props - uses data-table-row-{rowId} format to match actual DOM IDs
   const getRowProps = useCallback(
     (index: number, rowId: string) => ({
-      id: `row-${index}`,
+      id: `data-table-row-${rowId}`,
       "aria-selected": focusedIndex === index,
       tabIndex: -1, // Rows are not directly focusable, focus managed by container
     }),

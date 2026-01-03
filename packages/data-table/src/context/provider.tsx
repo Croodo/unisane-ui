@@ -8,11 +8,13 @@ import {
   useMemo,
   useRef,
   useCallback,
+  startTransition,
 } from "react";
 import type {
   DataTableContextValue,
   DataTableProviderProps,
   DataTableConfig,
+  DataTableCallbacks,
   SelectionSlice,
   SortSlice,
   FilterSlice,
@@ -24,11 +26,12 @@ import type {
 import { dataTableReducer, createInitialState } from "./reducer";
 import { flattenColumns, hasColumnGroups } from "../types/index";
 import { I18nProvider } from "../i18n/index";
-import { resolveDeprecatedProp } from "../utils/deprecation";
+import { FeedbackProvider } from "../feedback";
 
 // ─── CONTEXT ────────────────────────────────────────────────────────────────
 
-const DataTableContext = createContext<DataTableContextValue | null>(null);
+// Context uses `unknown` as default type parameter - consumers use useDataTableContext<T>() to get typed access
+const DataTableContext = createContext<DataTableContextValue<unknown> | null>(null);
 
 // ─── STORAGE KEYS ───────────────────────────────────────────────────────────
 
@@ -44,11 +47,8 @@ export function DataTableProvider<T extends { id: string }>({
   mode = "local",
   paginationMode = "offset",
   variant = "list",
-  // New prop names with deprecated fallbacks
-  rowSelectionEnabled,
-  selectable,
+  rowSelectionEnabled = false,
   showColumnDividers,
-  columnBorders,
   zebra = false,
   stickyHeader = true,
   resizable = true,
@@ -76,31 +76,20 @@ export function DataTableProvider<T extends { id: string }>({
   groupBy: externalGroupBy,
   onGroupByChange,
   onSelectAllFiltered,
+  sparseSelection,
   onPaginationChange,
   onColumnVisibilityChange,
   onScroll,
   onError,
   locale,
   dir = "ltr",
+  // Feedback
+  enableFeedback = true,
+  disableToasts = false,
+  disableAnnouncements = false,
 }: DataTableProviderProps<T>) {
-  // Resolve deprecated props with warnings
-  const effectiveRowSelectionEnabled = resolveDeprecatedProp(
-    rowSelectionEnabled,
-    selectable,
-    "selectable",
-    "rowSelectionEnabled",
-    false,
-    "DataTableProvider"
-  );
-
-  const effectiveShowColumnDividers = resolveDeprecatedProp(
-    showColumnDividers,
-    columnBorders,
-    "columnBorders",
-    "showColumnDividers",
-    variant === "grid", // Default based on variant
-    "DataTableProvider"
-  );
+  // Default showColumnDividers based on variant if not explicitly set
+  const effectiveShowColumnDividers = showColumnDividers ?? (variant === "grid");
 
   // Flatten columns and check for groups
   const flatColumns = useMemo(() => flattenColumns(columns), [columns]);
@@ -145,7 +134,7 @@ export function DataTableProvider<T extends { id: string }>({
       mode,
       paginationMode,
       variant,
-      rowSelectionEnabled: effectiveRowSelectionEnabled,
+      rowSelectionEnabled,
       showColumnDividers: effectiveShowColumnDividers,
       zebra,
       stickyHeader,
@@ -165,7 +154,7 @@ export function DataTableProvider<T extends { id: string }>({
       mode,
       paginationMode,
       variant,
-      effectiveRowSelectionEnabled,
+      rowSelectionEnabled,
       effectiveShowColumnDividers,
       zebra,
       stickyHeader,
@@ -286,10 +275,13 @@ export function DataTableProvider<T extends { id: string }>({
 
   // ─── CONTROLLED STATE SYNC ─────────────────────────────────────────────────
 
-  // Sync external selection to internal state
+  // Sync external selection to internal state using startTransition
+  // to prevent flickering on rapid updates (fixes race condition)
   useEffect(() => {
     if (externalSelectedIds !== undefined) {
-      dispatch({ type: "SELECT_ALL", ids: externalSelectedIds });
+      startTransition(() => {
+        dispatch({ type: "SELECT_ALL", ids: externalSelectedIds });
+      });
     }
   }, [externalSelectedIds]);
 
@@ -304,8 +296,9 @@ export function DataTableProvider<T extends { id: string }>({
       columnOrder: externalColumnOrder,
       selectedIds: externalSelectedIds,
       groupBy: externalGroupBy,
+      sparseSelection,
     }),
-    [externalSortState, controlledFilters, searchValue, externalPinState, externalColumnOrder, externalSelectedIds, externalGroupBy]
+    [externalSortState, controlledFilters, searchValue, externalPinState, externalColumnOrder, externalSelectedIds, externalGroupBy, sparseSelection]
   );
 
   // ─── MEMOIZED STATE SLICES ─────────────────────────────────────────────────
@@ -374,7 +367,8 @@ export function DataTableProvider<T extends { id: string }>({
   );
 
   // Store callbacks in refs for stable references
-  const callbacksRef = useRef({
+  // Updated synchronously during render (refs don't trigger re-renders)
+  const callbacksRef = useRef<DataTableCallbacks>({
     onSortChange,
     onFilterChange,
     onSearchChange,
@@ -389,23 +383,22 @@ export function DataTableProvider<T extends { id: string }>({
     onError,
   });
 
-  // Update refs when callbacks change (no re-render triggered)
-  useEffect(() => {
-    callbacksRef.current = {
-      onSortChange,
-      onFilterChange,
-      onSearchChange,
-      onColumnPinChange,
-      onColumnOrderChange,
-      onSelectionChange,
-      onGroupByChange,
-      onSelectAllFiltered,
-      onPaginationChange,
-      onColumnVisibilityChange,
-      onScroll,
-      onError,
-    };
-  });
+  // Update ref synchronously during render - safe because refs don't trigger re-renders
+  // This pattern ensures callbacks are always fresh without useEffect overhead
+  callbacksRef.current = {
+    onSortChange,
+    onFilterChange,
+    onSearchChange,
+    onColumnPinChange,
+    onColumnOrderChange,
+    onSelectionChange,
+    onGroupByChange,
+    onSelectAllFiltered,
+    onPaginationChange,
+    onColumnVisibilityChange,
+    onScroll,
+    onError,
+  };
 
   // Stable callback getters that don't change reference
   const getCallbacks = useCallback(() => callbacksRef.current, []);
@@ -444,13 +437,34 @@ export function DataTableProvider<T extends { id: string }>({
     ]
   );
 
-  return (
-    <I18nProvider locale={locale}>
-      <DataTableContext.Provider value={contextValue as DataTableContextValue}>
-        {children}
-      </DataTableContext.Provider>
-    </I18nProvider>
+  // Note: We cast to DataTableContextValue<unknown> because React Context doesn't support generics.
+  // The generic type T is preserved through useDataTableContext<T>() which casts back.
+  // This is a safe cast because:
+  // 1. T extends { id: string } constraint is maintained
+  // 2. All T-dependent operations go through typed hooks (useColumns<T>, etc.)
+  // 3. The context consumer (useDataTableContext<T>) restores the correct type
+  const tableContent = (
+    <DataTableContext.Provider value={contextValue as DataTableContextValue<unknown>}>
+      {children}
+    </DataTableContext.Provider>
   );
+
+  // Wrap with FeedbackProvider if feedback is enabled
+  // FeedbackProvider must be inside I18nProvider because it uses useI18n()
+  const contentWithFeedback = enableFeedback ? (
+    <FeedbackProvider
+      disabled={!enableFeedback}
+      disableToasts={disableToasts}
+      disableAnnouncements={disableAnnouncements}
+    >
+      {tableContent}
+    </FeedbackProvider>
+  ) : (
+    tableContent
+  );
+
+  // I18nProvider must be the outermost wrapper
+  return <I18nProvider locale={locale}>{contentWithFeedback}</I18nProvider>;
 }
 
 // ─── BASE HOOK ──────────────────────────────────────────────────────────────

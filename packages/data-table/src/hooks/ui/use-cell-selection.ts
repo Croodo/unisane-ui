@@ -8,41 +8,32 @@ import type {
   UseCellSelectionOptions,
   UseCellSelectionReturn,
 } from "../../types";
+import { CELL_ID_SEPARATOR, getCellSelector, parseCellId, DEFAULT_KEYBOARD_PAGE_SIZE } from "../../constants";
 
 // ─── UTILITIES ──────────────────────────────────────────────────────────────
 
 /**
- * Separator for cell keys. Using a double pipe which is unlikely to appear
- * in row IDs or column keys. This fixes the bug where IDs containing ":"
- * would break the parseKey function.
- */
-const CELL_KEY_SEPARATOR = "||";
-
-/**
  * Create a cell key for Set storage
- * Uses a safe separator that won't conflict with typical ID formats
+ * Uses the centralized separator from constants
  */
 function cellKey(rowId: string, columnKey: string): string {
-  return `${rowId}${CELL_KEY_SEPARATOR}${columnKey}`;
+  return `${rowId}${CELL_ID_SEPARATOR}${columnKey}`;
 }
 
 /**
  * Parse a cell key back to position
- * Uses indexOf to find the first separator, ensuring correct parsing
- * even if the separator appears in the columnKey (unlikely but safe)
+ * Uses the centralized parser from constants
  */
 function parseKey(key: string): CellPosition {
-  const separatorIndex = key.indexOf(CELL_KEY_SEPARATOR);
-  if (separatorIndex === -1) {
+  const parsed = parseCellId(key);
+  if (!parsed) {
     // Fallback for malformed keys - should not happen in normal usage
     if (process.env.NODE_ENV !== "production") {
       console.warn(`Invalid cell key format: ${key}`);
     }
     return { rowId: key, columnKey: "" };
   }
-  const rowId = key.slice(0, separatorIndex);
-  const columnKey = key.slice(separatorIndex + CELL_KEY_SEPARATOR.length);
-  return { rowId, columnKey };
+  return parsed;
 }
 
 // ─── HOOK ───────────────────────────────────────────────────────────────────
@@ -55,6 +46,9 @@ export function useCellSelection<T extends { id: string }>({
   multiSelect = true,
   rangeSelect = true,
   enabled = false,
+  onAnnounce,
+  columnDisplayNames = {},
+  getCellValue,
 }: UseCellSelectionOptions<T>): UseCellSelectionReturn {
   // State
   const [state, setState] = useState<CellSelectionState>({
@@ -69,6 +63,20 @@ export function useCellSelection<T extends { id: string }>({
   const columnKeysRef = useRef(columnKeys);
   dataRef.current = data;
   columnKeysRef.current = columnKeys;
+
+  // Helper to get column display name
+  const getColumnDisplayName = useCallback(
+    (columnKey: string) => columnDisplayNames[columnKey] || columnKey,
+    [columnDisplayNames]
+  );
+
+  // Helper to announce for screen readers
+  const announce = useCallback(
+    (message: string, priority: "polite" | "assertive" = "polite") => {
+      onAnnounce?.(message, priority);
+    },
+    [onAnnounce]
+  );
 
   // Build row index map for efficient lookups
   const rowIndexMap = useMemo(() => {
@@ -150,6 +158,10 @@ export function useCellSelection<T extends { id: string }>({
     (cell: CellPosition, addToSelection = false) => {
       if (!enabled) return;
 
+      const columnName = getColumnDisplayName(cell.columnKey);
+      const rowIdx = rowIndexMap.get(cell.rowId);
+      const rowNum = rowIdx !== undefined ? rowIdx + 1 : "?";
+
       setState((prev) => {
         const key = cellKey(cell.rowId, cell.columnKey);
         let newSelectedCells: Set<string>;
@@ -159,12 +171,18 @@ export function useCellSelection<T extends { id: string }>({
           newSelectedCells = new Set(prev.selectedCells);
           if (newSelectedCells.has(key)) {
             newSelectedCells.delete(key);
+            // Announce cell deselected
+            announce(`Row ${rowNum}, ${columnName} deselected`);
           } else {
             newSelectedCells.add(key);
+            // Announce cell selected
+            announce(`Row ${rowNum}, ${columnName} selected`);
           }
         } else {
           // Replace selection with just this cell
           newSelectedCells = new Set([key]);
+          // Announce active cell
+          announce(`Row ${rowNum}, ${columnName}`);
         }
 
         return {
@@ -178,7 +196,7 @@ export function useCellSelection<T extends { id: string }>({
 
       onActiveCellChange?.(cell);
     },
-    [enabled, multiSelect, onActiveCellChange]
+    [enabled, multiSelect, onActiveCellChange, getColumnDisplayName, rowIndexMap, announce]
   );
 
   /**
@@ -198,6 +216,12 @@ export function useCellSelection<T extends { id: string }>({
         rangeCells.add(key);
       }
 
+      // Announce range selection
+      const cellCount = rangeCells.size;
+      if (cellCount > 1) {
+        announce(`${cellCount} cells selected`);
+      }
+
       setState((prev) => ({
         ...prev,
         selectedCells: rangeCells,
@@ -207,7 +231,7 @@ export function useCellSelection<T extends { id: string }>({
         isSelecting: false,
       }));
     },
-    [enabled, rangeSelect, getCellsInRange]
+    [enabled, rangeSelect, getCellsInRange, announce]
   );
 
   /**
@@ -221,7 +245,8 @@ export function useCellSelection<T extends { id: string }>({
       isSelecting: false,
     });
     onActiveCellChange?.(null);
-  }, [onActiveCellChange]);
+    announce("Selection cleared");
+  }, [onActiveCellChange, announce]);
 
   // ─── QUERIES ────────────────────────────────────────────────────────────────
 
@@ -334,6 +359,19 @@ export function useCellSelection<T extends { id: string }>({
   );
 
   /**
+   * Focus a cell in the DOM by its position
+   */
+  const focusCellElement = useCallback((cell: CellPosition) => {
+    // Use requestAnimationFrame to ensure DOM has updated
+    requestAnimationFrame(() => {
+      const cellElement = document.querySelector(
+        getCellSelector(cell.rowId, cell.columnKey)
+      ) as HTMLElement;
+      cellElement?.focus();
+    });
+  }, []);
+
+  /**
    * Move active cell in a direction
    */
   const moveActiveCell = useCallback(
@@ -373,12 +411,70 @@ export function useCellSelection<T extends { id: string }>({
       if (extend && rangeSelect && state.rangeAnchor) {
         // Shift+Arrow: extend selection
         selectRange(state.rangeAnchor, newCell);
+        // Focus the new active cell (end of range)
+        focusCellElement(newCell);
       } else {
         // Arrow only: move active cell
         selectCell(newCell, false);
+        // Focus the new active cell
+        focusCellElement(newCell);
       }
     },
-    [enabled, state.activeCell, state.rangeAnchor, data, columnKeys, rowIndexMap, columnIndexMap, rangeSelect, selectRange, selectCell]
+    [enabled, state.activeCell, state.rangeAnchor, data, columnKeys, rowIndexMap, columnIndexMap, rangeSelect, selectRange, selectCell, focusCellElement]
+  );
+
+  /**
+   * Move to next/previous cell with Tab behavior (wraps to next/previous row)
+   * - Tab at last column: moves to first column of next row
+   * - Shift+Tab at first column: moves to last column of previous row
+   * - Tab at last cell of table: stays at last cell
+   * - Shift+Tab at first cell of table: stays at first cell
+   */
+  const moveTabNavigation = useCallback(
+    (reverse = false) => {
+      if (!enabled || !state.activeCell) return;
+
+      const currentRowIdx = rowIndexMap.get(state.activeCell.rowId) ?? -1;
+      const currentColIdx = columnIndexMap.get(state.activeCell.columnKey) ?? -1;
+
+      if (currentRowIdx === -1 || currentColIdx === -1) return;
+
+      let newRowIdx = currentRowIdx;
+      let newColIdx = currentColIdx;
+
+      if (reverse) {
+        // Shift+Tab: move left, wrap to previous row if at first column
+        if (currentColIdx > 0) {
+          newColIdx = currentColIdx - 1;
+        } else if (currentRowIdx > 0) {
+          // Wrap to last column of previous row
+          newRowIdx = currentRowIdx - 1;
+          newColIdx = columnKeys.length - 1;
+        }
+        // If at first cell (row 0, col 0), stay there
+      } else {
+        // Tab: move right, wrap to next row if at last column
+        if (currentColIdx < columnKeys.length - 1) {
+          newColIdx = currentColIdx + 1;
+        } else if (currentRowIdx < data.length - 1) {
+          // Wrap to first column of next row
+          newRowIdx = currentRowIdx + 1;
+          newColIdx = 0;
+        }
+        // If at last cell (last row, last col), stay there
+      }
+
+      const newRow = data[newRowIdx];
+      const newCol = columnKeys[newColIdx];
+
+      if (!newRow || !newCol) return;
+
+      const newCell: CellPosition = { rowId: newRow.id, columnKey: newCol };
+
+      selectCell(newCell, false);
+      focusCellElement(newCell);
+    },
+    [enabled, state.activeCell, data, columnKeys, rowIndexMap, columnIndexMap, selectCell, focusCellElement]
   );
 
   /**
@@ -394,27 +490,94 @@ export function useCellSelection<T extends { id: string }>({
       switch (event.key) {
         case "ArrowUp":
           event.preventDefault();
-          moveActiveCell("up", isShift);
+          if (isCtrlOrMeta) {
+            // Ctrl+Arrow: jump to first row (Excel standard)
+            if (data.length > 0) {
+              const targetCell: CellPosition = { rowId: data[0]!.id, columnKey: state.activeCell.columnKey };
+              if (isShift && rangeSelect && state.rangeAnchor) {
+                selectRange(state.rangeAnchor, targetCell);
+              } else {
+                selectCell(targetCell, false);
+              }
+              focusCellElement(targetCell);
+            }
+          } else {
+            moveActiveCell("up", isShift);
+          }
           break;
         case "ArrowDown":
           event.preventDefault();
-          moveActiveCell("down", isShift);
+          if (isCtrlOrMeta) {
+            // Ctrl+Arrow: jump to last row (Excel standard)
+            if (data.length > 0) {
+              const targetCell: CellPosition = { rowId: data[data.length - 1]!.id, columnKey: state.activeCell.columnKey };
+              if (isShift && rangeSelect && state.rangeAnchor) {
+                selectRange(state.rangeAnchor, targetCell);
+              } else {
+                selectCell(targetCell, false);
+              }
+              focusCellElement(targetCell);
+            }
+          } else {
+            moveActiveCell("down", isShift);
+          }
           break;
         case "ArrowLeft":
           event.preventDefault();
-          moveActiveCell("left", isShift);
+          if (isCtrlOrMeta) {
+            // Ctrl+Arrow: jump to first column (Excel standard)
+            if (columnKeys.length > 0) {
+              const targetCell: CellPosition = { rowId: state.activeCell.rowId, columnKey: columnKeys[0]! };
+              if (isShift && rangeSelect && state.rangeAnchor) {
+                selectRange(state.rangeAnchor, targetCell);
+              } else {
+                selectCell(targetCell, false);
+              }
+              focusCellElement(targetCell);
+            }
+          } else {
+            moveActiveCell("left", isShift);
+          }
           break;
         case "ArrowRight":
           event.preventDefault();
-          moveActiveCell("right", isShift);
+          if (isCtrlOrMeta) {
+            // Ctrl+Arrow: jump to last column (Excel standard)
+            if (columnKeys.length > 0) {
+              const targetCell: CellPosition = { rowId: state.activeCell.rowId, columnKey: columnKeys[columnKeys.length - 1]! };
+              if (isShift && rangeSelect && state.rangeAnchor) {
+                selectRange(state.rangeAnchor, targetCell);
+              } else {
+                selectCell(targetCell, false);
+              }
+              focusCellElement(targetCell);
+            }
+          } else {
+            moveActiveCell("right", isShift);
+          }
           break;
         case "Tab":
           event.preventDefault();
-          moveActiveCell(isShift ? "left" : "right", false);
+          moveTabNavigation(isShift);
           break;
         case "Enter":
           event.preventDefault();
-          moveActiveCell(isShift ? "up" : "down", false);
+          // Move down (or up with Shift) and focus the new cell
+          {
+            const currentRowIdx = rowIndexMap.get(state.activeCell.rowId) ?? -1;
+            const currentColIdx = columnIndexMap.get(state.activeCell.columnKey) ?? -1;
+            if (currentRowIdx !== -1 && currentColIdx !== -1) {
+              const newRowIdx = isShift
+                ? Math.max(0, currentRowIdx - 1)
+                : Math.min(data.length - 1, currentRowIdx + 1);
+              const newRow = data[newRowIdx];
+              if (newRow) {
+                const targetCell: CellPosition = { rowId: newRow.id, columnKey: state.activeCell.columnKey };
+                selectCell(targetCell, false);
+                focusCellElement(targetCell);
+              }
+            }
+          }
           break;
         case "Escape":
           event.preventDefault();
@@ -435,6 +598,7 @@ export function useCellSelection<T extends { id: string }>({
               ...prev,
               selectedCells: allCells,
             }));
+            announce(`All ${allCells.size} cells selected`);
           }
           break;
         case "c":
@@ -447,31 +611,78 @@ export function useCellSelection<T extends { id: string }>({
         case "Home":
           event.preventDefault();
           if (data.length > 0 && columnKeys.length > 0) {
-            const firstCell: CellPosition = { rowId: data[0]!.id, columnKey: columnKeys[0]! };
+            // Ctrl+Home: first cell of table (Excel standard)
+            // Home: first column of current row (Excel standard)
+            const targetCell: CellPosition = isCtrlOrMeta
+              ? { rowId: data[0]!.id, columnKey: columnKeys[0]! }
+              : { rowId: state.activeCell.rowId, columnKey: columnKeys[0]! };
             if (isShift && rangeSelect && state.rangeAnchor) {
-              selectRange(state.rangeAnchor, firstCell);
+              selectRange(state.rangeAnchor, targetCell);
             } else {
-              selectCell(firstCell, false);
+              selectCell(targetCell, false);
             }
+            focusCellElement(targetCell);
           }
           break;
         case "End":
           event.preventDefault();
           if (data.length > 0 && columnKeys.length > 0) {
-            const lastCell: CellPosition = {
-              rowId: data[data.length - 1]!.id,
-              columnKey: columnKeys[columnKeys.length - 1]!,
-            };
+            // Ctrl+End: last cell of table (Excel standard)
+            // End: last column of current row (Excel standard)
+            const targetCell: CellPosition = isCtrlOrMeta
+              ? { rowId: data[data.length - 1]!.id, columnKey: columnKeys[columnKeys.length - 1]! }
+              : { rowId: state.activeCell.rowId, columnKey: columnKeys[columnKeys.length - 1]! };
             if (isShift && rangeSelect && state.rangeAnchor) {
-              selectRange(state.rangeAnchor, lastCell);
+              selectRange(state.rangeAnchor, targetCell);
             } else {
-              selectCell(lastCell, false);
+              selectCell(targetCell, false);
+            }
+            focusCellElement(targetCell);
+          }
+          break;
+        case "PageUp":
+          event.preventDefault();
+          // Move up by page (Excel standard)
+          {
+            const currentRowIdx = rowIndexMap.get(state.activeCell.rowId) ?? -1;
+            if (currentRowIdx !== -1 && data.length > 0) {
+              const newRowIdx = Math.max(0, currentRowIdx - DEFAULT_KEYBOARD_PAGE_SIZE);
+              const newRow = data[newRowIdx];
+              if (newRow) {
+                const targetCell: CellPosition = { rowId: newRow.id, columnKey: state.activeCell.columnKey };
+                if (isShift && rangeSelect && state.rangeAnchor) {
+                  selectRange(state.rangeAnchor, targetCell);
+                } else {
+                  selectCell(targetCell, false);
+                }
+                focusCellElement(targetCell);
+              }
+            }
+          }
+          break;
+        case "PageDown":
+          event.preventDefault();
+          // Move down by page (Excel standard)
+          {
+            const currentRowIdx = rowIndexMap.get(state.activeCell.rowId) ?? -1;
+            if (currentRowIdx !== -1 && data.length > 0) {
+              const newRowIdx = Math.min(data.length - 1, currentRowIdx + DEFAULT_KEYBOARD_PAGE_SIZE);
+              const newRow = data[newRowIdx];
+              if (newRow) {
+                const targetCell: CellPosition = { rowId: newRow.id, columnKey: state.activeCell.columnKey };
+                if (isShift && rangeSelect && state.rangeAnchor) {
+                  selectRange(state.rangeAnchor, targetCell);
+                } else {
+                  selectCell(targetCell, false);
+                }
+                focusCellElement(targetCell);
+              }
             }
           }
           break;
       }
     },
-    [enabled, state.activeCell, state.rangeAnchor, data, columnKeys, moveActiveCell, clearSelection, selectCell, selectRange, multiSelect, rangeSelect]
+    [enabled, state.activeCell, state.rangeAnchor, data, columnKeys, moveActiveCell, moveTabNavigation, clearSelection, selectCell, selectRange, multiSelect, rangeSelect, focusCellElement]
   );
 
   // ─── CLIPBOARD ──────────────────────────────────────────────────────────────
@@ -517,11 +728,38 @@ export function useCellSelection<T extends { id: string }>({
    * Copy selected cells to clipboard as TSV (Excel-compatible)
    */
   const copyToClipboard = useCallback(async () => {
-    // This will be called by the consumer with actual data
-    // For now, we just notify that copy was requested
-    // The actual implementation needs to be done at the component level
-    // where we have access to the actual cell values
-  }, []);
+    if (!getCellValue || state.selectedCells.size === 0) {
+      return;
+    }
+
+    // Get selected cell values as 2D array using the getSelectedValues helper
+    const values = getSelectedValues((rowId, columnKey) => getCellValue(rowId, columnKey));
+
+    if (values.length === 0) {
+      return;
+    }
+
+    // Convert to TSV format (Tab-separated values)
+    const tsvText = values
+      .map(row =>
+        row.map(value => {
+          // Escape tabs and newlines in cell values
+          const textValue = value == null ? "" : String(value).replace(/\t/g, " ").replace(/\n/g, " ");
+          return textValue;
+        }).join("\t")
+      )
+      .join("\n");
+
+    try {
+      await navigator.clipboard.writeText(tsvText);
+      announce(`${state.selectedCells.size} cells copied to clipboard`);
+    } catch {
+      // Clipboard write failed (likely permissions)
+      if (process.env.NODE_ENV !== "production") {
+        console.warn("Failed to copy to clipboard");
+      }
+    }
+  }, [getCellValue, state.selectedCells, getSelectedValues, announce]);
 
   // ─── EFFECTS ────────────────────────────────────────────────────────────────
 

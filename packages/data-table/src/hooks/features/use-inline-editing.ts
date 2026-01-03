@@ -1,46 +1,9 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
+import { dequal } from "dequal";
 import type { UseInlineEditingOptions, InlineEditingController, EditingCell } from "../../types";
-
-/**
- * Deep equality check for comparing cell values
- * Handles primitives, Dates, arrays, and plain objects
- */
-function isEqual(a: unknown, b: unknown): boolean {
-  // Strict equality for primitives
-  if (a === b) return true;
-
-  // Handle null/undefined
-  if (a == null || b == null) return a === b;
-
-  // Handle Dates
-  if (a instanceof Date && b instanceof Date) {
-    return a.getTime() === b.getTime();
-  }
-
-  // Handle different types
-  if (typeof a !== typeof b) return false;
-
-  // Handle arrays
-  if (Array.isArray(a) && Array.isArray(b)) {
-    if (a.length !== b.length) return false;
-    return a.every((item, index) => isEqual(item, b[index]));
-  }
-
-  // Handle plain objects
-  if (typeof a === "object" && typeof b === "object") {
-    const keysA = Object.keys(a as object);
-    const keysB = Object.keys(b as object);
-    if (keysA.length !== keysB.length) return false;
-    return keysA.every((key) =>
-      Object.prototype.hasOwnProperty.call(b, key) &&
-      isEqual((a as Record<string, unknown>)[key], (b as Record<string, unknown>)[key])
-    );
-  }
-
-  return false;
-}
+import { getCellSelector } from "../../constants";
 
 /**
  * Hook for managing inline cell editing in DataTable
@@ -93,15 +56,26 @@ export function useInlineEditing<T extends { id: string }>({
     [enabled, onStartEdit]
   );
 
-  // Cancel editing
+  // Cancel editing and restore focus to the cell
   const cancelEdit = useCallback(() => {
-    if (editingCell) {
-      onCancelEdit?.(editingCell.rowId, editingCell.columnKey);
+    const cellToFocus = editingCell;
+    if (cellToFocus) {
+      onCancelEdit?.(cellToFocus.rowId, cellToFocus.columnKey);
     }
     setEditingCell(null);
     setPendingValue(null);
     setValidationError(null);
     originalValueRef.current = null;
+
+    // Restore focus to the cell after a tick
+    if (cellToFocus) {
+      requestAnimationFrame(() => {
+        const cellElement = document.querySelector(
+          getCellSelector(cellToFocus.rowId, cellToFocus.columnKey)
+        ) as HTMLElement;
+        cellElement?.focus();
+      });
+    }
   }, [editingCell, onCancelEdit]);
 
   // Clear validation error without canceling edit
@@ -154,16 +128,31 @@ export function useInlineEditing<T extends { id: string }>({
       return false;
     }
 
-    // If value hasn't changed, just close
-    if (isEqual(pendingValue, originalValueRef.current)) {
+    // If value hasn't changed, just close and restore focus
+    // Using dequal for fast deep equality comparison
+    if (dequal(pendingValue, originalValueRef.current)) {
+      const cellToFocus = editingCell;
       setEditingCell(null);
       setPendingValue(null);
       setValidationError(null);
       originalValueRef.current = null;
+
+      // Restore focus to the cell after state update
+      // Note: Using DOM query for focus is acceptable here because:
+      // 1. It only runs once per edit commit (not in render loop)
+      // 2. The query is fast (single attribute selector)
+      // 3. Alternative (cell registry with refs) adds significant complexity
+      requestAnimationFrame(() => {
+        const cellElement = document.querySelector(
+          getCellSelector(cellToFocus.rowId, cellToFocus.columnKey)
+        ) as HTMLElement;
+        cellElement?.focus();
+      });
       return true;
     }
 
     // Trigger save
+    const cellToFocus = editingCell;
     setIsSaving(true);
     try {
       await onCellChange?.(editingCell.rowId, editingCell.columnKey, pendingValue, row);
@@ -171,6 +160,14 @@ export function useInlineEditing<T extends { id: string }>({
       setPendingValue(null);
       setValidationError(null);
       originalValueRef.current = null;
+
+      // Restore focus to the cell after successful save
+      requestAnimationFrame(() => {
+        const cellElement = document.querySelector(
+          getCellSelector(cellToFocus.rowId, cellToFocus.columnKey)
+        ) as HTMLElement;
+        cellElement?.focus();
+      });
       return true;
     } catch (error) {
       // If save fails, set error
@@ -211,10 +208,25 @@ export function useInlineEditing<T extends { id: string }>({
         },
         onKeyDown: (e: React.KeyboardEvent) => {
           if (!isEditing && enabled) {
-            // Start editing on Enter or typing
-            if (e.key === "Enter" || e.key === "F2") {
+            // Start editing on Enter, F2, or Cmd/Ctrl+E
+            // Note: F2 may not work on Mac if system intercepts it for brightness
+            // Cmd/Ctrl+E provides a reliable alternative
+            const isEditShortcut =
+              e.key === "Enter" ||
+              e.key === "F2" ||
+              ((e.metaKey || e.ctrlKey) && e.key === "e");
+
+            if (isEditShortcut) {
               e.preventDefault();
               startEdit(rowId, columnKey, value);
+            } else if (e.key === "Delete") {
+              // Delete key: clear cell content (Excel standard)
+              e.preventDefault();
+              startEdit(rowId, columnKey, "");
+            } else if (e.key === "Backspace") {
+              // Backspace: start editing with empty value (Excel standard)
+              e.preventDefault();
+              startEdit(rowId, columnKey, "");
             } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
               // Single character typed - start editing with the typed character as initial value
               e.preventDefault();
@@ -227,6 +239,12 @@ export function useInlineEditing<T extends { id: string }>({
     [isCellEditing, enabled, startEdit]
   );
 
+  // Generate error message ID for aria-describedby linking
+  const getErrorMessageId = useCallback(() => {
+    if (!editingCell) return undefined;
+    return `cell-error-${editingCell.rowId}-${editingCell.columnKey}`;
+  }, [editingCell]);
+
   // Get props for the input element
   const getInputProps = useCallback(() => {
     const valueAsInput = (() => {
@@ -235,6 +253,8 @@ export function useInlineEditing<T extends { id: string }>({
       if (typeof pendingValue === "number") return pendingValue;
       return String(pendingValue);
     })();
+
+    const errorId = getErrorMessageId();
 
     return {
       value: valueAsInput,
@@ -249,8 +269,12 @@ export function useInlineEditing<T extends { id: string }>({
           e.preventDefault();
           cancelEdit();
         } else if (e.key === "Tab") {
-          // Commit on tab and let focus move
+          // Prevent default to control focus manually after commit
+          // This fixes the race condition where focus moves before async save completes
+          e.preventDefault();
           commitEdit();
+          // Focus will be restored by commitEdit's requestAnimationFrame
+          // Cell selection hook will handle Tab navigation after focus is restored
         }
       },
       onBlur: () => {
@@ -262,8 +286,9 @@ export function useInlineEditing<T extends { id: string }>({
       autoFocus: true,
       disabled: isSaving,
       "aria-invalid": !!validationError,
+      "aria-describedby": validationError ? errorId : undefined,
     };
-  }, [pendingValue, updateValue, commitEdit, cancelEdit, editingCell, isSaving, validationError]);
+  }, [pendingValue, updateValue, commitEdit, cancelEdit, editingCell, isSaving, validationError, getErrorMessageId]);
 
   return {
     editingCell,
@@ -279,6 +304,7 @@ export function useInlineEditing<T extends { id: string }>({
     isCellEditing,
     getCellEditProps,
     getInputProps,
+    getErrorMessageId,
   };
 }
 

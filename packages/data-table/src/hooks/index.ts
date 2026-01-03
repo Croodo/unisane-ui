@@ -67,6 +67,16 @@ export {
 
 export { useInlineEditing } from "./features/use-inline-editing";
 export {
+  useInlineEditingWithHistory,
+  type UseInlineEditingWithHistoryOptions,
+  type UseInlineEditingWithHistoryReturn,
+} from "./features/use-inline-editing-with-history";
+export {
+  useInlineEditingWithFeedback,
+  type UseInlineEditingWithFeedbackOptions,
+  type UseInlineEditingWithFeedbackReturn,
+} from "./features/use-inline-editing-with-feedback";
+export {
   useVirtualizedRows,
   type UseVirtualizedRowsOptions,
   type UseVirtualizedRowsReturn,
@@ -104,6 +114,11 @@ export {
   type UseClipboardPasteReturn,
 } from "./features/use-clipboard-paste";
 export {
+  useClipboardPasteWithFeedback,
+  type UseClipboardPasteWithFeedbackOptions,
+  type UseClipboardPasteWithFeedbackReturn,
+} from "./features/use-clipboard-paste-with-feedback";
+export {
   useEditHistory,
   type EditHistoryEntry,
   type EditChange,
@@ -112,12 +127,22 @@ export {
   type UseEditHistoryReturn,
 } from "./features/use-edit-history";
 export {
+  useEditHistoryWithFeedback,
+  type UseEditHistoryWithFeedbackOptions,
+  type UseEditHistoryWithFeedbackReturn,
+} from "./features/use-edit-history-with-feedback";
+export {
   useFilterPresets,
   type FilterPreset,
   type FilterPresetInput,
   type UseFilterPresetsOptions,
   type UseFilterPresetsReturn,
 } from "./features/use-filter-presets";
+export {
+  useFilterPresetsWithFeedback,
+  type UseFilterPresetsWithFeedbackOptions,
+  type UseFilterPresetsWithFeedbackReturn,
+} from "./features/use-filter-presets-with-feedback";
 export {
   useCompoundFilters,
   type FilterLogicOperator,

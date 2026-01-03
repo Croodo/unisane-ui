@@ -8,6 +8,7 @@ import type {
   ColumnPinState,
   PinPosition,
   TableVariant,
+  SparseSelectionController,
 } from "../types/index";
 import type { PartialDataTableLocale } from "../i18n/types";
 
@@ -233,6 +234,7 @@ export interface DataTableContextValue<T = unknown> {
     columnOrder: string[] | undefined;
     selectedIds: string[] | undefined;
     groupBy: string | string[] | null | undefined;
+    sparseSelection: SparseSelectionController | undefined;
   };
 
   // Multi-sort config
@@ -273,12 +275,8 @@ export interface DataTableProviderProps<T> {
   variant?: TableVariant;
   /** Enable row selection (checkboxes) */
   rowSelectionEnabled?: boolean;
-  /** @deprecated Use `rowSelectionEnabled` instead. */
-  selectable?: boolean;
   /** Show column dividers/borders between cells */
   showColumnDividers?: boolean;
-  /** @deprecated Use `showColumnDividers` instead. */
-  columnBorders?: boolean;
   zebra?: boolean;
   stickyHeader?: boolean;
   resizable?: boolean;
@@ -316,6 +314,15 @@ export interface DataTableProviderProps<T> {
   onGroupByChange?: (key: string | string[] | null) => void;
   /** Async callback to select all rows across the filtered dataset (server-backed) */
   onSelectAllFiltered?: () => Promise<string[]>;
+
+  // ─── Sparse Selection ───
+  /**
+   * Sparse selection controller from useSparseSelection hook.
+   * Enables O(1) select-all operations for large datasets (100K+ rows).
+   * When provided, this takes precedence over selectedIds for selection state.
+   */
+  sparseSelection?: SparseSelectionController;
+
   /** Callback when pagination changes (useful for sync when controlled sort/filter resets page) */
   onPaginationChange?: (page: number, pageSize: number) => void;
   /** Callback when column visibility changes (show/hide columns) */
@@ -342,4 +349,23 @@ export interface DataTableProviderProps<T> {
    * @default "ltr"
    */
   dir?: "ltr" | "rtl";
+
+  // ─── Feedback ───
+  /**
+   * Enable toast notifications and ARIA announcements for table operations.
+   * When enabled, operations like inline editing, export, undo/redo will show feedback.
+   * @default true
+   */
+  enableFeedback?: boolean;
+  /**
+   * Disable toast notifications while keeping ARIA announcements.
+   * Useful for screen-reader-only feedback.
+   * @default false
+   */
+  disableToasts?: boolean;
+  /**
+   * Disable ARIA live region announcements while keeping toast notifications.
+   * @default false
+   */
+  disableAnnouncements?: boolean;
 }

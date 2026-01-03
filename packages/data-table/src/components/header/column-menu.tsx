@@ -307,8 +307,11 @@ function TextFilter<T>({
               if (e.key === "Enter") {
                 e.preventDefault();
                 onSubmit();
+              } else if (e.key === "Escape") {
+                // Let Escape propagate to close the dropdown menu
+                return;
               }
-              // Stop propagation to prevent dropdown from closing
+              // Stop propagation for other keys to prevent dropdown interference
               e.stopPropagation();
             }}
             onClick={(e: React.MouseEvent) => e.stopPropagation()}

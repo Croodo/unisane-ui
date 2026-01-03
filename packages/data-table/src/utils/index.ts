@@ -8,14 +8,11 @@ export {
 // Re-export error from errors module
 export { DuplicateRowIdError } from "../errors";
 
-// Deprecation utilities
+// Deprecation utilities (for future use)
 export {
-  DEPRECATED_PROPS,
   warnDeprecatedProp,
   resolveDeprecatedProp,
-  resolveDeprecatedProps,
   clearDeprecationWarnings,
-  type WithDeprecatedProps,
 } from "./deprecation";
 
 // Grouping utilities
@@ -65,3 +62,11 @@ export {
   type LogContext,
   type LoggerOptions,
 } from "./logger";
+
+// Pagination utilities
+export {
+  getTotalPages,
+  clampPage,
+  getPageIndices,
+  getPaginationState,
+} from "./pagination";

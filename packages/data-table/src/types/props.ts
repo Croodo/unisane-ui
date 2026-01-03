@@ -1,7 +1,7 @@
 // ─── COMPONENT PROP TYPES ────────────────────────────────────────────────────
 // Props for the main DataTable component and its render prop callbacks.
 
-import type { ReactNode, CSSProperties } from "react";
+import type { ReactNode, CSSProperties, MouseEvent, KeyboardEvent } from "react";
 import type {
   MultiSortState,
   FilterState,
@@ -13,7 +13,18 @@ import type {
   CursorPagination,
 } from "./core";
 import type { Column, ColumnGroup } from "./column";
-import type { BulkAction, InlineEditingController } from "./features";
+import type { BulkAction, InlineEditingController, SparseSelectionController } from "./features";
+
+// ─── ROW ACTIVATION EVENT ────────────────────────────────────────────────────
+
+/**
+ * Event passed to onRowClick callback.
+ * Can be either a mouse click or keyboard activation (Enter/Space).
+ * Use `source` to distinguish between the two.
+ */
+export type RowActivationEvent =
+  | { source: "mouse"; event: MouseEvent }
+  | { source: "keyboard"; event: KeyboardEvent };
 
 // ─── RENDER PROP TYPES ───────────────────────────────────────────────────────
 
@@ -58,7 +69,25 @@ export interface DataTableProps<T extends { id: string }> {
   // ─── Required ───
   /** Data rows to display */
   data: T[];
-  /** Column definitions (supports flat columns or grouped columns) */
+  /**
+   * Column definitions (supports flat columns or grouped columns).
+   *
+   * ⚠️ **Performance Note: Reference Stability**
+   *
+   * For optimal performance, memoize your columns array to prevent unnecessary
+   * re-renders and data reprocessing:
+   *
+   * ```tsx
+   * // ✅ Good - stable reference
+   * const columns = useMemo(() => [
+   *   { key: 'name', header: 'Name' },
+   *   { key: 'email', header: 'Email' },
+   * ], []);
+   *
+   * // ❌ Bad - new array on every render (causes full re-render)
+   * <DataTable columns={[{ key: 'name', header: 'Name' }]} />
+   * ```
+   */
   columns: Array<Column<T> | ColumnGroup<T>>;
 
   // ─── Identification ───
@@ -76,20 +105,10 @@ export interface DataTableProps<T extends { id: string }> {
    */
   rowSelectionEnabled?: boolean;
   /**
-   * Enable row selection checkboxes.
-   * @deprecated Use `rowSelectionEnabled` instead. Will be removed in a future version.
-   */
-  selectable?: boolean;
-  /**
    * Show column border dividers.
    * When undefined, defaults based on variant (true for "grid", false otherwise).
    */
   showColumnDividers?: boolean;
-  /**
-   * Show column border dividers.
-   * @deprecated Use `showColumnDividers` instead. Will be removed in a future version.
-   */
-  columnBorders?: boolean;
   /** Enable zebra striping */
   zebra?: boolean;
   /** Make header sticky */
@@ -99,11 +118,6 @@ export interface DataTableProps<T extends { id: string }> {
    * @default "standard"
    */
   rowDensity?: Density;
-  /**
-   * Row density - controls row height and padding.
-   * @deprecated Use `rowDensity` instead. Will be removed in a future version.
-   */
-  density?: Density;
 
   // ─── Feature Toggles ───
   /** Enable search bar */
@@ -114,10 +128,21 @@ export interface DataTableProps<T extends { id: string }> {
   pinnable?: boolean;
   /** Enable column drag-to-reorder */
   reorderable?: boolean;
-  /** Enable virtual scrolling for large datasets */
+  /** Enable virtual scrolling for large datasets (row virtualization) */
   virtualize?: boolean;
-  /** Row count threshold before virtualization kicks in */
+  /** Row count threshold before row virtualization kicks in */
   virtualizeThreshold?: number;
+  /**
+   * Enable column virtualization for wide tables (50+ columns).
+   * Only renders visible columns plus overscan buffer.
+   * @default false
+   */
+  virtualizeColumns?: boolean;
+  /**
+   * Column count threshold before column virtualization kicks in.
+   * @default 20
+   */
+  virtualizeColumnsThreshold?: number;
   /** Show summary/footer row with aggregated values (requires columns to have `summary` defined) */
   showSummary?: boolean;
   /** Custom label for the summary row (defaults to "Summary") */
@@ -180,8 +205,19 @@ export interface DataTableProps<T extends { id: string }> {
   onRowReorder?: (fromIndex: number, toIndex: number, newOrder: string[]) => void;
 
   // ─── Events ───
-  /** Callback when row is clicked */
-  onRowClick?: (row: T, event: React.MouseEvent) => void;
+  /**
+   * Callback when row is activated (clicked or keyboard Enter/Space).
+   * The `activation` parameter is a discriminated union indicating the source.
+   * @example
+   * onRowClick={(row, activation) => {
+   *   if (activation.source === "mouse") {
+   *     // Handle mouse click
+   *   } else {
+   *     // Handle keyboard activation
+   *   }
+   * }}
+   */
+  onRowClick?: (row: T, activation: RowActivationEvent) => void;
   /** Callback when row is right-clicked (context menu) */
   onRowContextMenu?: (row: T, event: React.MouseEvent) => void;
   /** Callback when row is hovered (null when mouse leaves) */
@@ -224,6 +260,32 @@ export interface DataTableProps<T extends { id: string }> {
   // ─── Inline Editing ───
   /** Inline editing controller from useInlineEditing hook */
   inlineEditing?: InlineEditingController<T>;
+
+  // ─── Sparse Selection ───
+  /**
+   * Sparse selection controller from useSparseSelection hook.
+   * Enables O(1) select-all operations for large datasets (100K+ rows).
+   *
+   * When provided:
+   * - Select-all is O(1) instead of O(n)
+   * - Memory usage is constant regardless of selection size
+   * - Compatible with server-side selection across pages
+   *
+   * @example
+   * ```tsx
+   * const sparseSelection = useSparseSelection({
+   *   totalCount: 100000,
+   *   onSelectionChange: handleChange,
+   * });
+   *
+   * <DataTable
+   *   data={data}
+   *   columns={columns}
+   *   sparseSelection={sparseSelection}
+   * />
+   * ```
+   */
+  sparseSelection?: SparseSelectionController;
 
   // ─── Row Styling ───
   /** Active/highlighted row ID */
@@ -276,6 +338,24 @@ export interface DataTableProps<T extends { id: string }> {
    * @default "ltr"
    */
   dir?: "ltr" | "rtl";
+
+  // ─── Feedback ───
+  /**
+   * Enable feedback notifications (toasts and ARIA announcements).
+   * Requires <Toaster /> to be mounted in the app for toast display.
+   * @default true
+   */
+  enableFeedback?: boolean;
+  /**
+   * Disable toast notifications (keeps ARIA announcements).
+   * @default false
+   */
+  disableToasts?: boolean;
+  /**
+   * Disable ARIA announcements for screen readers (keeps toasts).
+   * @default false
+   */
+  disableAnnouncements?: boolean;
 }
 
 // ─── REMOTE DATA PROPS ───────────────────────────────────────────────────────

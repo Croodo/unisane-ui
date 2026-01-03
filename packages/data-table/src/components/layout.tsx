@@ -259,6 +259,7 @@ SyncedScrollContainer.displayName = "SyncedScrollContainer";
 // Uses clip-path to clip horizontally while allowing vertical overflow for dropdowns.
 // Uses translateX to sync scroll position from the body container via context.
 // Sets --header-scroll-offset CSS variable so pinned cells can counter-translate.
+// Adds elevation shadow when the header becomes "stuck" during vertical scroll.
 
 interface StickyHeaderScrollContainerProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
@@ -267,29 +268,78 @@ interface StickyHeaderScrollContainerProps extends React.HTMLAttributes<HTMLDivE
 export const StickyHeaderScrollContainer = forwardRef<HTMLDivElement, StickyHeaderScrollContainerProps>(
   ({ children, className, style, ...props }, ref) => {
     const { scrollLeft } = useScrollSync();
+    const [isStuck, setIsStuck] = useState(false);
+    const sentinelRef = useRef<HTMLDivElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    // Use Intersection Observer to detect when header becomes stuck
+    // A sentinel element is placed just above the sticky header
+    // When the sentinel goes out of view (intersectionRatio < 1), header is stuck
+    useEffect(() => {
+      const sentinel = sentinelRef.current;
+      if (!sentinel) return;
+
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          // Header is stuck when sentinel is not fully visible
+          setIsStuck(entry ? !entry.isIntersecting : false);
+        },
+        {
+          // Use the nearest scrolling ancestor as root
+          root: null,
+          // Trigger when sentinel starts to leave viewport
+          threshold: 0,
+          // Small negative margin to trigger slightly before the sentinel leaves
+          rootMargin: "0px 0px 0px 0px",
+        }
+      );
+
+      observer.observe(sentinel);
+      return () => observer.disconnect();
+    }, []);
 
     return (
-      <div
-        ref={ref}
-        className={cn("relative overflow-x-clip", className)}
-        style={{
-          // clip-path clips horizontally but allows vertical overflow for dropdowns
-          clipPath: "inset(0 0 -100vh 0)",
-          // Provide scroll offset for pinned cells to counter-translate
-          "--header-scroll-offset": `${scrollLeft}px`,
-          ...style,
-        } as React.CSSProperties}
-        {...props}
-      >
+      <>
+        {/* Sentinel element - positioned just above the sticky container */}
+        {/* When this scrolls out of view, we know the header is stuck */}
         <div
-          style={{
-            transform: `translateX(-${scrollLeft}px)`,
-            willChange: "transform",
+          ref={sentinelRef}
+          className="h-px w-full pointer-events-none"
+          aria-hidden="true"
+        />
+        <div
+          ref={(node) => {
+            containerRef.current = node;
+            if (typeof ref === "function") {
+              ref(node);
+            } else if (ref) {
+              ref.current = node;
+            }
           }}
+          className={cn(
+            "relative overflow-x-clip transition-shadow duration-200",
+            isStuck && "shadow-[0_2px_4px_-1px_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.06)]",
+            className
+          )}
+          style={{
+            // clip-path clips horizontally but allows vertical overflow for dropdowns
+            clipPath: "inset(0 0 -100vh 0)",
+            // Provide scroll offset for pinned cells to counter-translate
+            "--header-scroll-offset": `${scrollLeft}px`,
+            ...style,
+          } as React.CSSProperties}
+          {...props}
         >
-          {children}
+          <div
+            style={{
+              transform: `translateX(-${scrollLeft}px)`,
+              willChange: "transform",
+            }}
+          >
+            {children}
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 );

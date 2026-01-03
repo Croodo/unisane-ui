@@ -3,7 +3,7 @@
 import React, { memo } from "react";
 import type { ReactNode } from "react";
 import { Icon } from "@unisane/ui";
-import type { Column, PinPosition, ColumnMetaMap, InlineEditingController, RowGroup, GroupHeaderProps, CellSelectionContext } from "../types/index";
+import type { Column, PinPosition, ColumnMetaMap, InlineEditingController, RowGroup, GroupHeaderProps, CellSelectionContext, RowActivationEvent } from "../types/index";
 import type { RowDragProps } from "../hooks/ui/use-row-drag";
 import { DataTableRow } from "./row";
 import { GroupRow } from "./group-row";
@@ -27,7 +27,7 @@ interface DataTableBodyProps<T> {
   density?: Density;
   onSelect: (id: string, checked: boolean) => void;
   onToggleExpand: (id: string) => void;
-  onRowClick?: (row: T, event: React.MouseEvent) => void;
+  onRowClick?: (row: T, activation: RowActivationEvent) => void;
   /** Callback when row is right-clicked (context menu) */
   onRowContextMenu?: (row: T, event: React.MouseEvent) => void;
   onRowHover?: (row: T | null) => void;
@@ -56,6 +56,8 @@ interface DataTableBodyProps<T> {
   getCellSelectionContext?: (rowId: string, columnKey: string) => CellSelectionContext;
   /** Cell selection: handle cell click */
   onCellClick?: (rowId: string, columnKey: string, event: React.MouseEvent) => void;
+  /** Cell selection: handle keyboard navigation */
+  onCellKeyDown?: (event: React.KeyboardEvent) => void;
   /** Row reordering: whether drag-to-reorder is enabled */
   reorderableRows?: boolean;
   /** Row reordering: get drag props for a row */
@@ -165,6 +167,7 @@ function DataTableBodyInner<T extends { id: string }>({
   cellSelectionEnabled = false,
   getCellSelectionContext,
   onCellClick,
+  onCellKeyDown,
   reorderableRows = false,
   getRowDragProps,
   getDragHandleProps,
@@ -260,6 +263,7 @@ function DataTableBodyInner<T extends { id: string }>({
                 cellSelectionEnabled={cellSelectionEnabled}
                 getCellSelectionContext={getCellSelectionContext}
                 onCellClick={onCellClick}
+                onCellKeyDown={onCellKeyDown}
               />
             );
           });
@@ -311,6 +315,7 @@ function DataTableBodyInner<T extends { id: string }>({
           cellSelectionEnabled={cellSelectionEnabled}
           getCellSelectionContext={getCellSelectionContext}
           onCellClick={onCellClick}
+          onCellKeyDown={onCellKeyDown}
           reorderableRows={reorderableRows}
           isDragging={isDraggingRow?.(row.id)}
           isDropTarget={isDropTarget?.(row.id)}

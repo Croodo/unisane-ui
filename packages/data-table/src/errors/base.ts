@@ -29,6 +29,10 @@ export const DataTableErrorCode = {
   RENDER_ERROR: "DT_501",
   VIRTUALIZATION_ERROR: "DT_502",
   EDIT_FAILED: "DT_503",
+  SELECTION_ERROR: "DT_504",
+  EXPORT_ERROR: "DT_505",
+  FILTER_ERROR: "DT_506",
+  SORT_ERROR: "DT_507",
 } as const;
 
 export type DataTableErrorCodeValue = (typeof DataTableErrorCode)[keyof typeof DataTableErrorCode];

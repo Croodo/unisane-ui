@@ -203,6 +203,27 @@ export interface UseClipboardPasteReturn<T extends { id: string }> {
   copy: (getCellValue: (rowId: string, columnKey: string) => unknown) => Promise<boolean>;
 
   /**
+   * Copy a range of cells to clipboard.
+   * Returns TSV-formatted text for Excel/Sheets compatibility.
+   */
+  copyRange: (
+    startRowId: string,
+    startColumnKey: string,
+    endRowId: string,
+    endColumnKey: string,
+    getCellValue: (rowId: string, columnKey: string) => unknown
+  ) => Promise<boolean>;
+
+  /**
+   * Copy specific cells to clipboard.
+   * Cells should be provided as { rowId, columnKey }[]
+   */
+  copyCells: (
+    cells: Array<{ rowId: string; columnKey: string }>,
+    getCellValue: (rowId: string, columnKey: string) => unknown
+  ) => Promise<boolean>;
+
+  /**
    * Keyboard event handler to attach to the table container.
    */
   handleKeyDown: (event: React.KeyboardEvent) => void;
@@ -533,10 +554,7 @@ export function useClipboardPaste<T extends { id: string }>({
     async (getCellValue: (rowId: string, columnKey: string) => unknown): Promise<boolean> => {
       if (!enabled) return false;
 
-      // This function needs to be called with cell selection data
-      // The actual implementation depends on how cells are selected
-      // For now, just copy the active cell value
-
+      // Copy the active cell value
       const activeCell = getActiveCell();
       if (!activeCell) return false;
 
@@ -550,6 +568,137 @@ export function useClipboardPaste<T extends { id: string }>({
       }
     },
     [enabled, getActiveCell]
+  );
+
+  /**
+   * Copy a range of cells to clipboard as TSV (tab-separated values).
+   * Compatible with Excel, Google Sheets, and other spreadsheet applications.
+   */
+  const copyRange = useCallback(
+    async (
+      startRowId: string,
+      startColumnKey: string,
+      endRowId: string,
+      endColumnKey: string,
+      getCellValue: (rowId: string, columnKey: string) => unknown
+    ): Promise<boolean> => {
+      if (!enabled) return false;
+
+      const currentData = dataRef.current;
+      const currentColumnKeys = columnKeysRef.current;
+
+      // Find row indices
+      const startRowIndex = currentData.findIndex((row) => row.id === startRowId);
+      const endRowIndex = currentData.findIndex((row) => row.id === endRowId);
+
+      if (startRowIndex === -1 || endRowIndex === -1) return false;
+
+      // Find column indices
+      const startColIndex = currentColumnKeys.indexOf(startColumnKey);
+      const endColIndex = currentColumnKeys.indexOf(endColumnKey);
+
+      if (startColIndex === -1 || endColIndex === -1) return false;
+
+      // Normalize range (ensure start <= end)
+      const minRowIndex = Math.min(startRowIndex, endRowIndex);
+      const maxRowIndex = Math.max(startRowIndex, endRowIndex);
+      const minColIndex = Math.min(startColIndex, endColIndex);
+      const maxColIndex = Math.max(startColIndex, endColIndex);
+
+      // Build TSV string
+      const rows: string[] = [];
+
+      for (let rowIdx = minRowIndex; rowIdx <= maxRowIndex; rowIdx++) {
+        const row = currentData[rowIdx];
+        if (!row) continue;
+
+        const cellValues: string[] = [];
+        for (let colIdx = minColIndex; colIdx <= maxColIndex; colIdx++) {
+          const columnKey = currentColumnKeys[colIdx];
+          if (!columnKey) continue;
+
+          const value = getCellValue(row.id, columnKey);
+          // Escape tabs and newlines in cell values
+          const textValue = value == null ? "" : String(value).replace(/\t/g, " ").replace(/\n/g, " ");
+          cellValues.push(textValue);
+        }
+        rows.push(cellValues.join(TAB));
+      }
+
+      const tsvText = rows.join("\n");
+
+      try {
+        await navigator.clipboard.writeText(tsvText);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    [enabled]
+  );
+
+  /**
+   * Copy specific cells to clipboard as TSV.
+   * Cells are organized into a grid based on their positions.
+   */
+  const copyCells = useCallback(
+    async (
+      cells: Array<{ rowId: string; columnKey: string }>,
+      getCellValue: (rowId: string, columnKey: string) => unknown
+    ): Promise<boolean> => {
+      if (!enabled || cells.length === 0) return false;
+
+      const currentData = dataRef.current;
+      const currentColumnKeys = columnKeysRef.current;
+
+      // Build a map of cells by position
+      const cellMap = new Map<string, unknown>();
+      let minRowIndex = Infinity;
+      let maxRowIndex = -1;
+      let minColIndex = Infinity;
+      let maxColIndex = -1;
+
+      for (const cell of cells) {
+        const rowIndex = currentData.findIndex((row) => row.id === cell.rowId);
+        const colIndex = currentColumnKeys.indexOf(cell.columnKey);
+
+        if (rowIndex === -1 || colIndex === -1) continue;
+
+        minRowIndex = Math.min(minRowIndex, rowIndex);
+        maxRowIndex = Math.max(maxRowIndex, rowIndex);
+        minColIndex = Math.min(minColIndex, colIndex);
+        maxColIndex = Math.max(maxColIndex, colIndex);
+
+        const key = `${rowIndex}-${colIndex}`;
+        cellMap.set(key, getCellValue(cell.rowId, cell.columnKey));
+      }
+
+      if (maxRowIndex === -1 || maxColIndex === -1) return false;
+
+      // Build TSV string with empty cells for gaps
+      const rows: string[] = [];
+
+      for (let rowIdx = minRowIndex; rowIdx <= maxRowIndex; rowIdx++) {
+        const cellValues: string[] = [];
+        for (let colIdx = minColIndex; colIdx <= maxColIndex; colIdx++) {
+          const key = `${rowIdx}-${colIdx}`;
+          const value = cellMap.get(key);
+          const textValue = value == null ? "" : String(value).replace(/\t/g, " ").replace(/\n/g, " ");
+          cellValues.push(textValue);
+        }
+        rows.push(cellValues.join(TAB));
+      }
+
+      const tsvText = rows.join("\n");
+
+      try {
+        await navigator.clipboard.writeText(tsvText);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    [enabled]
   );
 
   // ─── KEYBOARD HANDLER ─────────────────────────────────────────────────────
@@ -577,6 +726,8 @@ export function useClipboardPaste<T extends { id: string }>({
     paste,
     pasteAt,
     copy,
+    copyRange,
+    copyCells,
     handleKeyDown,
   };
 }

@@ -110,6 +110,8 @@ export interface DataTableStrings {
   selectGroupRows: string;
   /** Remove grouping pill aria-label. Placeholder: {label} */
   removeGroupingLabel: string;
+  /** Grouping applied feedback. Placeholder: {column} */
+  groupApplied: string;
 
   // ─── Summary Row ───
   /** Summary row label */
@@ -144,6 +146,12 @@ export interface DataTableStrings {
   exportJson: string;
   /** JSON format description */
   exportJsonDesc: string;
+  /** Export started message. Placeholder: {format} */
+  exportStarted: string;
+  /** Export success message. Placeholder: {format} */
+  exportSuccess: string;
+  /** Export failed message */
+  exportFailed: string;
 
   // ─── Search ───
   /** Search input placeholder */
@@ -408,6 +416,14 @@ export interface DataTableStrings {
   copyId: string;
   /** Delete menu item */
   delete: string;
+
+  // ─── Inline Editing ───
+  /** Message shown when user tries to edit a non-editable cell */
+  cellNotEditable: string;
+  /** Cell updated feedback */
+  cellUpdated: string;
+  /** Row deleted feedback */
+  rowDeleted: string;
 
   // ─── Actions Cell ───
   /** Actions button aria-label */

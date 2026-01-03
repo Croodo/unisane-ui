@@ -1,14 +1,6 @@
 // ─── DEPRECATION UTILITIES ───────────────────────────────────────────────────
 // Utilities for handling deprecated props with backward compatibility.
-
-/**
- * Mapping of deprecated prop names to their new names
- */
-export const DEPRECATED_PROPS: Record<string, string> = {
-  selectable: "rowSelectionEnabled",
-  density: "rowDensity",
-  columnBorders: "showColumnDividers",
-};
+// Add future deprecations here as needed.
 
 /**
  * Set of props that have been warned about in this session
@@ -42,12 +34,12 @@ export function warnDeprecatedProp(
  *
  * @example
  * ```typescript
- * const rowSelectionEnabled = resolveDeprecatedProp(
- *   props.rowSelectionEnabled,
- *   props.selectable,
- *   "selectable",
- *   "rowSelectionEnabled",
- *   false
+ * const newValue = resolveDeprecatedProp(
+ *   props.newPropName,
+ *   props.oldPropName,
+ *   "oldPropName",
+ *   "newPropName",
+ *   defaultValue
  * );
  * ```
  */
@@ -75,60 +67,8 @@ export function resolveDeprecatedProp<T>(
 }
 
 /**
- * Process an object of props, resolving all deprecated props at once.
- * Returns a new object with only the new prop names.
- *
- * @example
- * ```typescript
- * const resolved = resolveDeprecatedProps(props, {
- *   selectable: { newName: "rowSelectionEnabled", default: false },
- *   density: { newName: "rowDensity", default: "standard" },
- *   columnBorders: { newName: "showColumnDividers", default: undefined },
- * });
- * ```
- */
-export function resolveDeprecatedProps<
-  TProps extends Record<string, unknown>,
-  TResolved extends Record<string, unknown>,
->(
-  props: TProps,
-  mappings: Record<
-    string,
-    { newName: string; default: unknown }
-  >,
-  componentName = "DataTable"
-): TResolved {
-  const result: Record<string, unknown> = {};
-
-  for (const [oldName, config] of Object.entries(mappings)) {
-    const newName = config.newName;
-    const newValue = props[newName];
-    const oldValue = props[oldName];
-
-    result[newName] = resolveDeprecatedProp(
-      newValue,
-      oldValue,
-      oldName,
-      newName,
-      config.default,
-      componentName
-    );
-  }
-
-  return result as TResolved;
-}
-
-/**
  * Clear the warned props set (useful for testing)
  */
 export function clearDeprecationWarnings(): void {
   warnedProps.clear();
 }
-
-/**
- * Type helper to create props interface with both old and new names
- */
-export type WithDeprecatedProps<
-  TNew extends Record<string, unknown>,
-  TDeprecated extends Record<string, unknown>,
-> = TNew & Partial<TDeprecated>;

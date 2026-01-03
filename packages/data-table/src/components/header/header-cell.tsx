@@ -123,7 +123,8 @@ export function HeaderCell<T>({
         // Pinned columns: sticky positioning with higher z-index to stay above non-pinned
         // Only enable sticky on tablet+ (≥768px container width) - mobile scrolls everything together
         // Non-pinned columns get z-0 to ensure they stack below pinned columns (z-20)
-        pinPosition ? "@md:sticky z-20" : "z-0",
+        // Pinned columns use isolate to create proper stacking context
+        pinPosition ? "@md:sticky z-20 isolate" : "z-0",
         // Column borders: show on non-pinned columns (except last), and on last pinned-left / first pinned-right
         showColumnBorders && !isLastColumn && !pinPosition && "border-r border-outline-variant/50",
         showColumnBorders && isLastPinnedLeft && "border-r border-outline-variant/50",
@@ -142,11 +143,14 @@ export function HeaderCell<T>({
           ? "-4px 0 6px -2px rgba(0, 0, 0, 0.1)"
           : undefined,
         // Counter-translate for pinned columns in sticky header (when using split-table layout)
-        // Use max() to only start translating once scroll exceeds drag handle width (mimics sticky behavior)
-        transform: pinPosition
+        // Left-pinned: Use max() to only start translating once scroll exceeds drag handle width
+        // Right-pinned: Always use full offset (no drag handle adjustment needed for right side)
+        transform: pinPosition === "left"
           ? reorderableRows
             ? "translateX(max(0px, calc(var(--header-scroll-offset, 0px) - 40px)))"
             : "translateX(var(--header-scroll-offset, 0px))"
+          : pinPosition === "right"
+          ? "translateX(var(--header-scroll-offset, 0px))"
           : undefined,
       }}
       scope="col"

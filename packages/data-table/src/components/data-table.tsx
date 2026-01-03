@@ -4,6 +4,7 @@ import React from "react";
 import type { DataTableProps } from "../types/index";
 import { DataTableProvider } from "../context/provider";
 import { DataTableInner } from "./data-table-inner";
+import { FeedbackProvider } from "../feedback";
 
 /**
  * DataTable - Feature-rich, highly scalable data table component for Unisane UI
@@ -41,7 +42,7 @@ import { DataTableInner } from "./data-table-inner";
  * <DataTable
  *   data={users}
  *   columns={columns}
- *   selectable
+ *   rowSelectionEnabled
  *   bulkActions={[{ label: "Delete", onClick: handleDelete }]}
  * />
  * ```
@@ -56,17 +57,19 @@ export function DataTable<T extends { id: string }>({
 
   // Visual
   variant = "list",
-  selectable,
-  columnBorders,
+  rowSelectionEnabled,
+  showColumnDividers,
   zebra = false,
   stickyHeader = true,
-  density = "standard",
+  rowDensity = "standard",
 
   // Features
   resizable = true,
   pinnable = true,
   virtualize = true,
   virtualizeThreshold = 50,
+  virtualizeColumns = false,
+  virtualizeColumnsThreshold = 20,
 
   // Pagination
   pagination = "offset",
@@ -102,6 +105,7 @@ export function DataTable<T extends { id: string }>({
   filters: controlledFilters,
   searchValue,
   columnPinState,
+  sparseSelection,
 
   // UI
   className,
@@ -112,20 +116,26 @@ export function DataTable<T extends { id: string }>({
 
   // Layout
   estimateRowHeight,
+
+  // Feedback
+  enableFeedback = true,
+  disableToasts = false,
+  disableAnnouncements = false,
 }: DataTableProps<T>) {
   // Compute effective settings based on variant
-  const effectiveSelectable = selectable ?? (variant === "grid" || bulkActions.length > 0);
-  const effectiveColumnBorders = columnBorders ?? variant === "grid";
+  const effectiveRowSelectionEnabled = rowSelectionEnabled ?? (variant === "grid" || bulkActions.length > 0);
+  const effectiveShowColumnDividers = showColumnDividers ?? variant === "grid";
 
-  return (
+  // Wrap content with FeedbackProvider if feedback is enabled
+  const content = (
     <DataTableProvider
       tableId={tableId}
       columns={columns}
       mode={mode}
       paginationMode={pagination}
       variant={variant}
-      selectable={effectiveSelectable}
-      columnBorders={effectiveColumnBorders}
+      rowSelectionEnabled={effectiveRowSelectionEnabled}
+      showColumnDividers={effectiveShowColumnDividers}
       zebra={zebra}
       stickyHeader={stickyHeader}
       resizable={resizable}
@@ -143,6 +153,7 @@ export function DataTable<T extends { id: string }>({
       onColumnPinChange={onColumnPinChange}
       selectedIds={selectedIds}
       onSelectionChange={onSelectionChange}
+      sparseSelection={sparseSelection}
     >
       <DataTableInner
         data={data}
@@ -156,9 +167,11 @@ export function DataTable<T extends { id: string }>({
         onRowClick={onRowClick}
         onRowContextMenu={onRowContextMenu}
         activeRowId={activeRowId}
-        density={density}
+        density={rowDensity}
         virtualize={virtualize}
         virtualizeThreshold={virtualizeThreshold}
+        virtualizeColumns={virtualizeColumns}
+        virtualizeColumnsThreshold={virtualizeColumnsThreshold}
         emptyMessage={emptyMessage}
         emptyIcon={emptyIcon}
         estimateRowHeight={estimateRowHeight}
@@ -166,6 +179,21 @@ export function DataTable<T extends { id: string }>({
         onRowReorder={onRowReorder}
       />
     </DataTableProvider>
+  );
+
+  // Return with or without FeedbackProvider based on enableFeedback prop
+  if (!enableFeedback) {
+    return content;
+  }
+
+  return (
+    <FeedbackProvider
+      disabled={!enableFeedback}
+      disableToasts={disableToasts}
+      disableAnnouncements={disableAnnouncements}
+    >
+      {content}
+    </FeedbackProvider>
   );
 }
 

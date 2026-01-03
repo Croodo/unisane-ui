@@ -92,12 +92,8 @@ export interface DataTableToolbarProps<T> {
   selectedIds?: string[];
   bulkActions?: BulkAction[];
   onClearSelection?: () => void;
-  /** @deprecated Use `exportHandler` instead for multi-format support */
-  onExport?: () => void;
   /** Export configuration with multi-format support */
   exportHandler?: ExportHandler;
-  /** @deprecated Use `printHandler` instead for full print support */
-  onPrint?: () => void;
   /** Print configuration */
   printHandler?: PrintHandler;
   onRefresh?: () => void;
