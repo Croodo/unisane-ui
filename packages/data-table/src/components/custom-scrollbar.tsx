@@ -21,6 +21,8 @@ export interface CustomScrollbarProps {
   dependencies?: unknown[];
   /** Additional class names */
   className?: string;
+  /** Ref to the DataTable root container for sticky positioning */
+  dataTableRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 // ─── COMPONENT ───────────────────────────────────────────────────────────────
@@ -31,15 +33,19 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
   pinnedRightWidth,
   dependencies = [],
   className = "",
+  dataTableRef,
 }) => {
   const trackRef = useRef<HTMLDivElement | null>(null);
   const thumbRef = useRef<HTMLDivElement | null>(null);
+  const scrollbarRef = useRef<HTMLDivElement | null>(null);
 
   // State
   const [thumbWidth, setThumbWidth] = useState(0);
   const [thumbLeft, setThumbLeft] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [hasOverflow, setHasOverflow] = useState(false);
+  const [isSticky, setIsSticky] = useState(false);
+  const [stickyPosition, setStickyPosition] = useState<{ left: number; width: number } | null>(null);
 
   // Drag refs
   const startXRef = useRef(0);
@@ -103,6 +109,101 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
     requestAnimationFrame(updateScrollbar);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pinnedLeftWidth, pinnedRightWidth, ...dependencies]);
+
+  // ─── STICKY POSITION LOGIC ────────────────────────────────────────────────────
+  // Scrollbar sticks to viewport bottom until table bottom comes into view
+
+  const updateStickyState = useCallback(() => {
+    const dataTable = dataTableRef?.current;
+
+    if (!dataTable || !hasOverflow) {
+      setIsSticky(false);
+      setStickyPosition(null);
+      return;
+    }
+
+    const dataTableRect = dataTable.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+
+    // The scrollbar's natural position is at the bottom of the DataTable
+    // We need to check if that natural position is visible in the viewport
+
+    // When NOT sticky, the scrollbar sits at the bottom of the DataTable
+    // When the table bottom comes into viewport (with room for scrollbar), unstick
+    const scrollbarNaturalBottom = dataTableRect.bottom;
+    const scrollbarNaturalTop = scrollbarNaturalBottom - SCROLLBAR_HEIGHT;
+
+    // Scrollbar should be sticky when its natural position is below the viewport
+    // i.e., when you'd have to scroll down to see it
+    const naturalPositionBelowViewport = scrollbarNaturalTop > viewportHeight;
+
+    // Also check if the table top is still visible (table hasn't scrolled completely out)
+    // The table should still be partially visible for the scrollbar to be useful
+    const tableStillVisible = dataTableRect.top < viewportHeight;
+
+    // Be sticky when natural scrollbar position is below viewport AND table is visible
+    const shouldBeSticky = naturalPositionBelowViewport && tableStillVisible;
+
+    setIsSticky(shouldBeSticky);
+
+    // Update position for fixed positioning (needs to track horizontal position)
+    if (shouldBeSticky) {
+      setStickyPosition({
+        left: dataTableRect.left,
+        width: dataTableRect.width,
+      });
+    } else {
+      setStickyPosition(null);
+    }
+  }, [dataTableRef, hasOverflow]);
+
+  // Listen for scroll and resize to update sticky state
+  useEffect(() => {
+    if (!dataTableRef?.current) return;
+
+    // Initial check after a frame to ensure layout is ready
+    requestAnimationFrame(updateStickyState);
+
+    // Listen to window scroll and resize
+    window.addEventListener("scroll", updateStickyState, { passive: true, capture: true });
+    window.addEventListener("resize", updateStickyState, { passive: true });
+
+    // Also listen to scroll events on any scrollable parent containers
+    // Use capture phase to catch scrolls before they bubble
+    document.addEventListener("scroll", updateStickyState, { passive: true, capture: true });
+
+    // Also observe the DataTable for size changes
+    const observer = new ResizeObserver(updateStickyState);
+    observer.observe(dataTableRef.current);
+
+    // Use IntersectionObserver as a fallback to detect visibility changes
+    const intersectionObserver = new IntersectionObserver(
+      () => {
+        updateStickyState();
+      },
+      { threshold: [0, 0.1, 0.5, 0.9, 1] }
+    );
+    intersectionObserver.observe(dataTableRef.current);
+
+    return () => {
+      window.removeEventListener("scroll", updateStickyState, { capture: true } as EventListenerOptions);
+      window.removeEventListener("resize", updateStickyState);
+      document.removeEventListener("scroll", updateStickyState, { capture: true } as EventListenerOptions);
+      observer.disconnect();
+      intersectionObserver.disconnect();
+    };
+  }, [dataTableRef, updateStickyState]);
+
+  // Update sticky when hasOverflow changes
+  useEffect(() => {
+    if (hasOverflow) {
+      // Small delay to ensure DOM has updated
+      requestAnimationFrame(updateStickyState);
+    } else {
+      setIsSticky(false);
+      setStickyPosition(null);
+    }
+  }, [hasOverflow, updateStickyState]);
 
   // Drag handlers
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -184,16 +285,38 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
   }, [tableContainerRef]);
 
   // Render scrollbar container - hidden on mobile where native touch scrollbar is used
+  // When sticky, the scrollbar is fixed to viewport bottom with same horizontal bounds as table
   return (
-    <div
-      className={cn(
-        "w-full relative bg-surface border-t border-outline-variant/50",
-        // Hide on mobile (< @md) - native scrollbar used for touch usability
-        "hidden @md:block",
-        className
+    <>
+      {/* Placeholder to maintain layout space when scrollbar is fixed */}
+      {isSticky && (
+        <div
+          className="hidden @md:block"
+          style={{ height: `${SCROLLBAR_HEIGHT}px` }}
+          aria-hidden="true"
+        />
       )}
-      style={{ height: `${SCROLLBAR_HEIGHT}px` }}
-    >
+      <div
+        ref={scrollbarRef}
+        className={cn(
+          "bg-surface border-t border-outline-variant/50",
+          // Hide on mobile (< @md) - native scrollbar used for touch usability
+          "hidden @md:block",
+          // Sticky positioning when table bottom is below viewport
+          isSticky ? "fixed bottom-0 z-50" : "relative w-full",
+          className
+        )}
+        style={{
+          height: `${SCROLLBAR_HEIGHT}px`,
+          // When sticky, use tracked position for horizontal alignment
+          ...(isSticky && stickyPosition
+            ? {
+                left: stickyPosition.left,
+                width: stickyPosition.width,
+              }
+            : {}),
+        }}
+      >
       {/* Track - only show contents when there's overflow */}
       <div
         ref={trackRef}
@@ -201,7 +324,7 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
         className={cn(
           "absolute top-0 bottom-0 transition-colors",
           hasOverflow && "cursor-pointer",
-          hasOverflow && (isDragging ? "bg-on-surface/8" : "bg-transparent hover:bg-on-surface/5")
+          hasOverflow && (isDragging ? "bg-on-surface/10" : "bg-on-surface/5 hover:bg-on-surface/8")
         )}
         style={{
           left: pinnedLeftWidth,
@@ -216,7 +339,7 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
               "absolute top-0 bottom-0 transition-colors",
               isDragging
                 ? "bg-primary"
-                : "bg-outline-variant/70 hover:bg-outline-variant"
+                : "bg-on-surface/40 hover:bg-on-surface/50"
             )}
             style={{
               width: thumbWidth,
@@ -228,6 +351,7 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
         )}
       </div>
     </div>
+    </>
   );
 };
 

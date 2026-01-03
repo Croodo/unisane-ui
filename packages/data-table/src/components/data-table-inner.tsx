@@ -133,6 +133,7 @@ export function DataTableInner<T extends { id: string }>({
   const { t, formatNumber } = useI18n();
 
   const tableContainerRef = useRef<HTMLDivElement>(null);
+  const dataTableRootRef = useRef<HTMLDivElement>(null);
 
   // Observe container for accurate responsive width detection
   useEffect(() => {
@@ -654,6 +655,7 @@ export function DataTableInner<T extends { id: string }>({
 
   return (
     <div
+      ref={dataTableRootRef}
       className={cn(
         "flex flex-col bg-surface isolate",
         className
@@ -827,6 +829,7 @@ export function DataTableInner<T extends { id: string }>({
         pinnedLeftWidth={pinnedLeftWidth}
         pinnedRightWidth={pinnedRightWidth}
         dependencies={[sortedVisibleColumns, columnMeta, paginatedData.length]}
+        dataTableRef={dataTableRootRef}
       />
     </div>
   );
