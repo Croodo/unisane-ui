@@ -33,20 +33,20 @@ export interface SidebarRailProps extends React.HTMLAttributes<HTMLElement> {
 
 export const SidebarRail = forwardRef<HTMLElement, SidebarRailProps>(
   ({ children, className, ...props }, ref) => {
-    const { handleRailLeave, railWidth, isMobile, isTablet, isDrawerVisible } =
-      useSidebar();
+    const { handleRailLeave, railWidth, isDrawerVisible } = useSidebar();
 
-    // Hide rail on mobile and tablet (tablet uses top app bar instead)
-    if (isMobile || isTablet) return null;
-
+    // Use CSS media queries for responsive visibility to avoid hydration mismatch.
+    // Rail is hidden on mobile (<600px) and tablet (600-840px) via CSS, shown on desktop (840px+).
     return (
       <nav
         ref={ref}
         className={cn(
-          "fixed left-0 top-0 h-screen flex flex-col items-center",
+          "fixed left-0 top-0 h-screen flex-col items-center",
           "bg-surface-container text-on-surface py-3 gap-1",
           "z-50 shrink-0",
           "transition-all duration-medium ease-standard",
+          // CSS-based responsive: hidden below expanded breakpoint (840px)
+          "hidden expanded:flex",
           // Only show border when drawer is visible
           isDrawerVisible && "border-r border-outline-variant",
           className
@@ -584,11 +584,11 @@ export interface SidebarInsetProps extends React.HTMLAttributes<HTMLElement> {
 
 export const SidebarInset = forwardRef<HTMLElement, SidebarInsetProps>(
   ({ children, className, style, ...props }, ref) => {
-    const { contentMargin, isMobile, isTablet } = useSidebar();
+    const { contentMargin } = useSidebar();
 
-    // Mobile and tablet use top app bar, so need top margin
-    const usesTopAppBar = isMobile || isTablet;
-
+    // Use CSS media queries for responsive top margin to avoid hydration mismatch.
+    // Mobile/tablet (<840px) use TopAppBar with mt-16, desktop (840px+) has no top margin.
+    // The --app-header-height CSS variable is set via CSS custom properties for each breakpoint.
     return (
       <main
         ref={ref}
@@ -596,14 +596,15 @@ export const SidebarInset = forwardRef<HTMLElement, SidebarInsetProps>(
           "flex-1 min-h-screen flex flex-col",
           "bg-surface",
           "transition-[margin] duration-emphasized ease-emphasized",
-          usesTopAppBar && "mt-16",
+          // CSS-based responsive: top margin for mobile/tablet, none for desktop
+          "mt-16 expanded:mt-0",
           className
         )}
         style={{
-          marginLeft: !usesTopAppBar ? contentMargin : undefined,
+          // contentMargin is already 0 for mobile/tablet in context, so this works correctly
+          marginLeft: contentMargin,
           // Expose app header height as CSS variable for sticky components (e.g., DataTable)
-          // On mobile/tablet, TopAppBar is 64px (h-16); on desktop, no fixed header
-          "--app-header-height": usesTopAppBar ? "64px" : "0px",
+          // This uses CSS custom properties that respond to breakpoints
           ...style,
         } as React.CSSProperties}
         {...props}

@@ -23,7 +23,7 @@ export function GroupHeaderRow<T>({
   hasPinnedLeftData,
 }: GroupHeaderRowProps<T>) {
   return (
-    <tr>
+    <tr aria-rowindex={1}>
       {/* Checkbox placeholder */}
       {selectable && (
         <th

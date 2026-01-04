@@ -129,7 +129,12 @@ function UsersTable({ data, setData, columns, features, density, onDensityChange
     data,
     onCellChange: async (rowId: string, columnKey: string, newValue: unknown) => {
       await new Promise((resolve) => setTimeout(resolve, 300));
-      setData((prev) => prev.map((row) => (row.id === rowId ? { ...row, [columnKey]: newValue } : row)));
+      // Convert numeric column values from string to number
+      const numericColumns = ["salary"];
+      const processedValue = numericColumns.includes(columnKey)
+        ? Number(newValue)
+        : newValue;
+      setData((prev) => prev.map((row) => (row.id === rowId ? { ...row, [columnKey]: processedValue } : row)));
     },
     validateCell: (_rowId: string, columnKey: string, value: unknown) => {
       if (columnKey === "salary") {
@@ -357,7 +362,12 @@ function ProductsTable({ data, setData, columns, features, density, onDensityCha
     data,
     onCellChange: async (rowId: string, columnKey: string, newValue: unknown) => {
       await new Promise((resolve) => setTimeout(resolve, 300));
-      setData((prev) => prev.map((row) => (row.id === rowId ? { ...row, [columnKey]: newValue } : row)));
+      // Convert numeric column values from string to number
+      const numericColumns = ["price", "cost", "quantity", "weight"];
+      const processedValue = numericColumns.includes(columnKey)
+        ? Number(newValue)
+        : newValue;
+      setData((prev) => prev.map((row) => (row.id === rowId ? { ...row, [columnKey]: processedValue } : row)));
     },
     validateCell: (_rowId: string, columnKey: string, value: unknown) => {
       if (columnKey === "price") {
@@ -599,7 +609,12 @@ function InventoryTable({ data, setData, columns, features, density, onDensityCh
     data,
     onCellChange: async (rowId: string, columnKey: string, newValue: unknown) => {
       await new Promise((resolve) => setTimeout(resolve, 300));
-      setData((prev) => prev.map((row) => (row.id === rowId ? { ...row, [columnKey]: newValue } : row)));
+      // Convert numeric column values from string to number
+      const numericColumns = ["costPrice", "sellingPrice", "currentStock", "reorderLevel", "weight"];
+      const processedValue = numericColumns.includes(columnKey)
+        ? Number(newValue)
+        : newValue;
+      setData((prev) => prev.map((row) => (row.id === rowId ? { ...row, [columnKey]: processedValue } : row)));
     },
     validateCell: (_rowId: string, columnKey: string, value: unknown) => {
       if (columnKey === "costPrice") {
@@ -844,7 +859,12 @@ function FinancialTable({ data, setData, columns, features, density, onDensityCh
     data,
     onCellChange: async (rowId, columnKey, newValue) => {
       await new Promise((resolve) => setTimeout(resolve, 200));
-      setData((prev) => prev.map((row) => (row.id === rowId ? { ...row, [columnKey]: newValue } : row)));
+      // Convert numeric column values from string to number
+      const numericColumns = ["amount"];
+      const processedValue = numericColumns.includes(columnKey)
+        ? Number(newValue)
+        : newValue;
+      setData((prev) => prev.map((row) => (row.id === rowId ? { ...row, [columnKey]: processedValue } : row)));
     },
     validateCell: (_rowId, columnKey, value) => {
       if (columnKey === "amount") {

@@ -12,6 +12,38 @@ import { cn, Slot } from "@ui/lib/utils";
 import { useSidebar } from "./sidebar-context";
 import { Ripple } from "../ripple";
 
+/**
+ * Renders a Material Symbol icon with proper styling.
+ * Handles both string icon names and React nodes.
+ */
+interface MaterialIconProps {
+  icon: React.ReactNode | string;
+  /** Whether the icon should appear in its active/filled state */
+  active?: boolean;
+  /** Font size in pixels (default: 20) */
+  size?: number;
+  className?: string;
+}
+
+export function MaterialIcon({ icon, active = false, size = 20, className }: MaterialIconProps) {
+  if (typeof icon === "string") {
+    return (
+      <span
+        className={cn("material-symbols-outlined transition-all duration-short", className)}
+        style={{
+          fontSize: size,
+          fontVariationSettings: active
+            ? "'FILL' 1, 'wght' 500"
+            : "'wght' 400",
+        }}
+      >
+        {icon}
+      </span>
+    );
+  }
+  return <>{icon}</>;
+}
+
 export interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
 }
@@ -33,20 +65,20 @@ export interface SidebarRailProps extends React.HTMLAttributes<HTMLElement> {
 
 export const SidebarRail = forwardRef<HTMLElement, SidebarRailProps>(
   ({ children, className, ...props }, ref) => {
-    const { handleRailLeave, railWidth, isMobile, isTablet, isDrawerVisible } =
-      useSidebar();
+    const { handleRailLeave, railWidth, isDrawerVisible } = useSidebar();
 
-    // Hide rail on mobile and tablet (tablet uses top app bar instead)
-    if (isMobile || isTablet) return null;
-
+    // Use CSS media queries for responsive visibility to avoid hydration mismatch.
+    // Rail is hidden on mobile (<600px) and tablet (600-840px) via CSS, shown on desktop (840px+).
     return (
       <nav
         ref={ref}
         className={cn(
-          "fixed left-0 top-0 h-screen flex flex-col items-center",
+          "fixed left-0 top-0 h-screen flex-col items-center",
           "bg-surface-container text-on-surface py-3 gap-1",
           "z-50 shrink-0",
           "transition-all duration-medium ease-standard",
+          // CSS-based responsive: hidden below expanded breakpoint (840px)
+          "hidden expanded:flex",
           // Only show border when drawer is visible
           isDrawerVisible && "border-r border-outline-variant",
           className
@@ -76,27 +108,6 @@ export interface SidebarRailItemProps {
   childIds?: string[];
 }
 
-const renderIcon = (
-  icon: React.ReactNode | string,
-  isActive: boolean = false
-) => {
-  if (typeof icon === "string") {
-    return (
-      <span
-        className="material-symbols-outlined text-[22px]! transition-all duration-short"
-        style={
-          isActive
-            ? { fontVariationSettings: "'FILL' 1, 'wght' 500" }
-            : { fontVariationSettings: "'wght' 400" }
-        }
-      >
-        {icon}
-      </span>
-    );
-  }
-  return icon;
-};
-
 export function SidebarRailItem({
   id,
   label,
@@ -111,7 +122,7 @@ export function SidebarRailItem({
 }: SidebarRailItemProps) {
   const { activeId, handleClick, handleHover, hasActiveChild } = useSidebar();
   const isDirectlyActive = activeId === id;
-  const hasChildActive = childIds.length > 0 && hasActiveChild(id, childIds);
+  const hasChildActive = childIds.length > 0 && hasActiveChild(childIds);
   const isActive = isDirectlyActive || hasChildActive;
 
   const content = (
@@ -128,9 +139,11 @@ export function SidebarRailItem({
         >
           <Ripple center disabled={disabled} />
           <span className="z-10 relative flex items-center justify-center">
-            {isActive && activeIcon
-              ? renderIcon(activeIcon, true)
-              : renderIcon(icon, isActive)}
+            <MaterialIcon
+              icon={isActive && activeIcon ? activeIcon : icon}
+              active={isActive}
+              size={22}
+            />
           </span>
         </div>
 
@@ -143,6 +156,8 @@ export function SidebarRailItem({
               "z-20 pointer-events-none ring-1 ring-surface",
               typeof badge === "number" && badge < 10 && "min-w-2 h-2 p-0.5"
             )}
+            role="status"
+            aria-label={typeof badge === "number" ? `${badge} notifications` : String(badge)}
           >
             {badge}
           </span>
@@ -224,8 +239,7 @@ export const SidebarDrawer = forwardRef<HTMLElement, SidebarDrawerProps>(
       isDrawerVisible,
       expanded,
       mobileOpen,
-      isMobile,
-      isTablet,
+      usesOverlayDrawer,
       handleDrawerEnter,
       handleDrawerLeave,
       railWidth,
@@ -233,8 +247,6 @@ export const SidebarDrawer = forwardRef<HTMLElement, SidebarDrawerProps>(
       mobileDrawerWidth,
     } = useSidebar();
 
-    // Tablet behaves like mobile for drawer (overlay from left edge)
-    const usesOverlayDrawer = isMobile || isTablet;
     const isOpen = usesOverlayDrawer ? mobileOpen : isDrawerVisible;
     const isOverlay = usesOverlayDrawer || !expanded;
     const effectiveWidth = usesOverlayDrawer ? mobileDrawerWidth : drawerWidth;
@@ -440,18 +452,7 @@ export function SidebarMenuItem({
       <Ripple disabled={disabled} />
       {icon && (
         <span className="shrink-0">
-          {typeof icon === "string" ? (
-            <span
-              className="material-symbols-outlined text-[20px]!"
-              style={
-                isActive ? { fontVariationSettings: "'FILL' 1" } : undefined
-              }
-            >
-              {icon}
-            </span>
-          ) : (
-            icon
-          )}
+          <MaterialIcon icon={icon} active={isActive} size={20} />
         </span>
       )}
       <span className="flex-1 truncate">{label}</span>
@@ -548,13 +549,10 @@ export function SidebarBackdrop({ className, ...props }: SidebarBackdropProps) {
     isDrawerVisible,
     expanded,
     mobileOpen,
-    isMobile,
-    isTablet,
+    usesOverlayDrawer,
     setMobileOpen,
   } = useSidebar();
 
-  // Tablet behaves like mobile for backdrop
-  const usesOverlayDrawer = isMobile || isTablet;
   const isVisible = mobileOpen || (isDrawerVisible && !expanded);
 
   if (!isVisible) return null;
@@ -584,10 +582,14 @@ export interface SidebarInsetProps extends React.HTMLAttributes<HTMLElement> {
 
 export const SidebarInset = forwardRef<HTMLElement, SidebarInsetProps>(
   ({ children, className, style, ...props }, ref) => {
-    const { contentMargin, isMobile, isTablet } = useSidebar();
+    const { railWidth, drawerWidth, expanded } = useSidebar();
 
-    // Mobile and tablet use top app bar, so need top margin
-    const usesTopAppBar = isMobile || isTablet;
+    // Calculate desktop margin:
+    // - When drawer is expanded (pinned), include drawer width
+    // - When drawer is collapsed (or hover-only), just rail width
+    // Note: We use 'expanded' (pinned state) not 'isDrawerVisible' (which includes hover)
+    // because hover is temporary and shouldn't shift content
+    const desktopMargin = expanded ? railWidth + drawerWidth : railWidth;
 
     return (
       <main
@@ -596,14 +598,16 @@ export const SidebarInset = forwardRef<HTMLElement, SidebarInsetProps>(
           "flex-1 min-h-screen flex flex-col",
           "bg-surface",
           "transition-[margin] duration-emphasized ease-emphasized",
-          usesTopAppBar && "mt-16",
+          // Responsive: top margin for mobile/tablet (TopAppBar), none for desktop
+          "mt-16 expanded:mt-0",
+          // Responsive: no left margin on mobile/tablet, applied via style on desktop
+          "ml-0",
           className
         )}
         style={{
-          marginLeft: !usesTopAppBar ? contentMargin : undefined,
-          // Expose app header height as CSS variable for sticky components (e.g., DataTable)
-          // On mobile/tablet, TopAppBar is 64px (h-16); on desktop, no fixed header
-          "--app-header-height": usesTopAppBar ? "64px" : "0px",
+          // Only apply margin-left on desktop (840px+) via CSS media query
+          // We use a CSS variable so the media query can reference it
+          "--sidebar-margin": `${desktopMargin}px`,
           ...style,
         } as React.CSSProperties}
         {...props}
@@ -670,7 +674,7 @@ export function SidebarCollapsibleGroup({
           "text-body-medium transition-colors duration-short",
           "cursor-pointer select-none relative overflow-hidden",
           hasActiveChild
-            ? "text-primary font-semibold"
+            ? "bg-secondary-container/50 text-on-secondary-container font-semibold"
             : "text-on-surface-variant font-medium hover:bg-on-surface/8 hover:text-on-surface"
         )}
         aria-expanded={isOpen}
@@ -679,20 +683,7 @@ export function SidebarCollapsibleGroup({
         <Ripple />
         {icon && (
           <span className="shrink-0">
-            {typeof icon === "string" ? (
-              <span
-                className="material-symbols-outlined text-[20px]!"
-                style={
-                  hasActiveChild
-                    ? { fontVariationSettings: "'FILL' 1" }
-                    : undefined
-                }
-              >
-                {icon}
-              </span>
-            ) : (
-              icon
-            )}
+            <MaterialIcon icon={icon} active={hasActiveChild} size={20} />
           </span>
         )}
         <span className="flex-1 text-left truncate">{label}</span>

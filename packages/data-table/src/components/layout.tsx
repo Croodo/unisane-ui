@@ -191,7 +191,8 @@ export const StickyZone = forwardRef<HTMLDivElement, StickyZoneProps>(
           }
         }}
         className={cn(
-          "sticky z-30 bg-surface",
+          // z-20: Below sidebar drawer (z-30) so drawer overlays table when open
+          "sticky z-20 bg-surface",
           className
         )}
         style={{

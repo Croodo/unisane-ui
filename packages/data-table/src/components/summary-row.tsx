@@ -99,7 +99,14 @@ export function formatSummaryValue(
 /**
  * Get i18n key for summary type label
  */
-function getSummaryLabelKey(type: SummaryCalculation): "summaryTotal" | "summaryAverage" | "summaryCount" | "summaryMin" | "summaryMax" {
+function getSummaryLabelKey(
+  type: SummaryCalculation
+):
+  | "summaryTotal"
+  | "summaryAverage"
+  | "summaryCount"
+  | "summaryMin"
+  | "summaryMax" {
   switch (type) {
     case "sum":
       return "summaryTotal";
@@ -213,11 +220,18 @@ function SummaryCell<T>({
         column.align === "end" && "text-right",
         column.align !== "center" && column.align !== "end" && "text-left",
         // Pinned styling
-        pinPosition ? "sticky z-20 isolate" : "z-0",
+        pinPosition ? "sticky z-10 isolate" : "z-0",
         // Column borders
-        showColumnBorders && !isLastColumn && !pinPosition && "border-r border-outline-variant/50",
-        showColumnBorders && isLastPinnedLeft && "border-r border-outline-variant/50",
-        showColumnBorders && isFirstPinnedRight && "border-l border-outline-variant/50"
+        showColumnBorders &&
+          !isLastColumn &&
+          !pinPosition &&
+          "border-r border-outline-variant/50",
+        showColumnBorders &&
+          isLastPinnedLeft &&
+          "border-r border-outline-variant/50",
+        showColumnBorders &&
+          isFirstPinnedRight &&
+          "border-l border-outline-variant/50"
       )}
       style={{
         width: meta?.width,
@@ -229,8 +243,8 @@ function SummaryCell<T>({
           pinPosition === "left"
             ? "4px 0 8px -3px rgba(0, 0, 0, 0.15)"
             : pinPosition === "right"
-            ? "-4px 0 8px -3px rgba(0, 0, 0, 0.15)"
-            : undefined,
+              ? "-4px 0 8px -3px rgba(0, 0, 0, 0.15)"
+              : undefined,
       }}
     >
       {content}
@@ -288,7 +302,7 @@ function SummaryRowInner<T extends { id: string }>({
         <td
           className={cn(
             "bg-surface-container-low border-t-2 border-outline-variant/50",
-            "sticky left-0 z-20 isolate"
+            "sticky left-0 z-10 isolate"
           )}
           style={{
             width: COLUMN_WIDTHS.DRAG_HANDLE,
@@ -309,8 +323,11 @@ function SummaryRowInner<T extends { id: string }>({
         <td
           className={cn(
             "bg-surface-container-low border-t-2 border-outline-variant/50",
-            "sticky z-20 isolate",
-            showColumnBorders && !enableExpansion && !lastPinnedLeftKey && "border-r border-outline-variant/50"
+            "sticky z-10 isolate",
+            showColumnBorders &&
+              !enableExpansion &&
+              !lastPinnedLeftKey &&
+              "border-r border-outline-variant/50"
           )}
           style={{
             width: COLUMN_WIDTHS.CHECKBOX,
@@ -332,8 +349,10 @@ function SummaryRowInner<T extends { id: string }>({
         <td
           className={cn(
             "bg-surface-container-low border-t-2 border-outline-variant/50",
-            "sticky z-20 isolate",
-            showColumnBorders && !lastPinnedLeftKey && "border-r border-outline-variant/50"
+            "sticky z-10 isolate",
+            showColumnBorders &&
+              !lastPinnedLeftKey &&
+              "border-r border-outline-variant/50"
           )}
           style={{
             width: COLUMN_WIDTHS.EXPANDER,
@@ -374,10 +393,17 @@ function SummaryRowInner<T extends { id: string }>({
               className={cn(
                 "bg-surface-container-low border-t-2 border-outline-variant/50",
                 paddingClass,
-                pinPosition ? "sticky z-20 isolate" : "z-0",
-                showColumnBorders && !isLastColumn && !pinPosition && "border-r border-outline-variant/50",
-                showColumnBorders && key === lastPinnedLeftKey && "border-r border-outline-variant/50",
-                showColumnBorders && key === firstPinnedRightKey && "border-l border-outline-variant/50"
+                pinPosition ? "sticky z-10 isolate" : "z-0",
+                showColumnBorders &&
+                  !isLastColumn &&
+                  !pinPosition &&
+                  "border-r border-outline-variant/50",
+                showColumnBorders &&
+                  key === lastPinnedLeftKey &&
+                  "border-r border-outline-variant/50",
+                showColumnBorders &&
+                  key === firstPinnedRightKey &&
+                  "border-l border-outline-variant/50"
               )}
               style={{
                 width: meta?.width,
@@ -389,8 +415,8 @@ function SummaryRowInner<T extends { id: string }>({
                   pinPosition === "left"
                     ? "4px 0 8px -3px rgba(0, 0, 0, 0.15)"
                     : pinPosition === "right"
-                    ? "-4px 0 8px -3px rgba(0, 0, 0, 0.15)"
-                    : undefined,
+                      ? "-4px 0 8px -3px rgba(0, 0, 0, 0.15)"
+                      : undefined,
               }}
             >
               <span className="text-label-small font-semibold text-on-surface">

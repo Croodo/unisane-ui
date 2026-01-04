@@ -120,7 +120,7 @@ export function DataTableInner<T extends { id: string }>({
   onRowReorder,
 }: DataTableInnerProps<T>) {
   // Context hooks
-  const { selectedRows, expandedRows, selectAll, deselectAll, toggleSelect, toggleExpand } =
+  const { selectedRows, expandedRows, selectRow, deselectRow, selectAll, deselectAll, toggleSelect, toggleExpand } =
     useSelection();
   const { sortState, cycleSort } = useSorting();
   const { searchText, columnFilters, setFilter } = useFiltering();
@@ -239,12 +239,19 @@ export function DataTableInner<T extends { id: string }>({
   }, [processedData, page, pageSize, config.paginationMode, config.mode]);
 
   // Sync page state when filtering reduces data below current page
+  // Use a ref to track if we're already adjusting to avoid dependency on `page`
+  const isAdjustingPageRef = useRef(false);
   useEffect(() => {
     if (config.paginationMode === "cursor" || config.mode === "remote") {
       return; // Skip for cursor/remote mode - server handles pagination
     }
+    if (isAdjustingPageRef.current) {
+      isAdjustingPageRef.current = false;
+      return;
+    }
     const totalPages = getTotalPages(processedData.length, pageSize);
-    if (page > totalPages) {
+    if (totalPages > 0 && page > totalPages) {
+      isAdjustingPageRef.current = true;
       setPage(totalPages);
     }
   }, [processedData.length, pageSize, page, setPage, config.paginationMode, config.mode]);
@@ -332,14 +339,12 @@ export function DataTableInner<T extends { id: string }>({
   const handleSelectRow = useCallback(
     (id: string, checked: boolean) => {
       if (checked) {
-        selectAll([...Array.from(selectedRows), id]);
+        selectRow(id);
       } else {
-        const next = new Set(selectedRows);
-        next.delete(id);
-        selectAll(Array.from(next));
+        deselectRow(id);
       }
     },
-    [selectedRows, selectAll]
+    [selectRow, deselectRow]
   );
 
   const handleSelectGroup = useCallback(

@@ -111,9 +111,16 @@ export function useProcessedData<T extends { id: string }>({
         );
       }
 
-      // Check for duplicate ids
-      const ids = data.map((row) => row.id);
-      const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
+      // Check for duplicate ids - O(n) using Set instead of O(n²) indexOf
+      const seenIds = new Set<string>();
+      const duplicates: string[] = [];
+      for (const row of data) {
+        if (seenIds.has(row.id)) {
+          duplicates.push(row.id);
+        } else {
+          seenIds.add(row.id);
+        }
+      }
       if (duplicates.length > 0) {
         console.warn(
           `DataTable: Duplicate row IDs detected: ${[...new Set(duplicates)].slice(0, 5).join(", ")}${duplicates.length > 5 ? "..." : ""}. ` +
@@ -193,7 +200,9 @@ export function useProcessedData<T extends { id: string }>({
 
           // Use custom sort function if provided
           if (column?.sortFn) {
-            comparison = column.sortFn(a, b);
+            const sortResult = column.sortFn(a, b);
+            // Ensure sortFn returns a valid number, fallback to 0 if undefined/NaN
+            comparison = typeof sortResult === "number" && !isNaN(sortResult) ? sortResult : 0;
           } else {
             // Default sorting by column value
             const aValue = getNestedValue(a, key);

@@ -52,7 +52,7 @@ export default function RootLayout({
       data-color-theme={themeConfig.colorTheme}
       data-theme-mode={themeConfig.theme}
     >
-      <body>
+      <body suppressHydrationWarning>
         <ThemeProvider>
           <DocsShell>{children}</DocsShell>
           <Toaster position="bottom-right" />

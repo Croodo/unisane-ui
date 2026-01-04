@@ -166,6 +166,46 @@
 }
 
 /* ============================================================
+   ANIMATIONS
+   ============================================================ */
+
+/* Ripple animation for touch feedback */
+@keyframes ripple {
+  from {
+    opacity: 0.35;
+    transform: scale(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(2);
+  }
+}
+
+/* Stagger animation for list items */
+@keyframes stagger-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Content enter animation for drawer content transitions */
+@keyframes content-enter {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ============================================================
    UTILITY CLASSES
    ============================================================ */
 
@@ -173,5 +213,39 @@
   /* Z-index utilities for layering system */
   .z-modal {
     z-index: var(--z-modal, 3000);
+  }
+
+  /* Animation utilities */
+  .animate-ripple {
+    animation: ripple 600ms ease-out;
+  }
+
+  .animate-stagger {
+    animation: stagger-in 300ms ease-out;
+  }
+
+  .animate-content-enter {
+    animation: content-enter 200ms ease-out;
+  }
+}
+
+/* Sidebar layout - applies margin only on desktop (840px+) */
+/* Uses CSS variable set by SidebarInset component */
+@media (min-width: 840px) {
+  main[style*="--sidebar-margin"] {
+    margin-left: var(--sidebar-margin);
+  }
+}
+
+/* App header height for sticky positioning */
+/* Mobile/Tablet: 64px (TopAppBar is position:fixed, h-16 = 64px, sticky must offset below it) */
+/* Desktop: 0px (AppHeader scrolls with content, not fixed) */
+:root {
+  --app-header-height: 64px;
+}
+
+@media (min-width: 840px) {
+  :root {
+    --app-header-height: 0px;
   }
 }

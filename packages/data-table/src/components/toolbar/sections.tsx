@@ -1,6 +1,6 @@
 "use client";
 
-import { cn, Icon } from "@unisane/ui";
+import { cn, Icon, DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@unisane/ui";
 import type { BulkAction } from "../../types";
 import { useFiltering, useColumns, useGrouping, usePagination } from "../../context";
 import { useI18n } from "../../i18n";
@@ -19,8 +19,62 @@ export function SelectionBar({
   onClearSelection?: () => void;
 }) {
   const { t } = useI18n();
+
+  // Render bulk action button (used in both dropdown items and inline buttons)
+  const renderActionButton = (action: BulkAction, idx: number, inline: boolean) => {
+    const isDisabled = typeof action.disabled === "function"
+      ? action.disabled(selectedIds)
+      : action.disabled;
+    const isDanger = action.variant === "danger";
+
+    if (!inline) {
+      // Dropdown menu item
+      return (
+        <DropdownMenuItem
+          key={idx}
+          onClick={() => action.onClick(selectedIds)}
+          disabled={isDisabled}
+          icon={
+            typeof action.icon === "string" ? (
+              <Icon symbol={action.icon} className="w-5 h-5" />
+            ) : action.icon ? (
+              <span>{action.icon}</span>
+            ) : undefined
+          }
+          className={isDanger ? "text-error" : undefined}
+        >
+          {action.label}
+        </DropdownMenuItem>
+      );
+    }
+
+    // Inline button for larger screens
+    return (
+      <button
+        key={idx}
+        onClick={() => action.onClick(selectedIds)}
+        disabled={isDisabled}
+        className={cn(
+          "inline-flex items-center gap-1.5 h-9 px-3 transition-colors rounded",
+          "disabled:opacity-50 disabled:pointer-events-none",
+          isDanger
+            ? "text-error hover:bg-error/8"
+            : "text-on-surface-variant hover:bg-on-surface/8 hover:text-on-surface"
+        )}
+      >
+        {typeof action.icon === "string" ? (
+          <Icon symbol={action.icon} className="text-[20px]" />
+        ) : action.icon ? (
+          <span>{action.icon}</span>
+        ) : null}
+        <span className="text-body-medium font-medium">{action.label}</span>
+      </button>
+    );
+  };
+
   return (
-    <div className="flex items-center gap-4 w-full">
+    <div className="flex items-center justify-between gap-2 @md:gap-4 w-full">
+      {/* Left: Selection count and clear button */}
       <div className="flex items-center gap-2">
         <span className="text-body-medium font-semibold text-primary whitespace-nowrap">
           {t("selectedCount", { count: selectedCount })}
@@ -35,38 +89,36 @@ export function SelectionBar({
           </button>
         )}
       </div>
-      <div className="h-6 w-px bg-primary/20 hidden sm:block" />
-      <div className="flex items-center gap-2 flex-wrap">
-        {bulkActions.map((action, idx) => {
-          const isDisabled = typeof action.disabled === "function"
-            ? action.disabled(selectedIds)
-            : action.disabled;
-          const isDanger = action.variant === "danger";
 
-          return (
-            <button
-              key={idx}
-              onClick={() => action.onClick(selectedIds)}
-              disabled={isDisabled}
-              className={cn(
-                "inline-flex items-center gap-1.5 h-9 px-3 transition-colors",
-                "text-body-medium font-medium rounded border",
-                "disabled:opacity-50 disabled:pointer-events-none",
-                isDanger
-                  ? "border-error/30 text-error hover:bg-error/8"
-                  : "border-primary/30 text-primary hover:bg-primary/8"
-              )}
-            >
-              {typeof action.icon === "string" ? (
-                <Icon symbol={action.icon} className="text-[18px]" />
-              ) : action.icon ? (
-                <span>{action.icon}</span>
-              ) : null}
-              <span>{action.label}</span>
-            </button>
-          );
-        })}
-      </div>
+      {/* Right: Bulk actions */}
+      {bulkActions.length > 0 && (
+        <div className="flex items-center gap-2">
+          {/* Small screens: Actions in dropdown (right-aligned) */}
+          <div className="@md:hidden">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className={cn(
+                    "flex items-center justify-center w-10 h-10 rounded-lg transition-colors",
+                    "text-on-surface-variant hover:text-on-surface hover:bg-on-surface/8"
+                  )}
+                  aria-label={t("actions")}
+                >
+                  <Icon symbol="more_vert" className="w-5 h-5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-48">
+                {bulkActions.map((action, idx) => renderActionButton(action, idx, false))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* Larger screens: Inline buttons */}
+          <div className="hidden @md:flex items-center gap-2">
+            {bulkActions.map((action, idx) => renderActionButton(action, idx, true))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

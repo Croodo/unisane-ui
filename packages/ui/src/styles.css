@@ -29,6 +29,18 @@
       }
 }
 
+/* Content enter animation for drawer content transitions */
+@keyframes content-enter {
+      from {
+            opacity: 0;
+            transform: translateX(-8px);
+      }
+      to {
+            opacity: 1;
+            transform: translateX(0);
+      }
+}
+
 @layer base {
       /* Remove default focus outline */
       *:focus {
@@ -53,6 +65,17 @@
 }
 
 @layer utilities {
+      /* Sidebar inset - applies margin only on desktop (expanded breakpoint 840px+) */
+      .sidebar-inset {
+            margin-left: 0;
+      }
+
+      @media (min-width: 840px) {
+            .sidebar-inset {
+                  margin-left: var(--sidebar-desktop-margin, 96px);
+            }
+      }
+
       /* Scrollbar utilities */
       .no-scrollbar::-webkit-scrollbar {
             display: none;
@@ -85,6 +108,10 @@
 
       .animate-ripple {
             animation: ripple 600ms ease-out;
+      }
+
+      .animate-content-enter {
+            animation: content-enter 200ms ease-out;
       }
 
       /* Z-index utilities for layering system */

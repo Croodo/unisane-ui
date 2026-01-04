@@ -133,6 +133,7 @@ export function SearchInput({
           className
         )}
         aria-label={t("openSearch")}
+       
       >
         <Icon symbol="search" className="w-5 h-5" />
         {/* Active search indicator */}
@@ -148,6 +149,7 @@ export function SearchInput({
             "@3xl:hidden absolute left-0 right-0 top-0 bottom-0 bg-surface border-b-2 border-primary z-50 flex items-center px-3 gap-2",
             "animate-in fade-in duration-150"
           )}
+         
         >
           <Icon symbol="search" className="w-5 h-5 text-on-surface-variant shrink-0" />
           <input
@@ -193,6 +195,7 @@ export function SearchInput({
           "transition-all duration-200 w-60",
           className
         )}
+       
       >
         <span id={descriptionId} className="sr-only">
           {effectivePlaceholder}

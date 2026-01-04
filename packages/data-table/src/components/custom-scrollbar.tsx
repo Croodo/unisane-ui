@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { cn } from "@unisane/ui";
 
 // ─── CONSTANTS ───────────────────────────────────────────────────────────────
@@ -105,10 +105,12 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
   }, [tableContainerRef, updateScrollbar]);
 
   // Re-run when dependencies change
+  // Using JSON.stringify for stable dependency comparison to avoid issues with array spread
+  const dependenciesKey = useMemo(() => JSON.stringify(dependencies), [dependencies]);
   useEffect(() => {
     requestAnimationFrame(updateScrollbar);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pinnedLeftWidth, pinnedRightWidth, ...dependencies]);
+  }, [pinnedLeftWidth, pinnedRightWidth, dependenciesKey]);
 
   // ─── STICKY POSITION LOGIC ────────────────────────────────────────────────────
   // Scrollbar sticks to viewport bottom until table bottom comes into view

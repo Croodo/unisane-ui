@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useLayoutEffect, useCallback } from "react";
+import React, { useState, useLayoutEffect, useCallback, useEffect } from "react";
 import { cn } from "@ui/lib/utils";
 
 interface RippleProps {
@@ -23,10 +23,24 @@ export const Ripple: React.FC<RippleProps> = ({
   className,
 }) => {
   const [ripples, setRipples] = useState<RippleEffect[]>([]);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  // Check for prefers-reduced-motion preference
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setPrefersReducedMotion(mediaQuery.matches);
+
+    const handleChange = (e: MediaQueryListEvent) => {
+      setPrefersReducedMotion(e.matches);
+    };
+
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, []);
 
   const addRipple = useCallback(
     (e: React.MouseEvent) => {
-      if (disabled) return;
+      if (disabled || prefersReducedMotion) return;
 
       const container = e.currentTarget.getBoundingClientRect();
       const size =
@@ -38,7 +52,7 @@ export const Ripple: React.FC<RippleProps> = ({
       const newRipple = { x, y, size, id: Date.now() };
       setRipples((prev) => [...prev, newRipple]);
     },
-    [disabled, center]
+    [disabled, center, prefersReducedMotion]
   );
 
   useLayoutEffect(() => {

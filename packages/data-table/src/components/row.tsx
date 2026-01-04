@@ -205,6 +205,7 @@ function DataTableRowInner<T extends { id: string }>({
         style={style}
         data-index={dataIndex}
         aria-selected={isSelected || isFocused}
+        aria-rowindex={rowIndex + 2}
         id={`data-table-row-${row.id}`}
         {...rowDragProps}
       >

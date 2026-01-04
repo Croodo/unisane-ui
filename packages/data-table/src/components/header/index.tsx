@@ -170,7 +170,7 @@ function DataTableHeaderInner<T extends { id: string }>({
       )}
 
       {/* Main header row (or child columns row if groups exist) */}
-      <tr>
+      <tr aria-rowindex={hasGroups ? 2 : 1}>
         {/* Drag handle column - scrolls with content, not sticky */}
         {reorderableRows && (
           <th
