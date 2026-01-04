@@ -3,6 +3,7 @@
 import React, { forwardRef, useRef, useEffect, useCallback, createContext, useContext, useState } from "react";
 import { cn } from "@unisane/ui";
 import { useOptionalDataTableContext } from "../context/provider";
+import { useSafeRAF } from "../hooks/use-safe-raf";
 
 // ─── SCROLL SYNC CONTEXT ─────────────────────────────────────────────────────
 // Context to synchronize horizontal scroll between header and body tables
@@ -56,6 +57,9 @@ export const DataTableLayout = forwardRef<HTMLDivElement, DataTableLayoutProps>(
     const scrollElementsRef = useRef<Map<string, HTMLElement>>(new Map());
     const isSyncingRef = useRef(false);
 
+    // Safe RAF for scroll sync
+    const { requestFrame } = useSafeRAF();
+
     const registerScrollElement = useCallback((id: string, element: HTMLElement | null) => {
       if (element) {
         scrollElementsRef.current.set(id, element);
@@ -82,10 +86,10 @@ export const DataTableLayout = forwardRef<HTMLDivElement, DataTableLayoutProps>(
       });
 
       // Reset syncing flag after a frame
-      requestAnimationFrame(() => {
+      requestFrame(() => {
         isSyncingRef.current = false;
       });
-    }, []);
+    }, [requestFrame]);
 
     const contextValue: ScrollSyncContextValue = {
       scrollLeft,

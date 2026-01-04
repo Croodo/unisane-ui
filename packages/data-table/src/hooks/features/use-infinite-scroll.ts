@@ -199,7 +199,9 @@ export function useInfiniteScroll({
 
       // Debounce the scroll check
       debounceTimeoutRef.current = setTimeout(() => {
-        const target = event.target as HTMLElement;
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+
         const { scrollTop, scrollHeight, clientHeight } = target;
         const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
 

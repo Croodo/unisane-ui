@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import { useSafeRAF } from "../use-safe-raf";
 
 // ─── TYPES ───────────────────────────────────────────────────────────────────
 
@@ -221,9 +222,10 @@ export function useStickyGroupHeaders({
   const [scrollTop, setScrollTop] = useState(0);
 
   // Refs
-  const rafRef = useRef<number | null>(null);
-  const lastScrollRef = useRef(0);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Safe RAF for scroll handling
+  const { requestFrame, cancelAllFrames } = useSafeRAF();
 
   // ─── CALCULATION ──────────────────────────────────────────────────────────
 
@@ -371,12 +373,10 @@ export function useStickyGroupHeaders({
       }
 
       debounceTimerRef.current = setTimeout(() => {
-        // Use RAF for smooth updates
-        if (rafRef.current) {
-          cancelAnimationFrame(rafRef.current);
-        }
+        // Cancel any pending frame before scheduling new one
+        cancelAllFrames();
 
-        rafRef.current = requestAnimationFrame(() => {
+        requestFrame(() => {
           calculateStickyHeaders();
         });
       }, scrollDebounce);
@@ -389,14 +389,11 @@ export function useStickyGroupHeaders({
 
     return () => {
       container.removeEventListener("scroll", handleScroll);
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current);
-      }
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [enabled, containerRef, calculateStickyHeaders, scrollDebounce]);
+  }, [enabled, containerRef, calculateStickyHeaders, scrollDebounce, requestFrame, cancelAllFrames]);
 
   // Recalculate when groups change
   useEffect(() => {

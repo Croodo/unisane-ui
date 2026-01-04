@@ -5,9 +5,11 @@ import { cn, Icon, Checkbox } from "@unisane/ui";
 import type { Column, PinPosition, ColumnMetaMap, CellContext, InlineEditingController, CellSelectionContext, RowActivationEvent } from "../types/index";
 import type { RowDragProps } from "../hooks/ui/use-row-drag";
 import { getNestedValue } from "../utils/get-nested-value";
+import { first, last } from "../utils/type-guards";
 import { DENSITY_STYLES, type Density, createCellId } from "../constants/index";
 import { useI18n } from "../i18n";
 import { DragHandle } from "./drag-handle";
+import { HighlightedText } from "./highlighted-text";
 
 // ─── ROW PROPS ──────────────────────────────────────────────────────────────
 
@@ -71,6 +73,8 @@ interface DataTableRowProps<T> {
     "aria-label": string;
     "aria-grabbed": boolean | undefined;
   };
+  /** Search text for highlighting matching content */
+  searchText?: string;
 }
 
 // ─── ROW COMPONENT ──────────────────────────────────────────────────────────
@@ -112,6 +116,7 @@ function DataTableRowInner<T extends { id: string }>({
   dropPosition = null,
   rowDragProps,
   dragHandleProps,
+  searchText,
 }: DataTableRowProps<T>) {
   const { t } = useI18n();
   const isOddRow = rowIndex % 2 === 1;
@@ -138,20 +143,24 @@ function DataTableRowInner<T extends { id: string }>({
   const pinnedRightColumns = columns.filter((col) => getEffectivePinPosition(col) === "right");
   const hasPinnedLeftData = pinnedLeftColumns.length > 0;
   const hasPinnedRightData = pinnedRightColumns.length > 0;
-  const lastPinnedLeftKey = hasPinnedLeftData ? String(pinnedLeftColumns[pinnedLeftColumns.length - 1]!.key) : null;
-  const firstPinnedRightKey = hasPinnedRightData ? String(pinnedRightColumns[0]!.key) : null;
+  const lastPinnedLeft = last(pinnedLeftColumns);
+  const lastPinnedLeftKey = lastPinnedLeft ? String(lastPinnedLeft.key) : null;
+  const firstPinnedRight = first(pinnedRightColumns);
+  const firstPinnedRightKey = firstPinnedRight ? String(firstPinnedRight.key) : null;
 
   const handleRowClick = (e: React.MouseEvent) => {
-    const target = e.target as HTMLElement;
+    const target = e.target;
     // Don't trigger row click if clicking on interactive elements
-    if (
-      target.closest("button") ||
-      target.closest("input") ||
-      target.closest("a") ||
-      target.closest('[role="button"]') ||
-      target.closest('[role="checkbox"]')
-    ) {
-      return;
+    if (target instanceof HTMLElement) {
+      if (
+        target.closest("button") ||
+        target.closest("input") ||
+        target.closest("a") ||
+        target.closest('[role="button"]') ||
+        target.closest('[role="checkbox"]')
+      ) {
+        return;
+      }
     }
     onRowClick?.(row, { source: "mouse", event: e });
   };
@@ -387,9 +396,29 @@ function DataTableRowInner<T extends { id: string }>({
               </>
             );
           } else {
-            content = col.render
+            // Render cell content with optional search highlighting
+            const renderContent = col.render
               ? col.render(row, cellContext)
               : (rawValue as ReactNode);
+
+            // Apply search highlighting to string content when searchText is provided
+            // Only highlight if there's no custom render (custom renders handle their own highlighting)
+            if (
+              searchText &&
+              !col.render &&
+              typeof rawValue === "string" &&
+              rawValue.length > 0
+            ) {
+              content = (
+                <HighlightedText
+                  text={rawValue}
+                  searchTerm={searchText}
+                  enabled={true}
+                />
+              );
+            } else {
+              content = renderContent;
+            }
           }
 
           // Handle cell click for cell selection

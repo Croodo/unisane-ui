@@ -6,6 +6,7 @@ import { cn, Icon } from "@unisane/ui";
 import type { Column, PinPosition, ColumnMetaMap } from "../types/index";
 import { COLUMN_WIDTHS, type Density } from "../constants/index";
 import { useI18n } from "../i18n";
+import { getNestedValue } from "../utils/get-nested-value";
 
 // ─── SUMMARY TYPES ───────────────────────────────────────────────────────────
 
@@ -20,22 +21,9 @@ export interface SummaryValue {
 // ─── UTILITY FUNCTIONS ───────────────────────────────────────────────────────
 
 /**
- * Get a nested value from an object using dot notation
- */
-function getNestedValue<T>(obj: T, path: string): unknown {
-  const keys = path.split(".");
-  let value: unknown = obj;
-  for (const key of keys) {
-    if (value == null) return undefined;
-    value = (value as Record<string, unknown>)[key];
-  }
-  return value;
-}
-
-/**
  * Calculate a summary value for a column
  */
-export function calculateSummary<T>(
+export function calculateSummary<T extends object>(
   data: T[],
   columnKey: string,
   calculation: SummaryCalculation
@@ -123,7 +111,7 @@ function getSummaryLabelKey(
 
 // ─── SUMMARY ROW PROPS ───────────────────────────────────────────────────────
 
-export interface SummaryRowProps<T> {
+export interface SummaryRowProps<T extends object> {
   /** Data to calculate summaries from */
   data: T[];
   /** Column definitions */
@@ -154,7 +142,7 @@ export interface SummaryRowProps<T> {
 
 // ─── SUMMARY CELL ────────────────────────────────────────────────────────────
 
-interface SummaryCellProps<T> {
+interface SummaryCellProps<T extends object> {
   column: Column<T>;
   data: T[];
   meta: ColumnMetaMap[string] | undefined;
@@ -167,7 +155,7 @@ interface SummaryCellProps<T> {
   customRenderer?: (data: T[]) => ReactNode;
 }
 
-function SummaryCell<T>({
+function SummaryCell<T extends object>({
   column,
   data,
   meta,

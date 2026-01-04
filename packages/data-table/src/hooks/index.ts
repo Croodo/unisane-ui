@@ -179,6 +179,13 @@ export {
 // General-purpose utilities
 
 export { useDebounce, useDebouncedCallback } from "./utilities/use-debounce";
+export {
+  useSafeRAF,
+  useRAFThrottle,
+  useRAFCallback,
+  type UseSafeRAFReturn,
+  type UseRAFThrottleReturn,
+} from "./use-safe-raf";
 
 // ─── ACTION DIALOG HOOKS ─────────────────────────────────────────────────────
 // Dialog state management for row-level actions
@@ -193,3 +200,15 @@ export {
   type ConfirmActionOptions,
   type UseConfirmActionReturn,
 } from "./use-action-dialog";
+
+// ─── ERROR HANDLING HOOKS ─────────────────────────────────────────────────────
+// Error hub access and error state management
+
+export {
+  useErrorHub,
+  useErrorListener,
+  useSeverityListener,
+  useLastError,
+  type UseErrorHubReturn,
+  type UseErrorHubOptions,
+} from "./use-error-hub";

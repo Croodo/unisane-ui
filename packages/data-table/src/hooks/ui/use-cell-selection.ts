@@ -9,6 +9,8 @@ import type {
   UseCellSelectionReturn,
 } from "../../types";
 import { CELL_ID_SEPARATOR, getCellSelector, parseCellId, DEFAULT_KEYBOARD_PAGE_SIZE } from "../../constants";
+import { useSafeRAF } from "../use-safe-raf";
+import { first, last } from "../../utils/type-guards";
 
 // ─── UTILITIES ──────────────────────────────────────────────────────────────
 
@@ -63,6 +65,9 @@ export function useCellSelection<T extends { id: string }>({
   const columnKeysRef = useRef(columnKeys);
   dataRef.current = data;
   columnKeysRef.current = columnKeys;
+
+  // Safe RAF for focus operations
+  const { requestFrame } = useSafeRAF();
 
   // Helper to get column display name
   const getColumnDisplayName = useCallback(
@@ -362,14 +367,16 @@ export function useCellSelection<T extends { id: string }>({
    * Focus a cell in the DOM by its position
    */
   const focusCellElement = useCallback((cell: CellPosition) => {
-    // Use requestAnimationFrame to ensure DOM has updated
-    requestAnimationFrame(() => {
+    // Use safe RAF to ensure DOM has updated and cleanup on unmount
+    requestFrame(() => {
       const cellElement = document.querySelector(
         getCellSelector(cell.rowId, cell.columnKey)
-      ) as HTMLElement;
-      cellElement?.focus();
+      );
+      if (cellElement instanceof HTMLElement) {
+        cellElement.focus();
+      }
     });
-  }, []);
+  }, [requestFrame]);
 
   /**
    * Move active cell in a direction
@@ -492,8 +499,9 @@ export function useCellSelection<T extends { id: string }>({
           event.preventDefault();
           if (isCtrlOrMeta) {
             // Ctrl+Arrow: jump to first row (Excel standard)
-            if (data.length > 0) {
-              const targetCell: CellPosition = { rowId: data[0]!.id, columnKey: state.activeCell.columnKey };
+            const firstRow = first(data);
+            if (firstRow) {
+              const targetCell: CellPosition = { rowId: firstRow.id, columnKey: state.activeCell.columnKey };
               if (isShift && rangeSelect && state.rangeAnchor) {
                 selectRange(state.rangeAnchor, targetCell);
               } else {
@@ -509,8 +517,9 @@ export function useCellSelection<T extends { id: string }>({
           event.preventDefault();
           if (isCtrlOrMeta) {
             // Ctrl+Arrow: jump to last row (Excel standard)
-            if (data.length > 0) {
-              const targetCell: CellPosition = { rowId: data[data.length - 1]!.id, columnKey: state.activeCell.columnKey };
+            const lastRow = last(data);
+            if (lastRow) {
+              const targetCell: CellPosition = { rowId: lastRow.id, columnKey: state.activeCell.columnKey };
               if (isShift && rangeSelect && state.rangeAnchor) {
                 selectRange(state.rangeAnchor, targetCell);
               } else {
@@ -526,8 +535,9 @@ export function useCellSelection<T extends { id: string }>({
           event.preventDefault();
           if (isCtrlOrMeta) {
             // Ctrl+Arrow: jump to first column (Excel standard)
-            if (columnKeys.length > 0) {
-              const targetCell: CellPosition = { rowId: state.activeCell.rowId, columnKey: columnKeys[0]! };
+            const firstColKey = first(columnKeys);
+            if (firstColKey) {
+              const targetCell: CellPosition = { rowId: state.activeCell.rowId, columnKey: firstColKey };
               if (isShift && rangeSelect && state.rangeAnchor) {
                 selectRange(state.rangeAnchor, targetCell);
               } else {
@@ -543,8 +553,9 @@ export function useCellSelection<T extends { id: string }>({
           event.preventDefault();
           if (isCtrlOrMeta) {
             // Ctrl+Arrow: jump to last column (Excel standard)
-            if (columnKeys.length > 0) {
-              const targetCell: CellPosition = { rowId: state.activeCell.rowId, columnKey: columnKeys[columnKeys.length - 1]! };
+            const lastColKey = last(columnKeys);
+            if (lastColKey) {
+              const targetCell: CellPosition = { rowId: state.activeCell.rowId, columnKey: lastColKey };
               if (isShift && rangeSelect && state.rangeAnchor) {
                 selectRange(state.rangeAnchor, targetCell);
               } else {
@@ -608,14 +619,16 @@ export function useCellSelection<T extends { id: string }>({
             copyToClipboard();
           }
           break;
-        case "Home":
+        case "Home": {
           event.preventDefault();
-          if (data.length > 0 && columnKeys.length > 0) {
+          const firstRowHome = first(data);
+          const firstColHome = first(columnKeys);
+          if (firstRowHome && firstColHome) {
             // Ctrl+Home: first cell of table (Excel standard)
             // Home: first column of current row (Excel standard)
             const targetCell: CellPosition = isCtrlOrMeta
-              ? { rowId: data[0]!.id, columnKey: columnKeys[0]! }
-              : { rowId: state.activeCell.rowId, columnKey: columnKeys[0]! };
+              ? { rowId: firstRowHome.id, columnKey: firstColHome }
+              : { rowId: state.activeCell.rowId, columnKey: firstColHome };
             if (isShift && rangeSelect && state.rangeAnchor) {
               selectRange(state.rangeAnchor, targetCell);
             } else {
@@ -624,14 +637,17 @@ export function useCellSelection<T extends { id: string }>({
             focusCellElement(targetCell);
           }
           break;
-        case "End":
+        }
+        case "End": {
           event.preventDefault();
-          if (data.length > 0 && columnKeys.length > 0) {
+          const lastRowEnd = last(data);
+          const lastColEnd = last(columnKeys);
+          if (lastRowEnd && lastColEnd) {
             // Ctrl+End: last cell of table (Excel standard)
             // End: last column of current row (Excel standard)
             const targetCell: CellPosition = isCtrlOrMeta
-              ? { rowId: data[data.length - 1]!.id, columnKey: columnKeys[columnKeys.length - 1]! }
-              : { rowId: state.activeCell.rowId, columnKey: columnKeys[columnKeys.length - 1]! };
+              ? { rowId: lastRowEnd.id, columnKey: lastColEnd }
+              : { rowId: state.activeCell.rowId, columnKey: lastColEnd };
             if (isShift && rangeSelect && state.rangeAnchor) {
               selectRange(state.rangeAnchor, targetCell);
             } else {
@@ -640,6 +656,7 @@ export function useCellSelection<T extends { id: string }>({
             focusCellElement(targetCell);
           }
           break;
+        }
         case "PageUp":
           event.preventDefault();
           // Move up by page (Excel standard)

@@ -70,3 +70,73 @@ export {
   getPageIndices,
   getPaginationState,
 } from "./pagination";
+
+// Safe execution utilities - error handling wrappers
+export {
+  safeExecute,
+  safeExecuteAsync,
+  safeBatchExecute,
+  createSafeFilter,
+  createSafeFilters,
+  createSafeSort,
+  createSafeSearch,
+  createSafeCellRenderer,
+  createSafeAccessor,
+  type SafeExecuteOptions,
+  type CellRenderContext,
+} from "./safe-execute";
+
+// Validation utilities - column and data validation
+export {
+  validateColumns,
+  assertValidColumns,
+  isValidColumnKey,
+  findDuplicateColumnKeys,
+  getAllColumnKeys,
+  validateRowIds as validateRowIdsUniqueness,
+  type ValidationResult,
+  type ValidateColumnsOptions,
+} from "./validation";
+
+// Controlled state desync warnings
+export {
+  DesyncDetector,
+  createDesyncDetector,
+  warnControlledDesync,
+  type ControlledStateType,
+  type DesyncWarning,
+  type DesyncDetectorOptions,
+} from "./controlled-state-warnings";
+
+// Type guards - safe DOM and object type checking
+export {
+  // DOM element guards
+  isHTMLElement,
+  isInputElement,
+  isTextAreaElement,
+  isButtonElement,
+  isSelectElement,
+  isTableCellElement,
+  isTableRowElement,
+  isEditableElement,
+  isInteractiveElement,
+  // Object guards
+  isPlainObject,
+  isArray,
+  isString,
+  isNumber,
+  isBoolean,
+  isDate,
+  isDefined,
+  isNullish,
+  // Array utilities
+  safeArrayAccess,
+  first,
+  last,
+  // Event utilities
+  shouldIgnoreEvent,
+  closestElement,
+  // Parse utilities
+  safeParseInt,
+  safeParseFloat,
+} from "./type-guards";

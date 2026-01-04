@@ -11,6 +11,8 @@ import type {
   SparseSelectionController,
 } from "../types/index";
 import type { PartialDataTableLocale } from "../i18n/types";
+import type { ErrorHub } from "../errors/error-hub";
+import type { DataTableErrorConfig } from "../types/props";
 
 // ─── STATE TYPES ────────────────────────────────────────────────────────────
 
@@ -227,6 +229,10 @@ export interface DataTableContextValue<T = unknown> {
   dispatch: React.Dispatch<DataTableAction>;
   config: DataTableConfig<T>;
 
+  // ─── Error Handling ───
+  /** Central error hub for reporting and tracking errors */
+  errorHub: ErrorHub;
+
   // Controlled state
   controlled: {
     sortState: MultiSortState | undefined;
@@ -376,4 +382,11 @@ export interface DataTableProviderProps<T> {
    * @default false
    */
   disableAnnouncements?: boolean;
+
+  // ─── Error Handling ───
+  /**
+   * Error handling configuration.
+   * Controls how errors are reported, recovered, and displayed.
+   */
+  errorConfig?: DataTableErrorConfig;
 }

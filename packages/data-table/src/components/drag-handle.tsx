@@ -6,7 +6,8 @@ import { useI18n } from "../i18n";
 
 // ─── TYPES ───────────────────────────────────────────────────────────────────
 
-export interface DragHandleProps extends React.HTMLAttributes<HTMLButtonElement> {
+export interface DragHandleProps
+  extends React.HTMLAttributes<HTMLButtonElement> {
   /** Whether the row is currently being dragged */
   isDragging?: boolean;
   /** Whether the handle is disabled */
@@ -33,13 +34,7 @@ export interface DragHandleProps extends React.HTMLAttributes<HTMLButtonElement>
  */
 export const DragHandle = forwardRef<HTMLButtonElement, DragHandleProps>(
   (
-    {
-      isDragging = false,
-      disabled = false,
-      size = "md",
-      className,
-      ...props
-    },
+    { isDragging = false, disabled = false, size = "md", className, ...props },
     ref
   ) => {
     const { t } = useI18n();
@@ -56,9 +51,9 @@ export const DragHandle = forwardRef<HTMLButtonElement, DragHandleProps>(
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
           "cursor-grab active:cursor-grabbing",
           "touch-none select-none",
-          // Touch-friendly: min 44px touch target on mobile
-          size === "sm" && "w-10 h-10 sm:w-6 sm:h-6",
-          size === "md" && "w-10 h-10 sm:w-8 sm:h-8",
+          // WCAG 2.5.5: min 44px touch target
+          size === "sm" && "min-w-[44px] min-h-[44px] w-11 h-11 sm:w-6 sm:h-6",
+          size === "md" && "min-w-[44px] min-h-[44px] w-11 h-11 sm:w-8 sm:h-8",
           isDragging && "opacity-50 cursor-grabbing",
           disabled && "opacity-30 cursor-not-allowed pointer-events-none",
           className

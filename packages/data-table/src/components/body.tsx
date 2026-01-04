@@ -77,22 +77,35 @@ interface DataTableBodyProps<T> {
   isDropTarget?: (id: string) => boolean;
   /** Row reordering: get drop position for a row */
   getDropPosition?: (id: string) => "before" | "after" | null;
+  /** Search text for highlighting matching content in cells */
+  searchText?: string;
 }
 
 // ─── LOADING STATE ─────────────────────────────────────────────────────────
 
 function LoadingState({ colSpan }: { colSpan: number }) {
   const { t } = useI18n();
+  const loadingText = t("loading");
+
   return (
     <tbody className="bg-surface">
-      <tr>
+      <tr role="row">
         <td
           colSpan={colSpan}
           className="px-4 py-20 text-center text-on-surface-variant"
+          role="cell"
         >
-          <div className="flex flex-col items-center justify-center gap-3">
-            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-            <span className="text-body-medium">{t("loading")}</span>
+          <div
+            className="flex flex-col items-center justify-center gap-3"
+            role="status"
+            aria-live="polite"
+            aria-label={loadingText}
+          >
+            <div
+              className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"
+              aria-hidden="true"
+            />
+            <span className="text-body-medium">{loadingText}</span>
           </div>
         </td>
       </tr>
@@ -112,18 +125,26 @@ function EmptyState({
   icon?: string;
 }) {
   const { t } = useI18n();
+  const emptyMessage = message ?? t("noResults");
+  const hintMessage = t("noResultsHint");
+
   return (
     <tbody className="bg-surface">
-      <tr>
+      <tr role="row">
         <td
           colSpan={colSpan}
           className="px-4 py-16 text-center text-on-surface-variant"
+          role="cell"
         >
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <Icon symbol={icon} className="w-8 h-8 text-on-surface-variant mb-2" />
-            <span className="text-title-medium text-on-surface">{message ?? t("noResults")}</span>
+          <div
+            className="flex flex-col items-center justify-center py-12 text-center"
+            role="status"
+            aria-label={`${emptyMessage}. ${hintMessage}`}
+          >
+            <Icon symbol={icon} className="w-8 h-8 text-on-surface-variant mb-2" aria-hidden="true" />
+            <span className="text-title-medium text-on-surface">{emptyMessage}</span>
             <span className="text-body-small text-on-surface-variant mt-1">
-              {t("noResultsHint")}
+              {hintMessage}
             </span>
           </div>
         </td>
@@ -174,6 +195,7 @@ function DataTableBodyInner<T extends { id: string }>({
   isDraggingRow,
   isDropTarget,
   getDropPosition,
+  searchText,
 }: DataTableBodyProps<T>) {
   // Calculate colspan
   const colSpan = columns.length + (selectable ? 1 : 0) + (enableExpansion ? 1 : 0) + (reorderableRows ? 1 : 0);
@@ -264,6 +286,7 @@ function DataTableBodyInner<T extends { id: string }>({
                 getCellSelectionContext={getCellSelectionContext}
                 onCellClick={onCellClick}
                 onCellKeyDown={onCellKeyDown}
+                searchText={searchText}
               />
             );
           });
@@ -322,6 +345,7 @@ function DataTableBodyInner<T extends { id: string }>({
           dropPosition={getDropPosition?.(row.id)}
           rowDragProps={getRowDragProps?.(row.id, index)}
           dragHandleProps={getDragHandleProps?.(row.id, index)}
+          searchText={searchText}
         />
       ))}
     </tbody>

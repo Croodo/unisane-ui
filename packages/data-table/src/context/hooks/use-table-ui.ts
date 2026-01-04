@@ -7,7 +7,7 @@ import { useDataTableContext } from "../provider";
  * Hook for table UI state and configuration
  */
 export function useTableUI() {
-  const { state, dispatch, config } = useDataTableContext();
+  const { state, dispatch, config, errorHub } = useDataTableContext();
 
   const resetAll = useCallback(
     () => dispatch({ type: "RESET_ALL" }),
@@ -16,6 +16,7 @@ export function useTableUI() {
 
   return {
     config,
+    errorHub,
     resetAll,
     hasCustomizations:
       Object.keys(state.columnPinState).length > 0 ||

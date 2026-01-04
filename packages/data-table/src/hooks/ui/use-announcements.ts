@@ -33,6 +33,7 @@ export interface UseAnnouncementsReturn {
  * Handles:
  * - Sort state change announcements
  * - Filter change announcements
+ * - Selection change announcements
  * - Manual announcements via the returned `announce` function
  *
  * Uses an assertive live region for immediate announcements.
@@ -42,6 +43,7 @@ export function useAnnouncements<T>({
   columns,
   columnFilters,
   searchText,
+  selectedCount,
 }: UseAnnouncementsOptions<T>): UseAnnouncementsReturn {
   const { t } = useI18n();
   const announcerRegionId = useId();
@@ -53,6 +55,8 @@ export function useAnnouncements<T>({
   const prevFilterCountRef = useRef(
     Object.keys(columnFilters).length + (searchText ? 1 : 0)
   );
+  const prevSelectedCountRef = useRef(selectedCount);
+  const isInitialMount = useRef(true);
 
   // Helper to announce changes to screen readers
   const announce = useCallback(
@@ -138,6 +142,40 @@ export function useAnnouncements<T>({
       announce(t("srFilterCleared"));
     }
   }, [columnFilters, searchText, t, announce]);
+
+  // Announce selection changes
+  useEffect(() => {
+    // Skip initial mount to avoid announcing "0 selected" on first render
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      prevSelectedCountRef.current = selectedCount;
+      return;
+    }
+
+    const prevCount = prevSelectedCountRef.current;
+    prevSelectedCountRef.current = selectedCount;
+
+    // Skip if selection didn't change
+    if (prevCount === selectedCount) return;
+
+    // Announce selection changes
+    if (selectedCount === 0 && prevCount > 0) {
+      // All deselected
+      announce(t("srAllDeselected"));
+    } else if (selectedCount > prevCount) {
+      // Selection increased (could be single or multiple)
+      if (prevCount === 0 && selectedCount > 1) {
+        // All selected at once
+        announce(t("srAllSelected", { count: selectedCount }));
+      } else {
+        // Announce current selection count
+        announce(t("selectedCount", { count: selectedCount }));
+      }
+    } else if (selectedCount < prevCount) {
+      // Selection decreased
+      announce(t("selectedCount", { count: selectedCount }));
+    }
+  }, [selectedCount, t, announce]);
 
   return {
     announcerRegionId,

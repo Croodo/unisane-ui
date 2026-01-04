@@ -453,7 +453,21 @@ export {
   // Base error
   DataTableError,
   DataTableErrorCode,
+  DEFAULT_ERROR_SEVERITY,
   type DataTableErrorCodeValue,
+
+  // Severity
+  ErrorSeverity,
+  SEVERITY_CONFIG,
+  getSeverityConfig,
+  compareSeverity,
+  maxSeverity,
+  meetsMinSeverity,
+  shouldReport,
+  shouldTriggerBoundary,
+  shouldAttemptRecovery,
+  shouldNotifyUser,
+  type SeverityConfig,
 
   // Data errors
   DuplicateRowIdError,
@@ -479,8 +493,53 @@ export {
   RenderError,
   VirtualizationError,
   EditError,
+  FilterError,
+  SortError,
+  ExportError,
+  SelectionError,
+  SearchError,
+
+  // Error Hub
+  ErrorHub,
+  getErrorHub,
+  createErrorHub,
+  resetDefaultErrorHub,
+  type ErrorHandler,
+  type Unsubscribe,
+  type ErrorHubOptions,
+  type ErrorHubState,
+  type RecoveryStrategy,
+
+  // Recovery
+  filterErrorRecovery,
+  sortErrorRecovery,
+  renderErrorRecovery,
+  editErrorRecovery,
+  dataFetchErrorRecovery,
+  getDefaultRecoveryStrategies,
+  executeRecovery,
+  type RecoveryResult,
+  type RecoveryStrategyConfig,
+
+  // Aggregate errors
+  AggregateDataTableError,
+  ErrorCollector,
+  aggregateErrors,
+  flattenErrors,
+  isAggregateError,
+
+  // User messages
+  getUserMessage,
+  getSeverityLabel,
+  getUserMessages,
+  formatErrorForDisplay,
+  type UserMessage,
 
   // Type guards
   isDataTableError,
   hasErrorCode,
+  hasSeverityAtLeast,
+  isFatalError,
+  shouldTriggerErrorBoundary,
+  isRecoverableError,
 } from "./errors";

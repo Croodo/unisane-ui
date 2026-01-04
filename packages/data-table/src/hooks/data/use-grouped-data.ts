@@ -126,10 +126,12 @@ export function useGroupedData<T extends { id: string }>({
       for (const row of rows) {
         const value = (row as Record<string, unknown>)[currentKey];
         const valueKey = String(value ?? "__null__");
-        if (!groupMap.has(valueKey)) {
-          groupMap.set(valueKey, []);
+        let group = groupMap.get(valueKey);
+        if (!group) {
+          group = [];
+          groupMap.set(valueKey, group);
         }
-        groupMap.get(valueKey)!.push(row);
+        group.push(row);
       }
 
       for (const [valueKey, groupRows] of groupMap) {

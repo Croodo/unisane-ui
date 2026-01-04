@@ -27,6 +27,11 @@ import { dataTableReducer, createInitialState } from "./reducer";
 import { flattenColumns, hasColumnGroups } from "../types/index";
 import { I18nProvider } from "../i18n/index";
 import { FeedbackProvider } from "../feedback";
+import { ErrorHub } from "../errors/error-hub";
+import { validateColumns } from "../utils/validation";
+import { ErrorSeverity } from "../errors/severity";
+import { DataTableError, DataTableErrorCode } from "../errors/base";
+import { createDesyncDetector } from "../utils/controlled-state-warnings";
 
 // ─── CONTEXT ────────────────────────────────────────────────────────────────
 
@@ -88,6 +93,8 @@ export function DataTableProvider<T extends { id: string }>({
   enableFeedback = true,
   disableToasts = false,
   disableAnnouncements = false,
+  // Error handling
+  errorConfig,
 }: DataTableProviderProps<T>) {
   // Default showColumnDividers based on variant if not explicitly set
   const effectiveShowColumnDividers = showColumnDividers ?? (variant === "grid");
@@ -96,35 +103,85 @@ export function DataTableProvider<T extends { id: string }>({
   const flatColumns = useMemo(() => flattenColumns(columns), [columns]);
   const hasGroups = useMemo(() => hasColumnGroups(columns), [columns]);
 
-  // Validate columns on mount/change and warn about issues (development only)
-  useEffect(() => {
-    // Skip validation in production for performance
-    if (process.env.NODE_ENV === "production") return;
+  // ─── ERROR HUB ───────────────────────────────────────────────────────────────
+  // Create or use provided ErrorHub for centralized error handling
 
-    if (!columns || columns.length === 0) {
-      console.warn("DataTable: No columns provided. Table will not render correctly.");
+  const errorHub = useMemo(() => {
+    // Use provided hub or create a new one
+    if (errorConfig?.errorHub) {
+      return errorConfig.errorHub;
+    }
+
+    const hubOptions = {
+      // Forward errors to onError callback (legacy callback support)
+      onError: (error: DataTableError) => {
+        // Call the config callback
+        errorConfig?.onError?.(error);
+        // Also call the legacy onError prop for backward compatibility
+        onError?.({
+          type: error.code.startsWith("DT_5") ? "filter" :
+                error.code.startsWith("DT_4") ? "render" :
+                error.code.startsWith("DT_6") ? "export" :
+                error.code.startsWith("DT_3") ? "data" :
+                error.code.startsWith("DT_2") ? "sort" : "unknown",
+          message: error.message,
+          error: error,
+          context: error.context,
+        });
+      },
+      minSeverity: errorConfig?.minReportSeverity ?? ErrorSeverity.WARNING,
+      maxErrors: 100,
+      ...errorConfig?.errorHubOptions,
+    };
+
+    return new ErrorHub(hubOptions);
+  }, [errorConfig, onError]);
+
+  // Register recovery strategies if provided
+  useEffect(() => {
+    if (errorConfig?.recoveryStrategies) {
+      for (const strategy of errorConfig.recoveryStrategies) {
+        errorHub.registerRecoveryStrategy(strategy);
+      }
+    }
+  }, [errorHub, errorConfig?.recoveryStrategies]);
+
+  // ─── COLUMN VALIDATION ──────────────────────────────────────────────────────
+  // Validate columns using the error hub system
+
+  useEffect(() => {
+    // Skip validation in production unless strict mode is enabled
+    if (process.env.NODE_ENV === "production" && !errorConfig?.strictValidation) {
       return;
     }
 
-    // Check for duplicate keys
-    const keys = flatColumns.map((col) => String(col.key));
-    const duplicates = keys.filter((key, index) => keys.indexOf(key) !== index);
-    if (duplicates.length > 0) {
-      console.error(
-        `DataTable: Duplicate column keys detected: ${[...new Set(duplicates)].join(", ")}. ` +
-        "Each column must have a unique key."
+    if (!columns || columns.length === 0) {
+      const error = new DataTableError(
+        "No columns provided. Table will not render correctly.",
+        DataTableErrorCode.INVALID_CONFIG,
+        { severity: ErrorSeverity.ERROR }
       );
+      errorHub.report(error);
+      return;
     }
 
-    // Check for missing headers
-    const missingHeaders = flatColumns.filter((col) => !col.header);
-    if (missingHeaders.length > 0) {
-      console.warn(
-        `DataTable: Columns missing headers: ${missingHeaders.map((c) => String(c.key)).join(", ")}. ` +
-        "Consider adding header text for better UX."
-      );
+    // Use the validation utility
+    const validation = validateColumns(flatColumns, {
+      includeWarnings: true,
+    });
+
+    // Report validation errors to the hub
+    for (const validationError of validation.errors) {
+      errorHub.report(validationError);
     }
-  }, [columns, flatColumns]);
+
+    // Log warnings in development
+    if (process.env.NODE_ENV !== "production") {
+      for (const warning of validation.warnings) {
+        console.warn(`[DataTable] ${warning}`);
+      }
+    }
+  }, [columns, flatColumns, errorHub, errorConfig?.strictValidation]);
 
   // Normalize stickyOffset to a CSS value string
   const normalizedStickyOffset = useMemo(() => {
@@ -300,6 +357,38 @@ export function DataTableProvider<T extends { id: string }>({
     }
   }, [externalSelectedIds]);
 
+  // ─── CONTROLLED STATE DESYNC DETECTION ─────────────────────────────────────
+  // In development, detect when controlled props don't match callback values
+
+  const desyncDetector = useMemo(
+    () => createDesyncDetector({
+      errorHub,
+      consoleWarnings: process.env.NODE_ENV !== "production",
+    }),
+    [errorHub]
+  );
+
+  // Verify controlled state after prop changes
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+
+    // Verify each controlled state type
+    desyncDetector.verifySortState(externalSortState);
+    desyncDetector.verifyFilterState(controlledFilters);
+    desyncDetector.verifySearchState(searchValue);
+    desyncDetector.verifyColumnPinState(externalPinState);
+    desyncDetector.verifyColumnOrderState(externalColumnOrder);
+    desyncDetector.verifySelectionState(externalSelectedIds);
+  }, [
+    desyncDetector,
+    externalSortState,
+    controlledFilters,
+    searchValue,
+    externalPinState,
+    externalColumnOrder,
+    externalSelectedIds,
+  ]);
+
   // ─── CONTEXT VALUE ─────────────────────────────────────────────────────────
 
   const controlled = useMemo(
@@ -424,6 +513,7 @@ export function DataTableProvider<T extends { id: string }>({
       stateSlices,
       dispatch,
       config,
+      errorHub,
       controlled,
       maxSortColumns,
       // Include direct callback references for backward compatibility
@@ -446,6 +536,7 @@ export function DataTableProvider<T extends { id: string }>({
       state,
       stateSlices,
       config,
+      errorHub,
       controlled,
       maxSortColumns,
       getCallbacks,

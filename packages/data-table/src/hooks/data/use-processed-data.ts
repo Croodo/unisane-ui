@@ -4,6 +4,8 @@ import { useMemo } from "react";
 import type { Column, FilterState, MultiSortState, FilterValue, TypedFilterValue } from "../../types";
 import { getNestedValue } from "../../utils/get-nested-value";
 import { useDebounce } from "../utilities/use-debounce";
+import type { ErrorHub } from "../../errors/error-hub";
+import { FilterError, SortError } from "../../errors/runtime-errors";
 
 interface UseProcessedDataOptions<T> {
   data: T[];
@@ -11,6 +13,8 @@ interface UseProcessedDataOptions<T> {
   columnFilters: FilterState;
   /** Sort state - array of sort items for multi-sort support */
   sortState: MultiSortState;
+  /** Error hub for reporting filter/sort errors (optional) */
+  errorHub?: ErrorHub;
   /**
    * Column definitions array.
    *
@@ -52,6 +56,13 @@ interface UseProcessedDataOptions<T> {
    * @default 0 (no debounce)
    */
   searchDebounceMs?: number;
+  /**
+   * Debounce delay for column filter changes in milliseconds.
+   * Useful for large datasets where immediate filtering on every change
+   * would cause lag. Recommended: 150-300ms for interactive filters.
+   * @default 0 (no debounce)
+   */
+  filterDebounceMs?: number;
 }
 
 /**
@@ -85,9 +96,14 @@ export function useProcessedData<T extends { id: string }>({
   columns,
   disableLocalProcessing = false,
   searchDebounceMs = 0,
+  filterDebounceMs = 0,
+  errorHub,
 }: UseProcessedDataOptions<T>): T[] {
   // Debounce search text to prevent excessive recalculations on every keystroke
   const debouncedSearchText = useDebounce(searchText, searchDebounceMs);
+
+  // Debounce column filters for large datasets
+  const debouncedColumnFilters = useDebounce(columnFilters, filterDebounceMs);
 
   return useMemo(() => {
     // Guard against empty data (early return for performance)
@@ -156,7 +172,7 @@ export function useProcessedData<T extends { id: string }>({
     }
 
     // ─── COLUMN FILTERS ───────────────────────────────────────────────────────
-    const filterEntries = Object.entries(columnFilters);
+    const filterEntries = Object.entries(debouncedColumnFilters);
     if (filterEntries.length > 0) {
       // Pre-build filter info for performance (avoid repeated lookups)
       const filterInfo = filterEntries.map(([key, filterValue]) => ({
@@ -165,13 +181,31 @@ export function useProcessedData<T extends { id: string }>({
         column: columnMap.get(key),
       }));
 
+      // Track which filter errors we've already reported
+      const reportedFilterErrors = new Set<string>();
+
       result = result.filter((row) => {
         // Short-circuit: return false on first non-match
         for (const { key, filterValue, column } of filterInfo) {
           // Use custom filter function if provided
           if (column?.filterFn) {
-            if (!column.filterFn(row, filterValue)) {
-              return false;
+            try {
+              if (!column.filterFn(row, filterValue)) {
+                return false;
+              }
+            } catch (cause) {
+              // Report error only once per column to avoid flooding
+              if (errorHub && !reportedFilterErrors.has(key)) {
+                reportedFilterErrors.add(key);
+                const error = new FilterError(
+                  key,
+                  filterValue,
+                  cause instanceof Error ? cause : undefined
+                );
+                errorHub.report(error);
+              }
+              // Fail open: include row if filter throws
+              continue;
             }
           } else {
             // Default filtering logic
@@ -193,6 +227,9 @@ export function useProcessedData<T extends { id: string }>({
         column: columnMap.get(sortItem.key),
       }));
 
+      // Track which sort errors we've already reported
+      const reportedSortErrors = new Set<string>();
+
       result.sort((a, b) => {
         // Compare by each sort column in order (primary first, then secondary, etc.)
         for (const { key, direction, column } of sortInfo) {
@@ -200,9 +237,23 @@ export function useProcessedData<T extends { id: string }>({
 
           // Use custom sort function if provided
           if (column?.sortFn) {
-            const sortResult = column.sortFn(a, b);
-            // Ensure sortFn returns a valid number, fallback to 0 if undefined/NaN
-            comparison = typeof sortResult === "number" && !isNaN(sortResult) ? sortResult : 0;
+            try {
+              const sortResult = column.sortFn(a, b);
+              // Ensure sortFn returns a valid number, fallback to 0 if undefined/NaN
+              comparison = typeof sortResult === "number" && !isNaN(sortResult) ? sortResult : 0;
+            } catch (cause) {
+              // Report error only once per column to avoid flooding
+              if (errorHub && !reportedSortErrors.has(key)) {
+                reportedSortErrors.add(key);
+                const error = new SortError(
+                  key,
+                  cause instanceof Error ? cause : undefined
+                );
+                errorHub.report(error);
+              }
+              // Treat as equal if sort throws (stable sort)
+              comparison = 0;
+            }
           } else {
             // Default sorting by column value
             const aValue = getNestedValue(a, key);
@@ -226,7 +277,7 @@ export function useProcessedData<T extends { id: string }>({
     }
 
     return result;
-  }, [data, debouncedSearchText, columnFilters, sortState, columns, disableLocalProcessing]);
+  }, [data, debouncedSearchText, debouncedColumnFilters, sortState, columns, disableLocalProcessing, errorHub]);
 }
 
 /**

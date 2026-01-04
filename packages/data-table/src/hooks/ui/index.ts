@@ -44,3 +44,8 @@ export {
   type UseRTLReturn,
   type RTLProviderProps,
 } from "./use-rtl";
+export {
+  useFocusRestore,
+  type UseFocusRestoreOptions,
+  type UseFocusRestoreReturn,
+} from "./use-focus-restore";

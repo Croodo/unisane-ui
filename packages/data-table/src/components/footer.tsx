@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import type { Column, PinPosition, ColumnMetaMap } from "../types/index";
 import type { Density } from "../constants/index";
 import { SummaryRow } from "./summary-row";
+import { first, last } from "../utils/type-guards";
 
 // ─── FOOTER PROPS ────────────────────────────────────────────────────────────
 
@@ -58,12 +59,10 @@ function DataTableFooterInner<T extends { id: string }>({
   // Calculate last pinned left and first pinned right for border logic
   const pinnedLeftColumns = columns.filter((col) => getEffectivePinPosition(col) === "left");
   const pinnedRightColumns = columns.filter((col) => getEffectivePinPosition(col) === "right");
-  const lastPinnedLeftKey = pinnedLeftColumns.length > 0
-    ? String(pinnedLeftColumns[pinnedLeftColumns.length - 1]!.key)
-    : null;
-  const firstPinnedRightKey = pinnedRightColumns.length > 0
-    ? String(pinnedRightColumns[0]!.key)
-    : null;
+  const lastPinnedLeft = last(pinnedLeftColumns);
+  const lastPinnedLeftKey = lastPinnedLeft ? String(lastPinnedLeft.key) : null;
+  const firstPinnedRight = first(pinnedRightColumns);
+  const firstPinnedRightKey = firstPinnedRight ? String(firstPinnedRight.key) : null;
 
   return (
     <tfoot>

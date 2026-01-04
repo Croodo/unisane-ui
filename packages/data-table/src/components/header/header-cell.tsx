@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useId } from "react";
 import { cn, Icon } from "@unisane/ui";
 import type { Column, SortDirection, PinPosition, ColumnMetaMap, FilterValue } from "../../types";
 import { ResizeHandle } from "./resize-handle";
@@ -94,6 +94,7 @@ export function HeaderCell<T>({
   reorderableRows = false,
 }: HeaderCellProps<T>) {
   const { t } = useI18n();
+  const filterDescriptionId = useId();
   const hasFilterOptions = column.filterable !== false;
   // Grouping is only available for columns with explicit groupable: true OR columns with select filter (categorical data)
   const isGroupable = column.groupable === true || (column.groupable !== false && column.filterType === "select");
@@ -104,6 +105,11 @@ export function HeaderCell<T>({
     (groupingEnabled && isGroupable);
 
   const hasActiveFilter = currentFilter !== undefined && currentFilter !== null && currentFilter !== "";
+
+  // Generate filter description for screen readers
+  const filterDescription = hasActiveFilter
+    ? t("filterBy", { column: String(column.header) }) + `: ${String(currentFilter)}`
+    : undefined;
 
   return (
     <th
@@ -161,6 +167,7 @@ export function HeaderCell<T>({
             : "descending"
           : undefined
       }
+      aria-describedby={hasActiveFilter ? filterDescriptionId : undefined}
       // Use suppressHydrationWarning for draggable attribute since it changes post-hydration
       suppressHydrationWarning
       draggable={dragProps?.draggable || undefined}
@@ -171,6 +178,12 @@ export function HeaderCell<T>({
       onDragLeave={dragProps?.onDragLeave}
       onDrop={dragProps?.onDrop}
     >
+      {/* Hidden filter description for screen readers */}
+      {hasActiveFilter && (
+        <span id={filterDescriptionId} className="sr-only">
+          {filterDescription}
+        </span>
+      )}
       {/* Main content area - text uses full width */}
       <div
         onClick={isSortable ? onSort : undefined}

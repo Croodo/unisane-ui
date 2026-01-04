@@ -138,7 +138,7 @@ export function DataTableInner<T extends { id: string }>({
     reorderable,
     observeContainer,
   } = useColumns<T>();
-  const { config } = useTableUI();
+  const { config, errorHub } = useTableUI();
   const { groupBy, groupByArray, setGroupBy, isGrouped, isMultiLevel, toggleGroupExpand, isGroupExpanded, addGroupBy } = useGrouping();
   const { t, formatNumber } = useI18n();
 
@@ -223,6 +223,7 @@ export function DataTableInner<T extends { id: string }>({
     sortState,
     columns: columns as Column<T>[],
     disableLocalProcessing,
+    errorHub,
   });
 
   const paginatedData = useMemo(() => {
@@ -634,6 +635,7 @@ export function DataTableInner<T extends { id: string }>({
               isDraggingRow={isDraggingRow}
               isDropTarget={isDropTarget}
               getDropPosition={getDropPosition}
+              searchText={searchText}
             />
             <DataTableFooter
               data={processedData}

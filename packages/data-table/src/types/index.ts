@@ -102,6 +102,7 @@ export type {
 // Props for DataTable and render callbacks
 
 export type {
+  DataTableErrorConfig,
   RowActivationEvent,
   DataTableHeaderRenderProps,
   DataTableToolbarRenderProps,

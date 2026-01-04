@@ -2,6 +2,8 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useI18n } from "../../i18n";
+import { useSafeRAF } from "../use-safe-raf";
+import { useFeedback } from "../../feedback";
 
 // ─── TYPES ───────────────────────────────────────────────────────────────────
 
@@ -188,6 +190,7 @@ export function useRowDrag<T extends { id: string }>({
   onReorder,
 }: UseRowDragOptions<T>): UseRowDragReturn {
   const { t } = useI18n();
+  const { feedback } = useFeedback();
   const [dragState, setDragState] = useState<RowDragState>({
     draggingId: null,
     draggingIndex: null,
@@ -200,6 +203,9 @@ export function useRowDrag<T extends { id: string }>({
 
   // Track if drag started from handle
   const dragFromHandleRef = useRef(false);
+
+  // Safe RAF for drag state updates
+  const { requestFrame } = useSafeRAF();
 
   // ─── HANDLER CACHING (3.0.5) ─────────────────────────────────────────────────
   // Cache row drag props to avoid creating new handler functions on each call
@@ -283,20 +289,26 @@ export function useRowDrag<T extends { id: string }>({
     (rowId: string) => {
       const currentIndex = data.findIndex((row) => row.id === rowId);
       if (currentIndex > 0) {
-        reorderRows(currentIndex, currentIndex - 1);
+        const toIndex = currentIndex - 1;
+        reorderRows(currentIndex, toIndex);
+        // Announce the move for screen readers (1-indexed for user-facing message)
+        feedback("rowMoved", { from: currentIndex + 1, to: toIndex + 1 });
       }
     },
-    [data, reorderRows]
+    [data, reorderRows, feedback]
   );
 
   const moveRowDown = useCallback(
     (rowId: string) => {
       const currentIndex = data.findIndex((row) => row.id === rowId);
       if (currentIndex < data.length - 1) {
-        reorderRows(currentIndex, currentIndex + 1);
+        const toIndex = currentIndex + 1;
+        reorderRows(currentIndex, toIndex);
+        // Announce the move for screen readers (1-indexed for user-facing message)
+        feedback("rowMoved", { from: currentIndex + 1, to: toIndex + 1 });
       }
     },
-    [data, reorderRows]
+    [data, reorderRows, feedback]
   );
 
   const moveRowUpRef = useRef(moveRowUp);
@@ -335,7 +347,7 @@ export function useRowDrag<T extends { id: string }>({
           dragImageRef.current = dragImage;
           e.dataTransfer.setDragImage(dragImage, 0, 0);
 
-          requestAnimationFrame(() => {
+          requestFrame(() => {
             setDragState({
               draggingId: rowId,
               draggingIndex: rowIndex,
@@ -421,7 +433,7 @@ export function useRowDrag<T extends { id: string }>({
       rowDragPropsCache.current.set(cacheKey, props);
       return props;
     },
-    [enabled]
+    [enabled, requestFrame]
   );
 
   const getDragHandleProps = useCallback(

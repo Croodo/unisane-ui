@@ -18,9 +18,9 @@ import { useFeedback } from "../../feedback";
 // ─── EXPORT FORMAT CONFIG ───────────────────────────────────────────────────
 
 interface FormatConfig {
-  labelKey: "exportCsv" | "exportExcel" | "exportPdf" | "exportJson";
+  labelKey: "exportCsv" | "exportExcel" | "exportPdf" | "exportJson" | "exportHtml";
   icon: string;
-  descriptionKey: "exportCsvDesc" | "exportExcelDesc" | "exportPdfDesc" | "exportJsonDesc";
+  descriptionKey: "exportCsvDesc" | "exportExcelDesc" | "exportPdfDesc" | "exportJsonDesc" | "exportHtmlDesc";
 }
 
 const FORMAT_CONFIG: Record<ExportFormat, FormatConfig> = {
@@ -43,6 +43,11 @@ const FORMAT_CONFIG: Record<ExportFormat, FormatConfig> = {
     labelKey: "exportJson",
     icon: "data_object",
     descriptionKey: "exportJsonDesc",
+  },
+  html: {
+    labelKey: "exportHtml",
+    icon: "code",
+    descriptionKey: "exportHtmlDesc",
   },
 };
 

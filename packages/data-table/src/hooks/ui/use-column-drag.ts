@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
+import { useSafeRAF } from "../use-safe-raf";
 
 export interface DragState {
   /** Currently dragging column key */
@@ -59,6 +60,9 @@ export function useColumnDrag({
   // Track the drag image element
   const dragImageRef = useRef<HTMLDivElement | null>(null);
 
+  // Safe RAF for drag state updates
+  const { requestFrame } = useSafeRAF();
+
   // Cleanup drag image on unmount
   useEffect(() => {
     return () => {
@@ -81,10 +85,12 @@ export function useColumnDrag({
       e.dataTransfer.effectAllowed = "move";
 
       // Get the column header text (clean up any extra content like sort icons)
-      const headerElement = e.currentTarget as HTMLElement;
-      const headerText = headerElement.querySelector("span.truncate")?.textContent
-        || headerElement.textContent?.trim().split("\n")[0]?.trim()
-        || columnKey;
+      const headerElement = e.currentTarget;
+      const headerText = headerElement instanceof HTMLElement
+        ? (headerElement.querySelector("span.truncate")?.textContent
+          || headerElement.textContent?.trim().split("\n")[0]?.trim()
+          || columnKey)
+        : columnKey;
 
       // Create custom drag image with icon and styled container
       const dragImage = document.createElement("div");
@@ -140,11 +146,11 @@ export function useColumnDrag({
       e.dataTransfer.setDragImage(dragImage, 0, 0);
 
       // Update state after a tick to allow browser to capture drag image
-      requestAnimationFrame(() => {
+      requestFrame(() => {
         setDragState((prev) => ({ ...prev, draggingKey: columnKey }));
       });
     },
-    [enabled]
+    [enabled, requestFrame]
   );
 
   const handleDragEnd = useCallback(() => {

@@ -2,7 +2,7 @@ import type { Column } from "../../types";
 
 // ─── EXPORT FORMATS ─────────────────────────────────────────────────────────
 
-export type ExportFormat = "csv" | "excel" | "pdf" | "json";
+export type ExportFormat = "csv" | "excel" | "pdf" | "json" | "html";
 
 // ─── EXPORT OPTIONS ─────────────────────────────────────────────────────────
 
@@ -86,6 +86,33 @@ export interface JSONExportOptions<T extends { id: string }> extends ExportOptio
   includeMetadata?: boolean;
 }
 
+// ─── HTML OPTIONS ───────────────────────────────────────────────────────────
+
+export interface HTMLExportOptions<T extends { id: string }> extends ExportOptions<T> {
+  /** Document/table title */
+  title?: string;
+  /** Include CSS styles (default: true) */
+  includeStyles?: boolean;
+  /** Use inline styles instead of CSS classes (better for email) */
+  inlineStyles?: boolean;
+  /** Header background color (default: #6750A4) */
+  headerColor?: string;
+  /** Header text color (default: #ffffff) */
+  headerTextColor?: string;
+  /** Border color (default: #e0e0e0) */
+  borderColor?: string;
+  /** Zebra stripe color (default: #f5f5f5) */
+  zebraColor?: string;
+  /** Font size in pixels (default: 14) */
+  fontSize?: number;
+  /** Font family (default: system fonts) */
+  fontFamily?: string;
+  /** Include metadata footer (export date, row count) */
+  includeMetadata?: boolean;
+  /** Wrap in full HTML document with DOCTYPE (default: true for export, false for string) */
+  wrapInDocument?: boolean;
+}
+
 // ─── EXPORT RESULT ──────────────────────────────────────────────────────────
 
 export interface ExportResult {
@@ -103,4 +130,5 @@ export type ExportConfig<T extends { id: string }> =
   | ({ format: "csv" } & CSVExportOptions<T>)
   | ({ format: "excel" } & ExcelExportOptions<T>)
   | ({ format: "pdf" } & PDFExportOptions<T>)
-  | ({ format: "json" } & JSONExportOptions<T>);
+  | ({ format: "json" } & JSONExportOptions<T>)
+  | ({ format: "html" } & HTMLExportOptions<T>);

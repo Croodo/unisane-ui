@@ -4,6 +4,7 @@ import { useState, useCallback, useRef } from "react";
 import { dequal } from "dequal";
 import type { UseInlineEditingOptions, InlineEditingController, EditingCell } from "../../types";
 import { getCellSelector } from "../../constants";
+import { useSafeRAF } from "../use-safe-raf";
 
 /**
  * Hook for managing inline cell editing in DataTable
@@ -42,6 +43,9 @@ export function useInlineEditing<T extends { id: string }>({
   // Track original value for cancel
   const originalValueRef = useRef<unknown>(null);
 
+  // Safe RAF for DOM operations
+  const { requestFrame } = useSafeRAF();
+
   // Start editing a cell
   const startEdit = useCallback(
     (rowId: string, columnKey: string, initialValue: unknown) => {
@@ -69,14 +73,16 @@ export function useInlineEditing<T extends { id: string }>({
 
     // Restore focus to the cell after a tick
     if (cellToFocus) {
-      requestAnimationFrame(() => {
+      requestFrame(() => {
         const cellElement = document.querySelector(
           getCellSelector(cellToFocus.rowId, cellToFocus.columnKey)
-        ) as HTMLElement;
-        cellElement?.focus();
+        );
+        if (cellElement instanceof HTMLElement) {
+          cellElement.focus();
+        }
       });
     }
-  }, [editingCell, onCancelEdit]);
+  }, [editingCell, onCancelEdit, requestFrame]);
 
   // Clear validation error without canceling edit
   // Useful for allowing retry after a failed save
@@ -142,11 +148,13 @@ export function useInlineEditing<T extends { id: string }>({
       // 1. It only runs once per edit commit (not in render loop)
       // 2. The query is fast (single attribute selector)
       // 3. Alternative (cell registry with refs) adds significant complexity
-      requestAnimationFrame(() => {
+      requestFrame(() => {
         const cellElement = document.querySelector(
           getCellSelector(cellToFocus.rowId, cellToFocus.columnKey)
-        ) as HTMLElement;
-        cellElement?.focus();
+        );
+        if (cellElement instanceof HTMLElement) {
+          cellElement.focus();
+        }
       });
       return true;
     }
@@ -162,11 +170,13 @@ export function useInlineEditing<T extends { id: string }>({
       originalValueRef.current = null;
 
       // Restore focus to the cell after successful save
-      requestAnimationFrame(() => {
+      requestFrame(() => {
         const cellElement = document.querySelector(
           getCellSelector(cellToFocus.rowId, cellToFocus.columnKey)
-        ) as HTMLElement;
-        cellElement?.focus();
+        );
+        if (cellElement instanceof HTMLElement) {
+          cellElement.focus();
+        }
       });
       return true;
     } catch (error) {
@@ -177,7 +187,7 @@ export function useInlineEditing<T extends { id: string }>({
     } finally {
       setIsSaving(false);
     }
-  }, [editingCell, pendingValue, data, onCellChange, cancelEdit, validateCell]);
+  }, [editingCell, pendingValue, data, onCellChange, cancelEdit, validateCell, requestFrame]);
 
   // Retry the last failed save operation
   // Clears the error and tries to commit again

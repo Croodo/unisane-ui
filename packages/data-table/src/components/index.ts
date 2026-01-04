@@ -42,3 +42,9 @@ export {
 } from "./actions-cell";
 export { TreeExpander, type TreeExpanderProps } from "./tree-expander";
 export { InfiniteScrollLoader, type InfiniteScrollLoaderProps } from "./infinite-scroll-loader";
+export {
+  HighlightedText,
+  splitTextBySearch,
+  type HighlightedTextProps,
+  type HighlightedSpan,
+} from "./highlighted-text";

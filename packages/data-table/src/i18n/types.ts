@@ -146,6 +146,10 @@ export interface DataTableStrings {
   exportJson: string;
   /** JSON format description */
   exportJsonDesc: string;
+  /** HTML format label */
+  exportHtml: string;
+  /** HTML format description */
+  exportHtmlDesc: string;
   /** Export started message. Placeholder: {format} */
   exportStarted: string;
   /** Export success message. Placeholder: {format} */
@@ -444,6 +448,80 @@ export interface DataTableStrings {
   errorDetails: string;
   /** Retry button label */
   retry: string;
+  /** Dismiss error button */
+  dismissError: string;
+  /** Show error details link */
+  showErrorDetails: string;
+  /** Hide error details link */
+  hideErrorDetails: string;
+  /** Copy error to clipboard */
+  copyError: string;
+  /** Error copied confirmation */
+  errorCopied: string;
+
+  // ─── Error Messages (User-Facing) ───
+  /** Duplicate row ID error. Placeholder: {id} */
+  errorDuplicateRowId: string;
+  /** Missing row ID error. Placeholder: {index} */
+  errorMissingRowId: string;
+  /** Invalid data format error */
+  errorInvalidDataFormat: string;
+  /** Data fetch failed error */
+  errorDataFetchFailed: string;
+  /** Invalid column key error. Placeholder: {key} */
+  errorInvalidColumnKey: string;
+  /** Duplicate column key error. Placeholder: {key} */
+  errorDuplicateColumnKey: string;
+  /** Missing column accessor error. Placeholder: {key} */
+  errorMissingColumnAccessor: string;
+  /** Invalid config error */
+  errorInvalidConfig: string;
+  /** Missing required prop error. Placeholder: {prop} */
+  errorMissingRequiredProp: string;
+  /** Incompatible options error */
+  errorIncompatibleOptions: string;
+  /** Context not found error */
+  errorContextNotFound: string;
+  /** Provider missing error */
+  errorProviderMissing: string;
+  /** Render error. Placeholder: {component} */
+  errorRenderFailed: string;
+  /** Virtualization error */
+  errorVirtualizationFailed: string;
+  /** Edit failed error. Placeholder: {column} */
+  errorEditFailed: string;
+  /** Selection error */
+  errorSelectionFailed: string;
+  /** Export error. Placeholder: {format} */
+  errorExportFailed: string;
+  /** Filter error. Placeholder: {column} */
+  errorFilterFailed: string;
+  /** Sort error. Placeholder: {column} */
+  errorSortFailed: string;
+  /** Search error */
+  errorSearchFailed: string;
+  /** Generic error fallback */
+  errorGeneric: string;
+
+  // ─── Error Severity Labels ───
+  /** Warning severity label */
+  severityWarning: string;
+  /** Error severity label */
+  severityError: string;
+  /** Critical severity label */
+  severityCritical: string;
+  /** Fatal severity label */
+  severityFatal: string;
+
+  // ─── Error Recovery Messages ───
+  /** Attempting recovery message */
+  errorRecoveryAttempting: string;
+  /** Recovery successful message */
+  errorRecoverySuccess: string;
+  /** Recovery failed message */
+  errorRecoveryFailed: string;
+  /** Using fallback value message */
+  errorUsingFallback: string;
 
   // ─── Screen Reader Announcements ───
   /** Status update for screen readers. Placeholders: {selectedCount}, {totalCount}, {sortInfo} */

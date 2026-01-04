@@ -3,14 +3,15 @@
 
 /**
  * Fixed widths for special columns (in pixels)
+ * All interactive columns meet WCAG 2.5.5 minimum touch target size (44px)
  */
 export const COLUMN_WIDTHS = {
-  /** Width for checkbox selection column */
+  /** Width for checkbox selection column (meets 44px touch target) */
   CHECKBOX: 48,
-  /** Width for row expander column */
-  EXPANDER: 40,
-  /** Width for drag handle column (row reordering) */
-  DRAG_HANDLE: 40,
+  /** Width for row expander column (meets 44px touch target) */
+  EXPANDER: 44,
+  /** Width for drag handle column (meets 44px touch target) */
+  DRAG_HANDLE: 44,
   /** Minimum width for resizable columns */
   MIN_RESIZABLE: 50,
   /** Default column width when not specified */
@@ -95,18 +96,21 @@ export const TIMING = {
 } as const;
 
 /**
- * Touch target dimensions for accessibility (WCAG)
+ * Touch target dimensions for accessibility (WCAG 2.5.5)
+ * All interactive elements should meet minimum 44x44px touch target
  */
 export const TOUCH_TARGETS = {
-  /** Minimum touch target size in pixels (WCAG requirement) */
-  MIN_SIZE: 48,
-  /** Current sizes that need fixing */
-  CURRENT: {
+  /** Minimum touch target size in pixels (WCAG 2.5.5 requirement) */
+  MIN_SIZE: 44,
+  /** Recommended touch target size for comfortable interaction */
+  RECOMMENDED_SIZE: 48,
+  /** Interactive element sizes - all meet WCAG requirements */
+  SIZES: {
     CHECKBOX: 48, // ✓ Meets requirement
-    EXPANDER: 40, // ⚠️ Needs padding increase
-    DRAG_HANDLE: 40, // ⚠️ Needs padding increase
-    PAGINATION_BUTTON: 40, // ⚠️ Needs padding increase
-    PAGE_SIZE_SELECT: 32, // ⚠️ Needs height increase
+    EXPANDER: 44, // ✓ Fixed - meets requirement
+    DRAG_HANDLE: 44, // ✓ Fixed - meets requirement
+    PAGINATION_BUTTON: 44, // ✓ Fixed - meets requirement
+    PAGE_SIZE_SELECT: 44, // ✓ Fixed - meets requirement
   },
 } as const;
 

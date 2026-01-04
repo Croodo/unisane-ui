@@ -8,6 +8,7 @@ import type {
   GroupAggregation,
   Column,
 } from "../../types";
+import { getNestedValue } from "../../utils/get-nested-value";
 
 // ─── TYPES ──────────────────────────────────────────────────────────────────
 
@@ -56,22 +57,9 @@ export interface UseRowGroupingReturn<T extends { id: string }> {
 // ─── HELPER FUNCTIONS ───────────────────────────────────────────────────────
 
 /**
- * Get a value from an object using a dot-notation path
- */
-function getNestedValue<T>(obj: T, path: string): unknown {
-  const keys = path.split(".");
-  let value: unknown = obj;
-  for (const key of keys) {
-    if (value == null) return undefined;
-    value = (value as Record<string, unknown>)[key];
-  }
-  return value;
-}
-
-/**
  * Calculate aggregation for a group of rows
  */
-function calculateAggregation<T>(
+function calculateAggregation<T extends object>(
   rows: T[],
   columnKey: string,
   aggregation: GroupAggregation<T>
@@ -196,11 +184,13 @@ export function useRowGrouping<T extends { id: string }>({
       const value = getNestedValue(row, groupBy);
       const groupId = String(value ?? "__null__");
 
-      if (!groupMap.has(groupId)) {
-        groupMap.set(groupId, []);
+      let group = groupMap.get(groupId);
+      if (!group) {
+        group = [];
+        groupMap.set(groupId, group);
         groupValues.set(groupId, value);
       }
-      groupMap.get(groupId)!.push(row);
+      group.push(row);
     }
 
     // Convert to array and sort

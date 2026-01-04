@@ -271,10 +271,10 @@ export function useVirtualizedGroupedRows<T extends { id: string }>({
         // Calculate approximate scroll position
         let scrollTop = 0;
         for (let i = 0; i < index && i < flattenedItems.length; i++) {
-          scrollTop +=
-            flattenedItems[i]!.type === "group"
-              ? estimateGroupHeaderHeight
-              : estimateRowHeight;
+          const item = flattenedItems[i];
+          scrollTop += item?.type === "group"
+            ? estimateGroupHeaderHeight
+            : estimateRowHeight;
         }
         containerRef.current.scrollTop = scrollTop;
       }

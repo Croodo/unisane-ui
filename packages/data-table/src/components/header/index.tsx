@@ -15,6 +15,7 @@ import { isColumnGroup } from "../../types";
 import { DENSITY_STYLES, type Density } from "../../constants";
 import { useColumnDrag } from "../../hooks/ui/use-column-drag";
 import { useI18n } from "../../i18n";
+import { first, last, safeArrayAccess } from "../../utils/type-guards";
 import { HeaderCell } from "./header-cell";
 import { GroupHeaderRow } from "./group-header-row";
 
@@ -122,12 +123,13 @@ function DataTableHeaderInner<T extends { id: string }>({
     priority: number | null;
   } => {
     const index = sortState.findIndex((s) => s.key === key);
-    if (index === -1) {
+    const sortItem = safeArrayAccess(sortState, index);
+    if (!sortItem) {
       return { isSorted: false, direction: null, priority: null };
     }
     return {
       isSorted: true,
-      direction: sortState[index]!.direction,
+      direction: sortItem.direction,
       priority: sortState.length > 1 ? index + 1 : null,
     };
   };
@@ -149,11 +151,10 @@ function DataTableHeaderInner<T extends { id: string }>({
     (col) => getEffectivePinPosition(col) === "right"
   );
   const hasPinnedLeftData = pinnedLeftColumns.length > 0;
-  const lastPinnedLeftKey = hasPinnedLeftData
-    ? String(pinnedLeftColumns[pinnedLeftColumns.length - 1]!.key)
-    : null;
-  const firstPinnedRightKey =
-    pinnedRightColumns.length > 0 ? String(pinnedRightColumns[0]!.key) : null;
+  const lastPinnedLeft = last(pinnedLeftColumns);
+  const lastPinnedLeftKey = lastPinnedLeft ? String(lastPinnedLeft.key) : null;
+  const firstPinnedRight = first(pinnedRightColumns);
+  const firstPinnedRightKey = firstPinnedRight ? String(firstPinnedRight.key) : null;
 
   return (
     <thead className="bg-surface">

@@ -3,6 +3,9 @@
 import React, { Component, type ReactNode, type ErrorInfo } from "react";
 import { Button, Icon } from "@unisane/ui";
 import { useI18n } from "../i18n";
+import { DataTableError, DataTableErrorCode } from "../errors/base";
+import { ErrorSeverity } from "../errors/severity";
+import type { ErrorHub } from "../errors/error-hub";
 
 // ─── ERROR STATE PROPS ───────────────────────────────────────────────────────
 
@@ -59,8 +62,12 @@ export function DataTableErrorDisplay({
 
 interface DataTableErrorBoundaryProps {
   children: ReactNode;
+  /** Custom fallback UI when error occurs */
   fallback?: ReactNode | ((props: { error: Error; reset: () => void }) => ReactNode);
+  /** Callback when error is caught */
   onError?: (error: Error, errorInfo: ErrorInfo) => void;
+  /** Error hub to report errors to (integrates with DataTable error system) */
+  errorHub?: ErrorHub;
 }
 
 interface DataTableErrorBoundaryState {
@@ -102,6 +109,22 @@ export class DataTableErrorBoundary extends Component<
     if (process.env.NODE_ENV === "development") {
       console.error("DataTable Error:", error);
       console.error("Error Info:", errorInfo.componentStack);
+    }
+
+    // Report to error hub if available
+    if (this.props.errorHub) {
+      const dataTableError = new DataTableError(
+        `React render error: ${error.message}`,
+        DataTableErrorCode.RENDER_ERROR,
+        {
+          severity: ErrorSeverity.FATAL,
+          cause: error,
+          context: {
+            componentStack: errorInfo.componentStack,
+          },
+        }
+      );
+      this.props.errorHub.report(dataTableError);
     }
 
     // Call custom error handler if provided

@@ -1,8 +1,12 @@
 import type { Column, RowGroup } from "../types";
+import { getNestedValue } from "./get-nested-value";
+
+// Re-export for backwards compatibility
+export { getNestedValue };
 
 // ─── TYPES ──────────────────────────────────────────────────────────────────
 
-export interface BuildGroupsOptions<T> {
+export interface BuildGroupsOptions<T extends object> {
   /** Data rows to group */
   data: T[];
   /** Array of column keys to group by (supports multi-level) */
@@ -16,19 +20,6 @@ export interface BuildGroupsOptions<T> {
 // ─── HELPERS ────────────────────────────────────────────────────────────────
 
 /**
- * Get a value from an object using dot-notation path
- */
-export function getNestedValue<T>(obj: T, path: string): unknown {
-  const keys = path.split(".");
-  let value: unknown = obj;
-  for (const key of keys) {
-    if (value == null) return undefined;
-    value = (value as Record<string, unknown>)[key];
-  }
-  return value;
-}
-
-/**
  * Format a group value for display
  */
 export function formatGroupLabel(value: unknown): string {
@@ -40,7 +31,7 @@ export function formatGroupLabel(value: unknown): string {
 /**
  * Calculate aggregation for a set of rows
  */
-export function calculateAggregation<T>(
+export function calculateAggregation<T extends object>(
   rows: T[],
   columnKey: string,
   aggregationType: "sum" | "average" | "count" | "min" | "max"
@@ -78,7 +69,7 @@ export function calculateAggregation<T>(
  * Supports multi-level grouping where each level groups by a different column.
  * Only the deepest level contains actual data rows.
  */
-export function buildNestedGroups<T>(
+export function buildNestedGroups<T extends object>(
   rows: T[],
   groupByKeys: string[],
   depth: number,
@@ -102,11 +93,13 @@ export function buildNestedGroups<T>(
     const value = getNestedValue(row, currentKey);
     const valueKey = String(value ?? "__null__");
 
-    if (!groupMap.has(valueKey)) {
-      groupMap.set(valueKey, []);
+    let group = groupMap.get(valueKey);
+    if (!group) {
+      group = [];
+      groupMap.set(valueKey, group);
       groupValues.set(valueKey, value);
     }
-    groupMap.get(valueKey)!.push(row);
+    group.push(row);
   }
 
   // Convert to array and sort alphabetically
@@ -172,7 +165,7 @@ export function buildNestedGroups<T>(
  * @param aggregationColumns - Columns with aggregation config
  * @returns Array of RowGroup objects
  */
-export function buildGroupedData<T>(
+export function buildGroupedData<T extends object>(
   options: BuildGroupsOptions<T>
 ): RowGroup<T>[] {
   const { data, groupByKeys, isGroupExpanded, aggregationColumns } = options;

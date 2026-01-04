@@ -3,6 +3,7 @@
 import { useCallback } from "react";
 import { useDataTableContext } from "../provider";
 import type { MultiSortState } from "../../types";
+import { safeArrayAccess } from "../../utils/type-guards";
 
 /**
  * Hook for sorting functionality
@@ -119,11 +120,12 @@ export function useSorting() {
   const getSortInfo = useCallback(
     (key: string): { direction: "asc" | "desc" | null; priority: number | null } => {
       const index = sortState.findIndex((s) => s.key === key);
-      if (index === -1) {
+      const sortItem = safeArrayAccess(sortState, index);
+      if (!sortItem) {
         return { direction: null, priority: null };
       }
       return {
-        direction: sortState[index]!.direction,
+        direction: sortItem.direction,
         priority: sortState.length > 1 ? index + 1 : null,
       };
     },

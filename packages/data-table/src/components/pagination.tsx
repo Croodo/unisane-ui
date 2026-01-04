@@ -74,7 +74,8 @@ function PageSizeSelector({
     <select
       value={pageSize}
       onChange={(e) => onChange(Number(e.target.value))}
-      className="h-11 px-3 text-body-small bg-surface border border-outline-variant rounded-sm text-on-surface cursor-pointer focus:outline-none focus:border-primary min-w-[60px]"
+      // WCAG 2.5.5: min 44px touch target
+      className="min-h-[44px] min-w-[60px] px-3 text-body-small bg-surface border border-outline-variant rounded-sm text-on-surface cursor-pointer focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
     >
       {pageSizeOptions.map((size) => (
         <option key={size} value={size}>

@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef, useMemo, useEffect } from "react";
 import type { Column, ColumnMeta, ColumnMetaMap } from "../../types";
+import { useSafeRAF } from "../use-safe-raf";
 
 // ─── TYPES ───────────────────────────────────────────────────────────────────
 
@@ -121,16 +122,9 @@ export function useVirtualizedColumns<T>({
 
   const [scrollLeft, setScrollLeft] = useState(0);
   const [containerWidth, setContainerWidth] = useState(0);
-  const rafRef = useRef<number | null>(null);
-  const isMountedRef = useRef(true);
 
-  // Track mounted state to prevent setState after unmount
-  useEffect(() => {
-    isMountedRef.current = true;
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
+  // Safe RAF for scroll handling
+  const { requestFrame, cancelAllFrames } = useSafeRAF();
 
   // ─── SHOULD VIRTUALIZE ─────────────────────────────────────────────────────
 
@@ -250,18 +244,21 @@ export function useVirtualizedColumns<T>({
     // Calculate padding
     let left = 0;
     for (let i = 0; i < startIdx; i++) {
-      left += scrollableColumnPositions[i]!.meta.width;
+      const pos = scrollableColumnPositions[i];
+      if (pos) left += pos.meta.width;
     }
 
     let right = 0;
     for (let i = endIdx + 1; i < scrollableColumnPositions.length; i++) {
-      right += scrollableColumnPositions[i]!.meta.width;
+      const pos = scrollableColumnPositions[i];
+      if (pos) right += pos.meta.width;
     }
 
     // Build visible columns array
     const visible: VirtualColumn<T>[] = [];
     for (let i = startIdx; i <= endIdx; i++) {
-      const pos = scrollableColumnPositions[i]!;
+      const pos = scrollableColumnPositions[i];
+      if (!pos) continue;
       visible.push({
         index: pos.index,
         column: pos.col,
@@ -291,17 +288,16 @@ export function useVirtualizedColumns<T>({
   // ─── SCROLL HANDLER ────────────────────────────────────────────────────────
 
   const onScroll = useCallback((event: React.UIEvent<HTMLElement>) => {
-    if (rafRef.current) {
-      cancelAnimationFrame(rafRef.current);
-    }
+    // Cancel any pending frame before scheduling new one
+    cancelAllFrames();
 
-    rafRef.current = requestAnimationFrame(() => {
-      // Prevent setState after unmount
-      if (!isMountedRef.current) return;
-      const target = event.target as HTMLElement;
-      setScrollLeft(target.scrollLeft);
+    requestFrame(() => {
+      const target = event.target;
+      if (target instanceof HTMLElement) {
+        setScrollLeft(target.scrollLeft);
+      }
     });
-  }, []);
+  }, [requestFrame, cancelAllFrames]);
 
   // ─── OBSERVE CONTAINER WIDTH ───────────────────────────────────────────────
 
@@ -310,8 +306,6 @@ export function useVirtualizedColumns<T>({
     if (!container || !shouldVirtualize) return;
 
     const updateWidth = () => {
-      // Prevent setState after unmount
-      if (!isMountedRef.current) return;
       setContainerWidth(container.clientWidth);
     };
 
@@ -324,9 +318,6 @@ export function useVirtualizedColumns<T>({
 
     return () => {
       resizeObserver.disconnect();
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current);
-      }
     };
   }, [scrollContainerRef, shouldVirtualize]);
 

@@ -103,16 +103,39 @@ export function getNestedValueSafe<T extends object, K extends keyof T>(
 
 /**
  * Sets a nested value in an object using dot notation (immutable)
+ *
+ * Performance characteristics:
+ * - Time: O(depth) where depth is the number of path segments
+ * - Space: O(depth) - only creates new objects along the path (structural sharing)
+ * - For shallow paths (depth 1-2), this is highly efficient
+ * - For very deep nesting (5+), consider flattening your data structure
+ *
  * @param obj - The object to set the value in
  * @param path - The path to set (e.g., "user.name")
  * @param value - The value to set
  * @returns A new object with the value set
+ *
+ * @example
+ * ```ts
+ * // Shallow path (fast)
+ * setNestedValue({ name: "John" }, "name", "Jane");
+ * // => { name: "Jane" }
+ *
+ * // Nested path (still efficient)
+ * setNestedValue({ user: { name: "John" } }, "user.name", "Jane");
+ * // => { user: { name: "Jane" } }
+ * ```
  */
 export function setNestedValue<T extends Record<string, unknown>>(
   obj: T,
   path: string,
   value: unknown
 ): T {
+  // Fast path: single-level key (no nesting)
+  if (!path.includes(".")) {
+    return { ...obj, [path]: value };
+  }
+
   const keys = path.split(".");
   const result = { ...obj };
   let current: Record<string, unknown> = result;
@@ -120,7 +143,11 @@ export function setNestedValue<T extends Record<string, unknown>>(
   for (let i = 0; i < keys.length - 1; i++) {
     const key = keys[i];
     if (key !== undefined) {
-      current[key] = { ...(current[key] as Record<string, unknown>) };
+      const existing = current[key];
+      // Only spread if it's an object, otherwise create empty object
+      current[key] = typeof existing === "object" && existing !== null
+        ? { ...(existing as Record<string, unknown>) }
+        : {};
       current = current[key] as Record<string, unknown>;
     }
   }

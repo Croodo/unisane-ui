@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { cn } from "@unisane/ui";
+import { useSafeRAF } from "../hooks/use-safe-raf";
 
 // ─── CONSTANTS ───────────────────────────────────────────────────────────────
 
@@ -52,6 +53,9 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
   const startScrollLeftRef = useRef(0);
   const thumbWidthRef = useRef(thumbWidth);
 
+  // Safe RAF for DOM operations
+  const { requestFrame } = useSafeRAF();
+
   useEffect(() => {
     thumbWidthRef.current = thumbWidth;
   }, [thumbWidth]);
@@ -89,7 +93,7 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
     if (!container) return;
 
     // Initial update after a frame to ensure DOM is ready
-    requestAnimationFrame(updateScrollbar);
+    requestFrame(updateScrollbar);
 
     container.addEventListener("scroll", updateScrollbar);
     window.addEventListener("resize", updateScrollbar);
@@ -102,15 +106,15 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
       window.removeEventListener("resize", updateScrollbar);
       observer.disconnect();
     };
-  }, [tableContainerRef, updateScrollbar]);
+  }, [tableContainerRef, updateScrollbar, requestFrame]);
 
   // Re-run when dependencies change
   // Using JSON.stringify for stable dependency comparison to avoid issues with array spread
   const dependenciesKey = useMemo(() => JSON.stringify(dependencies), [dependencies]);
   useEffect(() => {
-    requestAnimationFrame(updateScrollbar);
+    requestFrame(updateScrollbar);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pinnedLeftWidth, pinnedRightWidth, dependenciesKey]);
+  }, [pinnedLeftWidth, pinnedRightWidth, dependenciesKey, requestFrame]);
 
   // ─── STICKY POSITION LOGIC ────────────────────────────────────────────────────
   // Scrollbar sticks to viewport bottom until table bottom comes into view
@@ -164,13 +168,14 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
   useEffect(() => {
     if (!dataTableRef?.current) return;
 
-    let rafId: number | null = null;
+    let scheduled = false;
 
     // Throttled update using requestAnimationFrame
     const throttledUpdate = () => {
-      if (rafId !== null) return; // Already scheduled
-      rafId = requestAnimationFrame(() => {
-        rafId = null;
+      if (scheduled) return; // Already scheduled
+      scheduled = true;
+      requestFrame(() => {
+        scheduled = false;
         updateStickyState();
       });
     };
@@ -194,24 +199,23 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
     intersectionObserver.observe(dataTableRef.current);
 
     return () => {
-      if (rafId !== null) cancelAnimationFrame(rafId);
       window.removeEventListener("scroll", throttledUpdate, { capture: true } as EventListenerOptions);
       window.removeEventListener("resize", throttledUpdate);
       resizeObserver.disconnect();
       intersectionObserver.disconnect();
     };
-  }, [dataTableRef, updateStickyState]);
+  }, [dataTableRef, updateStickyState, requestFrame]);
 
   // Update sticky when hasOverflow changes
   useEffect(() => {
     if (hasOverflow) {
       // Small delay to ensure DOM has updated
-      requestAnimationFrame(updateStickyState);
+      requestFrame(updateStickyState);
     } else {
       setIsSticky(false);
       setStickyPosition(null);
     }
-  }, [hasOverflow, updateStickyState]);
+  }, [hasOverflow, updateStickyState, requestFrame]);
 
   // Drag handlers
   const handleMouseDown = useCallback((e: React.MouseEvent) => {

@@ -14,6 +14,111 @@ import type {
 } from "./core";
 import type { Column, ColumnGroup } from "./column";
 import type { BulkAction, InlineEditingController, SparseSelectionController } from "./features";
+import type { DataTableError } from "../errors/base";
+import type { ErrorSeverity } from "../errors/severity";
+import type { ErrorHub, ErrorHubOptions } from "../errors/error-hub";
+import type { RecoveryStrategyConfig } from "../errors/recovery";
+
+// ─── ERROR CONFIGURATION ──────────────────────────────────────────────────────
+
+/**
+ * Configuration for error handling in DataTable.
+ *
+ * @example
+ * ```tsx
+ * <DataTable
+ *   errorConfig={{
+ *     onError: (error) => {
+ *       // Send to telemetry
+ *       analytics.track("datatable_error", error.toJSON());
+ *     },
+ *     minReportSeverity: ErrorSeverity.ERROR,
+ *     showInlineErrors: true,
+ *   }}
+ * />
+ * ```
+ */
+export interface DataTableErrorConfig {
+  /**
+   * Callback fired when any error occurs.
+   * Use for logging, telemetry, or custom error handling.
+   *
+   * @example
+   * ```ts
+   * onError: (error) => {
+   *   Sentry.captureException(error);
+   * }
+   * ```
+   */
+  onError?: (error: DataTableError) => void;
+
+  /**
+   * Custom ErrorHub instance.
+   * If not provided, a new hub is created for this table instance.
+   *
+   * Use this to share error state across multiple tables or
+   * to integrate with a global error management system.
+   */
+  errorHub?: ErrorHub;
+
+  /**
+   * Options for the ErrorHub (ignored if `errorHub` is provided).
+   * Use this for simple configuration without creating a hub manually.
+   */
+  errorHubOptions?: ErrorHubOptions;
+
+  /**
+   * Custom recovery strategies to add or override defaults.
+   * Strategies are matched by error code.
+   *
+   * @example
+   * ```ts
+   * recoveryStrategies: [
+   *   {
+   *     id: "custom-filter-recovery",
+   *     codes: ["DT_506"],
+   *     recover: () => false,
+   *     getFallback: () => true, // Include all rows
+   *   }
+   * ]
+   * ```
+   */
+  recoveryStrategies?: RecoveryStrategyConfig[];
+
+  /**
+   * Minimum severity level to report to `onError`.
+   * Errors below this level are still logged but not reported.
+   * @default ErrorSeverity.WARNING
+   */
+  minReportSeverity?: ErrorSeverity;
+
+  /**
+   * Whether to show inline error indicators in cells when render fails.
+   * @default true
+   */
+  showInlineErrors?: boolean;
+
+  /**
+   * Custom renderer for cell-level errors.
+   * Called when a cell's render function throws.
+   */
+  errorCellRenderer?: (error: DataTableError) => ReactNode;
+
+  /**
+   * Whether to enable automatic error recovery attempts.
+   * When enabled, the table will try to recover from errors
+   * using registered recovery strategies.
+   * @default true
+   */
+  enableRecovery?: boolean;
+
+  /**
+   * Whether to validate columns on every render (not just development).
+   * Enable for strict mode that catches configuration errors in production.
+   * @default false (only validates in development)
+   */
+  strictValidation?: boolean;
+}
 
 // ─── ROW ACTIVATION EVENT ────────────────────────────────────────────────────
 
@@ -373,6 +478,23 @@ export interface DataTableProps<T extends { id: string }> {
    * @default false
    */
   disableAnnouncements?: boolean;
+
+  // ─── Error Handling ───
+  /**
+   * Error handling configuration.
+   * Controls how errors are reported, recovered, and displayed.
+   *
+   * @example
+   * ```tsx
+   * <DataTable
+   *   errorConfig={{
+   *     onError: (error) => Sentry.captureException(error),
+   *     showInlineErrors: true,
+   *   }}
+   * />
+   * ```
+   */
+  errorConfig?: DataTableErrorConfig;
 }
 
 // ─── REMOTE DATA PROPS ───────────────────────────────────────────────────────
