@@ -11,11 +11,11 @@
     "check-types": "next typegen && tsc --noEmit"
   },
   "dependencies": {
+    "@material-symbols/font-400": "^0.40.2",
     "@types/react-syntax-highlighter": "^15.5.13",
     "@unisane/data-table": "workspace:*",
     "@unisane/tokens": "workspace:*",
     "@unisane/ui": "workspace:*",
-    "material-symbols": "^0.40.2",
     "next": "16.0.10",
     "react": "^19.2.0",
     "react-dom": "^19.1.0",

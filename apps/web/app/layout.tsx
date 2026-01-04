@@ -1,5 +1,7 @@
 import "./globals.css";
-import "material-symbols/outlined.css";
+// Material Symbols - using lighter font-400 package (456KB vs 3.7MB full package)
+// This provides offline capability while keeping bundle size reasonable
+import "@material-symbols/font-400/outlined.css";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { ThemeProvider, Toaster } from "@unisane/ui";

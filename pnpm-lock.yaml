@@ -20,6 +20,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@material-symbols/font-400':
+        specifier: ^0.40.2
+        version: 0.40.2
       '@types/react-syntax-highlighter':
         specifier: ^15.5.13
         version: 15.5.13
@@ -32,9 +35,6 @@ importers:
       '@unisane/ui':
         specifier: workspace:*
         version: link:../../packages/ui
-      material-symbols:
-        specifier: ^0.40.2
-        version: 0.40.2
       next:
         specifier: 16.0.10
         version: 16.0.10(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -829,6 +829,9 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
+
+  '@material-symbols/font-400@0.40.2':
+    resolution: {integrity: sha512-Ibyypche5VmVB0ZNZd9Ytt9BSHhNr34ZTbFycfXY4Gnbs6mf+jYRblTGosHWWzw010mhJMewfnuW8nnk1XI9Ag==}
 
   '@mdx-js/loader@3.1.1':
     resolution: {integrity: sha512-0TTacJyZ9mDmY+VefuthVshaNIyCGZHJG2fMnGaDttCt8HmjUF7SizlHJpaCDoGnN635nK1wpzfpx/Xx5S4WnQ==}
@@ -2562,9 +2565,6 @@ packages:
     resolution: {integrity: sha512-o5vL7aDWatOTX8LzaS1WMoaoxIiLRQJuIKKe2wAw6IeULDHaqbiqiggmx+pKvZDb1Sj+pE46Sn1T7lCqfFtg1Q==}
     engines: {node: '>=16'}
 
-  material-symbols@0.40.2:
-    resolution: {integrity: sha512-QUJF1HztvcpP8pXHPPNESK05Thq/Zy8ub17T2xBDf4+gqx4KBs353lKHuVzE/eCYOtiB9JBlFOU7cjAI6vVMTQ==}
-
   math-intrinsics@1.1.0:
     resolution: {integrity: sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g==}
     engines: {node: '>= 0.4'}
@@ -4066,6 +4066,8 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  '@material-symbols/font-400@0.40.2': {}
 
   '@mdx-js/loader@3.1.1':
     dependencies:
@@ -6007,8 +6009,6 @@ snapshots:
       '@jridgewell/sourcemap-codec': 1.5.5
 
   markdown-extensions@2.0.0: {}
-
-  material-symbols@0.40.2: {}
 
   math-intrinsics@1.1.0: {}
 
