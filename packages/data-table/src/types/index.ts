@@ -132,3 +132,25 @@ export type {
   UseVirtualizedRowsOptions,
   UseVirtualizedRowsReturn,
 } from "./hooks";
+
+// ─── CONFIGURATION TYPES ──────────────────────────────────────────────────────
+// Grouped configuration for simplified API
+
+export type {
+  // Feature groups
+  FeaturesConfig,
+  VirtualizationConfig,
+  PaginationConfig,
+  EditingConfig,
+  StylingConfig,
+  CallbacksConfig,
+  ControlledStateConfig,
+  // Presets
+  DataTablePreset,
+  // Column helpers
+  SimpleColumn,
+  SimpleBulkAction,
+} from "./config";
+
+// Configuration utilities
+export { getPresetConfig, defineColumns, defineBulkActions } from "./config";

@@ -1,5 +1,5 @@
 // Main components
-export { DataTable } from "./data-table";
+export { DataTable, type DataTableProps } from "./data-table";
 export { DataTableInner, type DataTableInnerProps } from "./data-table-inner";
 
 // Layout components for split-table architecture

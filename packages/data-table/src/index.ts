@@ -1,5 +1,5 @@
 // ─── MAIN COMPONENT ────────────────────────────────────────────────────────
-export { DataTable } from "./components/data-table";
+export { DataTable, type DataTableProps } from "./components/data-table";
 export { DataTableInner, type DataTableInnerProps } from "./components/data-table-inner";
 
 // ─── TYPES ─────────────────────────────────────────────────────────────────
@@ -7,7 +7,6 @@ export type {
   // Core types
   Column,
   ColumnGroup,
-  DataTableProps,
   CellContext,
   SortItem,
   MultiSortState,
@@ -58,6 +57,18 @@ export type {
   // Render prop types
   DataTableHeaderRenderProps,
   DataTableToolbarRenderProps,
+
+  // Simplified API config types
+  FeaturesConfig,
+  VirtualizationConfig,
+  PaginationConfig,
+  EditingConfig,
+  StylingConfig,
+  CallbacksConfig,
+  ControlledStateConfig,
+  DataTablePreset,
+  SimpleColumn,
+  SimpleBulkAction,
 } from "./types/index";
 
 // ─── TYPE UTILITIES ─────────────────────────────────────────────────────────
@@ -65,6 +76,10 @@ export {
   isColumnGroup,
   flattenColumns,
   hasColumnGroups,
+  // Simplified API helpers
+  getPresetConfig,
+  defineColumns,
+  defineBulkActions,
 } from "./types/index";
 
 // ─── CONTEXT & HOOKS ───────────────────────────────────────────────────────

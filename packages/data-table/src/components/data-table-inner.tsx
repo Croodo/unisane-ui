@@ -12,6 +12,7 @@ import { TableColgroup } from "./colgroup";
 import { CustomScrollbar } from "./custom-scrollbar";
 import { StatusAnnouncer } from "./status-announcer";
 import {
+  DataTableLayout,
   SyncedScrollContainer,
   StickyHeaderScrollContainer,
   HeaderTable,
@@ -477,27 +478,28 @@ export function DataTableInner<T extends { id: string }>({
   const { role: _keyboardRole, ...restKeyboardProps } = keyboardProps;
 
   return (
-    <div
-      ref={dataTableRootRef}
-      {...restKeyboardProps}
-      role="region"
-      aria-label={t("srTableDescription", {
-        rowCount: totalItems ?? processedData.length,
-        columnCount: effectiveColumns.length,
-      })}
-      aria-busy={isLoading}
-      className={cn(
-        "flex flex-col bg-surface isolate",
-        className
-      )}
-      style={style}
-      onKeyDown={handleKeyDown}
-    >
-      {/* Screen reader status and announcements */}
-      <StatusAnnouncer
-        statusMessage={statusMessage}
-        announcerRegionId={announcerRegionId}
-      />
+    <DataTableLayout>
+      <div
+        ref={dataTableRootRef}
+        {...restKeyboardProps}
+        role="region"
+        aria-label={t("srTableDescription", {
+          rowCount: totalItems ?? processedData.length,
+          columnCount: effectiveColumns.length,
+        })}
+        aria-busy={isLoading}
+        className={cn(
+          "flex flex-col bg-surface isolate",
+          className
+        )}
+        style={style}
+        onKeyDown={handleKeyDown}
+      >
+        {/* Screen reader status and announcements */}
+        <StatusAnnouncer
+          statusMessage={statusMessage}
+          announcerRegionId={announcerRegionId}
+        />
 
       {/* Sticky header - uses overflow:hidden + transform to avoid breaking sticky */}
       {/* Shadow is applied dynamically by StickyHeaderScrollContainer when header becomes stuck */}
@@ -650,14 +652,15 @@ export function DataTableInner<T extends { id: string }>({
         )}
       </SyncedScrollContainer>
 
-      {/* Custom scrollbar that respects pinned columns */}
-      <CustomScrollbar
-        tableContainerRef={tableContainerRef}
-        pinnedLeftWidth={pinnedLeftWidth}
-        pinnedRightWidth={pinnedRightWidth}
-        dependencies={[effectiveColumns, columnMeta, paginatedData.length]}
-        dataTableRef={dataTableRootRef}
-      />
-    </div>
+        {/* Custom scrollbar that respects pinned columns */}
+        <CustomScrollbar
+          tableContainerRef={tableContainerRef}
+          pinnedLeftWidth={pinnedLeftWidth}
+          pinnedRightWidth={pinnedRightWidth}
+          dependencies={[effectiveColumns, columnMeta, paginatedData.length]}
+          dataTableRef={dataTableRootRef}
+        />
+      </div>
+    </DataTableLayout>
   );
 }
