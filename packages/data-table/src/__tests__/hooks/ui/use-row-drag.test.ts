@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
-import { useRowDrag } from "./use-row-drag";
+import { useRowDrag } from "../../../hooks/ui/use-row-drag";
 
 interface TestRow {
   id: string;

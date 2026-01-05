@@ -24,6 +24,9 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": resolve(__dirname, "./src"),
+      // Resolve @ui aliases for @unisane/ui peer dependency
+      "@ui/lib/utils": resolve(__dirname, "../ui/src/lib/utils"),
+      "@ui/primitives": resolve(__dirname, "../ui/src/primitives"),
     },
   },
 });

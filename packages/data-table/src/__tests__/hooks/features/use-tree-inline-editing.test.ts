@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
-import { useTreeData } from "./use-tree-data";
-import { useInlineEditing } from "./use-inline-editing";
+import { useTreeData } from "../../../hooks/features/use-tree-data";
+import { useInlineEditing } from "../../../hooks/features/use-inline-editing";
 
 // ─── TEST DATA ───────────────────────────────────────────────────────────────
 

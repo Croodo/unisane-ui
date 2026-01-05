@@ -84,6 +84,7 @@
     "@unisane/eslint-config": "workspace:*",
     "@unisane/typescript-config": "workspace:*",
     "@vitejs/plugin-react": "^5.1.2",
+    "@vitest/coverage-v8": "^4.0.16",
     "eslint": "^9.39.1",
     "happy-dom": "^20.0.11",
     "tsc-alias": "^1.8.10",

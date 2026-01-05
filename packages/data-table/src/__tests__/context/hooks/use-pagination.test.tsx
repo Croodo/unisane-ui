@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import React from "react";
-import { DataTableProvider } from "../provider";
-import { usePagination } from "./use-pagination";
+import { DataTableProvider } from "../../../context/provider";
+import { usePagination } from "../../../context/hooks/use-pagination";
 import type { Column } from "../../types";
 
 interface TestRow {
