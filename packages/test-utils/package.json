@@ -1,0 +1,28 @@
+{
+  "name": "@unisane/test-utils",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean",
+    "dev": "tsup src/index.ts --format esm --dts --watch",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@unisane/kernel": "workspace:*",
+    "mongodb-memory-server": "^9.1.0",
+    "ioredis-mock": "^8.9.0"
+  },
+  "devDependencies": {
+    "@unisane/typescript-config": "workspace:*",
+    "tsup": "^8.0.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
+  }
+}

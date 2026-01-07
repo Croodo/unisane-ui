@@ -1,0 +1,273 @@
+import { col } from '@unisane/kernel';
+import type { CreditsRepoPort } from '../domain/ports';
+import type { LedgerEntry } from '../domain/types';
+import type { CreditKind } from '@unisane/kernel';
+import type { FeatureKey } from '@unisane/kernel';
+import type { Document, Filter, WithId } from 'mongodb';
+import { seekPageMongoCollection } from '@unisane/kernel';
+
+type CreditLedgerDoc = {
+  tenantId: string;
+  kind: CreditKind;
+  amount: number;
+  reason?: string | null;
+  feature?: FeatureKey | null;
+  idemKey?: string;
+  expiresAt?: Date | null;
+  createdAt?: Date;
+};
+
+const ledgerCol = () => col<CreditLedgerDoc>('credit_ledger');
+
+export const CreditsRepoMongo: CreditsRepoPort = {
+  async findByIdem(tenantId, idemKey) {
+    const row = (await ledgerCol().findOne({ tenantId, idemKey } as Document)) as CreditLedgerDoc | null;
+    if (!row) return null;
+    return {
+      id: String((row as { _id?: unknown })._id ?? ''),
+      kind: (row.kind as CreditKind) ?? 'grant',
+      amount: (row.amount as number) ?? 0,
+      reason: (row.reason as string) ?? '',
+      feature: (row.feature as FeatureKey | null | undefined) ?? null,
+      createdAt: (row.createdAt as Date | undefined) ?? new Date(),
+      expiresAt: (row.expiresAt as Date | null | undefined) ?? null,
+    } as LedgerEntry;
+  },
+  async insertGrant(args) {
+    const now = new Date();
+    const r = await ledgerCol().insertOne({
+      tenantId: args.tenantId,
+      kind: 'grant',
+      amount: args.amount,
+      reason: args.reason,
+      idemKey: args.idemKey,
+      ...(args.expiresAt !== undefined ? { expiresAt: args.expiresAt } : {}),
+      createdAt: now,
+    } as CreditLedgerDoc);
+    return { id: String(r.insertedId) };
+  },
+  async insertBurn(args) {
+    const now = new Date();
+    const r = await ledgerCol().insertOne({
+      tenantId: args.tenantId,
+      kind: 'burn',
+      amount: args.amount,
+      feature: args.feature,
+      reason: args.reason ?? `use:${args.feature}`,
+      idemKey: args.idemKey,
+      createdAt: now,
+    } as CreditLedgerDoc);
+    return { id: String(r.insertedId) };
+  },
+  async totalsAvailable(tenantId, now = new Date()) {
+    const agg = await ledgerCol()
+      .aggregate<{ _id: null; grants: number; burns: number }>([
+        { $match: { tenantId } },
+        {
+          $group: {
+            _id: null,
+            grants: {
+              $sum: {
+                $cond: [
+                  { $and: [{ $eq: ['$kind', 'grant'] }, { $or: [{ $eq: ['$expiresAt', null] }, { $gt: ['$expiresAt', now] }] }] },
+                  '$amount',
+                  0,
+                ],
+              },
+            },
+            burns: { $sum: { $cond: [{ $eq: ['$kind', 'burn'] }, '$amount', 0] } },
+          },
+        },
+      ])
+      .toArray();
+    const grants = agg[0]?.grants ?? 0;
+    const burns = agg[0]?.burns ?? 0;
+    return { grants, burns, available: grants - burns };
+  },
+  async getBalancesByTenantIds(tenantIds: string[], now = new Date()): Promise<Map<string, number>> {
+    if (!tenantIds?.length) return new Map<string, number>();
+    const rows = (await ledgerCol()
+      .aggregate([
+        { $match: { tenantId: { $in: tenantIds } } },
+        {
+          $group: {
+            _id: "$tenantId",
+            grants: {
+              $sum: {
+                $cond: [
+                  {
+                    $and: [
+                      { $eq: ["$kind", "grant"] },
+                      {
+                        $or: [
+                          { $eq: ["$expiresAt", null] },
+                          { $gt: ["$expiresAt", now] },
+                        ],
+                      },
+                    ],
+                  },
+                  "$amount",
+                  0,
+                ],
+              },
+            },
+            burns: {
+              $sum: { $cond: [{ $eq: ["$kind", "burn"] }, "$amount", 0] },
+            },
+          },
+        },
+        { $project: { _id: 1, creditsAvailable: { $subtract: ["$grants", "$burns"] } } },
+      ])
+      .toArray()) as Array<{ _id: string; creditsAvailable: number }>;
+    const m = new Map<string, number>();
+    for (const r of rows) m.set(String(r._id), r.creditsAvailable ?? 0);
+    return m;
+  },
+  async totalsGrantsByReason(tenantId, now = new Date()) {
+    const agg = await ledgerCol()
+      .aggregate<{
+        _id: null;
+        subscriptionGrants: number;
+        topupGrants: number;
+        otherGrants: number;
+      }>([
+        { $match: { tenantId } },
+        {
+          $group: {
+            _id: null,
+            subscriptionGrants: {
+              $sum: {
+                $cond: [
+                  {
+                    $and: [
+                      { $eq: ['$kind', 'grant'] },
+                      {
+                        $or: [
+                          { $eq: ['$expiresAt', null] },
+                          { $gt: ['$expiresAt', now] },
+                        ],
+                      },
+                      {
+                        $regexMatch: {
+                          input: { $ifNull: ['$reason', ''] },
+                          regex: /^subscription:/,
+                        },
+                      },
+                    ],
+                  },
+                  '$amount',
+                  0,
+                ],
+              },
+            },
+            topupGrants: {
+              $sum: {
+                $cond: [
+                  {
+                    $and: [
+                      { $eq: ['$kind', 'grant'] },
+                      {
+                        $or: [
+                          { $eq: ['$expiresAt', null] },
+                          { $gt: ['$expiresAt', now] },
+                        ],
+                      },
+                      {
+                        $regexMatch: {
+                          input: { $ifNull: ['$reason', ''] },
+                          // Treat purchase and explicit topup:* as top-up credits
+                          regex: /^(purchase(?::|$)|topup:)/,
+                        },
+                      },
+                    ],
+                  },
+                  '$amount',
+                  0,
+                ],
+              },
+            },
+            otherGrants: {
+              $sum: {
+                $cond: [
+                  {
+                    $and: [
+                      { $eq: ['$kind', 'grant'] },
+                      {
+                        $or: [
+                          { $eq: ['$expiresAt', null] },
+                          { $gt: ['$expiresAt', now] },
+                        ],
+                      },
+                      {
+                        $not: [
+                          {
+                            $regexMatch: {
+                              input: { $ifNull: ['$reason', ''] },
+                              regex: /^subscription:/,
+                            },
+                          },
+                        ],
+                      },
+                      {
+                        $not: [
+                          {
+                            $regexMatch: {
+                              input: { $ifNull: ['$reason', ''] },
+                              regex: /^(purchase(?::|$)|topup:)/,
+                            },
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                  '$amount',
+                  0,
+                ],
+              },
+            },
+          },
+        },
+      ])
+      .toArray();
+    const row = agg[0];
+    return {
+      subscriptionGrants: row?.subscriptionGrants ?? 0,
+      topupGrants: row?.topupGrants ?? 0,
+      otherGrants: row?.otherGrants ?? 0,
+    };
+  },
+  async listLedgerPage(args) {
+    type Row = { _id: unknown; kind?: CreditKind; amount?: number; reason?: string; feature?: FeatureKey | null; createdAt?: Date; expiresAt?: Date | null };
+    const sortVec = [
+      { key: "createdAt", order: -1 as const },
+      { key: "_id", order: -1 as const },
+    ];
+    const { items, nextCursor } = await seekPageMongoCollection<CreditLedgerDoc, LedgerEntry>({
+      collection: ledgerCol(),
+      baseFilter: { tenantId: args.tenantId } as Filter<CreditLedgerDoc>,
+      limit: args.limit,
+      cursor: args.cursor ?? null,
+      sortVec,
+      projection: {
+        _id: 1,
+        kind: 1,
+        amount: 1,
+        reason: 1,
+        feature: 1,
+        createdAt: 1,
+        expiresAt: 1,
+      },
+      map: (r: WithId<CreditLedgerDoc>) => ({
+        id: String(r._id ?? ''),
+        kind: (r.kind as CreditKind) ?? 'grant',
+        amount: r.amount ?? 0,
+        reason: r.reason ?? '',
+        feature: (r.feature as FeatureKey | null | undefined) ?? null,
+        createdAt: r.createdAt ?? new Date(),
+        expiresAt: r.expiresAt ?? null,
+      }),
+    });
+    const rows = items;
+    return { rows, ...(nextCursor ? { nextCursor } : {}) } as const;
+  },
+};

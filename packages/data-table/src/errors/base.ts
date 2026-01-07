@@ -102,7 +102,7 @@ export class DataTableError extends Error {
   public readonly context?: Record<string, unknown>;
 
   /** Original error if this wraps another error */
-  public readonly cause?: Error;
+  public override readonly cause?: Error;
 
   /** Timestamp when the error was created */
   public readonly timestamp: Date;

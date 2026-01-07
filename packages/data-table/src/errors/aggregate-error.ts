@@ -140,7 +140,7 @@ export class AggregateDataTableError extends DataTableError {
   /**
    * Returns a formatted string with all errors listed.
    */
-  toFormattedString(): string {
+  override toFormattedString(): string {
     const lines = [`[AGGREGATE] ${this.message}:`];
     for (const error of this.errors) {
       lines.push(`  - ${error.toFormattedString()}`);
@@ -151,7 +151,7 @@ export class AggregateDataTableError extends DataTableError {
   /**
    * Returns all errors as a JSON object.
    */
-  toJSON(): Record<string, unknown> {
+  override toJSON(): Record<string, unknown> {
     return {
       ...super.toJSON(),
       errorCount: this.errorCount,

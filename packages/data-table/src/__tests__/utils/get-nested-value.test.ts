@@ -224,15 +224,15 @@ describe("setNestedValue", () => {
     });
 
     it("should add new property", () => {
-      const obj = { name: "John" };
+      const obj = { name: "John" } as Record<string, unknown>;
       const result = setNestedValue(obj, "age", 30);
       expect(result.age).toBe(30);
     });
 
     it("should add new nested property", () => {
-      const obj = { user: { name: "John" } };
+      const obj = { user: { name: "John" } } as Record<string, unknown>;
       const result = setNestedValue(obj, "user.email", "john@example.com");
-      expect(result.user.email).toBe("john@example.com");
+      expect((result.user as Record<string, unknown>).email).toBe("john@example.com");
     });
   });
 

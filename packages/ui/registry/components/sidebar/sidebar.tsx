@@ -12,6 +12,38 @@ import { cn, Slot } from "@/lib/utils";
 import { useSidebar } from "./sidebar-context";
 import { Ripple } from "../ripple";
 
+/**
+ * Renders a Material Symbol icon with proper styling.
+ * Handles both string icon names and React nodes.
+ */
+interface MaterialIconProps {
+  icon: React.ReactNode | string;
+  /** Whether the icon should appear in its active/filled state */
+  active?: boolean;
+  /** Font size in pixels (default: 20) */
+  size?: number;
+  className?: string;
+}
+
+export function MaterialIcon({ icon, active = false, size = 20, className }: MaterialIconProps) {
+  if (typeof icon === "string") {
+    return (
+      <span
+        className={cn("material-symbols-outlined transition-all duration-short", className)}
+        style={{
+          fontSize: size,
+          fontVariationSettings: active
+            ? "'FILL' 1, 'wght' 500"
+            : "'wght' 400",
+        }}
+      >
+        {icon}
+      </span>
+    );
+  }
+  return <>{icon}</>;
+}
+
 export interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
 }
@@ -76,27 +108,6 @@ export interface SidebarRailItemProps {
   childIds?: string[];
 }
 
-const renderIcon = (
-  icon: React.ReactNode | string,
-  isActive: boolean = false
-) => {
-  if (typeof icon === "string") {
-    return (
-      <span
-        className="material-symbols-outlined text-[22px]! transition-all duration-short"
-        style={
-          isActive
-            ? { fontVariationSettings: "'FILL' 1, 'wght' 500" }
-            : { fontVariationSettings: "'wght' 400" }
-        }
-      >
-        {icon}
-      </span>
-    );
-  }
-  return icon;
-};
-
 export function SidebarRailItem({
   id,
   label,
@@ -111,7 +122,7 @@ export function SidebarRailItem({
 }: SidebarRailItemProps) {
   const { activeId, handleClick, handleHover, hasActiveChild } = useSidebar();
   const isDirectlyActive = activeId === id;
-  const hasChildActive = childIds.length > 0 && hasActiveChild(id, childIds);
+  const hasChildActive = childIds.length > 0 && hasActiveChild(childIds);
   const isActive = isDirectlyActive || hasChildActive;
 
   const content = (
@@ -128,9 +139,11 @@ export function SidebarRailItem({
         >
           <Ripple center disabled={disabled} />
           <span className="z-10 relative flex items-center justify-center">
-            {isActive && activeIcon
-              ? renderIcon(activeIcon, true)
-              : renderIcon(icon, isActive)}
+            <MaterialIcon
+              icon={isActive && activeIcon ? activeIcon : icon}
+              active={isActive}
+              size={22}
+            />
           </span>
         </div>
 
@@ -143,6 +156,8 @@ export function SidebarRailItem({
               "z-20 pointer-events-none ring-1 ring-surface",
               typeof badge === "number" && badge < 10 && "min-w-2 h-2 p-0.5"
             )}
+            role="status"
+            aria-label={typeof badge === "number" ? `${badge} notifications` : String(badge)}
           >
             {badge}
           </span>
@@ -224,8 +239,7 @@ export const SidebarDrawer = forwardRef<HTMLElement, SidebarDrawerProps>(
       isDrawerVisible,
       expanded,
       mobileOpen,
-      isMobile,
-      isTablet,
+      usesOverlayDrawer,
       handleDrawerEnter,
       handleDrawerLeave,
       railWidth,
@@ -233,8 +247,6 @@ export const SidebarDrawer = forwardRef<HTMLElement, SidebarDrawerProps>(
       mobileDrawerWidth,
     } = useSidebar();
 
-    // Tablet behaves like mobile for drawer (overlay from left edge)
-    const usesOverlayDrawer = isMobile || isTablet;
     const isOpen = usesOverlayDrawer ? mobileOpen : isDrawerVisible;
     const isOverlay = usesOverlayDrawer || !expanded;
     const effectiveWidth = usesOverlayDrawer ? mobileDrawerWidth : drawerWidth;
@@ -440,18 +452,7 @@ export function SidebarMenuItem({
       <Ripple disabled={disabled} />
       {icon && (
         <span className="shrink-0">
-          {typeof icon === "string" ? (
-            <span
-              className="material-symbols-outlined text-[20px]!"
-              style={
-                isActive ? { fontVariationSettings: "'FILL' 1" } : undefined
-              }
-            >
-              {icon}
-            </span>
-          ) : (
-            icon
-          )}
+          <MaterialIcon icon={icon} active={isActive} size={20} />
         </span>
       )}
       <span className="flex-1 truncate">{label}</span>
@@ -548,13 +549,10 @@ export function SidebarBackdrop({ className, ...props }: SidebarBackdropProps) {
     isDrawerVisible,
     expanded,
     mobileOpen,
-    isMobile,
-    isTablet,
+    usesOverlayDrawer,
     setMobileOpen,
   } = useSidebar();
 
-  // Tablet behaves like mobile for backdrop
-  const usesOverlayDrawer = isMobile || isTablet;
   const isVisible = mobileOpen || (isDrawerVisible && !expanded);
 
   if (!isVisible) return null;
@@ -584,11 +582,15 @@ export interface SidebarInsetProps extends React.HTMLAttributes<HTMLElement> {
 
 export const SidebarInset = forwardRef<HTMLElement, SidebarInsetProps>(
   ({ children, className, style, ...props }, ref) => {
-    const { contentMargin } = useSidebar();
+    const { railWidth, drawerWidth, expanded } = useSidebar();
 
-    // Use CSS media queries for responsive top margin to avoid hydration mismatch.
-    // Mobile/tablet (<840px) use TopAppBar with mt-16, desktop (840px+) has no top margin.
-    // The --app-header-height CSS variable is set via CSS custom properties for each breakpoint.
+    // Calculate desktop margin:
+    // - When drawer is expanded (pinned), include drawer width
+    // - When drawer is collapsed (or hover-only), just rail width
+    // Note: We use 'expanded' (pinned state) not 'isDrawerVisible' (which includes hover)
+    // because hover is temporary and shouldn't shift content
+    const desktopMargin = expanded ? railWidth + drawerWidth : railWidth;
+
     return (
       <main
         ref={ref}
@@ -596,15 +598,16 @@ export const SidebarInset = forwardRef<HTMLElement, SidebarInsetProps>(
           "flex-1 min-h-screen flex flex-col",
           "bg-surface",
           "transition-[margin] duration-emphasized ease-emphasized",
-          // CSS-based responsive: top margin for mobile/tablet, none for desktop
+          // Responsive: top margin for mobile/tablet (TopAppBar), none for desktop
           "mt-16 expanded:mt-0",
+          // Responsive: no left margin on mobile/tablet, applied via style on desktop
+          "ml-0",
           className
         )}
         style={{
-          // contentMargin is already 0 for mobile/tablet in context, so this works correctly
-          marginLeft: contentMargin,
-          // Expose app header height as CSS variable for sticky components (e.g., DataTable)
-          // This uses CSS custom properties that respond to breakpoints
+          // Only apply margin-left on desktop (840px+) via CSS media query
+          // We use a CSS variable so the media query can reference it
+          "--sidebar-margin": `${desktopMargin}px`,
           ...style,
         } as React.CSSProperties}
         {...props}
@@ -671,7 +674,7 @@ export function SidebarCollapsibleGroup({
           "text-body-medium transition-colors duration-short",
           "cursor-pointer select-none relative overflow-hidden",
           hasActiveChild
-            ? "text-primary font-semibold"
+            ? "bg-secondary-container/50 text-on-secondary-container font-semibold"
             : "text-on-surface-variant font-medium hover:bg-on-surface/8 hover:text-on-surface"
         )}
         aria-expanded={isOpen}
@@ -680,20 +683,7 @@ export function SidebarCollapsibleGroup({
         <Ripple />
         {icon && (
           <span className="shrink-0">
-            {typeof icon === "string" ? (
-              <span
-                className="material-symbols-outlined text-[20px]!"
-                style={
-                  hasActiveChild
-                    ? { fontVariationSettings: "'FILL' 1" }
-                    : undefined
-                }
-              >
-                {icon}
-              </span>
-            ) : (
-              icon
-            )}
+            <MaterialIcon icon={icon} active={hasActiveChild} size={20} />
           </span>
         )}
         <span className="flex-1 text-left truncate">{label}</span>

@@ -44,8 +44,8 @@ describe("DOM Element Type Guards", () => {
     });
 
     it("should return false for non-Element objects", () => {
-      expect(isHTMLElement({})).toBe(false);
-      expect(isHTMLElement("string")).toBe(false);
+      expect(isHTMLElement({} as EventTarget)).toBe(false);
+      expect(isHTMLElement("string" as unknown as EventTarget)).toBe(false);
     });
   });
 

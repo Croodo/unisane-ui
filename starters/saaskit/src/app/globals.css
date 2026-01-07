@@ -1,0 +1,210 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  /* Clamp radii to avoid negative values when base radius is very small */
+  --radius-sm: max(0px, calc(var(--radius) - 4px));
+  --radius-md: max(0px, calc(var(--radius) - 2px));
+  --radius-lg: var(--radius);
+  --radius-xl: max(0px, calc(var(--radius) + 1px));
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+
+    to {
+      height: var(--radix-accordion-content-height);
+    }
+  }
+
+  @keyframes accordion-up {
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+
+    to {
+      height: 0;
+    }
+  }
+}
+
+:root {
+  /* App header height (used for sidebar and sticky content headers) */
+  --app-header-h: 0px;
+  /* No global header; managed in page */
+  /* Optional page-level sticky header (PageHeader) */
+  --page-header-h: 0px;
+  /* Default sticky inset for tables (set per scroll container) */
+  --table-sticky-top: 0px;
+  /* Slightly increased base radius for softer corners */
+  --radius: 0.5rem;
+  /* 8px */
+  /* Light — Tailwind Neutral Palette */
+  --background: #FFFFFF;
+  /* White for main content */
+  --foreground: #171717;
+  /* neutral-900 */
+  /* Cards are white to pop against the sidebar */
+  --card: #FFFFFF;
+  --card-foreground: #171717;
+  --popover: #FFFFFF;
+  --popover-foreground: #171717;
+  --primary: #5E6AD2;
+  /* Magic Blue (Brand) */
+  --primary-foreground: #FFFFFF;
+  --secondary: #eeeeee;
+  /* ~neutral-150 */
+  --secondary-foreground: #171717;
+  --muted: #eeeeee;
+  /* ~neutral-150 */
+  --muted-foreground: #737373;
+  /* neutral-500 */
+  --accent: #fafafa;
+  /* neutral-50 (matches sidebar bg) */
+  --accent-foreground: #171717;
+  --destructive: #EF4444;
+  --destructive-foreground: #FFFFFF;
+  --border: #ececec;
+  /* ~neutral-150 (lighter than 200) */
+  --input: #ececec;
+  /* ~neutral-150 */
+  --ring: #5E6AD2;
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  /* Sidebar (Light) */
+  --sidebar: #fafafa;
+  /* neutral-50 */
+  --sidebar-foreground: #404040;
+  /* neutral-700 */
+  --sidebar-primary: #5E6AD2;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #eeeeee;
+  /* ~neutral-150 (subtle hover) */
+  --sidebar-accent-foreground: #171717;
+  --sidebar-border: #ececec;
+  /* ~neutral-150 */
+  --sidebar-ring: #5E6AD2;
+}
+
+.dark {
+  /* Dark Mode - Zinc / Linear Inspired */
+  --background: #101012;
+  /* User Preferred Dark Base */
+  --foreground: #fafafa;
+  /* Zinc 50 */
+
+  /* Cards match background for flat, clean look (Linear style), defined by borders */
+  --card: #161619;
+  /* Elevated Surface */
+  --card-foreground: #fafafa;
+
+  --popover: #161619;
+  /* Elevated Surface */
+  --popover-foreground: #fafafa;
+
+  --primary: #5E6AD2;
+  --primary-foreground: #ffffff;
+
+  --secondary: #27272a;
+  /* Zinc 800 */
+  --secondary-foreground: #fafafa;
+
+  --muted: #27272a;
+  /* Zinc 800 */
+  --muted-foreground: #a1a1aa;
+  /* Zinc 400 */
+
+  --accent: #161619;
+  /* User Preferred Accent */
+  --accent-foreground: #fafafa;
+
+  --destructive: #7f1d1d;
+  /* Red 900 */
+  --destructive-foreground: #fafafa;
+
+  --border: #1d1d20;
+  /* User Preferred Border */
+  --input: #1d1d20;
+  /* User Preferred Border */
+  --ring: #1d1d20;
+  /* User Preferred Border */
+
+  /* Sidebar (Dark) - Seamless */
+  --sidebar: #0a0a0a;
+  /* User Preferred Sidebar */
+  --sidebar-foreground: #a1a1aa;
+  /* Zinc 400 */
+  --sidebar-primary: #5E6AD2;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #161619;
+  /* User Preferred Sidebar Accent */
+  --sidebar-accent-foreground: #fafafa;
+  --sidebar-border: #161619;
+  /* User Preferred Sidebar Border */
+  --sidebar-ring: #161619;
+  /* User Preferred Sidebar Ring */
+
+  /* Chart Colors - Adjusted for Dark Mode Contrast */
+  --chart-1: #6366f1;
+  /* Indigo 500 - Slightly brighter than primary */
+  --chart-2: #2dd4bf;
+  /* Teal 400 */
+  --chart-3: #f43f5e;
+  /* Rose 500 */
+  --chart-4: #fbbf24;
+  /* Amber 400 */
+  --chart-5: #60a5fa;
+  /* Blue 400 */
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}

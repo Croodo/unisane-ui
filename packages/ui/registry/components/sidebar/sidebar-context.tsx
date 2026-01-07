@@ -31,11 +31,13 @@ export interface SidebarState {
   isMobile: boolean;
   isTablet: boolean;
   isDesktop: boolean;
+  /** Whether the drawer should render as an overlay (mobile/tablet) vs inline (desktop) */
+  usesOverlayDrawer: boolean;
   railWidth: number;
   drawerWidth: number;
   mobileDrawerWidth: number;
   contentMargin: number;
-  hasActiveChild: (parentId: string, childIds: string[]) => boolean;
+  hasActiveChild: (childIds: string[]) => boolean;
   expandedGroups: Set<string>;
   setGroupExpanded: (groupId: string, expanded: boolean) => void;
   toggleGroup: (groupId: string) => void;
@@ -117,9 +119,12 @@ export function SidebarProvider({
     }
   }, [persist, storageKey]);
 
-  const [isMobile, setIsMobile] = useState(false);
+  // Default to mobile state to avoid hydration mismatch flash.
+  // CSS media queries handle the actual responsive visibility,
+  // and JS state updates after mount for behavior logic.
+  const [isMobile, setIsMobile] = useState(true);
   const [isTablet, setIsTablet] = useState(false);
-  const [isDesktop, setIsDesktop] = useState(true);
+  const [isDesktop, setIsDesktop] = useState(false);
 
   const entryTimeoutRef = useRef<number | null>(null);
   const exitTimeoutRef = useRef<number | null>(null);
@@ -305,7 +310,7 @@ export function SidebarProvider({
   }, [isMobile, exitDelay]);
 
   const hasActiveChild = useCallback(
-    (parentId: string, childIds: string[]): boolean => {
+    (childIds: string[]): boolean => {
       if (!activeId) return false;
       return childIds.includes(activeId);
     },
@@ -375,8 +380,10 @@ export function SidebarProvider({
 
   const effectiveItem = items.find((i) => i.id === lastContentId) || null;
   const isDrawerVisible = expanded || (!!hoveredId && hoverHasChildren);
+  // Whether drawer should render as overlay (mobile/tablet) vs inline (desktop)
+  const usesOverlayDrawer = isMobile || isTablet;
   // Content margin: desktop gets rail + optional drawer, tablet/mobile get none (use top app bar)
-  const contentMargin = isMobile || isTablet
+  const contentMargin = usesOverlayDrawer
     ? 0
     : expanded
       ? railWidth + drawerWidth
@@ -403,6 +410,7 @@ export function SidebarProvider({
     isMobile,
     isTablet,
     isDesktop,
+    usesOverlayDrawer,
     railWidth,
     drawerWidth,
     mobileDrawerWidth,

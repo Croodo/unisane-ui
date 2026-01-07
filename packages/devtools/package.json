@@ -1,0 +1,50 @@
+{
+  "name": "@unisane/devtools",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "unisane-devtools": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts src/cli.ts --format esm --dts --clean",
+    "dev": "tsup src/index.ts src/cli.ts --format esm --dts --watch",
+    "test": "vitest run",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "commander": "^11.0.0",
+    "chalk": "^5.3.0",
+    "ora": "^7.0.1",
+    "prompts": "^2.4.2",
+    "fs-extra": "^11.1.1",
+    "diff": "^5.2.0",
+    "glob": "^10.3.0",
+    "ts-morph": "^23.0.0",
+    "chokidar": "^3.6.0"
+  },
+  "devDependencies": {
+    "@unisane/typescript-config": "workspace:*",
+    "@types/fs-extra": "^11.0.4",
+    "@types/prompts": "^2.4.9",
+    "@types/diff": "^5.2.1",
+    "@types/node": "^20.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
+  },
+  "peerDependencies": {
+    "@unisane/kernel": "workspace:*"
+  },
+  "peerDependenciesMeta": {
+    "@unisane/kernel": {
+      "optional": true
+    }
+  }
+}

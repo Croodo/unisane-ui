@@ -1,0 +1,28 @@
+import { getTenantId, connectDb, events, assertTenantOwnership } from "@unisane/kernel";
+import { StorageRepo } from "../data/storage.repository";
+import { STORAGE_EVENTS } from "../domain/constants";
+import { ERR } from "@unisane/gateway";
+
+export type ConfirmUploadArgs = {
+  fileId: string;
+};
+
+export async function confirmUpload(args: ConfirmUploadArgs) {
+  const tenantId = getTenantId();
+  await connectDb();
+
+  const file = await StorageRepo.findById(args.fileId);
+  if (!file) throw ERR.notFound("File not found");
+  assertTenantOwnership(file);
+
+  const updated = await StorageRepo.confirmUpload(args.fileId);
+  if (!updated) throw ERR.validation("File already confirmed or deleted");
+
+  await events.emit(STORAGE_EVENTS.UPLOAD_CONFIRMED, {
+    tenantId,
+    fileId: args.fileId,
+    key: file.key,
+  });
+
+  return updated;
+}

@@ -3,7 +3,7 @@ import { renderHook, act } from "@testing-library/react";
 import React from "react";
 import { DataTableProvider } from "../../../context/provider";
 import { usePagination } from "../../../context/hooks/use-pagination";
-import type { Column } from "../../types";
+import type { Column } from "../../../types";
 
 interface TestRow {
   id: string;

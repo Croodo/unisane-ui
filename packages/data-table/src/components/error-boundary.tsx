@@ -104,7 +104,7 @@ export class DataTableErrorBoundary extends Component<
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
+  override componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     // Log error to console in development
     if (process.env.NODE_ENV === "development") {
       console.error("DataTable Error:", error);
@@ -135,7 +135,7 @@ export class DataTableErrorBoundary extends Component<
     this.setState({ hasError: false, error: null });
   };
 
-  render(): ReactNode {
+  override render(): ReactNode {
     const { hasError, error } = this.state;
     const { children, fallback } = this.props;
 

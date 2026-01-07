@@ -1,0 +1,140 @@
+"use client";
+import { useMemo } from "react";
+import { DataTable } from "@/src/components/datatable/DataTable";
+import type { Column } from "@/src/components/datatable/types";
+import { hooks } from "@/src/sdk/hooks";
+import type { WebhooksListEventsItem } from "@/src/sdk/types";
+import { PageHeader } from "@/src/context/usePageHeader";
+import { useSession } from "@/src/hooks/useSession";
+import { Card, CardContent } from "@/src/components/ui/card";
+import {
+  StatusBadge,
+  DirectionBadge,
+  HttpStatusBadge,
+} from "@/src/components/ui/status-badge";
+import { Webhook } from "lucide-react";
+
+export default function WebhooksClient() {
+  const { me } = useSession();
+  const tenantId = me?.tenantId ?? undefined;
+
+  const query = hooks.webhooks.listEvents(
+    tenantId ? { params: { tenantId }, query: { limit: 100 } } : undefined,
+    {
+      enabled: Boolean(tenantId),
+      refetchOnWindowFocus: false,
+      staleTime: 60_000,
+    }
+  );
+
+  const dataset = useMemo(
+    () => (query.data ?? []) as WebhooksListEventsItem[],
+    [query.data]
+  );
+
+  const columns = useMemo<Column<WebhooksListEventsItem>[]>(
+    () => [
+      {
+        key: "id",
+        header: "Event",
+        width: 200,
+        render: (row) => (
+          <span className="font-mono text-xs text-muted-foreground">
+            {row.id.length > 20
+              ? `${row.id.slice(0, 8)}…${row.id.slice(-6)}`
+              : row.id}
+          </span>
+        ),
+      },
+      {
+        key: "direction",
+        header: "Direction",
+        width: 120,
+        render: (row) => <DirectionBadge direction={row.direction} />,
+      },
+      {
+        key: "status",
+        header: "Status",
+        width: 130,
+        render: (row) => <StatusBadge status={row.status} showIcon />,
+      },
+      {
+        key: "httpStatus",
+        header: "HTTP",
+        width: 80,
+        align: "center",
+        render: (row) => <HttpStatusBadge code={row.httpStatus} />,
+      },
+      {
+        key: "provider",
+        header: "Provider",
+        width: 120,
+        render: (row) =>
+          row.provider ? (
+            <span className="capitalize">{row.provider}</span>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          ),
+      },
+      {
+        key: "target",
+        header: "Target",
+        render: (row) =>
+          row.target ? (
+            <span
+              className="font-mono text-xs truncate max-w-[300px] block"
+              title={row.target}
+            >
+              {row.target}
+            </span>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          ),
+      },
+      {
+        key: "createdAt",
+        header: "Created",
+        width: 180,
+        render: (row) => (
+          <span className="text-muted-foreground text-sm">
+            {new Date(row.createdAt).toLocaleString()}
+          </span>
+        ),
+      },
+    ],
+    []
+  );
+
+  const isLoading = query.isLoading && !query.data;
+
+  return (
+    <>
+      <PageHeader
+        title="Webhooks"
+        subtitle="Inbound and outbound events for this workspace."
+      />
+
+      {dataset.length === 0 && !isLoading ? (
+        <Card>
+          <CardContent className="py-10 text-center">
+            <Webhook className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium mb-2">No webhook events yet</h3>
+            <p className="text-sm text-muted-foreground max-w-md mx-auto">
+              Webhook events will appear here when your workspace sends or
+              receives webhooks from external services.
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <DataTable<WebhooksListEventsItem>
+          data={dataset}
+          columns={columns}
+          title="Webhook events"
+          isLoading={isLoading}
+          onRefresh={() => query.refetch?.()}
+          tableId="tenant-webhooks-events"
+        />
+      )}
+    </>
+  );
+}

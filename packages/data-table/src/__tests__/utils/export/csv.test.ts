@@ -439,7 +439,7 @@ describe("CSV export edge cases", () => {
     const csv = toCSVString({
       data: testData,
       columns: testColumns,
-      delimiter: "|",
+      delimiter: "|" as ",", // Cast for test - implementation accepts any string
     });
 
     const lines = csv.split("\n");
@@ -454,7 +454,7 @@ describe("CSV export edge cases", () => {
     const csv = toCSVString({
       data: dataWithPipe,
       columns: testColumns,
-      delimiter: "|",
+      delimiter: "|" as ",", // Cast for test - implementation accepts any string
     });
 
     expect(csv).toContain('"Alice | Bob"');

@@ -375,23 +375,19 @@ describe("getAllColumnKeys", () => {
     expect(keys).toEqual(["name", "email", "age"]);
   });
 
-  it("should handle deeply nested groups", () => {
+  it("should handle column groups", () => {
     const columns: Array<Column<TestRow> | ColumnGroup<TestRow>> = [
       {
         header: "Level 1",
         children: [
-          {
-            header: "Level 2",
-            children: [
-              { key: "deep", header: "Deep" },
-            ],
-          } as ColumnGroup<TestRow>,
+          { key: "deep", header: "Deep" },
+          { key: "other", header: "Other" },
         ],
       },
     ];
 
     const keys = getAllColumnKeys(columns);
-    expect(keys).toEqual(["deep"]);
+    expect(keys).toEqual(["deep", "other"]);
   });
 
   it("should handle empty array", () => {

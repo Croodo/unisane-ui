@@ -1,0 +1,35 @@
+{
+  "name": "@unisane/ai",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean",
+    "dev": "tsup src/index.ts --format esm --dts --watch",
+    "test": "vitest run",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@unisane/kernel": "workspace:*",
+    "@unisane/usage": "workspace:*",
+    "@unisane/flags": "workspace:*",
+    "@unisane/billing": "workspace:*",
+    "openai": "^4.20.0",
+    "@anthropic-ai/sdk": "^0.10.0",
+    "zod": "^3.22.0",
+    "@unisane/gateway": "workspace:*",
+    "mongodb": "^6.3.0"
+  },
+  "devDependencies": {
+    "@unisane/typescript-config": "workspace:*",
+    "tsup": "^8.0.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
+  }
+}

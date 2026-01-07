@@ -1,284 +1,117 @@
-# Unisane UI Handbook
+# Unisane Handbook
 
-Complete documentation for developers and LLMs working with the Unisane UI design system.
+Complete documentation for the Unisane platform and UI design system.
+
+---
+
+## Documentation Structure
+
+```
+handbook/
+├── architecture/           # Platform architecture (SaasKit, modules, etc.)
+│   ├── README.md           # Overview
+│   ├── ARCHITECTURE.md     # Full specification (authoritative)
+│   └── QUICK-REFERENCE.md  # Cheat sheet
+│
+├── design-system/          # UI component library
+│   ├── README.md           # Design system overview
+│   ├── 01-getting-started.md
+│   ├── 02-utilities.md
+│   ├── ... (16 component docs)
+│   └── 16-pagination-rating.md
+│
+└── guides/                 # How-to guides
+    └── quick-start.md      # UI library quick start
+```
 
 ---
 
 ## Quick Navigation
 
-### Design System Documentation
+### Platform Architecture
 
-The comprehensive design system docs covering all components, utilities, and patterns:
+Building SaasKit or working with business modules?
 
 | Document | Description |
 |----------|-------------|
-| [Getting Started](./design-system/01-getting-started.md) | Setup, tokens, Tailwind integration |
-| [Utilities](./design-system/02-utilities.md) | Ripple, StateLayer, FocusRing, Portal, Hooks |
-| [Layout](./design-system/03-layout.md) | Container, Grid, Stack, Pane System, Canonical Layouts |
-| [Buttons & Actions](./design-system/04-buttons-actions.md) | Button, IconButton, FAB, SegmentedButton |
-| [Inputs & Forms](./design-system/05-inputs-forms.md) | TextField, Select, Checkbox, Radio, Switch, Slider |
-| [Display](./design-system/06-display.md) | Typography, List, Chip, Avatar, Divider |
-| [Containers](./design-system/07-containers.md) | Card, Dialog, Sheet, Popover |
-| [Navigation](./design-system/08-navigation.md) | NavigationRail, NavigationDrawer, useNavigation, TopAppBar, Tabs |
-| [Feedback](./design-system/09-feedback.md) | Snackbar, Alert, Progress, Badge |
-| [Overlays](./design-system/10-overlays.md) | Tooltip, Menu, Dropdown, BottomSheet |
-| [Data Display](./design-system/11-data-display.md) | Table, DataGrid, EmptyState, Stat |
-| [Media](./design-system/12-media.md) | Image, ImageGallery, FileUpload, Carousel |
-| [Advanced](./design-system/13-advanced.md) | ScrollArea, Accordion, Breadcrumb, Stepper, Timeline |
-| [Specialized](./design-system/14-specialized.md) | Resizable, ContextMenu, Command, DatePicker, Combobox |
-| [Forms Extended](./design-system/15-forms-extended.md) | ToggleGroup, RadioGroup, CheckboxGroup, Form, Label |
-| [Pagination & Rating](./design-system/16-pagination-rating.md) | Pagination, SimplePagination, Rating |
+| [Architecture Overview](./architecture/README.md) | Platform architecture summary |
+| [Full Specification](./architecture/ARCHITECTURE.md) | Complete architecture (authoritative) |
+| [Quick Reference](./architecture/QUICK-REFERENCE.md) | Patterns cheat sheet |
+
+### Design System (UI)
+
+Building with Unisane UI components?
+
+| Document | Description |
+|----------|-------------|
+| [Design System](./design-system/README.md) | Component library overview |
+| [Getting Started](./design-system/01-getting-started.md) | Setup and tokens |
+| [Components](./design-system/) | All 61+ components |
 
 ### Guides
 
-- [Quick Start](./guides/quick-start.md) - Installation and basic setup
-- [Implementation Plan](./guides/implementation-plan.md) - Development roadmap
-- [Website Plan](./guides/website-plan.md) - Documentation site architecture
-
-### Reference
-
-- [Current Status](./reference/current-status.md) - Project progress tracking
-- [Final Status](./reference/final-status.md) - Comprehensive status report
-- [Navigation System](./reference/navigation-system.md) - Navigation patterns and hooks
-
-### LLM Context
-
-- [Blueprint](./llm-context/blueprint.md) - System architecture for AI assistants
-- [Session Summary](./llm-context/session-summary.md) - Previous session context
-- [Quick Reference](./llm-context/quick-reference.md) - Essential context for LLMs
+| Guide | Description |
+|-------|-------------|
+| [Quick Start](./guides/quick-start.md) | Install and use UI components |
 
 ---
 
-## Handbook Structure
+## What is Unisane?
 
-```
-handbook/
-├── design-system/              # Complete component documentation
-│   ├── README.md                  # Design system overview
-│   ├── 01-getting-started.md      # Setup and configuration
-│   ├── 02-utilities.md            # Utility components and hooks
-│   ├── 03-layout.md               # Layout system (Container, Pane, Canonical)
-│   ├── 04-buttons-actions.md      # Button variants
-│   ├── 05-inputs-forms.md         # Form controls
-│   ├── 06-display.md              # Display components
-│   ├── 07-containers.md           # Container components
-│   ├── 08-navigation.md           # Navigation system
-│   ├── 09-feedback.md             # Feedback components
-│   ├── 10-overlays.md             # Overlay components
-│   ├── 11-data-display.md         # Data display components
-│   ├── 12-media.md                # Media components
-│   ├── 13-advanced.md             # Advanced components
-│   ├── 14-specialized.md          # Specialized components
-│   ├── 15-forms-extended.md       # Extended form components
-│   └── 16-pagination-rating.md    # Pagination and rating
-│
-├── guides/                     # Implementation guides
-│   ├── quick-start.md             # Getting started guide
-│   ├── implementation-plan.md     # Complete roadmap
-│   └── website-plan.md            # Documentation site plan
-│
-├── reference/                  # Technical reference
-│   ├── current-status.md          # Project status
-│   ├── final-status.md            # Comprehensive report
-│   └── navigation-system.md       # Navigation documentation
-│
-└── llm-context/                # LLM-specific context
-    ├── blueprint.md               # System architecture
-    ├── session-summary.md         # Session history
-    └── quick-reference.md         # Quick reference guide
-```
+Unisane is a platform for building SaaS products:
+
+1. **UI Library** (`@unisane/ui`) - Material 3 components, shadcn-style
+2. **SaasKit** - Full SaaS starter with auth, billing, tenants, etc.
+3. **Modules** - Reusable business logic packages
+
+### Target Users
+
+- **Frontend devs**: Use `@unisane/ui` for Material 3 components
+- **Full-stack devs**: Use SaasKit to build complete SaaS apps
+- **Teams**: Customize and extend for specific needs
 
 ---
 
-## System Overview
+## Key Concepts
 
-### Design System
+### For UI Development
 
-Unisane UI is a Material 3-based design system built with:
-
-- **React 19** - Latest React features
-- **Tailwind CSS v4** - Token-driven utilities
-- **TypeScript** - Strict mode, full type safety
-- **CVA** - Class variance authority for component variants
-- **shadcn-style** - Copy components, own your code
-
-### Key Features
-
-- **61+ Components** - Complete component library
-- **OKLCH Theming** - Single-variable color system (--hue, --chroma)
-- **Dark Mode** - Auto-detect system preference or `.dark` class
-- **3 Color Schemes** - Tonal (default), monochrome, neutral
-- **3 Contrast Levels** - Standard, medium, high (WCAG AAA)
-- **4 Density Presets** - Dense, compact, standard, comfortable
-- **3 Radius Themes** - Sharp, standard, soft
-- **Industrial Units** - Density-aware spacing (4u, 8u)
-- **TypeScript Autocomplete** - Full IntelliSense for M3 tokens
-- **Navigation System** - Sophisticated rail + drawer patterns
-- **Accessibility** - WCAG AA compliant (AAA with high contrast)
-
----
-
-## Quick Start
-
-### Installation
-
-```bash
-pnpm add @unisane/ui
+```tsx
+// Install components
 npx @unisane/cli init
-npx @unisane/cli add button card dialog
-```
+npx @unisane/cli add button dialog
 
-### Basic Setup
-
-```tsx
-import { ThemeProvider } from "@unisane/ui";
-import "@unisane/ui/styles.css";
-
-export default function App({ children }) {
-  return (
-    <ThemeProvider
-      config={{
-        density: "standard",
-        theme: "system",
-        radius: "standard",
-      }}
-    >
-      {children}
-    </ThemeProvider>
-  );
-}
-```
-
-### Usage
-
-```tsx
+// Use components
 import { Button } from "@/components/ui/button";
 
 <Button variant="filled">Click me</Button>
 ```
 
----
+### For Platform Development
 
-## Component Inventory
+```typescript
+// Business modules follow clean architecture
+import { subscribe } from '@unisane/billing';
+import { ctx, events } from '@unisane/kernel';
 
-### Total: 61+ Components
+// All operations are tenant-scoped via context
+const subscription = await subscribe({ planId: 'pro' });
 
-**Primitives (7):**
-ripple, icon, text, surface, state-layer, focus-ring, menu
-
-**Layout (5):**
-container, pane, pane-layout, app-layout, theme-provider
-
-**Components (49+):**
-button, icon-button, fab, fab-menu, text-field, checkbox, radio, switch, slider, card, chip, badge, avatar, dialog, sheet, popover, tooltip, dropdown-menu, select, combobox, tabs, alert, banner, snackbar, progress, skeleton, divider, accordion, list, table, pagination, breadcrumb, stepper, top-app-bar, bottom-app-bar, navigation-bar, navigation-rail, navigation-drawer, search-bar, carousel, date-picker, time-picker, calendar, rating, scroll-area, segmented-button, canonical-layouts, typography, and more
-
----
-
-## Documentation Philosophy
-
-### 1. Token-First
-
-All styling derives from OKLCH-based design tokens:
-
-```css
-:root {
-  --hue: 240;           /* Primary hue (0-360) */
-  --chroma: 0.13;       /* Color intensity (0-0.2) */
-}
-
-/* All colors auto-generated from hue + chroma */
---color-primary: oklch(0.55 var(--chroma) var(--hue));
-```
-
-### 2. CVA Pattern
-
-Components use class-variance-authority for type-safe variants:
-
-```tsx
-const buttonVariants = cva("base-classes", {
-  variants: {
-    variant: {
-      filled: "bg-primary text-on-primary",
-      tonal: "bg-secondary-container",
-    },
-  },
-});
-```
-
-### 3. Industrial Units
-
-Spacing that scales with density:
-
-```tsx
-<div className="p-4u gap-2u">
-  {/* Standard: 16px padding, 8px gap */}
-  {/* Compact: 13.6px padding, 6.8px gap */}
-</div>
+// Events for async side effects
+await events.emit('billing.subscription.created', { ... });
 ```
 
 ---
 
-## Using This Handbook
+## Document Status
 
-### As a Developer
-
-1. **Getting Started**: Read [Design System Setup](./design-system/01-getting-started.md)
-2. **Component Reference**: Browse [Design System docs](./design-system/)
-3. **Navigation Patterns**: Study [Navigation docs](./design-system/08-navigation.md)
-4. **Layouts**: Check [Layout docs](./design-system/03-layout.md)
-
-### As an LLM
-
-1. **System Understanding**: Read [Blueprint](./llm-context/blueprint.md)
-2. **Quick Context**: Check [Quick Reference](./llm-context/quick-reference.md)
-3. **Component Details**: Browse [Design System docs](./design-system/)
-4. **Session History**: Review [Session Summary](./llm-context/session-summary.md)
+| Section | Status | Last Updated |
+|---------|--------|--------------|
+| Architecture | Authoritative | 2025-01-06 |
+| Design System | Complete | 2025-12-27 |
+| Guides | Active | 2025-12-27 |
 
 ---
 
-## Project Status
-
-### Completed (70%)
-
-- Component registry system
-- Enhanced ThemeProvider (dark mode, density, radius)
-- TypeScript autocomplete
-- Navigation system (primitives + hooks)
-- Complete design system documentation (16 files)
-- 61+ components implemented
-
-### In Progress
-
-- UI library structure refinement
-- CLI distribution improvements
-- Storybook integration
-
-### Planned
-
-- Testing infrastructure
-- NPM publishing
-- Public beta
-
----
-
-## Resources
-
-### Internal
-
-- Component Source: `packages/ui/src/components/`
-- Registry: `packages/ui/registry/`
-- CLI: `packages/cli/`
-- Tokens: `packages/tokens/`
-- Reference Implementation: `unisane-ui-reference/`
-
-### External
-
-- [Material 3 Guidelines](https://m3.material.io)
-- [Tailwind CSS v4](https://tailwindcss.com)
-- [React Documentation](https://react.dev)
-
----
-
-**Last Updated**: 2025-12-27
-**Version**: 0.4.0
-**Status**: Active Development
+**Maintainer:** Unisane Team
+**Version:** 2.0

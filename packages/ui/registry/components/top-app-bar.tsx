@@ -30,7 +30,6 @@ export type TopAppBarProps = VariantProps<typeof topAppBarVariants> & {
   navigationIcon?: React.ReactNode;
   actions?: React.ReactNode;
   className?: string;
-  scrollBehavior?: "pinned" | "enterAlways" | "exitUntilCollapsed";
   ariaLabel?: string;
 };
 

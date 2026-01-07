@@ -3,6 +3,15 @@ import { renderHook, act } from "@testing-library/react";
 import { useTreeData } from "../../../hooks/features/use-tree-data";
 import { useInlineEditing } from "../../../hooks/features/use-inline-editing";
 
+// ─── TEST TYPES ──────────────────────────────────────────────────────────────
+
+type OnCellChangeFn<T> = (
+  rowId: string,
+  columnKey: string,
+  value: unknown,
+  row: T
+) => void | Promise<void>;
+
 // ─── TEST DATA ───────────────────────────────────────────────────────────────
 
 interface Employee {
@@ -65,11 +74,11 @@ const createTestData = (): Employee[] => [
 
 describe("Tree Data + Inline Editing Integration", () => {
   let testData: Employee[];
-  let mockOnCellChange: ReturnType<typeof vi.fn>;
+  let mockOnCellChange: OnCellChangeFn<Employee>;
 
   beforeEach(() => {
     testData = createTestData();
-    mockOnCellChange = vi.fn();
+    mockOnCellChange = vi.fn() as unknown as OnCellChangeFn<Employee>;
   });
 
   describe("Basic Integration", () => {

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { useProcessedData } from "../../../hooks/data/use-processed-data";
-import type { Column, FilterState, MultiSortState, TypedFilterValue } from "../../types";
+import type { Column, FilterState, MultiSortState, TypedFilterValue } from "../../../types";
 
 // ─── TEST DATA ─────────────────────────────────────────────────────────────────
 
@@ -253,7 +253,7 @@ describe("useProcessedData", () => {
           key: "name",
           header: "Name",
           sortable: true,
-          sortFn: (a, b) => b.name.length - a.name.length, // Sort by name length descending
+          sortFn: (a: TestRow, b: TestRow) => b.name.length - a.name.length, // Sort by name length descending
         },
         ...testColumns.slice(1),
       ];
@@ -374,7 +374,7 @@ describe("useProcessedData", () => {
           key: "age",
           header: "Age",
           filterable: true,
-          filterFn: (row, value) => {
+          filterFn: (row: TestRow, value: unknown) => {
             // Custom: filter for ages divisible by value
             const num = Number(value);
             return row.age % num === 0;
