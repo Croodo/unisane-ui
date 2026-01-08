@@ -1,4 +1,4 @@
-import { getLatest, getLatestProviderSubId } from "../data/subscriptions.repository";
+import { SubscriptionsRepository } from "../data/subscriptions.repository";
 import { TenantsRepo } from "@unisane/tenants";
 import { getBillingProvider } from "@unisane/kernel";
 import { mapPlanIdForProvider } from "@unisane/kernel";
@@ -18,8 +18,8 @@ export async function changePlan(args: {
   }
 
   const [currentSub, providerSubId, tenant] = await Promise.all([
-    getLatest(args.tenantId).catch(() => null),
-    getLatestProviderSubId(args.tenantId),
+    SubscriptionsRepository.getLatest(args.tenantId).catch(() => null),
+    SubscriptionsRepository.getLatestProviderSubId(args.tenantId),
     TenantsRepo.findById(args.tenantId).catch(() => null),
   ]);
 

@@ -1,11 +1,6 @@
-import { connectDb, kv, getEnv } from "@unisane/kernel";
+import { connectDb, kv, getEnv, randomToken } from "@unisane/kernel";
 import { AuthCredentialRepo } from "../data/auth.repository";
-import crypto from "node:crypto";
 import { normalizeEmail } from "@unisane/identity";
-
-function randomToken(len = 32) {
-  return crypto.randomBytes(len).toString("base64url");
-}
 
 export async function resetStart(input: {
   email: string;

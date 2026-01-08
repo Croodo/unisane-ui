@@ -34,19 +34,31 @@ export class EventValidationError extends Error {
 }
 
 /**
- * Map of event type to handlers.
+ * Global state for event handlers to share across module instances in Next.js/Turbopack
  */
-const handlers = new Map<string, Set<EventHandler>>();
+interface EventEmitterState {
+  handlers: Map<string, Set<EventHandler>>;
+  globalHandlers: Set<EventHandler>;
+  outboxAccessor: (() => OutboxCollection) | null;
+  // Track handler registration for debugging/monitoring
+  registrationCount: number;
+  // Max handlers per event type (protection against memory leaks)
+  maxHandlersPerType: number;
+}
 
-/**
- * Global handlers that receive all events.
- */
-const globalHandlers = new Set<EventHandler>();
+const globalForEvents = global as unknown as { __eventEmitterState?: EventEmitterState };
 
-/**
- * Optional outbox collection accessor (set during app bootstrap).
- */
-let outboxAccessor: (() => OutboxCollection) | null = null;
+if (!globalForEvents.__eventEmitterState) {
+  globalForEvents.__eventEmitterState = {
+    handlers: new Map(),
+    globalHandlers: new Set(),
+    outboxAccessor: null,
+    registrationCount: 0,
+    maxHandlersPerType: 100, // Reasonable default, can be configured
+  };
+}
+
+const state = globalForEvents.__eventEmitterState;
 
 /**
  * Interface for outbox collection operations.
@@ -60,7 +72,38 @@ interface OutboxCollection {
  * Called during app bootstrap to enable reliable event emission.
  */
 export function setOutboxAccessor(accessor: () => OutboxCollection): void {
-  outboxAccessor = accessor;
+  state.outboxAccessor = accessor;
+}
+
+/**
+ * Configure max handlers per event type.
+ * Set to a lower value in serverless environments to detect leaks early.
+ */
+export function setMaxHandlersPerType(max: number): void {
+  state.maxHandlersPerType = max;
+}
+
+/**
+ * Get current handler statistics for debugging.
+ */
+export function getHandlerStats(): {
+  totalTypeHandlers: number;
+  globalHandlers: number;
+  registrationCount: number;
+  byType: Record<string, number>;
+} {
+  const byType: Record<string, number> = {};
+  let totalTypeHandlers = 0;
+  for (const [type, handlers] of state.handlers) {
+    byType[type] = handlers.size;
+    totalTypeHandlers += handlers.size;
+  }
+  return {
+    totalTypeHandlers,
+    globalHandlers: state.globalHandlers.size,
+    registrationCount: state.registrationCount,
+    byType,
+  };
 }
 
 /**
@@ -96,6 +139,18 @@ function validatePayload<T>(type: string, payload: T): T {
 }
 
 /**
+ * Log handler errors with structured context.
+ */
+function logHandlerError(type: string, error: unknown): void {
+  const err = error instanceof Error ? error : new Error(String(error));
+  console.error(`[events] Handler failed for '${type}':`, {
+    name: err.name,
+    message: err.message,
+    stack: err.stack,
+  });
+}
+
+/**
  * The main events API.
  */
 export const events = {
@@ -128,8 +183,8 @@ export const events = {
     };
 
     // Get handlers for this event type
-    const typeHandlers = handlers.get(type) || new Set();
-    const allHandlers = [...typeHandlers, ...globalHandlers];
+    const typeHandlers = state.handlers.get(type) || new Set();
+    const allHandlers = [...typeHandlers, ...state.globalHandlers];
 
     if (allHandlers.length === 0) {
       // No handlers, but event was valid - that's ok
@@ -140,8 +195,7 @@ export const events = {
     await Promise.all(
       allHandlers.map((handler) =>
         handler(event).catch((err) => {
-          // Log error but don't fail the emission
-          console.error(`[events] Handler failed for '${type}':`, err);
+          logHandlerError(type, err);
         })
       )
     );
@@ -166,7 +220,7 @@ export const events = {
    * @throws Error if outbox is not configured
    */
   async emitReliable<T>(type: string, payload: T, source = 'kernel'): Promise<void> {
-    if (!outboxAccessor) {
+    if (!state.outboxAccessor) {
       throw new Error(
         'Outbox not configured. Call setOutboxAccessor() during bootstrap to enable reliable events.'
       );
@@ -188,7 +242,7 @@ export const events = {
     };
 
     // Insert into outbox
-    const outbox = outboxAccessor();
+    const outbox = state.outboxAccessor();
     await outbox.insertOne(entry);
   },
 
@@ -210,15 +264,43 @@ export const events = {
    * @returns Unsubscribe function
    */
   on<T>(type: string, handler: EventHandler<T>): () => void {
-    if (!handlers.has(type)) {
-      handlers.set(type, new Set());
+    if (!state.handlers.has(type)) {
+      state.handlers.set(type, new Set());
     }
-    handlers.get(type)!.add(handler as EventHandler);
+
+    const typeHandlers = state.handlers.get(type)!;
+
+    // Check for handler limit (memory leak protection)
+    if (typeHandlers.size >= state.maxHandlersPerType) {
+      console.warn(
+        `[events] Max handlers (${state.maxHandlersPerType}) reached for '${type}'. ` +
+        `This may indicate a memory leak. Consider calling unsubscribe() when handlers are no longer needed.`
+      );
+    }
+
+    typeHandlers.add(handler as EventHandler);
+    state.registrationCount++;
 
     // Return unsubscribe function
     return () => {
-      handlers.get(type)?.delete(handler as EventHandler);
+      state.handlers.get(type)?.delete(handler as EventHandler);
     };
+  },
+
+  /**
+   * Subscribe to a specific event type with automatic cleanup after first call.
+   * Useful for one-time event handlers.
+   *
+   * @param type - The event type to subscribe to
+   * @param handler - The handler function (called once then unsubscribed)
+   * @returns Unsubscribe function (in case you want to cancel before event fires)
+   */
+  once<T>(type: string, handler: EventHandler<T>): () => void {
+    const unsubscribe = events.on<T>(type, async (event) => {
+      unsubscribe();
+      await handler(event);
+    });
+    return unsubscribe;
   },
 
   /**
@@ -236,8 +318,17 @@ export const events = {
    * @returns Unsubscribe function
    */
   onAll(handler: EventHandler): () => void {
-    globalHandlers.add(handler);
-    return () => globalHandlers.delete(handler);
+    // Check for global handler limit
+    if (state.globalHandlers.size >= state.maxHandlersPerType) {
+      console.warn(
+        `[events] Max global handlers (${state.maxHandlersPerType}) reached. ` +
+        `This may indicate a memory leak.`
+      );
+    }
+
+    state.globalHandlers.add(handler);
+    state.registrationCount++;
+    return () => state.globalHandlers.delete(handler);
   },
 
   /**
@@ -245,7 +336,7 @@ export const events = {
    * Useful for testing or cleanup.
    */
   off(type: string): void {
-    handlers.delete(type);
+    state.handlers.delete(type);
   },
 
   /**
@@ -253,8 +344,8 @@ export const events = {
    * Useful for testing or cleanup.
    */
   offAll(): void {
-    handlers.clear();
-    globalHandlers.clear();
+    state.handlers.clear();
+    state.globalHandlers.clear();
   },
 
   /**
@@ -262,6 +353,13 @@ export const events = {
    * Useful for debugging.
    */
   handlerCount(type: string): number {
-    return (handlers.get(type)?.size || 0) + globalHandlers.size;
+    return (state.handlers.get(type)?.size || 0) + state.globalHandlers.size;
+  },
+
+  /**
+   * Get all registered event types with handlers.
+   */
+  registeredTypes(): string[] {
+    return Array.from(state.handlers.keys());
   },
 };

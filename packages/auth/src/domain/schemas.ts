@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { ZLocale, DEFAULT_LOCALE } from '@unisane/kernel';
-import { ZPhoneE164 } from '@unisane/identity';
+import { ZLocale, DEFAULT_LOCALE } from '@unisane/kernel/client';
+import { ZPhoneE164 } from '@unisane/identity/client';
 
 export const ZPasswordSignup = z.object({
   email: z.string().email(),

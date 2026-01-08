@@ -85,9 +85,13 @@ export function makeHandler<
       const { ctx: authCtx, body, params, rl } = await guard<Body, Params>(req, routeParams, opts as unknown as GuardOptsInternal<Body, Params>);
 
       // Create kernel context from auth context
+      // Prefer URL path tenantId over session tenantId for routes like /tenants/[tenantId]/...
+      const routeTenantId = (params as { tenantId?: string } | undefined)?.tenantId;
+      const effectiveTenantId = routeTenantId || authCtx.tenantId;
+
       const kernelContext = createContext({
         requestId,
-        tenantId: authCtx.tenantId,
+        tenantId: effectiveTenantId,
         userId: authCtx.userId,
         metadata: {
           method: req.method,
@@ -103,7 +107,7 @@ export function makeHandler<
           method: req.method,
           path,
           op: opts.op ?? null,
-          tenantId: authCtx.tenantId ?? null,
+          tenantId: effectiveTenantId ?? null,
           userId: authCtx.userId ?? null,
         });
         const exec = async () =>
@@ -228,9 +232,13 @@ export function makeHandlerRaw<
       const { ctx: authCtx, body, params, rl } = await guard<Body, Params>(req, routeParams, opts as unknown as GuardOptsInternal<Body, Params>);
 
       // Create kernel context from auth context
+      // Prefer URL path tenantId over session tenantId for routes like /tenants/[tenantId]/...
+      const routeTenantId = (params as { tenantId?: string } | undefined)?.tenantId;
+      const effectiveTenantId = routeTenantId || authCtx.tenantId;
+
       const kernelContext = createContext({
         requestId,
-        tenantId: authCtx.tenantId,
+        tenantId: effectiveTenantId,
         userId: authCtx.userId,
         metadata: {
           method: req.method,
@@ -246,7 +254,7 @@ export function makeHandlerRaw<
           method: req.method,
           path,
           op: opts.op ?? null,
-          tenantId: authCtx.tenantId ?? null,
+          tenantId: effectiveTenantId ?? null,
           userId: authCtx.userId ?? null,
         });
         const exec = async () =>

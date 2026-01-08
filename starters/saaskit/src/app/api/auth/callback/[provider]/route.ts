@@ -1,13 +1,13 @@
 import { getEnv } from "@/src/shared/env";
 import { decodeJwt } from "jose";
-import { exchange } from "@/src/modules/auth";
+import { exchange } from "@unisane/auth";
 import { getAuthConfig } from "@/src/platform/auth/config";
-import { signJwtRS256 } from "@/src/gateway/jwt";
-import { buildAccessTokenCookie, parseCookies } from "@/src/gateway/cookies";
-import { makeHandlerRaw } from "@/src/gateway/httpHandler";
-import { ipFrom } from "@/src/gateway/rateLimit";
+import { signJwtRS256 } from "@unisane/gateway";
+import { buildAccessTokenCookie, parseCookies } from "@unisane/gateway";
+import { makeHandlerRaw } from "@unisane/gateway";
+import { ipFrom } from "@unisane/gateway";
 import { metrics } from "@/src/platform/telemetry";
-import { appendAudit } from "@/src/modules/audit";
+import { appendAudit } from "@unisane/audit";
 import { decodeBase64UrlJson } from "@/src/shared/encoding/base64urlJson";
 export const runtime = "nodejs";
 

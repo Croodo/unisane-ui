@@ -1,5 +1,5 @@
-import { HEADER_NAMES } from "@/src/gateway/headers";
-import { metrics } from "@/src/core/metrics";
+import { HEADER_NAMES } from "@unisane/gateway";
+import { metrics } from "@unisane/kernel";
 
 import type { AuthCtx } from '@unisane/gateway';
 

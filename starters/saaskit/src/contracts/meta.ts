@@ -1,5 +1,5 @@
 import type { ZodTypeAny } from "zod";
-import type { Permission } from "@unisane/kernel";
+import type { Permission } from "@unisane/kernel/client";
 
 export type OpMeta = {
   op: string;

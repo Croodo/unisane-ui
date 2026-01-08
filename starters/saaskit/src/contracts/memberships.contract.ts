@@ -5,13 +5,13 @@ import {
   ZRemoveRoleBody,
   ZGrantPermBody,
   ZRevokePermBody,
-} from "@unisane/identity";
-import { ZRoleId } from "@unisane/kernel";
-import { ZPermission } from "@unisane/kernel";
-import { ZGrantEffect } from "@unisane/kernel";
-import { ZCursor, ZLimitCoerce } from "@unisane/kernel";
+} from "@unisane/identity/client";
+import { ZRoleId } from "@unisane/kernel/client";
+import { ZPermission } from "@unisane/kernel/client";
+import { ZGrantEffect } from "@unisane/kernel/client";
+import { ZCursor, ZLimitCoerce } from "@unisane/kernel/client";
 import { defineOpMeta, withMeta } from "./meta";
-import { PERM } from "@unisane/kernel";
+import { PERM } from "@unisane/kernel/client";
 
 const c = initContract();
 

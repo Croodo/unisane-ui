@@ -1,9 +1,12 @@
-import { kv } from '@unisane/kernel';
-import { dbHealth } from '@unisane/kernel';
+import { kv, dbHealth } from '@unisane/kernel';
 import { HEADER_NAMES } from '@unisane/gateway';
-import { KIT_ID, KIT_CHANNEL, KIT_VERSION } from '@unisane/kernel';
 
 export const runtime = 'nodejs';
+
+// Kit metadata (from saaskit.json or env)
+const KIT_ID = process.env.KIT_ID ?? 'saaskit';
+const KIT_CHANNEL = process.env.KIT_CHANNEL ?? 'stable';
+const KIT_VERSION = process.env.KIT_VERSION ?? '0.0.0';
 
 export async function GET() {
   const requestId = crypto.randomUUID();

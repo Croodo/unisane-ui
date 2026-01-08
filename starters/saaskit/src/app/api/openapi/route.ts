@@ -1,6 +1,6 @@
 export const runtime = "nodejs";
 
-import { HEADER_NAMES } from "@/src/gateway/headers";
+import { HEADER_NAMES } from "@unisane/gateway";
 
 export async function GET(req: Request) {
   try {

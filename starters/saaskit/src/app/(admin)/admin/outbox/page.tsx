@@ -8,9 +8,9 @@ export default async function AdminOutboxPage({
 }) {
   const { cursor } = await searchParams;
   const api = await createApi();
-  const seed = await api.admin.outbox.listDead({
+  const seed = await api.admin.outbox.deadList({
     query: { limit: 50, ...(cursor ? { cursor } : {}) },
-  } as any);
+  });
   return (
     <section className="py-6">
       <OutboxClient initial={seed as any} />

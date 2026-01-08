@@ -1,8 +1,4 @@
-import {
-  getLatestProviderSubId,
-  setCancelAtPeriodEnd,
-  setCanceledImmediate,
-} from "../data/subscriptions.repository";
+import { SubscriptionsRepository } from "../data/subscriptions.repository";
 import { getTenantId, getBillingProvider, events } from "@unisane/kernel";
 import { getBillingMode } from "./mode";
 import { ERR } from "@unisane/gateway";
@@ -20,7 +16,7 @@ export async function cancelSubscription(
   if (mode === "topup_only" || mode === "disabled") {
     throw ERR.validation("Subscriptions are disabled for this deployment.");
   }
-  const providerSubId = await getLatestProviderSubId(tenantId);
+  const providerSubId = await SubscriptionsRepository.getLatestProviderSubId(tenantId);
   if (!providerSubId) return { ok: false as const, error: "NO_SUBSCRIPTION" };
   try {
     const provider = getBillingProvider();
@@ -28,8 +24,8 @@ export async function cancelSubscription(
   } catch (e) {
     throw e;
   }
-  if (args.atPeriodEnd) await setCancelAtPeriodEnd(tenantId);
-  else await setCanceledImmediate(tenantId);
+  if (args.atPeriodEnd) await SubscriptionsRepository.setCancelAtPeriodEnd(tenantId);
+  else await SubscriptionsRepository.setCanceledImmediate(tenantId);
 
   await events.emit(BILLING_EVENTS.SUBSCRIPTION_CANCELLED, {
     tenantId,

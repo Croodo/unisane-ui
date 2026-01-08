@@ -23,7 +23,7 @@ export default function OverviewClient() {
 
     // Calculate total tenants from plan distribution
     const totalTenants = data.planDistribution.reduce(
-      (sum, p) => sum + p.value,
+      (sum: number, p: { value: number }) => sum + p.value,
       0
     );
 

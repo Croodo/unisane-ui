@@ -191,6 +191,12 @@ export {
 export { normalizeEmail, normalizeUsername, normalizePhoneE164 } from '@unisane/kernel';
 
 // ════════════════════════════════════════════════════════════════════════════
+// Services - Permissions (for gateway auth)
+// ════════════════════════════════════════════════════════════════════════════
+
+export { getEffectivePerms, applyGlobalOverlays } from './service/perms';
+
+// ════════════════════════════════════════════════════════════════════════════
 // Providers (Dependency Injection)
 // ════════════════════════════════════════════════════════════════════════════
 

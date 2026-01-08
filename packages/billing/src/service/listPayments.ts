@@ -1,4 +1,4 @@
-import * as paymentsRepo from "../data/payments.repository";
+import { PaymentsRepository } from "../data/payments.repository";
 import { getTenantId } from "@unisane/kernel";
 
 export type ListPaymentsArgs = {
@@ -14,6 +14,6 @@ export async function listPayments(args: ListPaymentsArgs) {
     cursor?: string;
   };
   if (args.cursor !== undefined) base.cursor = args.cursor;
-  const page = await paymentsRepo.listPage(base);
+  const page = await PaymentsRepository.listPage(base);
   return page;
 }

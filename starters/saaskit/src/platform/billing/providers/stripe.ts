@@ -1,6 +1,6 @@
 import type { BillingProvider, CheckoutArgs } from "./index";
-import { TenantIntegrationsService } from "@/src/modules/billing";
-import { readTenant } from "@/src/modules/tenants";
+import { TenantIntegrationsService } from "@unisane/billing";
+import { readTenant } from "@unisane/tenants";
 import { randomUUID } from "node:crypto";
 import { getEnv } from "@/src/shared/env";
 import { parseMinorStr, toMajorNumberCurrency } from "@/src/shared/money";

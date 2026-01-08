@@ -8,17 +8,17 @@ import {
   ZCancel,
   ZChangeQuantity,
   ZChangePlan,
-} from "@unisane/billing";
+} from "@unisane/billing/client";
 import { defineOpMeta, withMeta } from "./meta";
-import { PERM } from "@unisane/kernel";
+import { PERM } from "@unisane/kernel/client";
 import {
   ZPaymentStatus,
   ZInvoiceStatus,
   ZSubscriptionStatus,
-} from "@unisane/kernel";
-import { ZPlanId } from "@unisane/kernel";
-import { ZBillingMode } from "@unisane/kernel";
-import { ZSeekPageQuery } from "@unisane/kernel";
+} from "@unisane/kernel/client";
+import { ZPlanId } from "@unisane/kernel/client";
+import { ZBillingMode } from "@unisane/kernel/client";
+import { ZSeekPageQuery } from "@unisane/kernel/client";
 
 const c = initContract();
 
@@ -123,8 +123,7 @@ export const billingContract = c.router({
       service: {
         importPath: "@unisane/billing",
         fn: "portal",
-        invoke: "object",
-        callArgs: [{ name: "tenantId", from: "params", key: "tenantId" }],
+        callArgs: [],
         requireTenantMatch: true,
         audit: {
           resourceType: "subscription",

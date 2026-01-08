@@ -1,9 +1,9 @@
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
-import { ZCursor, ZLimitCoerce } from '@unisane/kernel';
-import { ZWebhookDirection, ZWebhookEventStatus, ZWebhookProvider } from '@unisane/kernel';
+import { ZCursor, ZLimitCoerce } from '@unisane/kernel/client';
+import { ZWebhookDirection, ZWebhookEventStatus, ZWebhookProvider } from '@unisane/kernel/client';
 import { defineOpMeta, withMeta } from './meta';
-import { PERM } from '@unisane/kernel';
+import { PERM } from '@unisane/kernel/client';
 
 const c = initContract();
 

@@ -5,9 +5,9 @@ import {
   resolveEntitlements,
 } from "@/src/platform/metering/policy";
 import type { FeaturePolicyMap } from "@/src/shared/constants/metering";
-import { getWindow, increment } from "@/src/modules/usage";
-import { consume as consumeCredits } from "@/src/modules/credits";
-import { metrics } from "@/src/core/metrics";
+import { getWindow, increment } from "@unisane/usage";
+import { consume as consumeCredits } from "@unisane/credits";
+import { metrics } from "@unisane/kernel";
 
 export type UsagePort = {
   getWindow(args: {
@@ -89,19 +89,21 @@ export function createGuard(deps: { usage: UsagePort; credits: CreditsPort }) {
 }
 
 // DX helper: default guard wired to module services
+// Note: The @unisane/* functions use getTenantId() from kernel context,
+// so we don't pass tenantId to them (the port interface includes it for flexibility)
 export function createDefaultGuard() {
   return createGuard({
     usage: {
-      getWindow: ({ tenantId, feature, window }) =>
-        getWindow({ tenantId, feature, window }) as Promise<number>,
-      increment: ({ tenantId, feature, n, idempotencyKey }) =>
-        increment({ tenantId, feature, n, idempotencyKey }).then(
+      getWindow: ({ feature, window }) =>
+        getWindow({ feature, window }) as Promise<number>,
+      increment: ({ feature, n, idempotencyKey }) =>
+        increment({ feature, n, idempotencyKey }).then(
           () => undefined
         ),
     },
     credits: {
-      consume: ({ tenantId, amount, feature, idem }) =>
-        consumeCredits({ tenantId, amount, feature, reason: idem }).then(
+      consume: ({ amount, feature, idem }) =>
+        consumeCredits({ amount, feature, reason: idem }).then(
           () => undefined
         ),
     },
@@ -122,7 +124,7 @@ export async function enforceTokensAndQuota(args: {
 }
 
 // -------- Optional DX wrappers (feature toggles, capacities, quota checks) --------
-import { ERR } from "@/src/gateway/errors";
+import { ERR } from "@unisane/gateway";
 
 /** Require a boolean feature toggle for a tenant */
 export async function requireFeatureForTenant(
@@ -162,9 +164,11 @@ export async function checkQuotaWindow(
   )[feature];
   if (!q) return { used: 0, limit: Number.POSITIVE_INFINITY, ok: true };
   // Only day window is tracked precisely; others require additional rollups.
+  // Note: getWindow uses getTenantId() from kernel context
+  void tenantId; // tenantId passed in but used from context
   const used =
     q.window === "day"
-      ? await getWindow({ tenantId, feature, window: "day" })
+      ? await getWindow({ feature, window: "day" })
       : 0;
   const ok = used < q.limit;
   return { used, limit: q.limit, ok } as const;

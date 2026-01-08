@@ -6,9 +6,9 @@ import {
   ZOverrideWrite,
   ZOverrideOut,
   ZFlagsListQuery,
-} from "@unisane/flags";
+} from "@unisane/flags/client";
 import { defineOpMeta, withMeta } from "./meta";
-import { PERM } from "@unisane/kernel";
+import { PERM } from "@unisane/kernel/client";
 
 const c = initContract();
 

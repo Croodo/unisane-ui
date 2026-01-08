@@ -1,14 +1,16 @@
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 /** @type {import('next').NextConfig} */
-const projectRoot = process.cwd();
+const __dirname = dirname(fileURLToPath(import.meta.url));
+// Monorepo root for turbopack resolution
+const monorepoRoot = resolve(__dirname, '../..');
 
 const nextConfig = {
   reactStrictMode: true,
-  // Disable typedRoutes to avoid invalid .next/dev/types generation interfering with tsc
-  typedRoutes: false,
   turbopack: {
-    // Force the workspace root to the project folder to avoid
-    // root inference picking an upper-level lockfile
-    root: projectRoot,
+    // Set root to monorepo root where node_modules is hoisted
+    root: monorepoRoot,
   },
   async redirects() {
     return [

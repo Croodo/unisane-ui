@@ -2,9 +2,13 @@
  * Server client generation
  *
  * Generates typed API client for server-side usage (Next.js RSC, API routes).
+ *
+ * Structure:
+ * - api.domain.operation() - Regular routes
+ * - api.admin.domain.operation() - Admin routes (nested under admin namespace)
  */
 import * as path from 'node:path';
-import { header, pascalCase, extractParamNames, isAdminRoute } from './utils.js';
+import { header, pascalCase, extractParamNames } from './utils.js';
 import { parseRouterImports, collectRouteGroups } from './router-parser.js';
 import { writeText, ensureDir } from '../../utils/fs.js';
 import type { RouteGroup, AppRouteEntry } from './types.js';
@@ -18,6 +22,50 @@ export interface GenServerOptions {
   routerPath: string;
   /** Dry run mode */
   dryRun?: boolean;
+}
+
+/**
+ * Check if a route is an admin route
+ */
+function isAdminRoute(route: AppRouteEntry): boolean {
+  return route.name.startsWith('admin') || route.path.includes('/admin/');
+}
+
+/**
+ * Get the operation name for an admin route (strip admin prefix)
+ */
+function getAdminOpName(name: string): string {
+  // adminList -> list, adminReadOrNull -> readOrNull, adminDeadList -> deadList
+  if (name.startsWith('admin')) {
+    const rest = name.slice(5); // Remove 'admin'
+    return rest.charAt(0).toLowerCase() + rest.slice(1);
+  }
+  return name;
+}
+
+/**
+ * Separate routes into regular and admin routes by domain
+ */
+function separateRoutes(groups: RouteGroup[]): {
+  regularGroups: RouteGroup[];
+  adminGroups: RouteGroup[];
+} {
+  const regularGroups: RouteGroup[] = [];
+  const adminGroups: RouteGroup[] = [];
+
+  for (const g of groups) {
+    const regularRoutes = g.routes.filter((r) => !isAdminRoute(r));
+    const adminRoutes = g.routes.filter((r) => isAdminRoute(r));
+
+    if (regularRoutes.length > 0) {
+      regularGroups.push({ ...g, routes: regularRoutes });
+    }
+    if (adminRoutes.length > 0) {
+      adminGroups.push({ ...g, routes: adminRoutes });
+    }
+  }
+
+  return { regularGroups, adminGroups };
 }
 
 /**
@@ -98,16 +146,19 @@ function generateTypeHelpers(groups: RouteGroup[]): string {
 }
 
 /**
- * Generate ServerApi type definition
+ * Generate ServerApi type definition with nested admin namespace
  */
 function generateServerApiTypes(groups: RouteGroup[]): string {
-  const groupTypes = groups
+  const { regularGroups, adminGroups } = separateRoutes(groups);
+
+  // Generate regular domain types
+  const regularTypes = regularGroups
     .map((g) => {
-      const routes = g.routes.filter((r) => !isAdminRoute(r.name, r.metaOp));
+      const routes = g.routes;
       if (!routes.length) return '';
 
       const routeTypes = routes
-        .map((r) => generateRouteTypeOverloads(g, r))
+        .map((r) => generateRouteTypeOverloads(g, r, false))
         .join('\n');
 
       return `  ${g.name}: {\n${routeTypes}\n  }`;
@@ -115,13 +166,30 @@ function generateServerApiTypes(groups: RouteGroup[]): string {
     .filter(Boolean)
     .join(',\n');
 
-  return `export type ServerApi = {\n${groupTypes}\n};`;
+  // Generate admin domain types (nested under admin namespace)
+  const adminDomainTypes = adminGroups
+    .map((g) => {
+      const routes = g.routes;
+      if (!routes.length) return '';
+
+      const routeTypes = routes
+        .map((r) => generateRouteTypeOverloads(g, r, true))
+        .join('\n');
+
+      return `    ${g.name}: {\n${routeTypes}\n    }`;
+    })
+    .filter(Boolean)
+    .join(',\n');
+
+  const adminType = adminDomainTypes ? `,\n  admin: {\n${adminDomainTypes}\n  }` : '';
+
+  return `export type ServerApi = {\n${regularTypes}${adminType}\n};`;
 }
 
 /**
  * Generate type overloads for a single route
  */
-function generateRouteTypeOverloads(g: RouteGroup, r: AppRouteEntry): string {
+function generateRouteTypeOverloads(g: RouteGroup, r: AppRouteEntry, isAdmin: boolean): string {
   const Group = pascalCase(g.name);
   const Op = pascalCase(r.name);
   const T = `T${Group}${Op}`;
@@ -137,56 +205,74 @@ function generateRouteTypeOverloads(g: RouteGroup, r: AppRouteEntry): string {
   const hasParams = paramNames.length > 0;
   const singleParam = paramNames.length === 1;
 
+  // For admin routes, use the stripped operation name
+  const opName = isAdmin ? getAdminOpName(r.name) : r.name;
+  const indent = isAdmin ? '      ' : '    ';
+
   const lines: string[] = [];
 
   if (!hasBody) {
     if (!hasParams) {
-      lines.push(`    ${r.name}(query?: ${Q}): Promise<${R}>;`);
+      lines.push(`${indent}${opName}(query?: ${Q}): Promise<${R}>;`);
     } else if (singleParam) {
-      lines.push(`    ${r.name}(param: ${PV}): Promise<${R}>;`);
-      lines.push(`    ${r.name}(param: ${PV}, query: ${Q}): Promise<${R}>;`);
+      lines.push(`${indent}${opName}(param: ${PV}): Promise<${R}>;`);
+      lines.push(`${indent}${opName}(param: ${PV}, query: ${Q}): Promise<${R}>;`);
     } else {
-      lines.push(`    ${r.name}(params: ${P}): Promise<${R}>;`);
-      lines.push(`    ${r.name}(params: ${P}, query: ${Q}): Promise<${R}>;`);
+      lines.push(`${indent}${opName}(params: ${P}): Promise<${R}>;`);
+      lines.push(`${indent}${opName}(params: ${P}, query: ${Q}): Promise<${R}>;`);
     }
   } else {
     if (!hasParams) {
-      lines.push(`    ${r.name}(body: ${B}): Promise<${R}>;`);
-      lines.push(`    ${r.name}(body: ${B}, query: ${Q}): Promise<${R}>;`);
-      if (bodyOptional) lines.push(`    ${r.name}(): Promise<${R}>;`);
+      lines.push(`${indent}${opName}(body: ${B}): Promise<${R}>;`);
+      lines.push(`${indent}${opName}(body: ${B}, query: ${Q}): Promise<${R}>;`);
+      if (bodyOptional) lines.push(`${indent}${opName}(): Promise<${R}>;`);
     } else if (singleParam) {
-      lines.push(`    ${r.name}(param: ${PV}, body: ${B}): Promise<${R}>;`);
-      lines.push(`    ${r.name}(param: ${PV}, body: ${B}, query: ${Q}): Promise<${R}>;`);
-      if (bodyOptional) lines.push(`    ${r.name}(param: ${PV}): Promise<${R}>;`);
+      lines.push(`${indent}${opName}(param: ${PV}, body: ${B}): Promise<${R}>;`);
+      lines.push(`${indent}${opName}(param: ${PV}, body: ${B}, query: ${Q}): Promise<${R}>;`);
+      if (bodyOptional) lines.push(`${indent}${opName}(param: ${PV}): Promise<${R}>;`);
     } else {
-      lines.push(`    ${r.name}(params: ${P}, body: ${B}): Promise<${R}>;`);
-      lines.push(`    ${r.name}(params: ${P}, body: ${B}, query: ${Q}): Promise<${R}>;`);
-      if (bodyOptional) lines.push(`    ${r.name}(params: ${P}): Promise<${R}>;`);
+      lines.push(`${indent}${opName}(params: ${P}, body: ${B}): Promise<${R}>;`);
+      lines.push(`${indent}${opName}(params: ${P}, body: ${B}, query: ${Q}): Promise<${R}>;`);
+      if (bodyOptional) lines.push(`${indent}${opName}(params: ${P}): Promise<${R}>;`);
     }
   }
 
-  lines.push(`    ${r.name}(args?: ${T}): Promise<${R}>;`);
+  lines.push(`${indent}${opName}(args?: ${T}): Promise<${R}>;`);
 
   if (m === 'GET') {
-    lines.push(`    ${r.name}OrNull(args?: ${T}): Promise<${R} | null>;`);
+    lines.push(`${indent}${opName}OrNull(args?: ${T}): Promise<${R} | null>;`);
   }
 
   return lines.join('\n');
 }
 
 /**
- * Generate the serverApi factory function
+ * Generate the serverApi factory function with nested admin namespace
  */
 function generateServerApiFactory(groups: RouteGroup[]): string {
-  const routeImpls = groups
-    .map((g) => {
-      const routes = g.routes.filter((r) => !isAdminRoute(r.name, r.metaOp));
-      if (!routes.length) return '';
+  const { regularGroups, adminGroups } = separateRoutes(groups);
 
-      return routes.map((r) => generateRouteImplementation(g, r)).join('\n');
+  // Generate regular route implementations
+  const regularImpls = regularGroups
+    .map((g) => {
+      const routes = g.routes;
+      if (!routes.length) return '';
+      return routes.map((r) => generateRouteImplementation(g, r, false)).join('\n');
     })
     .filter(Boolean)
     .join('\n');
+
+  // Generate admin route implementations (nested under admin namespace)
+  const adminImpls = adminGroups
+    .map((g) => {
+      const routes = g.routes;
+      if (!routes.length) return '';
+      return routes.map((r) => generateRouteImplementation(g, r, true)).join('\n');
+    })
+    .filter(Boolean)
+    .join('\n');
+
+  const adminInit = adminGroups.length > 0 ? `\n  out['admin'] = {};` : '';
 
   return `export async function createServerApi(init: {
   baseUrl?: string;
@@ -227,8 +313,9 @@ export async function serverApiRaw(): Promise<Contracts> { return createServerAp
 
 export async function serverApi(): Promise<ServerApi> {
   const client = await createServerApi();
-  const out: Record<string, unknown> = {};
-${routeImpls}
+  const out: Record<string, unknown> = {};${adminInit}
+${regularImpls}
+${adminImpls}
   return out as unknown as ServerApi;
 }`;
 }
@@ -236,11 +323,18 @@ ${routeImpls}
 /**
  * Generate implementation for a single route
  */
-function generateRouteImplementation(g: RouteGroup, r: AppRouteEntry): string {
+function generateRouteImplementation(g: RouteGroup, r: AppRouteEntry, isAdmin: boolean): string {
   const m = r.method.toUpperCase();
   const hasBody = ['POST', 'PATCH', 'PUT'].includes(m);
   const paramNames = extractParamNames(r.path);
   const singleParam = paramNames.length === 1;
+
+  // For admin routes, use the stripped operation name and nested path
+  const opName = isAdmin ? getAdminOpName(r.name) : r.name;
+  const targetPath = isAdmin ? `(out['admin'] as Record<string, unknown>)['${g.name}']` : `out['${g.name}']`;
+  const initPath = isAdmin
+    ? `  (out['admin'] as Record<string, unknown>)['${g.name}'] = (out['admin'] as Record<string, unknown>)['${g.name}'] ?? {};`
+    : `  out['${g.name}'] = out['${g.name}'] ?? {};`;
 
   // Generate argument parsing logic
   let argParsing: string;
@@ -265,9 +359,9 @@ function generateRouteImplementation(g: RouteGroup, r: AppRouteEntry): string {
   }
 
   const orNullMethod = m === 'GET' ? `
-  (out['${g.name}'] as Record<string, unknown>)['${r.name}OrNull'] = async (...args: unknown[]) => {
+  (${targetPath} as Record<string, unknown>)['${opName}OrNull'] = async (...args: unknown[]) => {
     try {
-      const fn = (out['${g.name}'] as Record<string, unknown>)['${r.name}'] as (...a: unknown[]) => Promise<unknown>;
+      const fn = (${targetPath} as Record<string, unknown>)['${opName}'] as (...a: unknown[]) => Promise<unknown>;
       return await fn(...args);
     } catch (e) {
       if ((e as any)?.status === 404) return null;
@@ -275,8 +369,8 @@ function generateRouteImplementation(g: RouteGroup, r: AppRouteEntry): string {
     }
   };` : '';
 
-  return `  out['${g.name}'] = out['${g.name}'] ?? {};
-  (out['${g.name}'] as Record<string, unknown>)['${r.name}'] = async (...args: unknown[]) => {
+  return `${initPath}
+  (${targetPath} as Record<string, unknown>)['${opName}'] = async (...args: unknown[]) => {
     const first = args[0] as Record<string, unknown> | undefined;
     const isFull = first && typeof first === 'object' && (('params' in first) || ('query' in first) || ('body' in first));
     let a = (isFull ? first : {}) as { params?: unknown; query?: unknown; body?: unknown };

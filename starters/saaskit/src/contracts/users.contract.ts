@@ -1,10 +1,10 @@
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
 import { ZUserCreate, ZUserUpdate } from '@unisane/identity';
-import { ZCursor, ZLimitCoerce } from '@unisane/kernel';
+import { ZCursor, ZLimitCoerce } from '@unisane/kernel/client';
 import { defineOpMeta, withMeta } from './meta';
-import { PERM } from '@unisane/kernel';
-import { ZRoleId } from '@unisane/kernel';
+import { PERM } from '@unisane/kernel/client';
+import { ZRoleId } from '@unisane/kernel/client';
 
 const c = initContract();
 

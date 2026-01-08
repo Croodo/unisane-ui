@@ -105,9 +105,13 @@ export { getTenantOpenInvoiceCounts, getTenantLatestSubscriptions } from "./serv
 // Data - Repositories (for internal/webhook use)
 // ════════════════════════════════════════════════════════════════════════════
 
-export * as paymentsRepo from "./data/payments.repository";
-export * as invoicesRepo from "./data/invoices.repository";
-export * as subscriptionsRepo from "./data/subscriptions.repository";
+export { PaymentsRepository } from "./data/payments.repository";
+export { InvoicesRepository } from "./data/invoices.repository";
+export { SubscriptionsRepository } from "./data/subscriptions.repository";
+// Legacy aliases for backward compatibility
+export { PaymentsRepository as paymentsRepo } from "./data/payments.repository";
+export { InvoicesRepository as invoicesRepo } from "./data/invoices.repository";
+export { SubscriptionsRepository as subscriptionsRepo } from "./data/subscriptions.repository";
 export {
   findTenantIdByCustomer,
   upsertCustomerMapping,
@@ -120,3 +124,9 @@ export {
 // ════════════════════════════════════════════════════════════════════════════
 
 export { mapStripeSubStatus, mapRazorpaySubStatus } from "./domain/mappers";
+
+// ════════════════════════════════════════════════════════════════════════════
+// Services - Reconciliation (for background jobs)
+// ════════════════════════════════════════════════════════════════════════════
+
+export { reconcileStripe, reconcileRazorpay } from "./service/reconcile";

@@ -2,6 +2,15 @@ import { z } from 'zod';
 import type { FieldDef, Op } from '../registry/types';
 import { base64UrlDecodeUtf8 } from '@unisane/kernel';
 
+// Maximum allowed size for filters parameter (prevents DoS via large payloads)
+const MAX_FILTERS_SIZE = 10_000; // 10KB
+
+// Maximum date range allowed (in days)
+const MAX_DATE_RANGE_DAYS = 90;
+
+// Valid filter operations
+const VALID_OPS = new Set<string>(['eq', 'contains', 'in', 'gte', 'lte']);
+
 /** Clamp a number to integer within [min, max] range */
 function clampInt(val: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, Math.floor(val)));
@@ -30,10 +39,22 @@ export function parseListParams(
   return { limit, cursor, offset, sort, filtersRaw };
 }
 
-const ZFilterItem = z.object({ field: z.string(), op: z.string(), value: z.unknown().optional() });
+const ZFilterItem = z.object({
+  field: z.string().min(1).max(100), // Reasonable field name limits
+  op: z.string().refine((op) => VALID_OPS.has(op), {
+    message: `op must be one of: ${Array.from(VALID_OPS).join(', ')}`,
+  }),
+  value: z.unknown().optional(),
+});
 
 export function parseFilters(filtersRaw: string | undefined, registry: Record<string, FieldDef>): Filter[] {
   if (!filtersRaw) return [];
+
+  // Size limit check to prevent DoS
+  if (filtersRaw.length > MAX_FILTERS_SIZE) {
+    throw new Error(`filters parameter too large (max ${MAX_FILTERS_SIZE} characters)`);
+  }
+
   let input: unknown;
   try {
     input = JSON.parse(filtersRaw);
@@ -43,12 +64,27 @@ export function parseFilters(filtersRaw: string | undefined, registry: Record<st
       const decoded = base64UrlDecodeUtf8(filtersRaw);
       if (!decoded) throw new Error('decode failed');
       input = JSON.parse(decoded);
-    } catch {
+    } catch (e) {
       throw new Error('filters must be valid JSON (or base64url JSON)');
     }
   }
+
+  // Validate parsed data is an array
+  if (!Array.isArray(input)) {
+    throw new Error('filters must be an array');
+  }
+
+  // Limit number of filters to prevent abuse
+  if (input.length > 50) {
+    throw new Error('too many filters (max 50)');
+  }
+
   const parsed = z.array(ZFilterItem).safeParse(input);
-  if (!parsed.success) throw new Error('filters must be an array of {field,op,value}');
+  if (!parsed.success) {
+    const firstError = parsed.error.errors[0];
+    throw new Error(`filters validation failed: ${firstError?.message ?? 'invalid format'}`);
+  }
+
   const out: Filter[] = [];
   for (const f of parsed.data) {
     const field = f.field;
@@ -57,9 +93,49 @@ export function parseFilters(filtersRaw: string | undefined, registry: Record<st
     const def = registry[field];
     if (!def) throw new Error(`Unknown field: ${field}`);
     if (!def.ops.includes(op)) throw new Error(`Unsupported op '${op}' for ${field}`);
+
+    // Validate value type matches field type
+    if (value !== undefined && value !== null) {
+      validateValueType(field, def, op, value);
+    }
+
     out.push({ field, op, value });
   }
   return out;
+}
+
+function validateValueType(field: string, def: FieldDef, op: Op, value: unknown): void {
+  if (op === 'in') {
+    if (!Array.isArray(value)) {
+      throw new Error(`'in' operator requires array value for field ${field}`);
+    }
+    // Limit array size
+    if (value.length > 100) {
+      throw new Error(`'in' operator array too large for field ${field} (max 100 items)`);
+    }
+    return;
+  }
+
+  if (def.type === 'date' && (op === 'gte' || op === 'lte')) {
+    if (typeof value !== 'string') {
+      throw new Error(`Date field ${field} requires string value`);
+    }
+    const parsed = Date.parse(value);
+    if (isNaN(parsed)) {
+      throw new Error(`Invalid date format for field ${field}`);
+    }
+  }
+
+  if (def.type === 'number' && (op === 'gte' || op === 'lte' || op === 'eq')) {
+    const num = typeof value === 'number' ? value : Number(value);
+    if (!Number.isFinite(num)) {
+      throw new Error(`Invalid number value for field ${field}`);
+    }
+  }
+
+  if (op === 'contains' && typeof value !== 'string') {
+    throw new Error(`'contains' operator requires string value for field ${field}`);
+  }
 }
 
 export function applyFilters<T extends Record<string, unknown>>(
@@ -136,13 +212,84 @@ function toNum(val: unknown): number | null {
   return null;
 }
 
-export function validateRange(from?: string | null, to?: string | null) {
-  if (!from && !to) return;
-  const f = from ? ZRFC3339.parse(from) : null;
-  const t = to ? ZRFC3339.parse(to) : null;
-  if (f && t) {
-    const ms = Date.parse(t) - Date.parse(f);
-    const max = 90 * 24 * 60 * 60 * 1000; // 90d
-    if (ms > max) throw new Error('range > 90d not allowed');
+export interface DateRangeValidationOptions {
+  maxDays?: number;
+  allowEmpty?: boolean;
+}
+
+export function validateRange(
+  from?: string | null,
+  to?: string | null,
+  options?: DateRangeValidationOptions
+): void {
+  const { maxDays = MAX_DATE_RANGE_DAYS, allowEmpty = true } = options ?? {};
+
+  // Both empty is allowed by default
+  if (!from && !to) {
+    if (!allowEmpty) {
+      throw new Error('Date range is required');
+    }
+    return;
   }
+
+  // Parse and validate individual dates
+  let fromMs: number | null = null;
+  let toMs: number | null = null;
+
+  if (from) {
+    const parseResult = ZRFC3339.safeParse(from);
+    if (!parseResult.success) {
+      throw new Error(`Invalid 'from' date format: ${from}. Expected ISO 8601 format.`);
+    }
+    fromMs = Date.parse(from);
+    if (isNaN(fromMs)) {
+      throw new Error(`Invalid 'from' date: ${from}`);
+    }
+  }
+
+  if (to) {
+    const parseResult = ZRFC3339.safeParse(to);
+    if (!parseResult.success) {
+      throw new Error(`Invalid 'to' date format: ${to}. Expected ISO 8601 format.`);
+    }
+    toMs = Date.parse(to);
+    if (isNaN(toMs)) {
+      throw new Error(`Invalid 'to' date: ${to}`);
+    }
+  }
+
+  // If both dates present, validate the range
+  if (fromMs !== null && toMs !== null) {
+    // Check for reversed range
+    if (toMs < fromMs) {
+      throw new Error(`'to' date (${to}) must be after 'from' date (${from})`);
+    }
+
+    // Check for max range
+    const maxMs = maxDays * 24 * 60 * 60 * 1000;
+    const rangeMs = toMs - fromMs;
+    if (rangeMs > maxMs) {
+      throw new Error(`Date range exceeds maximum of ${maxDays} days`);
+    }
+  }
+}
+
+// Utility function for common date range extraction from filters
+export function extractDateRange(
+  filters: Filter[],
+  fieldName: string
+): { from?: string; to?: string } {
+  const result: { from?: string; to?: string } = {};
+
+  for (const f of filters) {
+    if (f.field === fieldName) {
+      if (f.op === 'gte' && typeof f.value === 'string') {
+        result.from = f.value;
+      } else if (f.op === 'lte' && typeof f.value === 'string') {
+        result.to = f.value;
+      }
+    }
+  }
+
+  return result;
 }

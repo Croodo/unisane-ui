@@ -1,5 +1,5 @@
-import { redis } from "@/src/core/kv/redis";
-import { kv } from "@/src/core/kv";
+import { redis } from "@unisane/kernel";
+import { kv } from "@unisane/kernel";
 import { KV } from "@/src/shared/constants/kv";
 
 // In-process listeners (works in single runtime). For multi-runtime,

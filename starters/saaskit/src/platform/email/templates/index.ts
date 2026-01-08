@@ -1,4 +1,4 @@
-import { getSetting } from '@unisane/settings/service/read';
+import { getSetting } from '@unisane/settings';
 import { renderWelcome } from './welcome';
 import { renderAuthVerifyEmail } from './auth_verify_email';
 import { renderAuthPasswordReset } from './auth_password_reset';

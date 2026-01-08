@@ -1,8 +1,8 @@
 import { initContract } from "@ts-rest/core";
 import { z } from "zod";
-import { ZCursor, ZLimitCoerce, ZSeekPageQuery } from "@unisane/kernel";
+import { ZCursor, ZLimitCoerce, ZSeekPageQuery } from "@unisane/kernel/client";
 import { defineOpMeta, withMeta } from "./meta";
-import { PERM } from "@unisane/kernel";
+import { PERM } from "@unisane/kernel/client";
 
 /** Admin audit list query with optional tenantId filter */
 export const ZAdminAuditListQuery = ZSeekPageQuery.extend({

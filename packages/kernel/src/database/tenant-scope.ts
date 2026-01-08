@@ -177,3 +177,50 @@ export function filterByTenant<T extends TenantScoped>(documents: T[]): T[] {
   }
   return documents.filter((doc) => doc.tenantId === context.tenantId);
 }
+
+// ============================================================================
+// EXPLICIT TENANT FILTERS (for auth-time operations before ctx.run())
+// ============================================================================
+
+/**
+ * Creates a MongoDB filter with explicit tenant ID parameter.
+ * Use this for operations that occur BEFORE context is initialized (e.g., auth).
+ *
+ * @example
+ * ```typescript
+ * // In auth middleware (before ctx.run())
+ * const filter = explicitTenantFilter(tenantId, { userId });
+ * const membership = await col('memberships').findOne(filter);
+ * ```
+ */
+export function explicitTenantFilter<T extends TenantScoped>(
+  tenantId: string,
+  additionalFilter: Partial<Omit<Filter<T>, 'tenantId'>> = {}
+): Filter<T> {
+  return {
+    tenantId,
+    ...additionalFilter,
+  } as Filter<T>;
+}
+
+/**
+ * Creates a tenant filter with explicit ID that also excludes soft-deleted documents.
+ * Use this for auth-time lookups that need soft-delete filtering.
+ *
+ * @example
+ * ```typescript
+ * // In auth middleware
+ * const filter = explicitTenantFilterActive(tenantId, { userId });
+ * const membership = await col('memberships').findOne(filter);
+ * ```
+ */
+export function explicitTenantFilterActive<T extends TenantScoped>(
+  tenantId: string,
+  additionalFilter: Partial<Omit<Filter<T>, 'tenantId'>> = {}
+): Filter<T> {
+  return {
+    tenantId,
+    $or: [{ deletedAt: null }, { deletedAt: { $exists: false } }],
+    ...additionalFilter,
+  } as Filter<T>;
+}

@@ -12,8 +12,20 @@ import { generateId } from '../utils/ids';
 /**
  * AsyncLocalStorage instance for storing request context.
  * This allows context to flow through async operations automatically.
+ *
+ * IMPORTANT: Stored on global to ensure single instance across module copies in Next.js/Turbopack.
+ * Without this, different module instances would have different AsyncLocalStorage instances,
+ * breaking context propagation across chunks.
  */
-const storage = new AsyncLocalStorage<RequestContext>();
+const globalForContext = global as unknown as {
+  __kernelContextStorage?: AsyncLocalStorage<RequestContext>;
+};
+
+if (!globalForContext.__kernelContextStorage) {
+  globalForContext.__kernelContextStorage = new AsyncLocalStorage<RequestContext>();
+}
+
+const storage = globalForContext.__kernelContextStorage;
 
 /**
  * Error thrown when attempting to access context outside of a ctx.run() scope.
@@ -38,19 +50,22 @@ export class ContextFieldRequiredError extends Error {
 /**
  * Injectable loaders for lazy-loaded context data.
  * These are set by the application during bootstrap to avoid circular dependencies.
+ * IMPORTANT: Stored on global to ensure single instance across module copies in Next.js/Turbopack.
  */
 type PlanLoader = (tenantId: string) => Promise<string>;
 type FlagsLoader = (tenantId: string) => Promise<Record<string, boolean>>;
 
-let planLoader: PlanLoader | null = null;
-let flagsLoader: FlagsLoader | null = null;
+const globalForLoaders = global as unknown as {
+  __kernelPlanLoader?: PlanLoader | null;
+  __kernelFlagsLoader?: FlagsLoader | null;
+};
 
 /**
  * Set the plan loader function (called during app bootstrap).
  * This allows the context to lazy-load tenant plans without circular deps.
  */
 export function setPlanLoader(loader: PlanLoader): void {
-  planLoader = loader;
+  globalForLoaders.__kernelPlanLoader = loader;
 }
 
 /**
@@ -58,7 +73,7 @@ export function setPlanLoader(loader: PlanLoader): void {
  * This allows the context to lazy-load feature flags without circular deps.
  */
 export function setFlagsLoader(loader: FlagsLoader): void {
-  flagsLoader = loader;
+  globalForLoaders.__kernelFlagsLoader = loader;
 }
 
 /**
@@ -125,8 +140,8 @@ export const ctx: ContextAPI = {
     }
 
     // Use registered loader or return default
-    if (planLoader) {
-      const plan = await planLoader(context.tenantId);
+    if (globalForLoaders.__kernelPlanLoader) {
+      const plan = await globalForLoaders.__kernelPlanLoader(context.tenantId);
       context.plan = plan;
       return plan;
     }
@@ -151,8 +166,8 @@ export const ctx: ContextAPI = {
     }
 
     // Use registered loader or return empty
-    if (flagsLoader) {
-      const flags = await flagsLoader(context.tenantId);
+    if (globalForLoaders.__kernelFlagsLoader) {
+      const flags = await globalForLoaders.__kernelFlagsLoader(context.tenantId);
       context.flags = flags;
       return flags;
     }

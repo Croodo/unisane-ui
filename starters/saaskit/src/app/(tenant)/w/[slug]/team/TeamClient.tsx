@@ -48,7 +48,7 @@ function formatUserId(userId: string): string {
  * Check if member has admin role
  */
 function isAdmin(member: MembershipsListItem): boolean {
-  return (member.roles ?? []).some((r) => r.roleId === "admin");
+  return (member.roles ?? []).some((r: { roleId: string }) => r.roleId === "admin");
 }
 
 export function TeamClient() {
@@ -202,7 +202,7 @@ export function TeamClient() {
         render: (row) =>
           (row.roles ?? []).length > 0 ? (
             <div className="flex flex-wrap gap-1">
-              {row.roles.map((r) => (
+              {row.roles.map((r: { roleId: string }) => (
                 <Badge key={r.roleId} variant="outline" className="text-xs">
                   {r.roleId}
                 </Badge>

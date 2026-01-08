@@ -43,7 +43,7 @@ export function SignupForm({ socialProviders = [] as SocialProvider[] }: { socia
     try {
       const { createApi } = await import('@/src/sdk');
       const api = await createApi();
-      await api.auth.passwordSignUp({ body: { email, password } });
+      await api.auth.passwordSignUp({ body: { email, password, locale: 'en' } });
       toast.success('Account created');
       const destination = callbackURL ?? '/onboarding';
       router.replace(destination);

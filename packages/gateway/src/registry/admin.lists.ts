@@ -1,7 +1,8 @@
 import type { FieldDef } from './types';
 import { usersAdminFieldRegistry } from './users.admin.fields';
 import { tenantsAdminFieldRegistry } from './tenants.admin.fields';
-import { parseFiltersParam } from '../query/filterParams';
+// Use client-safe filter parsing (no kernel dependency)
+import { parseFiltersParam } from '../query/filterParams.client';
 
 // Local types used by facetsMap (these match the SDK response shapes)
 type TenantsAdminStatsResponse = {
@@ -31,6 +32,66 @@ export type AdminListConfig = {
   };
 };
 
+// Helper function to safely get config by ID
+function getConfigById(id: string): AdminListConfig {
+  const config = adminListConfigs.find((c) => c.id === id);
+  if (!config) {
+    throw new Error(`Admin list config not found: ${id}. This is a bug - check adminListConfigs array.`);
+  }
+  return config;
+}
+
+// Helper function to map filters for tenants
+function mapTenantsFilters(uiFilters: Record<string, unknown>, search?: string): Record<string, unknown> {
+  const f: Record<string, unknown> = {};
+  if (typeof search === 'string' && search.trim()) {
+    f.q = search.trim();
+  }
+  const planFilter = uiFilters['plan'];
+  if (typeof planFilter === 'string' && planFilter.trim()) {
+    const val = planFilter.trim();
+    if (val === 'free') {
+      // "free" includes explicit 'free', null, or missing
+      f.planId = { in: ['free', null] };
+      // Note: generic FilterSpec doesn't easily support "or missing",
+      // but null usually matches missing in some Mongo contexts or we rely on data migration.
+    } else {
+      f.planId = { eq: val };
+    }
+  } else if (Array.isArray(planFilter) && planFilter.length) {
+    if (planFilter.includes('free')) {
+      f.planId = { in: [...planFilter, null] };
+    } else {
+      f.planId = { in: planFilter };
+    }
+  }
+  return f;
+}
+
+// Helper function to map filters for users
+function mapUsersFilters(uiFilters: Record<string, unknown>, search?: string): Record<string, unknown> {
+  const f: Record<string, unknown> = {};
+  if (typeof search === 'string' && search.trim()) {
+    f.q = search.trim();
+  }
+  const email = uiFilters['email'];
+  if (typeof email === 'string' && email.trim()) {
+    f.email = { contains: email.trim() };
+  }
+  const name = uiFilters['displayName'];
+  if (typeof name === 'string' && name.trim()) {
+    f.displayName = { contains: name.trim() };
+  }
+  const updated = uiFilters['updatedAt'] as { start?: string; end?: string } | undefined;
+  if (updated?.start || updated?.end) {
+    f.updatedAt = {
+      ...(updated.start ? { gte: updated.start } : {}),
+      ...(updated.end ? { lte: updated.end } : {}),
+    };
+  }
+  return f;
+}
+
 export const adminListConfigs: AdminListConfig[] = [
   {
     id: 'admin.tenants',
@@ -39,33 +100,7 @@ export const adminListConfigs: AdminListConfig[] = [
     defaultSort: '-createdAt',
     defaultLimit: 50,
     fieldsRegistry: tenantsAdminFieldRegistry as Record<string, FieldDef>,
-  mapFilters: (uiFilters, search) => {
-    const f: Record<string, unknown> = {};
-    if (typeof search === 'string' && search.trim()) {
-      f.q = search.trim();
-    }
-    const planFilter = uiFilters['plan'];
-    if (typeof planFilter === 'string' && planFilter.trim()) {
-      const val = planFilter.trim();
-      if (val === 'free') {
-        // "free" includes explicit 'free', null, or missing
-        f.planId = { in: ['free', null] }; 
-        // Note: generic FilterSpec doesn't easily support "or missing", 
-        // but null usually matches missing in some Mongo contexts or we rely on data migration.
-        // Ideally: { $or: [{ planId: 'free' }, { planId: null }, { planId: { $exists: false } }] }
-        // But FilterSpec is simple. Let's use 'in' with null.
-      } else {
-        f.planId = { eq: val };
-      }
-    } else if (Array.isArray(planFilter) && planFilter.length) {
-      if (planFilter.includes('free')) {
-         f.planId = { in: [...planFilter, null] };
-      } else {
-         f.planId = { in: planFilter };
-      }
-    }
-      return f;
-    },
+    mapFilters: mapTenantsFilters,
     facetsOp: ['tenants', 'admin', 'adminStats'],
     facetsMap: (res: unknown) => {
       const typed = res as TenantsAdminStatsResponse | null | undefined;
@@ -76,7 +111,8 @@ export const adminListConfigs: AdminListConfig[] = [
     deriveQuery: ({ cursor, sort, q, filters, limit, defaults }) => {
       const parsedFilters = typeof filters === 'string' ? parseFiltersParam(filters) : filters ?? {};
       const search = q ?? '';
-      const filtersMapped = adminListConfigs.find((c) => c.id === 'admin.tenants')!.mapFilters(parsedFilters, search);
+      // Use the helper function directly instead of looking up config
+      const filtersMapped = mapTenantsFilters(parsedFilters, search);
       const query: Record<string, unknown> = {
         limit: limit ?? defaults?.limit ?? 50,
         sort: sort ?? defaults?.sort ?? '-createdAt',
@@ -93,28 +129,7 @@ export const adminListConfigs: AdminListConfig[] = [
     defaultSort: '-updatedAt',
     defaultLimit: 25,
     fieldsRegistry: usersAdminFieldRegistry as Record<string, FieldDef>,
-  mapFilters: (uiFilters, search) => {
-    const f: Record<string, unknown> = {};
-    if (typeof search === 'string' && search.trim()) {
-      f.q = search.trim();
-    }
-    const email = uiFilters['email'];
-    if (typeof email === 'string' && email.trim()) {
-      f.email = { contains: email.trim() };
-      }
-      const name = uiFilters['displayName'];
-      if (typeof name === 'string' && name.trim()) {
-        f.displayName = { contains: name.trim() };
-      }
-      const updated = uiFilters['updatedAt'] as { start?: string; end?: string } | undefined;
-      if (updated?.start || updated?.end) {
-        f.updatedAt = {
-          ...(updated.start ? { gte: updated.start } : {}),
-          ...(updated.end ? { lte: updated.end } : {}),
-        };
-      }
-      return f;
-    },
+    mapFilters: mapUsersFilters,
     facetsOp: ['users', 'admin', 'facets'],
     facetsMap: (res: unknown) => {
       const typed = res as UsersAdminFacetsResponse | null | undefined;
@@ -126,7 +141,8 @@ export const adminListConfigs: AdminListConfig[] = [
     deriveQuery: ({ cursor, sort, q, filters, limit, defaults }) => {
       const parsedFilters = typeof filters === 'string' ? parseFiltersParam(filters) : filters ?? {};
       const search = q ?? '';
-      const filtersMapped = adminListConfigs.find((c) => c.id === 'admin.users')!.mapFilters(parsedFilters, search);
+      // Use the helper function directly instead of looking up config
+      const filtersMapped = mapUsersFilters(parsedFilters, search);
       const query: Record<string, unknown> = {
         limit: limit ?? defaults?.limit ?? 50,
         sort: sort ?? defaults?.sort ?? '-updatedAt',
@@ -137,3 +153,6 @@ export const adminListConfigs: AdminListConfig[] = [
     },
   },
 ];
+
+// Export helper for external use (with proper error handling)
+export { getConfigById };

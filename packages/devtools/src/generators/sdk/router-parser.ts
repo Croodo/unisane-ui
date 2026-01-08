@@ -14,9 +14,24 @@ export async function parseRouterImports(routerPath: string): Promise<Record<str
   const importRe = /import\s+\{\s*(\w+)\s*\}\s+from\s+['"](.+?)['"];?/g;
   const varToPath: Record<string, string> = {};
 
+  // Determine the contracts directory from router path
+  // e.g., /path/to/src/contracts/app.router.ts -> @/src/contracts
+  const routerDir = path.dirname(routerPath);
+  const contractsAlias = '@/src/contracts';
+
   let m: RegExpExecArray | null;
   while ((m = importRe.exec(src))) {
-    varToPath[m[1] as string] = m[2] as string;
+    let importPath = m[2] as string;
+    // Convert relative imports to @/src/contracts/* absolute imports
+    // This ensures SDK files in clients/generated/ can resolve them
+    if (importPath.startsWith('./') || importPath.startsWith('../')) {
+      // Resolve the relative path and convert to alias
+      const resolvedPath = path.resolve(routerDir, importPath);
+      // Extract the filename without extension and preserve .contract suffix
+      const filename = path.basename(resolvedPath);
+      importPath = `${contractsAlias}/${filename}`;
+    }
+    varToPath[m[1] as string] = importPath;
   }
 
   // Extract router body

@@ -1,7 +1,7 @@
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
 import { ZImportStart } from '@unisane/import-export';
-import { ZExportFormat, ZJobStatus } from '@unisane/kernel';
+import { ZExportFormat, ZJobStatus } from '@unisane/kernel/client';
 import { defineOpMeta, withMeta } from './meta';
 
 const c = initContract();

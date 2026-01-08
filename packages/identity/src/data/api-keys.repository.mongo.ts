@@ -1,6 +1,5 @@
-import { col, tenantFilter, withTenantId } from '@unisane/kernel';
+import { col, explicitTenantFilter, clampInt } from '@unisane/kernel';
 import type { Document } from 'mongodb';
-import { clampInt } from '@unisane/kernel';
 
 export type ApiKeyCreateDbInput = {
   tenantId: string;
@@ -13,15 +12,16 @@ export type ApiKeyCreateDbInput = {
 export const mongoApiKeysRepository = {
   async create(input: ApiKeyCreateDbInput) {
     const now = new Date();
-    // Use withTenantId to auto-add tenantId from context
-    const r = await col('apikeys').insertOne(withTenantId({
+    // Use explicit tenantId from input - operations happen within ctx.run() but we use the passed value
+    const r = await col('apikeys').insertOne({
+      tenantId: input.tenantId,
       name: input.name ?? null,
       hash: input.hash,
       scopes: input.scopes,
       createdBy: input.createdBy ?? null,
       createdAt: now,
       updatedAt: now,
-    }) as unknown as Document);
+    } as unknown as Document);
     return {
       id: String(r.insertedId),
       scopes: input.scopes ?? [],
@@ -30,17 +30,17 @@ export const mongoApiKeysRepository = {
     } as const;
   },
   async revoke(tenantId: string, keyId: string) {
-    // Use tenantFilter for automatic tenant scoping
+    // Use explicit tenantId parameter
     await col('apikeys').updateOne(
-      tenantFilter({ _id: keyId }) as unknown as Document,
+      explicitTenantFilter(tenantId, { _id: keyId }) as unknown as Document,
       { $set: { revokedAt: new Date(), updatedAt: new Date() } } as unknown as Document
     );
     return { ok: true as const };
   },
   async listByTenant(tenantId: string, limit = 100) {
-    // Use tenantFilter for automatic tenant scoping
+    // Use explicit tenantId parameter
     const rows = await col('apikeys')
-      .find(tenantFilter({}) as unknown as Document)
+      .find(explicitTenantFilter(tenantId, {}) as unknown as Document)
       .sort({ createdAt: -1 })
       .limit(clampInt(limit, 1, 500))
       .project({ _id: 1, name: 1, scopes: 1, revokedAt: 1, createdAt: 1 } as unknown as Document)

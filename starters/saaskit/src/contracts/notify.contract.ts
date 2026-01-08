@@ -4,8 +4,8 @@ import {
   ZEmailEnqueue,
   ZPrefUpdate,
   ZMarkRead,
-} from "@unisane/notify";
-import { ZCursor, ZLimitCoerce } from "@unisane/kernel";
+} from "@unisane/notify/client";
+import { ZCursor, ZLimitCoerce } from "@unisane/kernel/client";
 import { defineOpMeta, withMeta } from "./meta";
 
 const c = initContract();

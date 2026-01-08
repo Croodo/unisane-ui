@@ -1,15 +1,18 @@
-import { col, tenantFilter, tenantFilterActive, softDeleteFilter } from "@unisane/kernel";
+import {
+  col,
+  softDeleteFilter,
+  explicitTenantFilter,
+  explicitTenantFilterActive,
+  seekPageMongoCollection,
+  clampInt,
+} from "@unisane/kernel";
+import type { RoleId, Permission, GrantEffect } from "@unisane/kernel";
 import type { Document, Filter, WithId } from "mongodb";
-import type { RoleId } from "@unisane/kernel";
-import type { Permission } from "@unisane/kernel";
-import type { GrantEffect } from "@unisane/kernel";
-import { seekPageMongoCollection } from "@unisane/kernel";
 import type { MembershipsApi, Membership } from "../domain/types";
 import {
   mapMembershipDocToMembership,
   type MembershipDoc,
 } from "../domain/mappers";
-import { clampInt } from "@unisane/kernel";
 
 const mCol = () => col<MembershipDoc>("memberships");
 
@@ -22,9 +25,10 @@ function extractMembership(r: unknown): MembershipDoc | null {
 
 export const mongoMembershipsRepository: MembershipsApi = {
   async get(tenantId: string, userId: string): Promise<Membership | null> {
-    // Use tenantFilterActive for automatic tenant scoping + soft delete filter
+    // Use explicit tenantId parameter - NOT from context
+    // This is important for auth-time lookups that happen before ctx.run()
     const doc = await mCol().findOne(
-      tenantFilterActive({ userId }) as Document
+      explicitTenantFilterActive(tenantId, { userId }) as Document
     );
     return mapMembershipDocToMembership(doc);
   },
@@ -35,9 +39,9 @@ export const mongoMembershipsRepository: MembershipsApi = {
     roleId: RoleId,
     expectedVersion?: number
   ) {
-    // Use tenantFilterActive for automatic tenant scoping + soft delete filter
+    // Use explicit tenantId - NOT from context
     const current = await mCol().findOne(
-      tenantFilterActive({ userId }) as Document
+      explicitTenantFilterActive(tenantId, { userId }) as Document
     );
     if (
       current &&
@@ -47,9 +51,8 @@ export const mongoMembershipsRepository: MembershipsApi = {
       return { conflict: true as const, expected: current.version ?? 0 };
     }
     const now = new Date();
-    // Use tenantFilter for update operation
     const r = await mCol().findOneAndUpdate(
-      tenantFilter({ userId }) as Document,
+      explicitTenantFilter(tenantId, { userId }) as Document,
       {
         $addToSet: { roles: { roleId, grantedAt: now } },
         $inc: { version: 1 },
@@ -70,9 +73,9 @@ export const mongoMembershipsRepository: MembershipsApi = {
     roleId: RoleId,
     expectedVersion?: number
   ) {
-    // Use tenantFilterActive for automatic tenant scoping + soft delete filter
+    // Use explicit tenantId - NOT from context
     const current = await mCol().findOne(
-      tenantFilterActive({ userId }) as Document
+      explicitTenantFilterActive(tenantId, { userId }) as Document
     );
     if (
       current &&
@@ -82,9 +85,8 @@ export const mongoMembershipsRepository: MembershipsApi = {
       return { conflict: true as const, expected: current.version ?? 0 };
     }
     const now = new Date();
-    // Use tenantFilter for update operation
     const r = await mCol().findOneAndUpdate(
-      tenantFilter({ userId }) as Document,
+      explicitTenantFilter(tenantId, { userId }) as Document,
       {
         $pull: { roles: { roleId } },
         $inc: { version: 1 },
@@ -105,9 +107,9 @@ export const mongoMembershipsRepository: MembershipsApi = {
     effect: GrantEffect,
     expectedVersion?: number
   ) {
-    // Use tenantFilterActive for automatic tenant scoping + soft delete filter
+    // Use explicit tenantId - NOT from context
     const current = await mCol().findOne(
-      tenantFilterActive({ userId }) as Document
+      explicitTenantFilterActive(tenantId, { userId }) as Document
     );
     if (
       current &&
@@ -117,9 +119,8 @@ export const mongoMembershipsRepository: MembershipsApi = {
       return { conflict: true as const, expected: current.version ?? 0 };
     }
     const now = new Date();
-    // Use tenantFilter for update operation
     const r = await mCol().findOneAndUpdate(
-      tenantFilter({ userId }) as Document,
+      explicitTenantFilter(tenantId, { userId }) as Document,
       {
         $addToSet: { grants: { perm, effect } },
         $inc: { version: 1 },
@@ -140,9 +141,9 @@ export const mongoMembershipsRepository: MembershipsApi = {
     perm: Permission,
     expectedVersion?: number
   ) {
-    // Use tenantFilterActive for automatic tenant scoping + soft delete filter
+    // Use explicit tenantId - NOT from context
     const current = await mCol().findOne(
-      tenantFilterActive({ userId }) as Document
+      explicitTenantFilterActive(tenantId, { userId }) as Document
     );
     if (
       current &&
@@ -152,9 +153,8 @@ export const mongoMembershipsRepository: MembershipsApi = {
       return { conflict: true as const, expected: current.version ?? 0 };
     }
     const now = new Date();
-    // Use tenantFilter for update operation
     const r = await mCol().findOneAndUpdate(
-      tenantFilter({ userId }) as Document,
+      explicitTenantFilter(tenantId, { userId }) as Document,
       {
         $pull: { grants: { perm } },
         $inc: { version: 1 },
@@ -188,8 +188,8 @@ export const mongoMembershipsRepository: MembershipsApi = {
     cursor?: string
   ): Promise<{ items: Membership[]; nextCursor?: string }> {
     const max = clampInt(limit, 1, 500);
-    // Use tenantFilterActive for automatic tenant scoping + soft delete filter
-    const baseFilter = tenantFilterActive({}) as Filter<MembershipDoc>;
+    // Use explicit tenantId - NOT from context
+    const baseFilter = explicitTenantFilterActive(tenantId, {}) as Filter<MembershipDoc>;
     const projection: Record<string, 0 | 1> = {
       tenantId: 1,
       userId: 1,
@@ -266,9 +266,9 @@ export const mongoMembershipsRepository: MembershipsApi = {
   },
 
   async delete(tenantId: string, userId: string, expectedVersion?: number) {
-    // Use tenantFilterActive for automatic tenant scoping + soft delete filter
+    // Use explicit tenantId - NOT from context
     const current = await mCol().findOne(
-      tenantFilterActive({ userId }) as Document
+      explicitTenantFilterActive(tenantId, { userId }) as Document
     );
     if (!current) {
       return { notFound: true as const };
@@ -280,9 +280,8 @@ export const mongoMembershipsRepository: MembershipsApi = {
       return { conflict: true as const, expected: current.version ?? 0 };
     }
     const now = new Date();
-    // Use tenantFilter for update operation
     await mCol().updateOne(
-      tenantFilter({ userId }) as Document,
+      explicitTenantFilter(tenantId, { userId }) as Document,
       {
         $set: { deletedAt: now, updatedAt: now },
         $inc: { version: 1 },

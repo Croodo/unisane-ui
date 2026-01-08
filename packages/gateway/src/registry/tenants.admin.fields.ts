@@ -1,5 +1,7 @@
-import { PLANS } from '@unisane/kernel';
 import type { FieldDef } from './types';
+
+// Client-safe inline (avoids importing kernel which has Node.js-only modules)
+const PLANS = ['free', 'pro', 'pro_yearly', 'business', 'business_yearly'] as const;
 
 export const tenantsAdminFieldRegistry: Record<string, FieldDef> = {
   id: { key: '_id', type: 'string', ops: ['eq', 'in'] },

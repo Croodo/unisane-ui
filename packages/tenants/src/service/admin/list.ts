@@ -19,15 +19,24 @@ export interface TenantEnrichmentProviders {
   getTenantCreditBalances?: (tenantIds: string[]) => Promise<Map<string, number>>;
 }
 
-// Global enrichment providers - set at bootstrap time
-let enrichmentProviders: TenantEnrichmentProviders = {};
+// Use global object to share provider state across module instances in Next.js
+const globalForTenantEnrichment = global as unknown as {
+  __tenantEnrichmentProviders?: TenantEnrichmentProviders;
+};
 
 /**
  * Configure enrichment providers for admin functions.
  * Called once at application bootstrap to inject dependencies.
  */
 export function configureTenantEnrichment(providers: TenantEnrichmentProviders): void {
-  enrichmentProviders = providers;
+  globalForTenantEnrichment.__tenantEnrichmentProviders = providers;
+}
+
+/**
+ * Get enrichment providers (for internal use by read.ts)
+ */
+export function getEnrichmentProviders(): TenantEnrichmentProviders {
+  return globalForTenantEnrichment.__tenantEnrichmentProviders ?? {};
 }
 
 const { BILLING_PROVIDER } = getEnv();
@@ -113,16 +122,17 @@ export async function listAdminTenants(args: {
   const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
   // Use injected providers or default to empty maps
+  const providers = getEnrichmentProviders();
   const [mMap, apiMap, ovMap, invMap, latestSubMap, actMap, whMap, crMap] =
     await Promise.all([
-      enrichmentProviders.getTenantMembershipCounts?.(tenantIds) ?? Promise.resolve(new Map()),
-      enrichmentProviders.getTenantApiKeyCounts?.(tenantIds) ?? Promise.resolve(new Map()),
-      enrichmentProviders.getTenantOverrideCounts?.(tenantIds) ?? Promise.resolve(new Map()),
-      enrichmentProviders.getTenantOpenInvoiceCounts?.(tenantIds) ?? Promise.resolve(new Map()),
-      enrichmentProviders.getTenantLatestSubscriptions?.(tenantIds) ?? Promise.resolve(new Map()),
-      enrichmentProviders.getTenantLastActivity?.(tenantIds) ?? Promise.resolve(new Map()),
-      enrichmentProviders.getTenantFailureCounts?.(tenantIds, since24h) ?? Promise.resolve(new Map()),
-      enrichmentProviders.getTenantCreditBalances?.(tenantIds) ?? Promise.resolve(new Map()),
+      providers.getTenantMembershipCounts?.(tenantIds) ?? Promise.resolve(new Map()),
+      providers.getTenantApiKeyCounts?.(tenantIds) ?? Promise.resolve(new Map()),
+      providers.getTenantOverrideCounts?.(tenantIds) ?? Promise.resolve(new Map()),
+      providers.getTenantOpenInvoiceCounts?.(tenantIds) ?? Promise.resolve(new Map()),
+      providers.getTenantLatestSubscriptions?.(tenantIds) ?? Promise.resolve(new Map()),
+      providers.getTenantLastActivity?.(tenantIds) ?? Promise.resolve(new Map()),
+      providers.getTenantFailureCounts?.(tenantIds, since24h) ?? Promise.resolve(new Map()),
+      providers.getTenantCreditBalances?.(tenantIds) ?? Promise.resolve(new Map()),
     ]);
 
   const enriched: TenantAdminView[] = items.map((t) => {

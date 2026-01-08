@@ -33,7 +33,7 @@ export function SessionProvider({
   initialMe,
 }: {
   children: React.ReactNode;
-  initialMe?: Me;
+  initialMe?: Me | undefined;
 }) {
   const [me, setMe] = useState<Me>(initialMe ?? null);
   const [loading, setLoading] = useState(!initialMe);

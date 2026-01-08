@@ -37,3 +37,5 @@ export type { UsageKeyBuilder } from './domain/keys';
 
 export * from './service/increment';
 export * from './service/getWindow';
+export { rollupHour } from './service/rollupHour';
+export { rollupDay } from './service/rollupDay';

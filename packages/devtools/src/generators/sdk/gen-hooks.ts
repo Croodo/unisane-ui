@@ -169,22 +169,36 @@ export * from "./unwrap";
 
 /**
  * Generate query keys factory
+ *
+ * Uses extracted types instead of contract imports for browser safety.
  */
 function generateKeys(groups: RouteGroup[]): string {
   const headerComment = header('sdk:gen --hooks');
 
-  const imports = groups
-    .map((g) => `import { ${g.varName} } from '${g.importPath}';`)
+  // Import extracted types for each group
+  // Keys file is at hooks/generated/keys.ts, types are at types/generated/*.types.ts
+  // Include all routes (including admin) since we use extracted types
+  const typeImports = groups
+    .filter((g) => g.routes.length > 0)
+    .map((g) => {
+      const routes = g.routes;
+      const Group = pascalCase(g.name);
+      const types = routes.map((r) => `${Group}${pascalCase(r.name)}Request`);
+      return `import type { ${types.join(', ')} } from '../../types/generated/${g.name}.types';`;
+    })
     .join('\n');
 
   const keysBody = groups
     .map((g) => {
-      const routes = g.routes.filter((r) => !isAdminRoute(r.name, r.metaOp));
+      const routes = g.routes;
       if (!routes.length) return '';
 
+      const Group = pascalCase(g.name);
       const entries = routes
         .map((r) => {
-          return `    ${r.name}: (args?: ClientInferRequest<typeof ${g.varName}["${r.name}"]>) => {
+          const Op = pascalCase(r.name);
+          // Use extracted type instead of ClientInferRequest
+          return `    ${r.name}: (args?: ${Group}${Op}Request) => {
       const a = args as { params?: unknown; query?: unknown } | undefined;
       return ["${g.name}", "${r.name}", a?.params ?? null, a?.query ?? null] as const;
     },`;
@@ -197,8 +211,8 @@ function generateKeys(groups: RouteGroup[]): string {
 
   return `${headerComment}
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { ClientInferRequest } from "@ts-rest/core";
-${imports}
+// Types extracted at code-gen time (browser-safe, no contract imports)
+${typeImports}
 
 export const keys = {
 ${keysBody}
@@ -230,17 +244,39 @@ function getClientPath(groupName: string, routeName: string, opMeta?: string): s
 }
 
 /**
- * Generate type helpers for a domain
+ * Generate type imports for a domain
+ * Uses extracted types instead of runtime contract inference
+ */
+function generateTypeImports(group: RouteGroup): string {
+  // Include all routes (including admin) since we use extracted types
+  const routes = group.routes;
+  const Group = pascalCase(group.name);
+
+  const types = routes.flatMap((r) => {
+    const Op = pascalCase(r.name);
+    return [`${Group}${Op}Request`, `${Group}${Op}Response`];
+  });
+
+  return `import type {
+  ${types.join(',\n  ')}
+} from "../../types/generated/${group.name}.types";`;
+}
+
+/**
+ * Generate type aliases for a domain
+ * Maps extracted types to internal naming convention (T/D prefix)
  */
 function generateTypeHelpers(group: RouteGroup): string {
-  const routes = group.routes.filter((r) => !isAdminRoute(r.name, r.metaOp));
+  // Include all routes (including admin) since we use extracted types
+  const routes = group.routes;
 
   return routes
     .map((r) => {
       const Group = pascalCase(group.name);
       const Op = pascalCase(r.name);
-      return `type T${Group}${Op} = ClientInferRequest<RouteOf<typeof ${group.varName}["${r.name}"]>>;
-type D${Group}${Op} = DataOf<ClientInferResponseBody<RouteOf<typeof ${group.varName}["${r.name}"]>, 200>>;`;
+      // Use extracted types instead of runtime inference
+      return `type T${Group}${Op} = ${Group}${Op}Request;
+type D${Group}${Op} = ${Group}${Op}Response;`;
     })
     .join('\n');
 }
@@ -418,18 +454,26 @@ function generateRouteHooks(group: RouteGroup, route: AppRouteEntry): string {
 
 /**
  * Generate domain hooks file
+ *
+ * IMPORTANT: This generates browser-safe hooks that do NOT import contracts.
+ * All types are imported from pre-extracted type definitions, avoiding
+ * the contract → @unisane/* → kernel → async_hooks dependency chain.
  */
 function generateDomainHooks(group: RouteGroup): string {
   const headerComment = header('sdk:gen --hooks');
-  const routes = group.routes.filter((r) => !isAdminRoute(r.name, r.metaOp));
+  // Include all routes (including admin) since we now use extracted types
+  // which are browser-safe and don't pull in Node.js modules
+  const routes = group.routes;
   const hasTenantRoutes = routes.some((r) => hasTenantParam(r.path));
 
+  // Use extracted types instead of contract imports
+  const typeImports = generateTypeImports(group);
   const typeHelpers = generateTypeHelpers(group);
   const hooks = routes.map((r) => generateRouteHooks(group, r)).join('\n\n');
 
   return `${headerComment}
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
-// @ts-nocheck - Generated file with complex ts-rest type inference
+// @ts-nocheck - Generated file
 "use client";
 
 import {
@@ -447,14 +491,11 @@ import type {
   UseInfiniteQueryOptions,
   UseMutationOptions,
 } from "@tanstack/react-query";
-import type {
-  ClientInferRequest,
-  ClientInferResponseBody,
-} from "@ts-rest/core";
-import { ${group.varName} } from "${group.importPath}";
+// Types extracted at code-gen time (browser-safe, no contract imports)
+${typeImports}
 import { browserApi } from "@/src/sdk/clients/generated/browser";${hasTenantRoutes ? '\nimport { useActiveTenant } from "@/src/hooks/useActiveTenant";' : ''}
 import { keys } from "../keys";
-import type { RouteOf, DataOf, ListOut } from "../shared/types";
+import type { ListOut } from "../shared/types";
 import { unwrapResponse, toListOut, is404 } from "../shared/unwrap";
 
 type QueryOpts<T> = Omit<
@@ -470,7 +511,7 @@ type MutationOpts<D, V> = Omit<
   "mutationFn"
 >;
 
-// Type helpers
+// Type aliases (maps extracted types to T/D naming convention)
 ${typeHelpers}
 
 // Hooks
@@ -507,7 +548,8 @@ function generateHooksBarrel(groups: RouteGroup[]): string {
     .join('\n');
 
   const nsEntries = groups.map((g) => {
-    const routes = g.routes.filter((r) => !isAdminRoute(r.name, r.metaOp));
+    // Include all routes (including admin) since we now use extracted types
+    const routes = g.routes;
     if (!routes.length) return '';
 
     // Build nested structure for admin.get, admin.patch patterns

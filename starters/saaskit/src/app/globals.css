@@ -1,6 +1,11 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Content sources for Tailwind v4 to scan for class usage */
+@source "../../src/**/*.{js,ts,jsx,tsx,mdx}";
+@source "../../../../packages/ui/src/**/*.{js,ts,jsx,tsx,mdx}";
+@source "../../../../packages/data-table/src/**/*.{js,ts,jsx,tsx,mdx}";
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {

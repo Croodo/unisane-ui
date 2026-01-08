@@ -1,5 +1,5 @@
-import { initFlagsSubscriber } from "@/src/modules/flags/service/get";
-import { initSettingsSubscriber } from "@/src/modules/settings/service/read";
+import { initFlagsSubscriber } from "@unisane/flags";
+import { initSettingsSubscriber } from "@unisane/settings";
 import { validateEnvOrThrow } from "./env";
 
 let initialized = false;

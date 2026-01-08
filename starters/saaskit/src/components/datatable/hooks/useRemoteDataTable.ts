@@ -93,7 +93,7 @@ export interface RemoteDataTableProps<T> {
 
   // Sort
   controlledSort: { key: string | null; direction: SortDirection };
-  onSortChange: (key: string | null, direction: SortDirection) => void;
+  onSortChange: (key: string | number | symbol | null, direction: SortDirection) => void;
 
   // Pagination
   cursorPagination: {
@@ -225,7 +225,7 @@ export function useRemoteDataTable<T extends { id: string }>({
 
     // Sort
     controlledSort,
-    onSortChange: params.onSortChange,
+    onSortChange: (key: string | number | symbol | null, dir: SortDirection) => params.onSortChange(key as string | null, dir),
 
     // Pagination
     cursorPagination,

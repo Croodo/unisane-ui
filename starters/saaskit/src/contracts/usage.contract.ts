@@ -2,7 +2,7 @@ import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
 import { ZUsageIncrement } from '@unisane/usage';
 import { defineOpMeta, withMeta } from './meta';
-import { ZFeatureKey } from '@unisane/kernel';
+import { ZFeatureKey } from '@unisane/kernel/client';
 
 const c = initContract();
 

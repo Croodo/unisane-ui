@@ -1,6 +1,6 @@
-import { inngest } from "@/src/core/inngest";
-import { JobsService } from "@/src/modules/import-export/service/jobs";
-import { getSignedUploadUrl } from "@/src/core/storage";
+import { inngest } from "@unisane/kernel";
+import { JobsService } from "@unisane/import-export";
+import { getSignedUploadUrl } from "@unisane/kernel";
 
 export const exportCsv = inngest.createFunction(
   { id: "export-csv" },

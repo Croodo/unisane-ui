@@ -1,5 +1,9 @@
-import { PLANS, USER_STATUS, USER_STATUS_RANK } from '@unisane/kernel';
 import type { FieldDef } from './types';
+
+// Client-safe inlined constants (avoids importing kernel which has Node.js-only modules)
+const PLANS = ['free', 'pro', 'pro_yearly', 'business', 'business_yearly'] as const;
+const USER_STATUS = ['invited', 'active', 'suspended'] as const;
+const USER_STATUS_RANK: Record<string, number> = { invited: 0, active: 1, suspended: 2 };
 
 // Re-export names used by tests for backward compatibility
 export const USERS_STATUS = USER_STATUS;

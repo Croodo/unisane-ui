@@ -1,4 +1,4 @@
-import { getLatest } from "../data/subscriptions.repository";
+import { SubscriptionsRepository } from "../data/subscriptions.repository";
 import { TenantsRepo } from "@unisane/tenants";
 import { getTenantId } from "@unisane/kernel";
 import { getBillingMode } from "./mode";
@@ -7,7 +7,7 @@ import { ERR } from "@unisane/gateway";
 export async function getSubscription() {
   const tenantId = getTenantId();
   const [sub, tenant] = await Promise.all([
-    getLatest(tenantId).catch(() => null),
+    SubscriptionsRepository.getLatest(tenantId).catch(() => null),
     TenantsRepo.findById(tenantId).catch(() => null),
   ]);
   return {
@@ -27,7 +27,7 @@ export async function assertActiveSubscriptionForCredits(): Promise<void> {
   const tenantId = getTenantId();
   const mode = await getBillingMode();
   if (mode !== "subscription_with_credits") return;
-  const sub = await getLatest(tenantId).catch(() => null);
+  const sub = await SubscriptionsRepository.getLatest(tenantId).catch(() => null);
   const status = sub?.status;
   const isActive = status === "active" || status === "trialing";
   if (!isActive) {

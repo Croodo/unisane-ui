@@ -1,4 +1,4 @@
-import * as invoicesRepo from "../data/invoices.repository";
+import { InvoicesRepository } from "../data/invoices.repository";
 import { getTenantId } from "@unisane/kernel";
 
 export type ListInvoicesArgs = {
@@ -14,6 +14,6 @@ export async function listInvoices(args: ListInvoicesArgs) {
     cursor?: string;
   };
   if (args.cursor !== undefined) base.cursor = args.cursor;
-  const page = await invoicesRepo.listPage(base);
+  const page = await InvoicesRepository.listPage(base);
   return page;
 }

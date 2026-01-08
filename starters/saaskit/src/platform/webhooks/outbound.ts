@@ -1,7 +1,7 @@
 import { hmacSHA256Hex } from '@/src/platform/webhooks/signing';
 import { recordOutbound } from '@unisane/webhooks';
 import { HEADER_NAMES } from '@unisane/gateway';
-import { getTypedSetting } from '@unisane/settings/service/readTyped';
+import { getTypedSetting } from '@unisane/settings';
 import { SETTINGS_NS, WEBHOOKS_SETTING_KEYS } from '@unisane/kernel';
 
 export type OutboundWebhookPayload = {

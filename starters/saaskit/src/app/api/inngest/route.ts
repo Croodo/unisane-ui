@@ -1,5 +1,5 @@
 import { serve } from "inngest/next";
-import { inngest } from "@/src/core/inngest";
+import { inngest } from "@unisane/kernel";
 import { exportCsv } from "@/src/platform/inngest/functions/export";
 
 export const { GET, POST, PUT } = serve({

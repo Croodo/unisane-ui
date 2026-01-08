@@ -14,11 +14,13 @@ export async function getEntitlementsWithUsage(args: GetEntitlementsWithUsageArg
   }
 }> {
   const ent = await resolveEntitlements(args.tenantId);
+  // Note: getWindow uses getTenantId() from kernel context
+  void args.tenantId; // tenantId passed in but used from context
   const quotas = Object.fromEntries(
     await Promise.all(
       Object.entries(ent.quotas).map(async ([key, q]) => {
         if (q.window === 'day') {
-          const used = await getWindow({ tenantId: args.tenantId, feature: key, window: 'day' });
+          const used = await getWindow({ feature: key, window: 'day' });
           return [key, { ...q, used }]
         }
         return [key, { ...q, used: null }]

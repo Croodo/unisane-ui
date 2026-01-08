@@ -1,19 +1,5 @@
 import { TenantsRepo } from "../../data/tenants.repository";
-import type { TenantEnrichmentProviders } from "./list";
-
-// Re-use the same enrichment providers from list.ts
-// They are configured once at bootstrap via configureTenantEnrichment()
-
-// Global enrichment providers reference - shared with list.ts
-let enrichmentProviders: TenantEnrichmentProviders = {};
-
-/**
- * Set enrichment providers (called from list.ts configureTenantEnrichment)
- * @internal
- */
-export function _setEnrichmentProviders(providers: TenantEnrichmentProviders): void {
-  enrichmentProviders = providers;
-}
+import { getEnrichmentProviders } from "./list";
 
 export type ReadAdminTenantArgs = {
   tenantId: string;
@@ -41,16 +27,17 @@ export async function readAdminTenant(args: ReadAdminTenantArgs): Promise<{
   const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
   // Use injected providers or default to empty maps
+  const providers = getEnrichmentProviders();
   const [mMap, apiMap, ovMap, invMap, latestSubMap, actMap, whMap, crMap] =
     await Promise.all([
-      enrichmentProviders.getTenantMembershipCounts?.([args.tenantId]) ?? Promise.resolve(new Map()),
-      enrichmentProviders.getTenantApiKeyCounts?.([args.tenantId]) ?? Promise.resolve(new Map()),
-      enrichmentProviders.getTenantOverrideCounts?.([args.tenantId]) ?? Promise.resolve(new Map()),
-      enrichmentProviders.getTenantOpenInvoiceCounts?.([args.tenantId]) ?? Promise.resolve(new Map()),
-      enrichmentProviders.getTenantLatestSubscriptions?.([args.tenantId]) ?? Promise.resolve(new Map()),
-      enrichmentProviders.getTenantLastActivity?.([args.tenantId]) ?? Promise.resolve(new Map()),
-      enrichmentProviders.getTenantFailureCounts?.([args.tenantId], since24h) ?? Promise.resolve(new Map()),
-      enrichmentProviders.getTenantCreditBalances?.([args.tenantId]) ?? Promise.resolve(new Map()),
+      providers.getTenantMembershipCounts?.([args.tenantId]) ?? Promise.resolve(new Map()),
+      providers.getTenantApiKeyCounts?.([args.tenantId]) ?? Promise.resolve(new Map()),
+      providers.getTenantOverrideCounts?.([args.tenantId]) ?? Promise.resolve(new Map()),
+      providers.getTenantOpenInvoiceCounts?.([args.tenantId]) ?? Promise.resolve(new Map()),
+      providers.getTenantLatestSubscriptions?.([args.tenantId]) ?? Promise.resolve(new Map()),
+      providers.getTenantLastActivity?.([args.tenantId]) ?? Promise.resolve(new Map()),
+      providers.getTenantFailureCounts?.([args.tenantId], since24h) ?? Promise.resolve(new Map()),
+      providers.getTenantCreditBalances?.([args.tenantId]) ?? Promise.resolve(new Map()),
     ]);
 
   const sub = latestSubMap.get(args.tenantId) ?? null;

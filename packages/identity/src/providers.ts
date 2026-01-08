@@ -23,15 +23,17 @@ export interface IdentityProviders {
   tenantsRepo?: TenantsRepoLike;
 }
 
-// Global providers - set at bootstrap time
-let providers: IdentityProviders = {};
+// Use global object to share provider state across module instances in Next.js
+const globalForIdentity = global as unknown as {
+  __identityProviders?: IdentityProviders;
+};
 
 /**
  * Configure identity providers.
  * Called once at application bootstrap to inject dependencies.
  */
 export function configureIdentityProviders(p: IdentityProviders): void {
-  providers = p;
+  globalForIdentity.__identityProviders = p;
 }
 
 /**
@@ -39,8 +41,8 @@ export function configureIdentityProviders(p: IdentityProviders): void {
  * Throws if not configured.
  */
 export function getTenantsRepo(): TenantsRepoLike {
-  if (!providers.tenantsRepo) {
+  if (!globalForIdentity.__identityProviders?.tenantsRepo) {
     throw new Error('TenantsRepo not configured. Call configureIdentityProviders() at bootstrap.');
   }
-  return providers.tenantsRepo;
+  return globalForIdentity.__identityProviders.tenantsRepo;
 }

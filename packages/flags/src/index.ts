@@ -44,3 +44,9 @@ export * from './service/evaluate';
 // ════════════════════════════════════════════════════════════════════════════
 
 export { getTenantOverrideCounts } from './service/admin/stats';
+
+// ════════════════════════════════════════════════════════════════════════════
+// Data - Repository (for background jobs)
+// ════════════════════════════════════════════════════════════════════════════
+
+export { listExpiredOverridesForCleanup } from './data/overrides.repository';

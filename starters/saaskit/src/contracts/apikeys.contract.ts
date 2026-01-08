@@ -1,7 +1,7 @@
 import { initContract } from "@ts-rest/core";
 import { z } from "zod";
 import { defineOpMeta, withMeta } from "./meta";
-import { PERM } from "@unisane/kernel";
+import { PERM } from "@unisane/kernel/client";
 
 const c = initContract();
 

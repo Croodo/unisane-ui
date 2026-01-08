@@ -1,10 +1,10 @@
 import { initContract } from "@ts-rest/core";
 import { z } from "zod";
-import { ZTenantCreate } from "@unisane/identity";
+import { ZTenantCreate } from "@unisane/identity/client";
 import { defineOpMeta, withMeta } from "./meta";
-import { ZCursor } from "@unisane/kernel";
-import { ZPlanId } from "@unisane/kernel";
-import { ZSubscriptionStatus } from "@unisane/kernel";
+import { ZCursor } from "@unisane/kernel/client";
+import { ZPlanId } from "@unisane/kernel/client";
+import { ZSubscriptionStatus } from "@unisane/kernel/client";
 
 const c = initContract();
 

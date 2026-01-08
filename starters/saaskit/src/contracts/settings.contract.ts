@@ -4,9 +4,9 @@ import {
   ZPatchSetting,
   ZSettingOut,
   ZGetSetting,
-} from "@unisane/settings";
+} from "@unisane/settings/client";
 import { defineOpMeta, withMeta } from "./meta";
-import { PERM } from "@unisane/kernel";
+import { PERM } from "@unisane/kernel/client";
 
 const c = initContract();
 

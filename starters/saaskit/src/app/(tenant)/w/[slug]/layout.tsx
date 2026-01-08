@@ -40,6 +40,8 @@ export default async function WorkspaceLayout({
     ? ((me as { perms?: string[] }).perms ?? [])
     : [];
   // Wrap subtree with session for instant hydration
+  // Type assertion needed as Me type widening doesn't perfectly align with MeGetResponse
+  const initialMe = me as Parameters<typeof SessionProvider>[0]["initialMe"];
   return (
     <SidebarProvider
       style={
@@ -49,7 +51,7 @@ export default async function WorkspaceLayout({
         } as React.CSSProperties
       }
     >
-      <SessionProvider initialMe={me}>
+      <SessionProvider initialMe={initialMe}>
         <TenantSidebar slug={slug} perms={perms} />
         <SidebarInset className="flex flex-row">
           {/* Main content area */}

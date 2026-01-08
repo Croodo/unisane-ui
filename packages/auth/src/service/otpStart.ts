@@ -1,13 +1,6 @@
-import { connectDb, kv } from '@unisane/kernel';
+import { connectDb, kv, randomDigits } from '@unisane/kernel';
 import { normalizeEmail, ensureUserByEmail } from '@unisane/identity';
 import { otpCodeKey } from '../domain/keys';
-
-function randomCode(len: number) {
-  const chars = '0123456789';
-  let out = '';
-  for (let i = 0; i < len; i++) out += chars[Math.floor(Math.random() * chars.length)];
-  return out;
-}
 
 export async function otpStart(input: { email: string; codeLen: number; ttlSec: number }): Promise<{ sent: boolean }> {
   await connectDb();
@@ -15,7 +8,7 @@ export async function otpStart(input: { email: string; codeLen: number; ttlSec: 
   // Ensure user exists for OTP login flow (create minimal user lazily)
   await ensureUserByEmail(emailNorm);
 
-  const code = randomCode(input.codeLen);
+  const code = randomDigits(input.codeLen);
   const key = otpCodeKey(emailNorm);
   await kv.set(key, code, { PX: input.ttlSec * 1000 });
 

@@ -27,6 +27,7 @@ export { parseRouterImports, collectRouteGroups } from './router-parser.js';
 
 // Generators
 export { genTypes } from './gen-types.js';
+export { genExtractedTypes } from './gen-extracted-types.js';
 export { genBrowser } from './gen-browser.js';
 export { genServer } from './gen-server.js';
 export { genHooks } from './gen-hooks.js';

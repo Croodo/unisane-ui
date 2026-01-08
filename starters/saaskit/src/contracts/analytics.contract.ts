@@ -1,7 +1,7 @@
 import { initContract } from "@ts-rest/core";
 import { z } from "zod";
 import { defineOpMeta, withMeta } from "./meta";
-import { ZAnalyticsDashboard } from "@unisane/analytics";
+import { ZAnalyticsDashboard } from "@unisane/analytics/client";
 
 const c = initContract();
 

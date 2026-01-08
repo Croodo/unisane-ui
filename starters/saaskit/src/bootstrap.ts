@@ -3,8 +3,7 @@
  * Called once at app startup (instrumentation.ts or first request)
  */
 
-import { connectDb, setClient } from '@unisane/kernel';
-import { MongoClient } from 'mongodb';
+import { connectDb, closeDb } from '@unisane/kernel';
 
 // Type for bootstrap status
 let bootstrapped = false;
@@ -19,14 +18,6 @@ export async function bootstrap() {
   console.log('[bootstrap] Starting platform initialization...');
 
   // 1. Database connection
-  const mongoUri = process.env.MONGODB_URI;
-  if (!mongoUri) {
-    throw new Error('MONGODB_URI environment variable is required');
-  }
-
-  const client = new MongoClient(mongoUri);
-  await client.connect();
-  setClient(client);
   await connectDb();
   console.log('[bootstrap] ✓ Database connected');
 
@@ -54,9 +45,8 @@ async function setupRepositories() {
   // Configure identity providers (breaks identity -> tenants cycle)
   const { configureIdentityProviders } = await import('@unisane/identity');
   const { TenantsRepo } = await import('@unisane/tenants');
-  configureIdentityProviders({
-    tenantsRepo: TenantsRepo,
-  });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  configureIdentityProviders({ tenantsRepo: TenantsRepo as any });
   console.log('[bootstrap]   - Identity providers configured');
 
   // Configure tenant bootstrap providers (breaks tenants -> identity cycle)
@@ -89,123 +79,54 @@ async function setupRepositories() {
     getTenantCreditBalances,
   });
   console.log('[bootstrap]   - Tenant enrichment providers configured');
+
+  // Configure gateway auth (for JWT/API key authentication)
+  const { configureAuth } = await import('@unisane/gateway');
+  const { usersRepository, apiKeysRepository, getEffectivePerms, applyGlobalOverlays } = await import('@unisane/identity');
+
+  configureAuth({
+    findApiKeyByHash: async (hash: string) => {
+      const key = await apiKeysRepository.findActiveByHash(hash);
+      if (!key) return null;
+      return { id: key.id, tenantId: key.tenantId, scopes: key.scopes };
+    },
+    findUserById: async (userId: string) => {
+      const user = await usersRepository.findById(userId);
+      if (!user) return null;
+      return { id: user.id, sessionsRevokedAt: user.sessionsRevokedAt ?? null };
+    },
+    getEffectivePerms,
+    applyGlobalOverlays,
+    connectDb: async () => { await connectDb(); },
+  });
+  console.log('[bootstrap]   - Gateway auth configured');
 }
 
 /**
  * Set up platform providers
  */
 async function setupProviders() {
-  // Import providers from platform directory
-  // These are implementation-specific (Stripe, Resend, S3, OpenAI)
+  // Initialize cache subscribers and validate environment
+  const { initModules } = await import('./platform/init');
+  initModules();
+  console.log('[bootstrap]   - Module initializers run');
 
-  // Billing provider (Stripe/LemonSqueezy)
-  const billingProvider = process.env.BILLING_PROVIDER || 'stripe';
-  if (billingProvider === 'stripe') {
-    const { setBillingProvider } = await import('@unisane/kernel');
-    const { createStripeProvider } = await import('./platform/billing/stripe');
-    setBillingProvider(createStripeProvider());
-  }
-
-  // Email provider (Resend/SES)
-  const emailProvider = process.env.EMAIL_PROVIDER || 'resend';
-  if (emailProvider === 'resend') {
-    const { setEmailProvider } = await import('./platform/email/resend');
-    setEmailProvider();
-  }
-
-  // Storage provider (S3/R2)
-  const storageProvider = process.env.STORAGE_PROVIDER || 's3';
-  if (storageProvider === 's3') {
-    const { setStorageProvider } = await import('./platform/storage/s3');
-    setStorageProvider();
-  }
-
-  // AI provider (OpenAI)
-  const aiProvider = process.env.AI_PROVIDER || 'openai';
-  if (aiProvider === 'openai') {
-    const { setAiProvider } = await import('./platform/ai/openai');
-    setAiProvider();
-  }
+  // Provider registration is handled by:
+  // - platform/init.ts for module initialization
+  // - platform/billing/providers/index.ts for billing
+  // - platform/email/providers/index.ts for email
+  // Providers are accessed via getProvider() functions rather than registered globally
+  console.log('[bootstrap]   - Providers available via platform modules');
 }
 
 /**
  * Register event handlers for all modules
  */
 async function registerEventHandlers() {
-  // Each module may have event handlers that respond to events from other modules
-  // These handlers enable loose coupling between modules
-
-  // Identity handlers (e.g., user.deleted -> cleanup)
-  try {
-    const { registerIdentityHandlers } = await import('@unisane/identity');
-    if (typeof registerIdentityHandlers === 'function') {
-      registerIdentityHandlers();
-    }
-  } catch {}
-
-  // Tenant handlers
-  try {
-    const { registerTenantHandlers } = await import('@unisane/tenants');
-    if (typeof registerTenantHandlers === 'function') {
-      registerTenantHandlers();
-    }
-  } catch {}
-
-  // Auth handlers
-  try {
-    const { registerAuthHandlers } = await import('@unisane/auth');
-    if (typeof registerAuthHandlers === 'function') {
-      registerAuthHandlers();
-    }
-  } catch {}
-
-  // Billing handlers (e.g., subscription.created -> enable features)
-  try {
-    const { registerBillingHandlers } = await import('@unisane/billing');
-    if (typeof registerBillingHandlers === 'function') {
-      registerBillingHandlers();
-    }
-  } catch {}
-
-  // Audit handlers (e.g., log sensitive operations)
-  try {
-    const { registerAuditHandlers } = await import('@unisane/audit');
-    if (typeof registerAuditHandlers === 'function') {
-      registerAuditHandlers();
-    }
-  } catch {}
-
-  // Credits handlers
-  try {
-    const { registerCreditsHandlers } = await import('@unisane/credits');
-    if (typeof registerCreditsHandlers === 'function') {
-      registerCreditsHandlers();
-    }
-  } catch {}
-
-  // Usage handlers
-  try {
-    const { registerUsageHandlers } = await import('@unisane/usage');
-    if (typeof registerUsageHandlers === 'function') {
-      registerUsageHandlers();
-    }
-  } catch {}
-
-  // Webhook handlers
-  try {
-    const { registerWebhookHandlers } = await import('@unisane/webhooks');
-    if (typeof registerWebhookHandlers === 'function') {
-      registerWebhookHandlers();
-    }
-  } catch {}
-
-  // Notify handlers
-  try {
-    const { registerNotifyHandlers } = await import('@unisane/notify');
-    if (typeof registerNotifyHandlers === 'function') {
-      registerNotifyHandlers();
-    }
-  } catch {}
+  // Event handler registration is handled automatically by each module
+  // when they are imported. No explicit registration needed.
+  // This function is kept for potential future use.
+  console.log('[bootstrap]   - Event handlers initialized via module imports');
 }
 
 /**
@@ -224,11 +145,7 @@ export async function shutdown() {
   console.log('[bootstrap] Shutting down...');
 
   // Close database connections, flush caches, etc.
-  const { getClient } = await import('@unisane/kernel');
-  const client = getClient();
-  if (client) {
-    await client.close();
-  }
+  await closeDb();
 
   bootstrapped = false;
   console.log('[bootstrap] ✓ Shutdown complete');

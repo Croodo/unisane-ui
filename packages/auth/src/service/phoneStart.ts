@@ -1,7 +1,7 @@
-import { kv } from "@unisane/kernel";
+import { kv, randomDigits } from "@unisane/kernel";
 import { ERR } from "@unisane/gateway";
 import { phoneVerifyKey } from "../domain/keys";
-import { normalizePhoneE164, usersRepository, membershipsRepository } from "@unisane/identity";
+import { normalizePhoneE164, usersRepository } from "@unisane/identity";
 
 export async function phoneStart(args: {
   userId: string;
@@ -15,7 +15,7 @@ export async function phoneStart(args: {
   if (existing && existing.id !== userId)
     throw ERR.versionMismatch();
   // Generate 6-digit code
-  const code = String(Math.floor(100000 + Math.random() * 900000));
+  const code = randomDigits(6);
   const payload = JSON.stringify({ phone, code });
   // Save to KV with TTL 10 minutes
   await kv.set(phoneVerifyKey(userId), payload, { PX: 10 * 60 * 1000 });

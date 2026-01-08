@@ -23,7 +23,7 @@
     "@unisane/kernel": "workspace:*",
     "@unisane/gateway": "workspace:*",
     "zod": "^3.22.0",
-    "mongodb": "^6.3.0"
+    "mongodb": "^7.0.0"
   },
   "devDependencies": {
     "@unisane/typescript-config": "workspace:*",

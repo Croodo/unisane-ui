@@ -179,7 +179,7 @@ export function ApiKeysClient() {
         render: (row) =>
           (row.scopes ?? []).length > 0 ? (
             <div className="flex flex-wrap gap-1">
-              {row.scopes.map((s) => (
+              {row.scopes.map((s: string) => (
                 <Badge key={s} variant="secondary">
                   {s}
                 </Badge>

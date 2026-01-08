@@ -1,7 +1,7 @@
 import { getBillingProvider } from "@unisane/kernel";
 import { toMinorStrCurrency } from "@unisane/kernel";
 import { redis } from "@unisane/kernel";
-import * as paymentsRepo from "../data/payments.repository";
+import { PaymentsRepository } from "../data/payments.repository";
 import { getEnv } from "@unisane/kernel";
 import { refundLockKey } from "../domain/keys";
 import type { BillingProvider } from "@unisane/kernel";
@@ -20,7 +20,7 @@ export async function refund(args: {
     tenantId: args.tenantId,
   });
   if (!enabled) throw ERR.forbidden("Refunds disabled");
-  const p = await paymentsRepo.findByProviderPaymentId({
+  const p = await PaymentsRepository.findByProviderPaymentId({
     tenantId: args.tenantId,
     providerPaymentId: args.providerPaymentId,
   });
@@ -54,6 +54,6 @@ export async function refund(args: {
     providerPaymentId: args.providerPaymentId,
     ...(amountMinorStr ? { amountMinorStr } : {}),
   });
-  await paymentsRepo.markRefunded(p.id);
+  await PaymentsRepository.markRefunded(p.id);
   return { ok: true as const };
 }

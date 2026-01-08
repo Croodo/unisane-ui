@@ -3,11 +3,11 @@ import { z } from "zod";
 import {
   ZGrantTokens,
   ZBurnTokens,
-} from "@unisane/credits";
+} from "@unisane/credits/client";
 import { defineOpMeta, withMeta } from "./meta";
-import { PERM } from "@unisane/kernel";
-import { ZCreditKind } from "@unisane/kernel";
-import { ZFeatureKey } from "@unisane/kernel";
+import { PERM } from "@unisane/kernel/client";
+import { ZCreditKind } from "@unisane/kernel/client";
+import { ZFeatureKey } from "@unisane/kernel/client";
 
 const c = initContract();
 

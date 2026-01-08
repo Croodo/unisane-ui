@@ -11,7 +11,7 @@ import {
   ZTokenExchange,
   ZPhoneStart,
   ZPhoneVerify,
-} from "@unisane/auth";
+} from "@unisane/auth/client";
 
 const c = initContract();
 

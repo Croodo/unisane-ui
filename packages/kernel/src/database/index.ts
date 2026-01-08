@@ -62,6 +62,9 @@ export {
   filterByTenant,
   TenantIsolationError,
   TenantContextRequiredError,
+  // Explicit variants for auth-time operations (before ctx.run())
+  explicitTenantFilter,
+  explicitTenantFilterActive,
 } from './tenant-scope';
 export type { TenantScoped } from './tenant-scope';
 

@@ -56,15 +56,14 @@ export function PricingClient() {
 
   const [cadence, setCadence] = useState<"month" | "year">("month");
 
+  type TieredPlan = {
+    tierId: string;
+    monthly?: BillingConfigResponse["plans"][number];
+    yearly?: BillingConfigResponse["plans"][number];
+  };
+
   const tieredPlans = useMemo(() => {
-    const map = new Map<
-      string,
-      {
-        tierId: string;
-        monthly?: BillingConfigResponse["plans"][number];
-        yearly?: BillingConfigResponse["plans"][number];
-      }
-    >();
+    const map = new Map<string, TieredPlan>();
     const sourcePlans = plans ?? [];
     for (const p of sourcePlans) {
       const isYearly =
@@ -72,7 +71,8 @@ export function PricingClient() {
       const baseId = p.id.endsWith("_yearly")
         ? p.id.replace(/_yearly$/, "")
         : p.id;
-      const current = map.get(baseId) ?? { tierId: baseId };
+      const existing = map.get(baseId);
+      const current: TieredPlan = existing ?? { tierId: baseId };
       if (isYearly) current.yearly = p;
       else current.monthly = p;
       map.set(baseId, current);
@@ -276,7 +276,7 @@ export function PricingClient() {
                 </div>
 
                 <ul className="space-y-3 flex-1 mb-8">
-                  {highlights.map((item) => (
+                  {highlights.map((item: string) => (
                     <li key={item} className="flex items-start gap-3">
                       <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                       <span className="text-sm text-foreground">{item}</span>

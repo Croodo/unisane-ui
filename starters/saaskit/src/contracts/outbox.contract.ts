@@ -1,7 +1,7 @@
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
 import { defineOpMeta, withMeta } from './meta';
-import { ZCursor } from '@unisane/kernel';
+import { ZCursor } from '@unisane/kernel/client';
 
 const c = initContract();
 

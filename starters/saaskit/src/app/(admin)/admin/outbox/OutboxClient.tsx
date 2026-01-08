@@ -6,7 +6,6 @@ import { hooks } from "@/src/sdk/hooks";
 import type { OutboxAdminDeadListItem, OutboxAdminDeadListResponse } from "@/src/sdk/types";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { HEADER_NAMES } from "@/src/shared/constants/headers";
 import { RATE_LIMIT_POLICIES } from "@/src/shared/constants/rate-limits";
 import { PageHeader } from "@/src/context/usePageHeader";
 
@@ -91,15 +90,9 @@ function RequeueOne({ id }: { id: string }) {
         "@/src/sdk/clients/generated/browser"
       );
       const api = await createApi();
-      const reqId = crypto.randomUUID();
-      await api.admin.outbox.requeueDead({
-        body: { ids: [id] },
-        headers: { [HEADER_NAMES.REQUEST_ID]: reqId },
-      } as any);
+      await api.admin.outbox.deadRequeue({ ids: [id] });
       const pol = RATE_LIMIT_POLICIES["admin.outbox.requeueDead"];
-      toast.success(
-        `Requeued 1 item · req ${reqId} · ${pol.max}/${pol.windowSec}s`
-      );
+      toast.success(`Requeued 1 item · ${pol.max}/${pol.windowSec}s`);
       // Refresh any dead-list queries
       void qc.invalidateQueries({
         queryKey: ["outbox", "adminDeadList"],
@@ -132,15 +125,9 @@ function PurgeOne({ id }: { id: string }) {
         "@/src/sdk/clients/generated/browser"
       );
       const api = await createApi();
-      const reqId = crypto.randomUUID();
-      await api.admin.outbox.purgeDead({
-        body: { ids: [id] },
-        headers: { [HEADER_NAMES.REQUEST_ID]: reqId },
-      } as any);
+      await api.admin.outbox.deadPurge({ ids: [id] });
       const pol = RATE_LIMIT_POLICIES["admin.outbox.purgeDead"];
-      toast.success(
-        `Purged 1 item · req ${reqId} · ${pol.max}/${pol.windowSec}s`
-      );
+      toast.success(`Purged 1 item · ${pol.max}/${pol.windowSec}s`);
       void qc.invalidateQueries({
         queryKey: ["outbox", "adminDeadList"],
         exact: false,
@@ -173,14 +160,10 @@ function RequeueSelected({ ids }: { ids: string[] }) {
         "@/src/sdk/clients/generated/browser"
       );
       const api = await createApi();
-      const reqId = crypto.randomUUID();
-      await api.admin.outbox.requeueDead({
-        body: { ids },
-        headers: { [HEADER_NAMES.REQUEST_ID]: reqId },
-      } as any);
+      await api.admin.outbox.deadRequeue({ ids });
       const pol = RATE_LIMIT_POLICIES["admin.outbox.requeueDead"];
       toast.success(
-        `Requeued ${ids.length} ${ids.length === 1 ? "item" : "items"} · req ${reqId} · ${pol.max}/${pol.windowSec}s`
+        `Requeued ${ids.length} ${ids.length === 1 ? "item" : "items"} · ${pol.max}/${pol.windowSec}s`
       );
       void qc.invalidateQueries({
         queryKey: ["outbox", "adminDeadList"],
@@ -228,14 +211,10 @@ function PurgeSelected({ ids }: { ids: string[] }) {
         "@/src/sdk/clients/generated/browser"
       );
       const api = await createApi();
-      const reqId = crypto.randomUUID();
-      await api.admin.outbox.purgeDead({
-        body: { ids },
-        headers: { [HEADER_NAMES.REQUEST_ID]: reqId },
-      } as any);
+      await api.admin.outbox.deadPurge({ ids });
       const pol = RATE_LIMIT_POLICIES["admin.outbox.purgeDead"];
       toast.success(
-        `Purged ${ids.length} ${ids.length === 1 ? "item" : "items"} · req ${reqId} · ${pol.max}/${pol.windowSec}s`
+        `Purged ${ids.length} ${ids.length === 1 ? "item" : "items"} · ${pol.max}/${pol.windowSec}s`
       );
       void qc.invalidateQueries({
         queryKey: ["outbox", "adminDeadList"],
@@ -281,14 +260,10 @@ function PageActions({
         "@/src/sdk/clients/generated/browser"
       );
       const api = await createApi();
-      const reqId = crypto.randomUUID();
-      await api.admin.outbox.requeueDead({
-        body: { ids },
-        headers: { [HEADER_NAMES.REQUEST_ID]: reqId },
-      } as any);
+      await api.admin.outbox.deadRequeue({ ids });
       const pol = RATE_LIMIT_POLICIES["admin.outbox.requeueDead"];
       toast.success(
-        `Requeued ${ids.length} on page · req ${reqId} · ${pol.max}/${pol.windowSec}s`
+        `Requeued ${ids.length} on page · ${pol.max}/${pol.windowSec}s`
       );
       void qc.invalidateQueries({
         queryKey: ["outbox", "adminDeadList"],
@@ -312,14 +287,10 @@ function PageActions({
         "@/src/sdk/clients/generated/browser"
       );
       const api = await createApi();
-      const reqId = crypto.randomUUID();
-      await api.admin.outbox.purgeDead({
-        body: { ids },
-        headers: { [HEADER_NAMES.REQUEST_ID]: reqId },
-      } as any);
+      await api.admin.outbox.deadPurge({ ids });
       const pol = RATE_LIMIT_POLICIES["admin.outbox.purgeDead"];
       toast.success(
-        `Purged ${ids.length} on page · req ${reqId} · ${pol.max}/${pol.windowSec}s`
+        `Purged ${ids.length} on page · ${pol.max}/${pol.windowSec}s`
       );
       void qc.invalidateQueries({
         queryKey: ["outbox", "adminDeadList"],
@@ -336,14 +307,10 @@ function PageActions({
         "@/src/sdk/clients/generated/browser"
       );
       const api = await createApi();
-      const reqId = crypto.randomUUID();
-      await api.admin.outbox.requeueDeadAll({
-        body: { limit: allLimit },
-        headers: { [HEADER_NAMES.REQUEST_ID]: reqId },
-      } as any);
+      await api.admin.outbox.deadRequeueAll({ limit: allLimit });
       const pol = RATE_LIMIT_POLICIES["admin.outbox.requeueDeadAll"];
       toast.success(
-        `Requeue all (up to ${allLimit}) · req ${reqId} · ${pol.max}/${pol.windowSec}s`
+        `Requeue all (up to ${allLimit}) · ${pol.max}/${pol.windowSec}s`
       );
       void qc.invalidateQueries({
         queryKey: ["outbox", "adminDeadList"],
@@ -364,14 +331,10 @@ function PageActions({
         "@/src/sdk/clients/generated/browser"
       );
       const api = await createApi();
-      const reqId = crypto.randomUUID();
-      await api.admin.outbox.purgeDeadAll({
-        body: { limit: allLimit },
-        headers: { [HEADER_NAMES.REQUEST_ID]: reqId },
-      } as any);
+      await api.admin.outbox.deadPurgeAll({ limit: allLimit });
       const pol = RATE_LIMIT_POLICIES["admin.outbox.purgeDeadAll"];
       toast.success(
-        `Purge all (up to ${allLimit}) · req ${reqId} · ${pol.max}/${pol.windowSec}s`
+        `Purge all (up to ${allLimit}) · ${pol.max}/${pol.windowSec}s`
       );
       void qc.invalidateQueries({
         queryKey: ["outbox", "adminDeadList"],

@@ -35,6 +35,7 @@ export const ZFlagOut = z.object({
 });
 
 export type FlagWrite = z.infer<typeof ZFlagWrite>;
+export type FlagOut = z.infer<typeof ZFlagOut>;
 
 // Overrides
 export const ZOverrideWrite = z.object({
@@ -46,6 +47,9 @@ export const ZOverrideOut = z.object({
   value: z.boolean(),
   expiresAt: ZRFC3339.nullable().optional(),
 });
+
+export type OverrideWrite = z.infer<typeof ZOverrideWrite>;
+export type OverrideOut = z.infer<typeof ZOverrideOut>;
 
 // Query for GET /flags/:key
 export const ZFlagGetQuery = z.object({ env: ZAppEnv.optional() });

@@ -8,6 +8,7 @@ import { loadConfig, resolvePaths } from '../../config/index.js';
 import { log } from '../../utils/logger.js';
 import { existsSync, ensureDir } from '../../utils/fs.js';
 import { genTypes } from '../../generators/sdk/gen-types.js';
+import { genExtractedTypes } from '../../generators/sdk/gen-extracted-types.js';
 import { genBrowser } from '../../generators/sdk/gen-browser.js';
 import { genServer } from '../../generators/sdk/gen-server.js';
 import { genHooks } from '../../generators/sdk/gen-hooks.js';
@@ -158,8 +159,24 @@ export async function sdkGen(options: SdkGenOptions = {}): Promise<number> {
       }
     }
 
-    // Generate React hooks
+    // Generate React hooks (requires extracted types first)
     if (targets.includes('hooks')) {
+      // First, generate extracted types that hooks depend on
+      spinner.text = 'Extracting types for hooks...';
+      try {
+        const extractedTypesOutput = path.join(paths.sdkOutput, 'types/generated');
+        await genExtractedTypes({
+          output: extractedTypesOutput,
+          appRouter,
+          routerPath: paths.routerPath,
+          dryRun,
+        });
+        generated.push('types/generated/');
+      } catch (e) {
+        errors.push(`extracted-types: ${e instanceof Error ? e.message : String(e)}`);
+      }
+
+      // Then generate hooks that import from extracted types
       spinner.text = 'Generating React hooks...';
       try {
         const hooksOutput = path.join(paths.sdkOutput, 'hooks/generated');

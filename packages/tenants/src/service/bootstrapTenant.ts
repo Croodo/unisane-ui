@@ -26,15 +26,21 @@ export interface TenantBootstrapProviders {
   addOwnerRole?: (tenantId: string, userId: string) => Promise<void>;
 }
 
-// Global bootstrap providers - set at bootstrap time
-let bootstrapProviders: TenantBootstrapProviders = {};
+// Use global object to share provider state across module instances in Next.js
+const globalForTenantBootstrap = global as unknown as {
+  __tenantBootstrapProviders?: TenantBootstrapProviders;
+};
 
 /**
  * Configure bootstrap providers for tenant functions.
  * Called once at application bootstrap to inject dependencies.
  */
 export function configureTenantBootstrap(providers: TenantBootstrapProviders): void {
-  bootstrapProviders = providers;
+  globalForTenantBootstrap.__tenantBootstrapProviders = providers;
+}
+
+function getBootstrapProviders(): TenantBootstrapProviders {
+  return globalForTenantBootstrap.__tenantBootstrapProviders ?? {};
 }
 
 /**
@@ -93,8 +99,9 @@ export async function bootstrapFirstTenantForUser(
     const tenantId = t.id;
 
     // Add owner role via injected provider
-    if (bootstrapProviders.addOwnerRole) {
-      await bootstrapProviders.addOwnerRole(tenantId, userId);
+    const providers = getBootstrapProviders();
+    if (providers.addOwnerRole) {
+      await providers.addOwnerRole(tenantId, userId);
     } else {
       logger.warn("tenant.bootstrap.no_owner_provider", { tenantId, userId });
     }

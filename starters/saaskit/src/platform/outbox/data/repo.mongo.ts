@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- MongoDB repository uses any for document casting */
-import { col } from "@/src/core/db/connection";
-import { seekPageMongoCollection } from "@/src/core/pagination";
+import { col } from "@unisane/kernel";
+import { seekPageMongoCollection } from "@unisane/kernel";
 import type {
   OutboxRepoPort,
   OutboxItem,
@@ -9,7 +9,7 @@ import type {
 } from "@/src/platform/outbox/domain/ports";
 import type { OutboxStatus, OutboxKind } from "@/src/shared/constants/outbox";
 import type { Document } from "mongodb";
-import { maybeObjectId } from "@/src/core/db/mongo/objectId";
+import { maybeObjectId } from "@unisane/kernel";
 import { clampInt } from "@/src/shared/numbers/clamp";
 
 type OutboxDoc = {

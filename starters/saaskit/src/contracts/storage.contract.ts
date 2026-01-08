@@ -1,14 +1,14 @@
 import { initContract } from "@ts-rest/core";
 import { z } from "zod";
 import { defineOpMeta, withMeta } from "./meta";
-import { PERM } from "@unisane/kernel";
+import { PERM } from "@unisane/kernel/client";
 import {
   ZRequestUpload,
   ZListFiles,
   ZStorageFileResponse,
   ZUploadUrlResponse,
   ZDownloadUrlResponse,
-} from "@unisane/storage";
+} from "@unisane/storage/client";
 
 const c = initContract();
 

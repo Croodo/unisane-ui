@@ -1,8 +1,5 @@
 import { z } from "zod";
-import { ZGrantEffect } from "@unisane/kernel";
-import { ZLocale, DEFAULT_LOCALE } from "@unisane/kernel";
-import { ZRoleId } from "@unisane/kernel";
-import { ZPermission } from "@unisane/kernel";
+import { ZGrantEffect, ZLocale, DEFAULT_LOCALE, ZRoleId, ZPermission } from "@unisane/kernel/client";
 
 export const ZInviteUser = z.object({
   email: z.string().email(),

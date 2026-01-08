@@ -54,3 +54,5 @@ export * from './telemetry';
 
 // Registry types
 export * from './registry/types';
+export { adminListConfigs } from './registry/admin.lists';
+export type { AdminListConfig } from './registry/admin.lists';

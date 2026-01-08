@@ -140,7 +140,7 @@ export function DashboardClient({ slug }: DashboardClientProps) {
         ? { items: membersRaw }
         : undefined;
   const membersCount = membersData?.items?.length ?? 0;
-  const hasMoreMembers = Boolean(membersData?.nextCursor);
+  const hasMoreMembers = Boolean((membersData as MembersResponse | undefined)?.nextCursor);
 
   const apiKeysRaw = apiKeysQuery.data;
   const apiKeysData =

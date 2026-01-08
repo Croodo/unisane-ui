@@ -1,7 +1,7 @@
 import { listByProviderCursor as tenantIntegrationsCursor } from "../data/tenant-integrations.repository";
-import * as subscriptionsRepo from "../data/subscriptions.repository";
-import * as invoicesRepo from "../data/invoices.repository";
-import * as paymentsRepo from "../data/payments.repository";
+import { SubscriptionsRepository } from "../data/subscriptions.repository";
+import { InvoicesRepository } from "../data/invoices.repository";
+import { PaymentsRepository } from "../data/payments.repository";
 import { metrics } from "@unisane/kernel";
 import { toMajorNumberCurrency } from "@unisane/kernel";
 import { getEnv } from "@unisane/kernel";
@@ -90,7 +90,7 @@ export async function reconcileStripe(
         const currentPeriodEnd =
           getNumber(s, ["current_period_end"]) ??
           getNumber(s, ["items", "data", "0", "current_period_end"]);
-        await subscriptionsRepo.upsertByProviderId({
+        await SubscriptionsRepository.upsertByProviderId({
           tenantId,
           provider: "stripe",
           providerSubId: id ?? "",
@@ -131,7 +131,7 @@ export async function reconcileStripe(
             BigInt(amountPaid),
             currency
           );
-          await invoicesRepo.upsertByProviderId({
+          await InvoicesRepository.upsertByProviderId({
             tenantId,
             provider: "stripe",
             providerInvoiceId: id,
@@ -148,7 +148,7 @@ export async function reconcileStripe(
             BigInt(amountPaid),
             currency
           );
-          await paymentsRepo.upsertByProviderId({
+          await PaymentsRepository.upsertByProviderId({
             tenantId,
             provider: "stripe",
             providerPaymentId: paymentIntent,
@@ -207,7 +207,7 @@ export async function reconcileRazorpay(
   let payments = 0;
   // Refresh known subscriptions from DB by provider id
   try {
-    const rows = await subscriptionsRepo.listByProviderId("razorpay");
+    const rows = await SubscriptionsRepository.listByProviderId("razorpay");
     for (const row of rows) {
       if (deadlineMs && Date.now() > deadlineMs) break;
       const s = await rzpGet<Record<string, unknown>>(
@@ -216,7 +216,7 @@ export async function reconcileRazorpay(
       const status = getString(s, ["status"]);
       const quantity = getNumber(s, ["quantity"]);
       const planId = getString(s, ["plan_id"]) || getString(s, ["plan", "id"]);
-      await subscriptionsRepo.upsertByProviderId({
+      await SubscriptionsRepository.upsertByProviderId({
         tenantId: row.tenantId,
         provider: "razorpay",
         providerSubId: row.providerSubId,
@@ -232,7 +232,7 @@ export async function reconcileRazorpay(
   }
   // Refresh recent payments from DB by provider id
   try {
-    const rowsP = await paymentsRepo.listByProviderId("razorpay");
+    const rowsP = await PaymentsRepository.listByProviderId("razorpay");
     for (const row of rowsP) {
       if (deadlineMs && Date.now() > deadlineMs) break;
       const p = await rzpGet<Record<string, unknown>>(
@@ -246,7 +246,7 @@ export async function reconcileRazorpay(
         const amountMajor = toMajorNumberCurrency(BigInt(amount), currency);
         const mapped: import("@unisane/kernel").PaymentStatus =
           statusRaw === "captured" ? "succeeded" : "processing";
-        await paymentsRepo.upsertByProviderId({
+        await PaymentsRepository.upsertByProviderId({
           tenantId: row.tenantId,
           provider: "razorpay",
           providerPaymentId: row.providerPaymentId,

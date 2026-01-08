@@ -7,12 +7,12 @@ import {
   type FeaturePolicyMap,
   type TokenCost,
 } from "@/src/shared/constants/metering";
-import { readTenant } from "@/src/modules/tenants";
+import { readTenant } from "@unisane/tenants";
 import { cacheGet, cacheSet } from "@/src/platform/config/cache";
 import { KV } from "@/src/shared/constants/kv";
 import { SETTINGS_NS, PLAN_SETTING_KEYS } from "@/src/shared/constants/settings";
 import { subscribe } from "@/src/platform/config/bus";
-import { getTypedSetting } from "@/src/modules/settings/service/readTyped";
+import { getTypedSetting } from "@unisane/settings";
 
 // -------- Token cost policy (per-operation costs + daily freebies) --------
 export type TokenPolicy = {
@@ -113,7 +113,7 @@ export async function resolveEntitlements(
 }
 
 export async function invalidateEntitlements(tenantId: string): Promise<void> {
-  const { kv } = await import("@/src/core/kv");
+  const { kv } = await import("@unisane/kernel");
   await kv.del(`${KV.ENTITLEMENTS}${tenantId}`);
 }
 

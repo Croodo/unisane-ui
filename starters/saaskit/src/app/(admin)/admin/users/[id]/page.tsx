@@ -19,7 +19,7 @@ export default async function AdminUserDetailPage({
     if (user === null) return notFound();
 
     // Admin: fetch memberships for this user
-    const m = await api.admin.users.memberships({
+    const m = await api.admin.users.membershipsByUser({
       params: { id },
       query: { limit: 50 },
     });

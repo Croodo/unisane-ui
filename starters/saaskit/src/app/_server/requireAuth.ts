@@ -29,9 +29,12 @@ export async function requireUser(
     return { api: client, me };
   } catch (e) {
     const status = (e as Error & { status?: number }).status;
-    if (status === 401) {
+    // Redirect to login for auth errors (401, 403) or if no session
+    if (status === 401 || status === 403) {
       redirect(`/login?next=${encodeURIComponent(nextPath)}`);
     }
+    // Log and rethrow other errors
+    console.error("[requireUser] Error:", e);
     throw e;
   }
 }

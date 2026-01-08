@@ -1,9 +1,9 @@
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
-import { ZGlobalRole } from '@unisane/kernel';
-import { ZPlanId } from '@unisane/kernel';
-import { ZRoleId } from '@unisane/kernel';
-import { ZPermission } from '@unisane/kernel';
+import { ZGlobalRole } from '@unisane/kernel/client';
+import { ZPlanId } from '@unisane/kernel/client';
+import { ZRoleId } from '@unisane/kernel/client';
+import { ZPermission } from '@unisane/kernel/client';
 import { defineOpMeta, withMeta } from './meta';
 
 const c = initContract();

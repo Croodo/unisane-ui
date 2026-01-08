@@ -1,5 +1,5 @@
 import { z, type ZodTypeAny } from "zod";
-import { ERR } from "@/src/gateway/errors";
+import { ERR } from "@unisane/gateway";
 
 /**
  * Safely parse input with a Zod schema and throw a validation error if it fails.
