@@ -57,7 +57,7 @@ export default function InstallationPage() {
               Run the init command to set up your project. This will install dependencies, configure Tailwind CSS,
               and create the necessary configuration files.
             </Typography>
-            <CliCommand command="@unisane/cli init" />
+            <CliCommand command="unisane ui init" />
           </div>
 
           {/* Step 2: Add Components */}
@@ -66,7 +66,7 @@ export default function InstallationPage() {
             <Typography variant="bodyMedium" className="text-on-surface-variant max-w-2xl">
               Add the components you need to your project. You can add them one at a time or all at once.
             </Typography>
-            <CliCommand command="@unisane/cli add button card" />
+            <CliCommand command="unisane ui add button card" />
           </div>
 
           {/* Step 3: Import and Use */}

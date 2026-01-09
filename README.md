@@ -25,10 +25,10 @@ A Material 3-based design system built with React, Tailwind CSS v4, and TypeScri
 pnpm add @unisane/ui
 
 # Initialize
-npx @unisane/cli init
+npx unisane ui init
 
 # Add components
-npx @unisane/cli add button card dialog
+npx unisane ui add button card dialog
 ```
 
 ```tsx

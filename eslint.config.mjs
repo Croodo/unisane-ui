@@ -1,4 +1,4 @@
-import { config } from "./packages/eslint-config/base.js";
+import { config } from "./packages/tooling/eslint-config/base.js";
 
 export default [
   ...config,

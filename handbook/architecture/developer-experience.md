@@ -24,50 +24,49 @@ This document covers tooling and patterns to make building platforms on Unisane 
 
 ### Overview
 
-The Unisane CLI (`unisane`) provides commands for scaffolding, development, and deployment.
+The Unisane CLI ecosystem provides commands for scaffolding, development, and deployment through a unified architecture.
 
 ### Installation
 
 ```bash
-# Global install
-npm install -g @unisane/cli
+# Create a new project
+npx create-unisane my-app
 
-# Or use via npx
-npx @unisane/cli
+# Or use the main CLI directly
+npx unisane --help
 ```
+
+### CLI Packages
+
+| Package | Binary | Purpose |
+|---------|--------|---------|
+| `create-unisane` | `create-unisane` | Project scaffolding |
+| `unisane` | `unisane` | Main CLI (UI + delegates to devtools) |
+| `@unisane/devtools` | `unisane-devtools` | Heavy operations (codegen, db, billing) |
 
 ### Commands
 
 ```bash
-# Project initialization
-unisane init                      # Interactive project setup
-unisane init --template saaskit   # Use SaasKit template
-unisane init --template minimal   # Minimal setup (kernel + gateway only)
+# Project creation
+npx create-unisane my-app                    # Interactive setup
+npx create-unisane my-app --template saaskit # Use SaasKit template
 
-# Module management
+# UI Component Management (shadcn-style)
+npx unisane ui init              # Initialize Unisane UI in project
+npx unisane ui add button card   # Add UI components
+npx unisane ui add --all         # Add all components
+npx unisane ui diff              # Check for component updates
+npx unisane ui doctor            # Verify installation
+
+# Module management (via devtools)
 unisane add billing               # Add billing module
 unisane add billing credits usage # Add multiple modules
-unisane remove analytics          # Remove a module
 unisane list                      # List available modules
 
-# Code generation
+# Code generation (via devtools)
 unisane generate module <name>    # Generate new module scaffold
 unisane generate service <name>   # Generate service file
 unisane generate contract <name>  # Generate API contract
-unisane generate migration <name> # Generate migration file
-
-# Development
-unisane dev                       # Start dev server
-unisane dev --seed                # Start with database seeding
-unisane db:seed                   # Seed database
-unisane db:migrate                # Run migrations
-unisane db:reset                  # Reset database
-
-# Build & Deploy
-unisane build                     # Production build
-unisane build --analyze           # Build with bundle analysis
-unisane typecheck                 # Type checking
-unisane lint                      # Linting
 ```
 
 ### DevTools Commands (Starter Projects)
@@ -111,113 +110,85 @@ npm run devtools diagrams:generate   # Architecture diagrams
 
 ### Implementation
 
+The CLI is implemented across three packages:
+
 ```typescript
-// packages/cli/src/index.ts
-
+// packages/tooling/unisane/src/cli.ts (Main CLI)
 #!/usr/bin/env node
-
 import { Command } from 'commander';
-import { init } from './commands/init';
-import { add, remove, list } from './commands/modules';
-import { generate } from './commands/generate';
-import { dev, build } from './commands/build';
-import { seed, migrate, reset } from './commands/db';
+import { log } from '@unisane/cli-core';
 
 const program = new Command();
 
 program
   .name('unisane')
-  .description('Unisane Platform CLI')
-  .version('1.0.0');
+  .description('Unisane CLI')
+  .version('0.1.0');
 
-// Init command
-program
-  .command('init')
-  .description('Initialize a new Unisane project')
-  .option('-t, --template <template>', 'Template to use (saaskit, minimal)')
-  .option('-d, --directory <dir>', 'Target directory')
-  .option('--skip-install', 'Skip dependency installation')
-  .action(init);
+// UI commands (built-in via devtools)
+const ui = program.command('ui').description('UI component management');
 
-// Module commands
+ui.command('init')
+  .description('Initialize Unisane UI in your project')
+  .option('-f, --force', 'Overwrite existing files')
+  .action(/* delegates to devtools */);
+
+ui.command('add [components...]')
+  .description('Add UI components')
+  .option('-a, --all', 'Add all components')
+  .option('-o, --overwrite', 'Overwrite existing files')
+  .action(/* delegates to devtools */);
+
+// Module commands (delegate to devtools if available)
 program
   .command('add <modules...>')
   .description('Add modules to your project')
-  .action(add);
+  .action(/* delegates to devtools */);
+
+program.parse();
+```
+
+```typescript
+// packages/tooling/create-unisane/src/index.ts (Scaffolding)
+#!/usr/bin/env node
+import { Command } from 'commander';
+import { downloadTemplate, extractTemplate } from './template.js';
+import { log, prompt } from '@unisane/cli-core';
+
+const program = new Command();
 
 program
-  .command('remove <modules...>')
-  .description('Remove modules from your project')
-  .action(remove);
+  .name('create-unisane')
+  .description('Create a new Unisane project')
+  .argument('[name]', 'Project name')
+  .option('-t, --template <template>', 'Template to use')
+  .action(async (name, options) => {
+    // Interactive prompts if no args
+    // Download template from GitHub
+    // Set up project
+  });
 
-program
-  .command('list')
-  .description('List available modules')
-  .option('--installed', 'Show only installed modules')
-  .action(list);
+program.parse();
+```
 
-// Generate commands
-const generateCmd = program
-  .command('generate')
-  .alias('g')
-  .description('Generate code scaffolds');
+```typescript
+// packages/tooling/devtools/src/cli.ts (Full DevTools)
+#!/usr/bin/env node
+import { Command } from 'commander';
+import { uiInit, uiAdd, uiDiff, uiDoctor } from './commands/ui/index.js';
 
-generateCmd
-  .command('module <name>')
-  .description('Generate a new module')
-  .option('--layer <layer>', 'Module layer (1-5)', '3')
-  .action((name, options) => generate('module', name, options));
+const program = new Command();
 
-generateCmd
-  .command('service <name>')
-  .description('Generate a service file')
-  .option('-m, --module <module>', 'Target module')
-  .action((name, options) => generate('service', name, options));
+program.name('unisane-devtools').description('Unisane developer tools');
 
-generateCmd
-  .command('contract <name>')
-  .description('Generate an API contract')
-  .option('-m, --module <module>', 'Target module')
-  .action((name, options) => generate('contract', name, options));
+// UI Commands (full implementation)
+const ui = program.command('ui').description('UI component management');
+ui.command('init').action(uiInit);
+ui.command('add [components...]').action(uiAdd);
+ui.command('diff [component]').action(uiDiff);
+ui.command('doctor').action(uiDoctor);
 
-generateCmd
-  .command('migration <name>')
-  .description('Generate a migration file')
-  .action((name, options) => generate('migration', name, options));
-
-// Dev commands
-program
-  .command('dev')
-  .description('Start development server')
-  .option('--seed', 'Seed database on start')
-  .option('-p, --port <port>', 'Port number', '3000')
-  .action(dev);
-
-program
-  .command('build')
-  .description('Build for production')
-  .option('--analyze', 'Analyze bundle size')
-  .action(build);
-
-// Database commands
-program
-  .command('db:seed')
-  .description('Seed the database')
-  .option('--fresh', 'Reset before seeding')
-  .action(seed);
-
-program
-  .command('db:migrate')
-  .description('Run database migrations')
-  .option('--rollback', 'Rollback last migration')
-  .action(migrate);
-
-program
-  .command('db:reset')
-  .description('Reset database (DESTRUCTIVE)')
-  .option('--force', 'Skip confirmation')
-  .action(reset);
-
+// Codegen, DB, Billing commands...
 program.parse();
 ```
 
@@ -438,7 +409,7 @@ export async function list{{EntityType}}s(
 ### Interactive Setup
 
 ```bash
-$ unisane init
+$ npx create-unisane
 
 ? Project name: my-saas-app
 ? Template: SaasKit (Full SaaS boilerplate)
@@ -1006,27 +977,30 @@ export default function UsersPage() {
 ### Recommended Workflow
 
 ```bash
-# 1. Initialize project
-unisane init --template saaskit
+# 1. Create project
+npx create-unisane my-project --template saaskit
 cd my-project
 
 # 2. Configure environment
 cp .env.example .env.local
 # Edit .env.local with your values
 
-# 3. Start development
-unisane dev --seed
+# 3. Initialize UI components
+npx unisane ui init
+npx unisane ui add button card input
 
-# 4. Add a new feature
-unisane generate module inventory --layer 3
-unisane generate contract inventory
+# 4. Start development
+pnpm dev
 
-# 5. Run tests
+# 5. Add a new feature (via devtools)
+pnpm devtools crud products --tenant --slug --ui=form
+
+# 6. Run tests
 pnpm test
 pnpm test:e2e
 
-# 6. Build for production
-unisane build
+# 7. Build for production
+pnpm build
 ```
 
 ### VSCode Integration

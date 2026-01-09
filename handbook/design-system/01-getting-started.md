@@ -6,14 +6,14 @@ A comprehensive guide to understanding and using this Material Design 3 token-ba
 
 ```bash
 # 1. Initialize your project (copies all files locally)
-npx @unisane/cli init
+npx unisane ui init
 
 # 2. Install dependencies
 pnpm add clsx tailwind-merge class-variance-authority
 
 # 3. Add components as needed
-npx @unisane/cli add button
-npx @unisane/cli add card
+npx unisane ui add button
+npx unisane ui add card
 ```
 
 **Setup Flow:**
@@ -108,7 +108,7 @@ The system includes **75+ components** across 16 categories:
 The CLI copies all necessary files directly to your project (shadcn-style):
 
 ```bash
-npx @unisane/cli init
+npx unisane ui init
 ```
 
 This creates:
@@ -131,9 +131,9 @@ pnpm add clsx tailwind-merge class-variance-authority
 ### Step 3: Add Components
 
 ```bash
-npx @unisane/cli add button
-npx @unisane/cli add card
-npx @unisane/cli add dialog
+npx unisane ui add button
+npx unisane ui add card
+npx unisane ui add dialog
 ```
 
 Components are copied to `src/components/ui/` with all dependencies auto-resolved.
@@ -276,7 +276,7 @@ Tonal palettes generated using OKLCH:
 
 ## Global CSS Setup
 
-After running `npx @unisane/cli init`, your `src/app/globals.css` looks like:
+After running `npx unisane ui init`, your `src/app/globals.css` looks like:
 
 ```css
 /* Unisane UI - Tailwind v4 with Material 3 Design Tokens */
@@ -547,9 +547,9 @@ Material Design ripple effect for touch feedback.
 After init, add components using the CLI:
 
 ```bash
-npx @unisane/cli add button
-npx @unisane/cli add card
-npx @unisane/cli add ripple
+npx unisane ui add button
+npx unisane ui add card
+npx unisane ui add ripple
 ```
 
 ### Component Structure with CVA
@@ -813,10 +813,10 @@ import { useTheme, ThemeProvider } from "@/components/theme-provider";
 
 ## Next Steps
 
-1. **Initialize**: `npx @unisane/cli init`
+1. **Initialize**: `npx unisane ui init`
 2. **Install**: `pnpm add clsx tailwind-merge class-variance-authority`
 3. **Theme**: Set `--hue` in globals.css for your brand color
-4. **Add Components**: `npx @unisane/cli add button card dialog`
+4. **Add Components**: `npx unisane ui add button card dialog`
 5. **Build**: Start using components!
 
 **Component Documentation:**

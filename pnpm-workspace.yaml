@@ -1,4 +1,27 @@
 packages:
+  # Apps
   - "apps/*"
-  - "packages/*"
+
+  # Core infrastructure
+  - "packages/foundation/*"
+
+  # Shared business modules
+  - "packages/modules/*"
+
+  # Premium modules
+  - "packages/pro/*"
+
+  # UI packages
+  - "packages/ui/*"
+
+  # Development tooling
+  - "packages/tooling/*"
+
+  # Platform-specific modules (future)
+  - "packages/crm/*"
+  - "packages/ecommerce/*"
+  - "packages/helpdesk/*"
+  - "packages/ai-platform/*"
+
+  # Starter templates
   - "starters/*"

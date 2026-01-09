@@ -9,87 +9,123 @@ Complete specification for all development tools in the Unisane monorepo.
 
 ## CLI Ecosystem Architecture
 
-The Unisane ecosystem has **two distinct CLI packages** that serve different purposes:
+The Unisane ecosystem has a **unified CLI architecture** with three packages serving different purposes:
 
 | Package | Binary | Purpose | Audience |
 |---------|--------|---------|----------|
-| `@unisane/cli` | `unisane` | UI component management | App developers |
+| `unisane` | `unisane` | Main CLI entry point | All developers |
+| `create-unisane` | `create-unisane` | Project scaffolding | New users |
 | `@unisane/devtools` | `unisane-devtools` | Code generation & ops | Framework developers |
 
-### Why Two Separate CLIs?
+### CLI Package Roles
 
-| Factor | @unisane/cli | @unisane/devtools |
-|--------|--------------|-------------------|
-| **Primary User** | App developers consuming UI | Framework maintainers |
-| **Publishing** | npm public | Internal/workspace only |
-| **Dependencies** | Minimal (fs, prompts) | Heavy (ts-morph, mongodb) |
-| **Execution Context** | Any project | Only inside starters |
-| **Update Frequency** | Stable, versioned | Iterates with contracts |
+| Factor | `unisane` | `create-unisane` | `@unisane/devtools` |
+|--------|-----------|------------------|---------------------|
+| **Primary User** | App developers | New users | Framework maintainers |
+| **Publishing** | npm public | npm public | Internal/workspace only |
+| **Dependencies** | Minimal + delegates to devtools | Minimal (prompts, download) | Heavy (ts-morph, mongodb) |
+| **Execution Context** | Any project | Outside projects | Only inside starters |
 
-### @unisane/cli (`unisane`)
+### `unisane` (Main CLI)
 ```bash
-# Used by any developer installing Unisane components
-npx @unisane/cli init              # Initialize new project
-npx @unisane/cli add button card   # Add UI components
-npx @unisane/cli diff              # Check for component updates
-npx @unisane/cli doctor            # Verify installation
+# UI component management (shadcn-style)
+npx unisane ui init              # Initialize Unisane UI in project
+npx unisane ui add button card   # Add UI components
+npx unisane ui diff              # Check for component updates
+npx unisane ui doctor            # Verify installation
+
+# Delegates to devtools when inside a starter project
+npx unisane add billing          # Add modules (via devtools)
+npx unisane generate contract    # Code generation (via devtools)
 ```
 
-### @unisane/devtools (`unisane-devtools`)
+### `create-unisane` (Project Scaffolding)
+```bash
+# Create new projects
+npx create-unisane my-app                    # Interactive setup
+npx create-unisane my-app --template saaskit # Use specific template
+```
+
+### `@unisane/devtools` (Framework Tooling)
 ```bash
 # Used only inside starter projects (saaskit, etc.)
 pnpm devtools routes:gen           # Generate API routes
 pnpm devtools sdk:gen              # Generate SDK
 pnpm devtools db:query tenants     # Query database
 pnpm devtools billing:seed-stripe  # Setup Stripe
+pnpm devtools ui init              # Initialize UI (same as unisane ui init)
+pnpm devtools ui add button        # Add components (same as unisane ui add)
+```
+
+### Architecture Rationale
+
+The unified CLI delegates heavy operations to `@unisane/devtools` when detected, keeping the main `unisane` package lightweight:
+
+```
+unisane (lightweight entry point)
+├── ui commands       → Built-in (via devtools)
+├── create commands   → Delegates to create-unisane
+└── add/generate/etc  → Delegates to @unisane/devtools if installed
+
+@unisane/devtools (heavy operations)
+├── routes:gen        → ts-morph, AST parsing
+├── sdk:gen           → Code generation
+├── db:*              → MongoDB operations
+├── billing:*         → Stripe integration
+└── ui:*              → Full UI management
 ```
 
 ### Dependency Contrast
 
 ```
-@unisane/cli dependencies:
-├── commander        (CLI)
-├── chalk           (colors)
-├── ora             (spinners)
-├── prompts         (interactive)
-└── fs-extra        (files)
-Total: ~500KB
+unisane dependencies:
+├── @unisane/cli-core (shared prompts/logging)
+└── commander         (CLI framework)
+Total: ~100KB (delegates heavy ops)
+
+create-unisane dependencies:
+├── @unisane/cli-core (shared prompts/logging)
+├── commander         (CLI framework)
+└── download utils    (template fetching)
+Total: ~200KB
 
 @unisane/devtools dependencies:
-├── commander        (CLI)
-├── chalk           (colors)
-├── ora             (spinners)
-├── ts-morph        (AST parsing - 15MB!)
-├── mongodb         (database)
-├── stripe          (billing)
-├── chokidar        (watch)
-├── express         (openapi:serve)
+├── @unisane/cli-core (shared prompts/logging)
+├── commander         (CLI framework)
+├── ts-morph          (AST parsing - 15MB!)
+├── mongodb           (database)
+├── stripe            (billing)
+├── chokidar          (watch)
+├── express           (openapi:serve)
 ├── swagger-ui-express
-└── @unisane/kernel (peer)
+└── @unisane/kernel   (peer)
 Total: ~20MB+
 ```
 
-Combining them would force `ts-morph` and `mongodb` on users who just want UI components.
+This architecture keeps the main CLI fast while providing full power when needed.
 
 ---
 
 ## Implementation Status
 
-> **Note:** This document describes the **target architecture**. Some tools are planned but not implemented.
+> **Note:** This document describes both implemented and planned tools.
 
-| Tool | Status | Notes |
-|------|--------|-------|
-| @unisane/eslint-config | **Implemented** | packages/eslint-config |
-| @unisane/typescript-config | **Implemented** | packages/typescript-config |
-| @unisane/tailwind-config | **Implemented** | packages/tailwind-config |
+| Tool | Status | Location |
+|------|--------|----------|
+| @unisane/eslint-config | **Implemented** | packages/tooling/eslint-config |
+| @unisane/typescript-config | **Implemented** | packages/tooling/typescript-config |
+| @unisane/tailwind-config | **Implemented** | packages/tooling/tailwind-config |
 | @unisane/prettier-config | **Not Implemented** | Planned |
 | @unisane/vitest-config | **Not Implemented** | Planned |
 | @unisane/tsup-config | **Not Implemented** | Planned |
-| @unisane/devtools | **Implemented** | packages/devtools (CLI) |
-| tools/cli/ | **Not Implemented** | User-facing CLI, planned |
+| @unisane/devtools | **Implemented** | packages/tooling/devtools |
+| @unisane/cli-core | **Implemented** | packages/tooling/cli-core (shared utilities) |
+| unisane | **Implemented** | packages/tooling/unisane (main CLI) |
+| create-unisane | **Implemented** | packages/tooling/create-unisane |
+| .changeset/ | **Implemented** | Version management configured |
+| .github/workflows/release.yml | **Implemented** | Automated releases with Changesets |
 | tools/release/ | **Not Implemented** | Build scripts, planned |
 | .husky/ | **Not Implemented** | Git hooks, planned |
-| .changeset/ | **Not Implemented** | Version management, planned |
 
 See [implementation-status.md](./implementation-status.md) for full status tracking.
 
@@ -137,62 +173,88 @@ See [implementation-status.md](./implementation-status.md) for full status track
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Final Directory Structure
+### Current Directory Structure
 
 ```
-unisane/
+unisane-monorepo/
 ├── packages/
-│   ├── eslint-config/           # @unisane/eslint-config
-│   ├── typescript-config/       # @unisane/typescript-config
-│   ├── tailwind-config/         # @unisane/tailwind-config
-│   ├── prettier-config/         # @unisane/prettier-config (NEW)
-│   ├── vitest-config/           # @unisane/vitest-config (NEW)
-│   └── tsup-config/             # @unisane/tsup-config (NEW)
+│   └── tooling/                      # All CLI/dev tooling
+│       ├── cli-core/                 # @unisane/cli-core (shared utilities)
+│       │   └── src/
+│       │       ├── log.ts            # Logging utilities
+│       │       └── prompts.ts        # Interactive prompts
+│       │
+│       ├── unisane/                  # Main `unisane` CLI
+│       │   └── src/
+│       │       └── cli.ts            # Entry point, delegates to devtools
+│       │
+│       ├── create-unisane/           # `create-unisane` scaffolding CLI
+│       │   └── src/
+│       │       ├── index.ts          # Entry point
+│       │       ├── template.ts       # Template download
+│       │       └── utils.ts          # Helpers
+│       │
+│       ├── devtools/                 # @unisane/devtools (heavy ops)
+│       │   └── src/
+│       │       ├── cli.ts            # CLI entry point
+│       │       └── commands/
+│       │           ├── ui/           # UI component management
+│       │           │   ├── init.ts   # Initialize UI in project
+│       │           │   ├── add.ts    # Add components
+│       │           │   ├── diff.ts   # Check for updates
+│       │           │   └── doctor.ts # Verify installation
+│       │           ├── codegen/      # Code generation
+│       │           ├── billing/      # Stripe operations
+│       │           ├── db/           # Database operations
+│       │           └── release/      # Version management
+│       │
+│       ├── eslint-config/            # @unisane/eslint-config
+│       ├── typescript-config/        # @unisane/typescript-config
+│       └── tailwind-config/          # @unisane/tailwind-config
 │
-├── tools/
-│   ├── cli/                     # unisane CLI (extended)
-│   │   ├── src/
-│   │   │   ├── commands/
-│   │   │   │   ├── init.ts      # Project init
-│   │   │   │   ├── add.ts       # Add components/modules
-│   │   │   │   ├── remove.ts    # Remove modules
-│   │   │   │   ├── generate.ts  # Code generation
-│   │   │   │   ├── dev.ts       # Dev server
-│   │   │   │   ├── build.ts     # Build
-│   │   │   │   ├── db.ts        # Database commands
-│   │   │   │   ├── diff.ts      # Component diff
-│   │   │   │   └── doctor.ts    # Health check
-│   │   │   ├── templates/       # Code templates
-│   │   │   └── utils/
-│   │   └── package.json
-│   │
-│   └── release/                 # Build & release tools
-│       ├── src/
-│       │   ├── strip-pro.ts     # PRO code removal
-│       │   ├── generate.ts      # Source generation
-│       │   ├── bundle.ts        # Bundle for npm
-│       │   └── publish.ts       # npm publish
-│       └── package.json
-│
-├── .husky/                      # Git hooks
-│   ├── pre-commit
-│   ├── commit-msg
-│   └── pre-push
-│
-├── .changeset/                  # Version management
+├── .changeset/                       # Version management (implemented)
 │   └── config.json
 │
 ├── .github/
 │   └── workflows/
-│       ├── ci.yml               # CI pipeline
-│       ├── release.yml          # Release pipeline
-│       └── preview.yml          # PR preview
+│       └── release.yml               # Automated releases (implemented)
 │
-├── commitlint.config.js
-├── lint-staged.config.js
-├── prettier.config.js
-├── vitest.workspace.ts
+├── scripts/
+│   └── sync-versions.mjs             # Version synchronization
+│
 └── turbo.json
+```
+
+### Planned Additions
+
+```
+unisane-monorepo/
+├── packages/
+│   └── tooling/
+│       ├── prettier-config/          # @unisane/prettier-config (planned)
+│       ├── vitest-config/            # @unisane/vitest-config (planned)
+│       └── tsup-config/              # @unisane/tsup-config (planned)
+│
+├── tools/
+│   └── release/                      # Build & release tools (planned)
+│       └── src/
+│           ├── strip-pro.ts          # PRO code removal
+│           ├── build-starter.ts      # Bundle starters for distribution
+│           └── verify.ts             # Verification
+│
+├── .husky/                           # Git hooks (planned)
+│   ├── pre-commit
+│   ├── commit-msg
+│   └── pre-push
+│
+├── .github/
+│   └── workflows/
+│       ├── ci.yml                    # CI pipeline (planned)
+│       └── preview.yml               # PR preview (planned)
+│
+├── commitlint.config.js              # (planned)
+├── lint-staged.config.js             # (planned)
+└── vitest.workspace.ts               # (planned)
 ```
 
 ---
@@ -1018,202 +1080,163 @@ jobs:
 
 ## CLI Tool
 
-### Extended CLI Commands
+### Unified CLI Architecture
 
-The existing CLI handles UI components. We need to extend it for platform features.
+The CLI is split into three packages with clear responsibilities:
 
 ```
-tools/cli/
-├── src/
-│   ├── index.ts
-│   ├── commands/
-│   │   ├── ui/                  # Existing UI commands
-│   │   │   ├── init.ts
-│   │   │   ├── add.ts
-│   │   │   ├── diff.ts
-│   │   │   └── doctor.ts
-│   │   │
-│   │   └── platform/            # NEW: Platform commands
-│   │       ├── init.ts          # Initialize platform project
-│   │       ├── add.ts           # Add modules
-│   │       ├── remove.ts        # Remove modules
-│   │       ├── generate.ts      # Code generation
-│   │       ├── dev.ts           # Dev server
-│   │       ├── build.ts         # Build
-│   │       └── db.ts            # Database commands
-│   │
-│   ├── templates/
-│   │   ├── module/              # Module templates
-│   │   ├── service/             # Service templates
-│   │   ├── contract/            # Contract templates
-│   │   └── migration/           # Migration templates
-│   │
-│   └── utils/
-│       ├── prompts.ts
-│       ├── fs.ts
-│       └── deps.ts
+packages/tooling/
+├── cli-core/                    # Shared utilities
+│   └── src/
+│       ├── log.ts               # Logging (banners, success, error, dim)
+│       └── prompts.ts           # Interactive prompts (select, confirm, etc.)
 │
-└── package.json
+├── unisane/                     # Main CLI entry point
+│   └── src/
+│       └── cli.ts               # Delegates to devtools when available
+│
+├── create-unisane/              # Project scaffolding
+│   └── src/
+│       ├── index.ts             # Entry point
+│       └── template.ts          # Download templates from GitHub
+│
+└── devtools/                    # Heavy operations
+    └── src/
+        ├── cli.ts               # Full CLI with all commands
+        └── commands/
+            ├── ui/              # UI component management
+            │   ├── init.ts      # Initialize Unisane UI
+            │   ├── add.ts       # Add components (shadcn-style)
+            │   ├── diff.ts      # Check for updates
+            │   └── doctor.ts    # Verify installation
+            ├── codegen/         # Code generation
+            ├── billing/         # Stripe operations
+            ├── db/              # Database queries
+            └── release/         # Version management
 ```
+
+### Main CLI (`unisane`)
+
+The main CLI is lightweight and delegates heavy operations to devtools:
 
 ```typescript
-// tools/cli/src/index.ts (Extended)
+// packages/tooling/unisane/src/cli.ts
 #!/usr/bin/env node
-
-import { Command } from "commander";
-
-// UI commands (existing)
-import { initCommand as uiInit } from "./commands/ui/init.js";
-import { addCommand as uiAdd } from "./commands/ui/add.js";
-import { diffCommand } from "./commands/ui/diff.js";
-import { doctorCommand } from "./commands/ui/doctor.js";
-
-// Platform commands (new)
-import { initCommand as platformInit } from "./commands/platform/init.js";
-import { addCommand as platformAdd } from "./commands/platform/add.js";
-import { removeCommand } from "./commands/platform/remove.js";
-import { generateCommand } from "./commands/platform/generate.js";
-import { devCommand } from "./commands/platform/dev.js";
-import { buildCommand } from "./commands/platform/build.js";
-import { dbCommand } from "./commands/platform/db.js";
+import { Command } from 'commander';
+import { log } from '@unisane/cli-core';
 
 const program = new Command();
 
 program
-  .name("unisane")
-  .description("Unisane CLI - UI components and platform tools")
-  .version("1.0.0");
+  .name('unisane')
+  .description('Unisane CLI')
+  .version('0.1.0');
 
-// ══════════════════════════════════════════════════════════════════════════
-// UI COMMANDS (shadcn-style component management)
-// ══════════════════════════════════════════════════════════════════════════
+// UI commands - delegate to devtools
+const ui = program.command('ui').description('UI component management');
 
-const ui = program.command("ui").description("UI component management");
-
-ui.command("init")
-  .description("Initialize Unisane UI in your project")
-  .option("-y, --yes", "Skip confirmation prompts")
-  .action(uiInit);
-
-ui.command("add")
-  .description("Add UI components")
-  .argument("[components...]", "Components to add")
-  .option("-a, --all", "Add all components")
-  .action(uiAdd);
-
-ui.command("diff")
-  .description("Check for component updates")
-  .argument("[component]", "Component to check")
-  .action(diffCommand);
-
-ui.command("doctor")
-  .description("Check UI installation")
-  .action(doctorCommand);
-
-// ══════════════════════════════════════════════════════════════════════════
-// PLATFORM COMMANDS (SaaS module management)
-// ══════════════════════════════════════════════════════════════════════════
-
-program
-  .command("init")
-  .description("Initialize a new Unisane platform project")
-  .option("-t, --template <template>", "Template (saaskit, minimal)")
-  .option("-d, --directory <dir>", "Target directory")
-  .action(platformInit);
-
-program
-  .command("add")
-  .description("Add modules to your project")
-  .argument("<modules...>", "Modules to add (e.g., billing credits)")
-  .action(platformAdd);
-
-program
-  .command("remove")
-  .description("Remove modules from your project")
-  .argument("<modules...>", "Modules to remove")
-  .action(removeCommand);
-
-// ══════════════════════════════════════════════════════════════════════════
-// GENERATE COMMANDS
-// ══════════════════════════════════════════════════════════════════════════
-
-const generate = program
-  .command("generate")
-  .alias("g")
-  .description("Generate code scaffolds");
-
-generate
-  .command("module <name>")
-  .description("Generate a new module")
-  .option("--layer <layer>", "Module layer (1-5)")
-  .action((name, opts) => generateCommand("module", name, opts));
-
-generate
-  .command("service <name>")
-  .description("Generate a service file")
-  .option("-m, --module <module>", "Target module")
-  .action((name, opts) => generateCommand("service", name, opts));
-
-generate
-  .command("contract <name>")
-  .description("Generate an API contract")
-  .action((name, opts) => generateCommand("contract", name, opts));
-
-generate
-  .command("migration <name>")
-  .description("Generate a migration file")
-  .action((name, opts) => generateCommand("migration", name, opts));
-
-// ══════════════════════════════════════════════════════════════════════════
-// DEV COMMANDS
-// ══════════════════════════════════════════════════════════════════════════
-
-program
-  .command("dev")
-  .description("Start development server")
-  .option("--seed", "Seed database on start")
-  .option("-p, --port <port>", "Port number")
-  .action(devCommand);
-
-program
-  .command("build")
-  .description("Build for production")
-  .option("--analyze", "Analyze bundle size")
-  .action(buildCommand);
-
-// ══════════════════════════════════════════════════════════════════════════
-// DATABASE COMMANDS
-// ══════════════════════════════════════════════════════════════════════════
-
-const db = program.command("db").description("Database operations");
-
-db.command("seed")
-  .description("Seed the database")
-  .option("--fresh", "Reset before seeding")
-  .action((opts) => dbCommand("seed", opts));
-
-db.command("migrate")
-  .description("Run migrations")
-  .option("--rollback", "Rollback last migration")
-  .action((opts) => dbCommand("migrate", opts));
-
-db.command("reset")
-  .description("Reset database (DESTRUCTIVE)")
-  .option("--force", "Skip confirmation")
-  .action((opts) => dbCommand("reset", opts));
-
-// ══════════════════════════════════════════════════════════════════════════
-// LIST COMMAND
-// ══════════════════════════════════════════════════════════════════════════
-
-program
-  .command("list")
-  .description("List available modules")
-  .option("--installed", "Show only installed modules")
-  .action(async (opts) => {
-    const { listModules } = await import("./commands/platform/list.js");
-    await listModules(opts);
+ui.command('init')
+  .description('Initialize Unisane UI in your project')
+  .option('-f, --force', 'Overwrite existing files')
+  .action(async (options) => {
+    // Check if devtools is installed, run uiInit if available
+    // Otherwise provide installation instructions
   });
+
+ui.command('add [components...]')
+  .description('Add UI components')
+  .option('-a, --all', 'Add all components')
+  .option('-o, --overwrite', 'Overwrite existing files')
+  .option('-y, --yes', 'Skip confirmation')
+  .action(async (components, options) => {
+    // Delegate to devtools
+  });
+
+// Package manager detection
+function detectPackageManager(): 'pnpm' | 'npm' | 'yarn' | 'bun' {
+  // Checks lockfiles and env vars
+}
+
+// Devtools availability check
+function isDevtoolsInstalled(): boolean {
+  // Checks node_modules/@unisane/devtools
+}
+```
+
+### UI Commands (in devtools)
+
+UI commands provide shadcn-style component management:
+
+```typescript
+// packages/tooling/devtools/src/commands/ui/init.ts
+export async function uiInit(options: UiInitOptions): Promise<number> {
+  // 1. Verify Next.js project
+  // 2. Create src/styles/unisane.css (from @unisane/tokens)
+  // 3. Create src/lib/utils.ts (cn function with tailwind-merge)
+  // 4. Update app/globals.css with imports
+  // 5. Create component directories
+}
+
+// packages/tooling/devtools/src/commands/ui/add.ts
+export async function uiAdd(options: UiAddOptions): Promise<number> {
+  // 1. Load registry from @unisane/ui/registry/registry.json
+  // 2. Resolve component dependencies (transitive)
+  // 3. Interactive selection if no components specified
+  // 4. Copy files from registry, transform imports
+  // 5. Report npm dependencies needed
+}
+
+// packages/tooling/devtools/src/commands/ui/diff.ts
+export async function uiDiff(options: UiDiffOptions): Promise<number> {
+  // Compare local components against registry versions
+  // Report files that differ
+}
+
+// packages/tooling/devtools/src/commands/ui/doctor.ts
+export async function uiDoctor(options: UiDoctorOptions): Promise<number> {
+  // Check: Next.js, Tailwind v4, @unisane/ui, tokens, imports, utils
+}
+```
+
+### Devtools CLI (Full Commands)
+
+```typescript
+// packages/tooling/devtools/src/cli.ts
+#!/usr/bin/env node
+import { Command } from 'commander';
+import { uiInit, uiAdd, uiDiff, uiDoctor } from './commands/ui/index.js';
+
+const program = new Command();
+
+program.name('unisane-devtools').description('Unisane developer tools');
+
+// UI Commands
+const ui = program.command('ui').description('UI component management');
+ui.command('init').action(uiInit);
+ui.command('add [components...]').action(uiAdd);
+ui.command('diff [component]').action(uiDiff);
+ui.command('doctor').action(uiDoctor);
+
+// Codegen Commands
+const codegen = program.command('codegen').description('Code generation');
+codegen.command('routes').action(/* ... */);
+codegen.command('sdk').action(/* ... */);
+codegen.command('crud <name>').action(/* ... */);
+
+// Database Commands
+const db = program.command('db').description('Database operations');
+db.command('query <collection>').action(/* ... */);
+db.command('indexes:apply').action(/* ... */);
+
+// Billing Commands
+const billing = program.command('billing').description('Stripe operations');
+billing.command('seed-stripe').action(/* ... */);
+billing.command('plans').action(/* ... */);
+
+// Release Commands
+const release = program.command('release').description('Version management');
+release.command('version').action(/* ... */);
+release.command('check').action(/* ... */);
 
 program.parse();
 ```

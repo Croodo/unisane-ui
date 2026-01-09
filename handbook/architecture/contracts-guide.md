@@ -17,6 +17,7 @@ This guide covers the contracts package, ts-rest integration, defineOpMeta patte
 7. [Type Generation](#type-generation)
 8. [Contract Versioning](#contract-versioning)
 9. [Testing Contracts](#testing-contracts)
+10. [Schema Rules](#schema-rules)
 
 ---
 
@@ -979,6 +980,96 @@ describe("hooks.tenants.list", () => {
   });
 });
 ```
+
+---
+
+## Schema Rules
+
+> **IMPORTANT:** Follow these rules to maintain a clean schema hierarchy and prevent duplication.
+
+### Schema Hierarchy
+
+```
+Level 1: packages/[service]/domain/schemas.ts    → SSOT (Single Source of Truth)
+Level 2: packages/[service]/client.ts            → Re-exports for client use
+Level 3: starters/saaskit/src/contracts/*.ts     → Imports from packages + DTOs
+Level 4: starters/saaskit/sdk/schemas.ts         → Generated
+Level 5: starters/saaskit/sdk/types.ts           → Generated
+```
+
+### What Goes Where
+
+| Schema Type | Location | Example |
+|-------------|----------|---------|
+| **Domain schemas** | `packages/[module]/domain/schemas.ts` | `ZTenant`, `ZUser`, `ZSubscription` |
+| **Client schemas** | `packages/[module]/client.ts` | Re-exports of domain schemas |
+| **Request DTOs** | `contracts/*.contract.ts` (inline) | `ZPdfBody`, `ZApiKeyCreate` |
+| **Response DTOs** | `contracts/*.contract.ts` (inline) | `ZMeOut`, `ZLedgerItem`, `ZUserOut` |
+| **Admin query schemas** | `contracts/*.contract.ts` (inline) | `ZAdminListQuery`, `ZAdminUserFilters` |
+
+### Rules
+
+1. **Domain schemas MUST be defined in packages**
+   ```typescript
+   // ✅ CORRECT - In packages/tenants/domain/schemas.ts
+   export const ZTenantCreate = z.object({ name: z.string(), slug: z.string() });
+
+   // ❌ WRONG - Defining domain logic in contract
+   const ZTenantCreate = z.object({ name: z.string(), slug: z.string() });
+   ```
+
+2. **Contracts MUST import domain schemas from packages**
+   ```typescript
+   // ✅ CORRECT
+   import { ZTenantCreate, ZTenantFilters } from '@unisane/tenants/client';
+
+   // ❌ WRONG - Duplicating package schemas
+   const ZTenantFilters = z.object({ planId: z.string().optional() });
+   ```
+
+3. **Response DTOs are allowed inline in contracts**
+   ```typescript
+   // ✅ CORRECT - Response DTO specific to this endpoint
+   const ZMeOut = z.object({
+     userId: z.string(),
+     tenantId: z.string(),
+     role: z.string(),
+     plan: z.string(),
+   });
+   ```
+
+4. **Admin query schemas are allowed inline**
+   ```typescript
+   // ✅ CORRECT - Admin-specific query params
+   export const ZAdminListQuery = z.object({
+     cursor: ZCursor.optional(),
+     limit: z.coerce.number().max(50).default(50),
+     sort: z.string().optional(),
+     filters: ZAdminUserFilters.optional(),
+   });
+   ```
+
+5. **Enums and constants MUST come from kernel**
+   ```typescript
+   // ✅ CORRECT
+   import { ZPlanId, ZCreditKind } from '@unisane/kernel/client';
+
+   // ❌ WRONG - Hardcoding enum values
+   const PLANS = ['free', 'pro', 'business'] as const;
+   ```
+
+### Audit Results (2026-01-09)
+
+Audited all 22 contract files in `starters/saaskit/src/contracts/`. Findings:
+
+| Category | Count | Status |
+|----------|-------|--------|
+| Intentional inline schemas (Response DTOs) | 13 | ✅ Correct |
+| Admin query schemas | 4 | ✅ Correct |
+| Files with no inline schemas | 9 | ✅ Correct |
+| Domain duplication | 0 | ✅ None found |
+
+**Conclusion:** Contract files follow best practices. All inline schemas are intentionally contract-specific (response DTOs, request bodies, admin queries).
 
 ---
 

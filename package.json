@@ -6,9 +6,21 @@
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "check-types": "turbo run check-types",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "build:starter": "pnpm --filter @unisane/cli-core build && pnpm --filter @unisane/devtools build && node packages/tooling/devtools/dist/cli.js release build",
+    "build:starter:oss": "pnpm --filter @unisane/cli-core build && pnpm --filter @unisane/devtools build && node packages/tooling/devtools/dist/cli.js release build --oss",
+    "verify:build": "node packages/tooling/devtools/dist/cli.js release verify",
+    "unisane": "node packages/tooling/devtools/dist/cli.js",
+    "changeset": "changeset",
+    "changeset:version": "changeset version",
+    "changeset:publish": "changeset publish",
+    "release": "pnpm build && pnpm changeset:publish",
+    "version:check": "node scripts/sync-versions.mjs --check",
+    "version:fix": "node scripts/sync-versions.mjs --fix"
   },
   "devDependencies": {
+    "@changesets/changelog-github": "^0.5.2",
+    "@changesets/cli": "^2.29.8",
     "prettier": "^3.6.0",
     "prettier-plugin-tailwindcss": "^0.7.1",
     "turbo": "^2.6.3",

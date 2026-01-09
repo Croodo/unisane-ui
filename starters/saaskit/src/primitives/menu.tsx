@@ -84,11 +84,11 @@ export const MenuItem: React.FC<MenuItemProps> = ({
   if (asChild && isValidElement(children)) {
     return (
       <Slot className={itemClasses} role="menuitem">
-        {cloneElement(children as React.ReactElement, {},
+        {cloneElement(children as React.ReactElement<{ children?: React.ReactNode }>, {},
           <>
             <Ripple disabled={disabled} />
             {/* Children of the Link/asChild element are preserved */}
-            {(children as React.ReactElement).props.children}
+            {(children as React.ReactElement<{ children?: React.ReactNode }>).props.children}
           </>
         )}
       </Slot>

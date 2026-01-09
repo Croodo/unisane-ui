@@ -9,7 +9,7 @@ Get up and running with Unisane UI in minutes.
 ### 1. Initialize your project
 
 ```bash
-npx @unisane/cli init
+npx unisane ui init
 ```
 
 This creates all necessary files:
@@ -36,9 +36,9 @@ pnpm add clsx tailwind-merge class-variance-authority
 ### 3. Add components
 
 ```bash
-npx @unisane/cli add button
-npx @unisane/cli add card
-npx @unisane/cli add dialog
+npx unisane ui add button
+npx unisane ui add card
+npx unisane ui add dialog
 ```
 
 Components are copied to `src/components/ui/` with all dependencies auto-resolved.
@@ -473,7 +473,7 @@ Update your tsconfig.json:
 Make sure you added the component:
 
 ```bash
-npx @unisane/cli add button
+npx unisane ui add button
 ```
 
 ### Missing dependencies

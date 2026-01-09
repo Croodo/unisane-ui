@@ -401,7 +401,7 @@ function emitAdminRegistries(configs: AdminListConfig[]) {
   for (const cfg of configs) {
     const filename = `${cfg.id}.grid.ts`.replace("admin.", "admin.");
     const { mapFn, deriveFn } = registryNames(cfg);
-    const content = `${header}import { adminListConfigs } from "@unisane/gateway";
+    const content = `${header}import { adminListConfigs } from "@unisane/gateway/client";
 import { fields as generatedFields } from "./generated/${cfg.id}.fields.gen";
 import { createApi } from "@/src/sdk";
 

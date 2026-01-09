@@ -33,18 +33,28 @@ This document tracks the implementation status of Unisane monorepo components. U
 
 ### Package Structure Reorganization
 
-| Structure | Current | Target | Status |
-|-----------|---------|--------|--------|
-| Foundation packages | `packages/kernel`, `packages/gateway` | `packages/foundation/*` | **Planned** |
-| Shared modules | `packages/[module]` (flat) | `packages/modules/*` | **Planned** |
-| PRO modules | Mixed with OSS | `packages/pro/*` | **Planned** |
-| UI packages | `packages/ui`, `packages/data-table` | `packages/ui/*` | **Planned** |
-| Tooling | Mixed locations | `packages/tooling/*` | **Planned** |
-| Platform-specific | Not yet created | `packages/crm/*`, `packages/ecommerce/*`, etc. | **Future** |
+| Structure | Location | Packages | Status |
+|-----------|----------|----------|--------|
+| Foundation packages | `packages/foundation/*` | kernel, gateway, contracts | **Implemented** |
+| Shared modules | `packages/modules/*` | 15 business modules | **Implemented** |
+| PRO modules | `packages/pro/*` | analytics, sso, import-export | **Implemented** |
+| UI packages | `packages/ui/*` | core, data-table, tokens, cli | **Implemented** |
+| Tooling | `packages/tooling/*` | devtools, test-utils, configs | **Implemented** |
+| Platform-specific | `packages/crm/*`, etc. | (Future) | **Planned** |
 
-> **Note:** Package reorganization is planned to support multi-platform architecture.
-> See [ARCHITECTURE.md#monorepo-structure](./ARCHITECTURE.md#monorepo-structure) for target layout.
-> See [centralization-plan.md](../roadmaps/centralization-plan.md) for migration steps.
+> **Completed:** Phase 2 package reorganization completed 2026-01-09.
+> See [centralization-plan.md](../roadmaps/centralization-plan.md) for details.
+
+### Schema Organization
+
+| Area | Status | Notes |
+|------|--------|-------|
+| Schema hierarchy | **Implemented** | 5-level hierarchy documented |
+| Contract audit | **Implemented** | 22 files audited, 0 duplications |
+| Schema rules | **Implemented** | Documented in contracts-guide.md |
+
+> **Completed:** Phase 3 schema organization completed 2026-01-09.
+> See [contracts-guide.md](./contracts-guide.md#schema-rules) for schema rules.
 
 ---
 
@@ -90,15 +100,31 @@ This document tracks the implementation status of Unisane monorepo components. U
 | @unisane/ui | **Implemented** | Material 3 component library |
 | @unisane/data-table | **Implemented** | Advanced data grid with filtering, sorting, pagination |
 | @unisane/tokens | **Implemented** | Design tokens (colors, typography) |
-| @unisane/cli | **Implemented** | shadcn-style UI CLI (`add`, `init`, `diff`, `doctor`) |
 
 ---
 
-## Tooling
+## CLI Packages
+
+| Package | Status | Purpose |
+|---------|--------|---------|
+| `unisane` | **Implemented** | Main CLI entry point (`npx unisane`) |
+| `create-unisane` | **Implemented** | Project scaffolding (`npx create-unisane`) |
+| @unisane/cli-core | **Implemented** | Shared CLI utilities (logging, prompts) |
+| @unisane/devtools | **Implemented** | Heavy CLI operations (codegen, db, billing) |
+
+### UI Commands (via devtools)
+
+| Command | Status | Purpose |
+|---------|--------|---------|
+| `unisane ui init` | **Implemented** | Initialize Unisane UI in project |
+| `unisane ui add` | **Implemented** | Add UI components (shadcn-style) |
+| `unisane ui diff` | **Implemented** | Check for component updates |
+| `unisane ui doctor` | **Implemented** | Verify installation |
+
+### DevTools Commands
 
 | Package/Tool | Status | Purpose |
 |--------------|--------|---------|
-| @unisane/devtools | **Implemented** | CLI for code generation |
 | routes:gen | **Implemented** | Generate Next.js API routes from contracts |
 | sdk:gen | **Implemented** | Generate SDK clients, hooks, types |
 | sdk:gen --admin-hooks | **Implemented** | Generate admin list params hooks |
@@ -114,11 +140,14 @@ This document tracks the implementation status of Unisane monorepo components. U
 
 | Component | Status | Location | Notes |
 |-----------|--------|----------|-------|
+| create-unisane | **Implemented** | `packages/tooling/create-unisane` | `npx create-unisane` scaffolding |
+| .changeset/ | **Implemented** | Root | Version management with Changesets |
+| .github/workflows/release.yml | **Implemented** | Root | Automated releases |
+| scripts/sync-versions.mjs | **Implemented** | Root | Version synchronization |
 | tools/release/ | **Not Implemented** | Planned | Build scripts for starters |
 | build-starter.ts | **Not Implemented** | Planned | Flatten packages to src/modules/ |
 | transform-imports.ts | **Not Implemented** | Planned | @unisane/* → @/modules/* |
 | strip-pro.ts | **Not Implemented** | Planned | OSS/PRO code stripping |
-| create-unisane-app | **Not Implemented** | Planned | `npx create-unisane-app` scaffolding |
 
 See [build-distribution.md](./build-distribution.md) for detailed design specs.
 
@@ -132,7 +161,43 @@ See [build-distribution.md](./build-distribution.md) for detailed design specs.
 | Platform layer | **Implemented** | Hexagonal architecture in src/platform/ |
 | SDK generation | **Implemented** | All targets via devtools |
 | Admin pages | **Implemented** | Users, tenants management |
-| Tenant pages | **Partial** | Dashboard, settings, webhooks |
+| Tenant pages | **Implemented** | Dashboard, settings, webhooks, team, API keys, audit |
+
+### Server Table State Pattern
+
+| Component | Status | Location | Notes |
+|-----------|--------|----------|-------|
+| useServerTable hook | **Implemented** | `src/hooks/useServerTable.ts` | URL-based state for server-first pattern |
+| SDK page persistence | **Implemented** | `gen-admin-hooks.ts` | pageIndex synced to URL |
+| UsersClient (server-first) | **Implemented** | `admin/users/` | Uses useServerTable |
+| TenantsClient (client-first) | **Implemented** | `admin/tenants/` | Uses SDK hooks |
+| AdminAuditClient | **Implemented** | `admin/audit/` | Client-first with detail panel |
+| OutboxClient | **Implemented** | `admin/outbox/` | Action-focused, fixed limit |
+| FlagsClient | **Implemented** | `admin/flags/` | Custom configuration UI |
+| AuditClient (tenant) | **Implemented** | `w/[slug]/audit/` | Log viewing with detail panel |
+| TeamClient | **Implemented** | `w/[slug]/team/` | Role management |
+| ApiKeysClient | **Implemented** | `w/[slug]/apikeys/` | CRUD with dialogs |
+| WebhooksClient | **Implemented** | `w/[slug]/webhooks/` | Event log viewing |
+
+> **Completed:** Server Table State Phase 0-5 completed 2026-01-09.
+> See [server-table-state.md](../roadmaps/server-table-state.md) for details.
+
+### Feature Gaps (Phase 4 Analysis)
+
+| Feature | Admin UI | Tenant UI | Backend | Notes |
+|---------|----------|-----------|---------|-------|
+| Analytics | ✅ `/admin/overview` | ❌ Missing | ✅ @unisane/analytics | Tenant-level analytics pending |
+| Usage/Quotas | ❌ Missing | ❌ Missing | ✅ @unisane/usage | High priority for tenant visibility |
+| Credits | ❌ Missing | Partial (in billing) | ✅ @unisane/credits | Admin credit management needed |
+| Import/Export | ❌ Missing | ❌ Missing | ✅ @unisane/import-export | Backend ready, UI pending |
+| Notifications | ❌ Missing | ❌ Missing | ✅ @unisane/notify | Email campaigns, preferences |
+| Storage | ❌ Missing | ❌ Missing | ✅ @unisane/storage | File management UI |
+| Media | ❌ Missing | ❌ Missing | ✅ @unisane/media | Asset library |
+| PDF | ❌ Missing | ❌ Missing | ✅ @unisane/pdf | Template management |
+| AI | — | ❌ Missing | ✅ @unisane/ai | Feature controls |
+
+> **Status:** Feature gap analysis completed 2026-01-09.
+> See [MASTER-ROADMAP.md](../roadmaps/MASTER-ROADMAP.md#phase-4-feature-completion-in-progress) for implementation order.
 
 ---
 

@@ -1,0 +1,12 @@
+{
+  "name": "@unisane/typescript-config",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "vitest": "^4.0.16"
+  }
+}

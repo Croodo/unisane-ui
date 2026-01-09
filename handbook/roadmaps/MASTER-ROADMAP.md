@@ -23,9 +23,10 @@ Build a **unified, centralized platform** for rapid SaaS development where:
 
 | Area | Status | Health |
 |------|--------|--------|
-| **Monorepo Structure** | 30 packages in `@unisane/*` | Good |
-| **Foundation** | kernel + gateway | Good |
-| **Feature Packages** | 18 modules + 3 PRO | Good |
+| **Monorepo Structure** | 30 packages in 5 categories | Excellent |
+| **Package Organization** | foundation/, modules/, pro/, ui/, tooling/ | Excellent |
+| **Foundation** | kernel + gateway + contracts | Good |
+| **Feature Packages** | 15 modules + 3 PRO | Good |
 | **UI Library** | @unisane/ui + data-table | Good |
 | **SDK Generation** | @unisane/devtools | Good |
 | **Platform Layer** | Hexagonal architecture | Good |
@@ -74,48 +75,163 @@ Build tools to ship starters to end users.
 | Improve SDK naming conventions | Medium | Pending (Phase 4) |
 | Remove @ts-nocheck from generated code | Medium | Pending (Phase 4) |
 
-### Phase 2: Package Structure Reorganization
+### Phase 2: Package Structure Reorganization (COMPLETED ✅)
 
 **Goal:** Multi-platform architecture with categorized package folders.
 
-| Task | Priority | Document |
-|------|----------|----------|
-| Create foundation/ folder (kernel, gateway, contracts) | High | [centralization-plan.md](./centralization-plan.md) |
-| Create modules/ folder (18 shared modules) | High | [centralization-plan.md](./centralization-plan.md) |
-| Create pro/ folder (analytics, sso, import-export) | High | [centralization-plan.md](./centralization-plan.md) |
-| Create ui/ folder (ui, data-table, tokens, cli) | High | [centralization-plan.md](./centralization-plan.md) |
-| Create tooling/ folder (devtools, configs, test-utils) | High | [centralization-plan.md](./centralization-plan.md) |
-| Update pnpm-workspace.yaml | High | [centralization-plan.md](./centralization-plan.md) |
-| Update all import paths | High | [centralization-plan.md](./centralization-plan.md) |
-| Verify turbo caching works | Medium | [centralization-plan.md](./centralization-plan.md) |
+| Task | Priority | Status |
+|------|----------|--------|
+| Create foundation/ folder (kernel, gateway, contracts) | High | ✅ Done |
+| Create modules/ folder (15 shared modules) | High | ✅ Done |
+| Create pro/ folder (analytics, sso, import-export) | High | ✅ Done |
+| Create ui/ folder (core, data-table, tokens, cli) | High | ✅ Done |
+| Create tooling/ folder (devtools, configs, test-utils) | High | ✅ Done |
+| Update pnpm-workspace.yaml | High | ✅ Done |
+| Update all tsconfig.json paths | High | ✅ Done |
+| Verify pnpm install works | High | ✅ Done |
+| Verify turbo build works | High | ✅ Done (31/32 packages) |
 
-**Benefits:**
-- Clear separation for multi-platform development
-- Future platform folders (crm/, ecommerce/, etc.)
-- Better developer navigation
+**Result:**
+```
+packages/
+├── foundation/   # kernel, gateway, contracts
+├── modules/      # 15 business modules
+├── pro/          # analytics, sso, import-export
+├── ui/           # core, data-table, tokens, cli
+└── tooling/      # devtools, test-utils, configs
+```
 
-### Phase 3: Schema & Contract Centralization
+### Phase 3: Schema & Contract Centralization (COMPLETED ✅)
 
 **Goal:** Single source of truth for schemas and contracts.
 
-| Task | Priority | Document |
-|------|----------|----------|
-| Establish schema hierarchy rules | High | [centralization-plan.md](./centralization-plan.md) |
-| Move contracts closer to packages | Medium | [centralization-plan.md](./centralization-plan.md) |
-| Admin config self-registration | Medium | [centralization-plan.md](./centralization-plan.md) |
-| Field registry consolidation | Medium | [centralization-plan.md](./centralization-plan.md) |
+| Task | Priority | Status |
+|------|----------|--------|
+| Audit contract files for inline schemas | High | ✅ Done (22 files) |
+| Establish schema hierarchy rules | High | ✅ Done (contracts-guide.md) |
+| Document schema rules | High | ✅ Done |
 
-### Phase 4: Feature Completion
+**Result:** Audited all 22 contract files. Found 0 domain schema duplications. All inline schemas are intentionally contract-specific (response DTOs, request bodies, admin queries). Schema rules documented in [contracts-guide.md](../architecture/contracts-guide.md#schema-rules).
+
+**Note:** Admin config self-registration and field registry consolidation moved to Phase 4 (feature completion) as they require more implementation work.
+
+### Phase 4: Feature Completion (IN PROGRESS)
 
 **Goal:** Complete all planned features for saaskit.
 
-| Task | Priority | Document |
-|------|----------|----------|
-| Server table state pattern | High | [server-table-state.md](./server-table-state.md) |
-| Complete admin panels | High | - |
-| Complete tenant features | High | - |
-| Analytics implementation | Medium | - |
-| Import/export features | Medium | - |
+#### 4.1 Completed Tasks
+
+| Task | Priority | Status |
+|------|----------|--------|
+| Server table state pattern (Phase 0-5) | High | ✅ Done |
+| useServerTable hook | High | ✅ Done |
+| SDK page persistence | High | ✅ Done |
+| Apply patterns to other admin pages | Medium | ✅ Analyzed (no changes needed) |
+| Apply patterns to tenant pages | Medium | ✅ Analyzed (no changes needed) |
+
+**Server Table State Completed (Phase 0-5):**
+- `useServerTable` hook at `starters/saaskit/src/hooks/useServerTable.ts`
+- SDK hooks with page persistence in `gen-admin-hooks.ts`
+- UsersClient (server-first) and TenantsClient (client-first) patterns working
+
+See [server-table-state.md](./server-table-state.md) for full details.
+
+---
+
+#### 4.2 Feature Gap Analysis (2026-01-09)
+
+**Admin Pages:** 13 exist, 8 modules missing UI
+**Tenant Pages:** 9 exist, 9 modules missing UI
+
+---
+
+#### 4.3 Admin Panel Tasks (Priority Order)
+
+| Task | Priority | Backend | Notes |
+|------|----------|---------|-------|
+| Admin credits dashboard | High | ✅ @unisane/credits | View credit consumption across tenants |
+| Admin usage dashboard | High | ✅ @unisane/usage | Monitor quotas and rate limits |
+| Admin import/export management | Medium | ✅ @unisane/import-export | View/manage import/export jobs |
+| Admin notify management | Medium | ✅ @unisane/notify | Email campaigns, notification logs |
+| Admin storage dashboard | Low | ✅ @unisane/storage | Storage quota monitoring |
+| Admin media library | Low | ✅ @unisane/media | Asset management |
+| Admin PDF templates | Low | ✅ @unisane/pdf | Template management |
+
+**Already Implemented Admin:**
+- `/admin/overview` - Analytics dashboard ✅
+- `/admin/tenants` - Tenant management ✅
+- `/admin/users` - User management ✅
+- `/admin/audit` - Audit logs ✅
+- `/admin/flags` - Feature flags ✅
+- `/admin/settings` - Global settings ✅
+- `/admin/health` - System health ✅
+- `/admin/outbox` - Dead letter queue ✅
+
+---
+
+#### 4.4 Tenant Feature Tasks (Priority Order)
+
+| Task | Priority | Backend | Notes |
+|------|----------|---------|-------|
+| Tenant usage dashboard | High | ✅ @unisane/usage | View usage vs quotas |
+| Tenant import/export UI | High | ✅ @unisane/import-export | Export/import workspace data |
+| Tenant notify preferences | Medium | ✅ @unisane/notify | Notification settings |
+| Tenant storage management | Low | ✅ @unisane/storage | File management |
+| Tenant media library | Low | ✅ @unisane/media | Asset uploads |
+| Tenant AI settings | Low | ✅ @unisane/ai | AI feature controls |
+
+**Already Implemented Tenant:**
+- `/w/[slug]/dashboard` - Workspace overview ✅
+- `/w/[slug]/settings` - Workspace settings ✅
+- `/w/[slug]/billing` - Billing & credits ✅
+- `/w/[slug]/team` - Team management ✅
+- `/w/[slug]/account` - Account settings ✅
+- `/w/[slug]/apikeys` - API keys ✅
+- `/w/[slug]/webhooks` - Webhooks ✅
+- `/w/[slug]/audit` - Audit logs ✅
+
+---
+
+#### 4.5 Analytics Enhancement
+
+| Task | Priority | Status | Notes |
+|------|----------|--------|-------|
+| Admin analytics dashboard | High | ✅ Done | `/admin/overview` with revenue, users, churn |
+| Tenant analytics page | Medium | Pending | Per-workspace analytics |
+| Custom date range queries | Low | Pending | Currently fixed 30-day windows |
+| Event-based analytics | Low | Pending | Constants exist, not implemented |
+
+---
+
+#### 4.6 Import/Export Implementation
+
+| Task | Priority | Status | Notes |
+|------|----------|--------|-------|
+| Backend services | High | ✅ Done | Full service/repo/domain layer |
+| REST API routes | High | ✅ Done | 3 tenant endpoints |
+| SDK hooks | High | ✅ Done | Auto-generated React Query hooks |
+| Admin import/export UI | Medium | Pending | Job management, history viewer |
+| Tenant import/export UI | Medium | Pending | File upload, format selection |
+
+---
+
+#### 4.7 Recommended Implementation Order
+
+**Phase 4a - High Value, Low Effort:**
+1. Tenant usage dashboard (usage data already exists)
+2. Admin credits dashboard (credit data already exists)
+3. Tenant import/export UI (backend ready, just needs UI)
+
+**Phase 4b - Medium Value:**
+4. Admin import/export management
+5. Tenant notify preferences
+6. Tenant analytics page
+
+**Phase 4c - Nice-to-Have:**
+7. Admin storage dashboard
+8. Tenant media library
+9. Admin notify management
+10. Admin PDF templates
 
 ### Phase 5: Testing & Quality
 
@@ -210,7 +326,8 @@ Build tools to ship starters to end users.
 
 | Metric | Current | Target |
 |--------|---------|--------|
-| Packages with lint script | 2/30 | 30/30 |
+| Packages with lint script | 30/30 | 30/30 ✅ |
+| Package organization | 5 categories | 5 categories ✅ |
 | Test coverage | ~5% | 80% |
 | Generated code with @ts-nocheck | Many | 0 |
 | Circular dependencies | 0 | 0 |

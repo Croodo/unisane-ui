@@ -90,12 +90,27 @@ Unisane is a platform for building SaaS products:
 
 ## Key Concepts
 
+### CLI Architecture
+
+Unisane uses a unified CLI architecture:
+
+| Package | Binary | Purpose |
+|---------|--------|---------|
+| `create-unisane` | `create-unisane` | Project scaffolding |
+| `unisane` | `unisane` | Main CLI (UI + delegates to devtools) |
+| `@unisane/devtools` | `unisane-devtools` | Heavy operations (codegen, db, billing) |
+
+See [dev-tools.md](./architecture/dev-tools.md) for full CLI documentation.
+
 ### For UI Development
 
 ```tsx
-// Install components
-npx @unisane/cli init
-npx @unisane/cli add button dialog
+// Create a new project
+npx create-unisane my-app
+
+// Initialize UI in existing project
+npx unisane ui init
+npx unisane ui add button dialog
 
 // Use components
 import { Button } from "@/components/ui/button";

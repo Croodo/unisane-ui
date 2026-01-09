@@ -107,8 +107,38 @@ references/
 # Migration scripts (temporary)
 scripts/fix-*.sh
 scripts/fix-*.ts
+scripts/fix-*.mjs
+
+# Temporary/scratch directories
+.tmp/
+docs/
 
 # ===========================================
 # Claude Code
 # ===========================================
 .claude/
+
+# ===========================================
+# Vercel
+# ===========================================
+.vercel
+
+# ===========================================
+# Test artifacts
+# ===========================================
+test-results/
+playwright-report/
+playwright/.cache/
+
+# ===========================================
+# Package artifacts (when publishing)
+# ===========================================
+*.tgz
+*.pack
+
+# ===========================================
+# Changesets local
+# ===========================================
+.changeset/*.md
+!.changeset/config.json
+!.changeset/README.md

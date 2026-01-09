@@ -1,0 +1,881 @@
+/*
+ * DEPRECATED: This file will be removed in a future version.
+ * Please use the merged file instead:
+ *   @import "@unisane/tokens/unisane.css";
+ */
+
+/* ============================================================
+   Unisane UI Design Tokens
+   Generated from "Blue" theme using OKLCH color science
+   ============================================================ */
+
+/* ============================================================
+   THEMING SYSTEM - Multiple ways to customize!
+   ============================================================
+
+   1. HUE - Change the primary color:
+      :root { --hue: 145; }     // Green
+      :root { --hue: 285; }     // Purple
+      :root { --hue: 70; }      // Orange
+
+      Available hues:
+      Blue: 240 (default)  Green: 145   Teal: 180
+      Purple: 285          Orange: 70   Red: 25
+
+   2. CHROMA - Adjust color intensity:
+      :root { --chroma: 0.08; }  // Muted
+      :root { --chroma: 0.18; }  // Vibrant
+
+   3. SCHEME - Color strategy (via data attribute):
+      <html data-scheme="tonal">       // Default - full color
+      <html data-scheme="monochrome">  // Pure grayscale
+      <html data-scheme="neutral">     // Low saturation, professional
+
+   4. CONTRAST - Accessibility level (via data attribute):
+      <html data-contrast="standard">  // Default
+      <html data-contrast="medium">    // Boosted readability
+      <html data-contrast="high">      // WCAG AAA compliant
+
+   5. DARK MODE:
+      <html class="dark">              // Manual dark mode
+      // Or automatic via prefers-color-scheme
+
+   6. DENSITY:
+      <html data-density="compact">    // Tighter spacing
+      <html data-density="comfortable">// More breathing room
+
+   7. RADIUS:
+      <html data-radius="sharp">       // Sharper corners
+      <html data-radius="soft">        // Rounder corners
+
+   COMBINING: All options can be combined!
+      <html class="dark" data-scheme="neutral" data-contrast="high">
+   ============================================================ */
+
+/* Theme defaults layer - can be overridden by unlayered app CSS */
+@layer unisane-defaults {
+  :root {
+    --hue: 240;
+    --chroma: 0.16;
+  }
+}
+
+:root {
+
+  /* Derived hues (auto-calculated) */
+  --hue-secondary: var(--hue);
+  --hue-tertiary: calc(var(--hue) + 60);
+  --hue-neutral: var(--hue);
+  --hue-error: 25;
+
+  /* Derived chromas */
+  --chroma-secondary: calc(var(--chroma) * 1.2);
+  --chroma-tertiary: calc(var(--chroma) * 0.7);
+  --chroma-neutral: 0.02;
+  --chroma-error: 0.18;
+
+  /* Neutral variant chroma (1.5x neutral) */
+  --chroma-neutral-variant: calc(var(--chroma-neutral) * 1.5);
+
+  /* === REFERENCE PALETTES (auto-derived from --hue and --chroma) === */
+
+  /* primary */
+  --ref-primary-0: #000000;
+  --ref-primary-4: oklch(0.1 calc(var(--chroma) * 0.5) var(--hue));
+  --ref-primary-6: oklch(0.13 calc(var(--chroma) * 0.6) var(--hue));
+  --ref-primary-10: oklch(0.22 calc(var(--chroma) * 0.7) var(--hue));
+  --ref-primary-12: oklch(0.25 calc(var(--chroma) * 0.75) var(--hue));
+  --ref-primary-17: oklch(0.3 calc(var(--chroma) * 0.8) var(--hue));
+  --ref-primary-20: oklch(0.33 calc(var(--chroma) * 0.85) var(--hue));
+  --ref-primary-22: oklch(0.36 calc(var(--chroma) * 0.87) var(--hue));
+  --ref-primary-24: oklch(0.38 calc(var(--chroma) * 0.88) var(--hue));
+  --ref-primary-30: oklch(0.44 calc(var(--chroma) * 0.95) var(--hue));
+  --ref-primary-40: oklch(0.55 calc(var(--chroma) * 1) var(--hue));
+  --ref-primary-50: oklch(0.65 calc(var(--chroma) * 1) var(--hue));
+  --ref-primary-60: oklch(0.74 calc(var(--chroma) * 0.9) var(--hue));
+  --ref-primary-70: oklch(0.82 calc(var(--chroma) * 0.75) var(--hue));
+  --ref-primary-80: oklch(0.88 calc(var(--chroma) * 0.55) var(--hue));
+  --ref-primary-90: oklch(0.94 calc(var(--chroma) * 0.35) var(--hue));
+  --ref-primary-95: oklch(0.97 calc(var(--chroma) * 0.25) var(--hue));
+  --ref-primary-99: oklch(0.995 calc(var(--chroma) * 0.15) var(--hue));
+  --ref-primary-100: #FFFFFF;
+
+  /* secondary */
+  --ref-secondary-0: #000000;
+  --ref-secondary-4: oklch(0.1 calc(var(--chroma-secondary) * 0.5) var(--hue-secondary));
+  --ref-secondary-6: oklch(0.13 calc(var(--chroma-secondary) * 0.6) var(--hue-secondary));
+  --ref-secondary-10: oklch(0.22 calc(var(--chroma-secondary) * 0.7) var(--hue-secondary));
+  --ref-secondary-12: oklch(0.25 calc(var(--chroma-secondary) * 0.75) var(--hue-secondary));
+  --ref-secondary-17: oklch(0.3 calc(var(--chroma-secondary) * 0.8) var(--hue-secondary));
+  --ref-secondary-20: oklch(0.33 calc(var(--chroma-secondary) * 0.85) var(--hue-secondary));
+  --ref-secondary-22: oklch(0.36 calc(var(--chroma-secondary) * 0.87) var(--hue-secondary));
+  --ref-secondary-24: oklch(0.38 calc(var(--chroma-secondary) * 0.88) var(--hue-secondary));
+  --ref-secondary-30: oklch(0.44 calc(var(--chroma-secondary) * 0.95) var(--hue-secondary));
+  --ref-secondary-40: oklch(0.55 calc(var(--chroma-secondary) * 1) var(--hue-secondary));
+  --ref-secondary-50: oklch(0.65 calc(var(--chroma-secondary) * 1) var(--hue-secondary));
+  --ref-secondary-60: oklch(0.74 calc(var(--chroma-secondary) * 0.9) var(--hue-secondary));
+  --ref-secondary-70: oklch(0.82 calc(var(--chroma-secondary) * 0.75) var(--hue-secondary));
+  --ref-secondary-80: oklch(0.88 calc(var(--chroma-secondary) * 0.55) var(--hue-secondary));
+  --ref-secondary-90: oklch(0.94 calc(var(--chroma-secondary) * 0.35) var(--hue-secondary));
+  --ref-secondary-95: oklch(0.97 calc(var(--chroma-secondary) * 0.25) var(--hue-secondary));
+  --ref-secondary-99: oklch(0.995 calc(var(--chroma-secondary) * 0.15) var(--hue-secondary));
+  --ref-secondary-100: #FFFFFF;
+
+  /* tertiary */
+  --ref-tertiary-0: #000000;
+  --ref-tertiary-4: oklch(0.1 calc(var(--chroma-tertiary) * 0.5) var(--hue-tertiary));
+  --ref-tertiary-6: oklch(0.13 calc(var(--chroma-tertiary) * 0.6) var(--hue-tertiary));
+  --ref-tertiary-10: oklch(0.22 calc(var(--chroma-tertiary) * 0.7) var(--hue-tertiary));
+  --ref-tertiary-12: oklch(0.25 calc(var(--chroma-tertiary) * 0.75) var(--hue-tertiary));
+  --ref-tertiary-17: oklch(0.3 calc(var(--chroma-tertiary) * 0.8) var(--hue-tertiary));
+  --ref-tertiary-20: oklch(0.33 calc(var(--chroma-tertiary) * 0.85) var(--hue-tertiary));
+  --ref-tertiary-22: oklch(0.36 calc(var(--chroma-tertiary) * 0.87) var(--hue-tertiary));
+  --ref-tertiary-24: oklch(0.38 calc(var(--chroma-tertiary) * 0.88) var(--hue-tertiary));
+  --ref-tertiary-30: oklch(0.44 calc(var(--chroma-tertiary) * 0.95) var(--hue-tertiary));
+  --ref-tertiary-40: oklch(0.55 calc(var(--chroma-tertiary) * 1) var(--hue-tertiary));
+  --ref-tertiary-50: oklch(0.65 calc(var(--chroma-tertiary) * 1) var(--hue-tertiary));
+  --ref-tertiary-60: oklch(0.74 calc(var(--chroma-tertiary) * 0.9) var(--hue-tertiary));
+  --ref-tertiary-70: oklch(0.82 calc(var(--chroma-tertiary) * 0.75) var(--hue-tertiary));
+  --ref-tertiary-80: oklch(0.88 calc(var(--chroma-tertiary) * 0.55) var(--hue-tertiary));
+  --ref-tertiary-90: oklch(0.94 calc(var(--chroma-tertiary) * 0.35) var(--hue-tertiary));
+  --ref-tertiary-95: oklch(0.97 calc(var(--chroma-tertiary) * 0.25) var(--hue-tertiary));
+  --ref-tertiary-99: oklch(0.995 calc(var(--chroma-tertiary) * 0.15) var(--hue-tertiary));
+  --ref-tertiary-100: #FFFFFF;
+
+  /* neutral */
+  --ref-neutral-0: #000000;
+  --ref-neutral-4: oklch(0.1 calc(var(--chroma-neutral) * 0.5) var(--hue-neutral));
+  --ref-neutral-6: oklch(0.13 calc(var(--chroma-neutral) * 0.6) var(--hue-neutral));
+  --ref-neutral-10: oklch(0.22 calc(var(--chroma-neutral) * 0.7) var(--hue-neutral));
+  --ref-neutral-12: oklch(0.25 calc(var(--chroma-neutral) * 0.75) var(--hue-neutral));
+  --ref-neutral-17: oklch(0.3 calc(var(--chroma-neutral) * 0.8) var(--hue-neutral));
+  --ref-neutral-20: oklch(0.33 calc(var(--chroma-neutral) * 0.85) var(--hue-neutral));
+  --ref-neutral-22: oklch(0.36 calc(var(--chroma-neutral) * 0.87) var(--hue-neutral));
+  --ref-neutral-24: oklch(0.38 calc(var(--chroma-neutral) * 0.88) var(--hue-neutral));
+  --ref-neutral-30: oklch(0.44 calc(var(--chroma-neutral) * 0.95) var(--hue-neutral));
+  --ref-neutral-40: oklch(0.55 calc(var(--chroma-neutral) * 1) var(--hue-neutral));
+  --ref-neutral-50: oklch(0.65 calc(var(--chroma-neutral) * 1) var(--hue-neutral));
+  --ref-neutral-60: oklch(0.74 calc(var(--chroma-neutral) * 0.9) var(--hue-neutral));
+  --ref-neutral-70: oklch(0.82 calc(var(--chroma-neutral) * 0.75) var(--hue-neutral));
+  --ref-neutral-80: oklch(0.88 calc(var(--chroma-neutral) * 0.55) var(--hue-neutral));
+  --ref-neutral-90: oklch(0.94 calc(var(--chroma-neutral) * 0.35) var(--hue-neutral));
+  --ref-neutral-95: oklch(0.97 calc(var(--chroma-neutral) * 0.25) var(--hue-neutral));
+  --ref-neutral-99: oklch(0.995 calc(var(--chroma-neutral) * 0.15) var(--hue-neutral));
+  --ref-neutral-100: #FFFFFF;
+
+  /* neutral-variant */
+  --ref-neutral-variant-0: #000000;
+  --ref-neutral-variant-4: oklch(0.1 calc(var(--chroma-neutral-variant) * 0.5) var(--hue-neutral));
+  --ref-neutral-variant-6: oklch(0.13 calc(var(--chroma-neutral-variant) * 0.6) var(--hue-neutral));
+  --ref-neutral-variant-10: oklch(0.22 calc(var(--chroma-neutral-variant) * 0.7) var(--hue-neutral));
+  --ref-neutral-variant-12: oklch(0.25 calc(var(--chroma-neutral-variant) * 0.75) var(--hue-neutral));
+  --ref-neutral-variant-17: oklch(0.3 calc(var(--chroma-neutral-variant) * 0.8) var(--hue-neutral));
+  --ref-neutral-variant-20: oklch(0.33 calc(var(--chroma-neutral-variant) * 0.85) var(--hue-neutral));
+  --ref-neutral-variant-22: oklch(0.36 calc(var(--chroma-neutral-variant) * 0.87) var(--hue-neutral));
+  --ref-neutral-variant-24: oklch(0.38 calc(var(--chroma-neutral-variant) * 0.88) var(--hue-neutral));
+  --ref-neutral-variant-30: oklch(0.44 calc(var(--chroma-neutral-variant) * 0.95) var(--hue-neutral));
+  --ref-neutral-variant-40: oklch(0.55 calc(var(--chroma-neutral-variant) * 1) var(--hue-neutral));
+  --ref-neutral-variant-50: oklch(0.65 calc(var(--chroma-neutral-variant) * 1) var(--hue-neutral));
+  --ref-neutral-variant-60: oklch(0.74 calc(var(--chroma-neutral-variant) * 0.9) var(--hue-neutral));
+  --ref-neutral-variant-70: oklch(0.82 calc(var(--chroma-neutral-variant) * 0.75) var(--hue-neutral));
+  --ref-neutral-variant-80: oklch(0.88 calc(var(--chroma-neutral-variant) * 0.55) var(--hue-neutral));
+  --ref-neutral-variant-90: oklch(0.94 calc(var(--chroma-neutral-variant) * 0.35) var(--hue-neutral));
+  --ref-neutral-variant-95: oklch(0.97 calc(var(--chroma-neutral-variant) * 0.25) var(--hue-neutral));
+  --ref-neutral-variant-99: oklch(0.995 calc(var(--chroma-neutral-variant) * 0.15) var(--hue-neutral));
+  --ref-neutral-variant-100: #FFFFFF;
+
+  /* error */
+  --ref-error-0: #000000;
+  --ref-error-4: oklch(0.1 calc(var(--chroma-error) * 0.5) var(--hue-error));
+  --ref-error-6: oklch(0.13 calc(var(--chroma-error) * 0.6) var(--hue-error));
+  --ref-error-10: oklch(0.22 calc(var(--chroma-error) * 0.7) var(--hue-error));
+  --ref-error-12: oklch(0.25 calc(var(--chroma-error) * 0.75) var(--hue-error));
+  --ref-error-17: oklch(0.3 calc(var(--chroma-error) * 0.8) var(--hue-error));
+  --ref-error-20: oklch(0.33 calc(var(--chroma-error) * 0.85) var(--hue-error));
+  --ref-error-22: oklch(0.36 calc(var(--chroma-error) * 0.87) var(--hue-error));
+  --ref-error-24: oklch(0.38 calc(var(--chroma-error) * 0.88) var(--hue-error));
+  --ref-error-30: oklch(0.44 calc(var(--chroma-error) * 0.95) var(--hue-error));
+  --ref-error-40: oklch(0.55 calc(var(--chroma-error) * 1) var(--hue-error));
+  --ref-error-50: oklch(0.65 calc(var(--chroma-error) * 1) var(--hue-error));
+  --ref-error-60: oklch(0.74 calc(var(--chroma-error) * 0.9) var(--hue-error));
+  --ref-error-70: oklch(0.82 calc(var(--chroma-error) * 0.75) var(--hue-error));
+  --ref-error-80: oklch(0.88 calc(var(--chroma-error) * 0.55) var(--hue-error));
+  --ref-error-90: oklch(0.94 calc(var(--chroma-error) * 0.35) var(--hue-error));
+  --ref-error-95: oklch(0.97 calc(var(--chroma-error) * 0.25) var(--hue-error));
+  --ref-error-99: oklch(0.995 calc(var(--chroma-error) * 0.15) var(--hue-error));
+  --ref-error-100: #FFFFFF;
+
+
+  /* === SCALING KNOBS === */
+  --scale-space: 1;
+  --scale-type: 1;
+  /* Radius uses combined multiplier: density-radius × theme-radius */
+  --scale-radius-density: 1;   /* Modified by data-density */
+  --scale-radius-theme: 1;     /* Modified by data-radius */
+  --scale-radius: calc(var(--scale-radius-density) * var(--scale-radius-theme));
+  --unit: calc(4px * var(--scale-space));
+
+  /* Pane Widths */
+  --width-pane-list: 360px;
+  --width-pane-fixed: 412px;
+  --width-pane-supporting: 400px;
+  --width-rail-collapsed: 80px;
+  --width-drawer-compact: 360px;
+
+  /* === TONE MAPPING LAYER (Light Mode) ===
+     Override these to remap which palette tones map to semantic colors.
+     This enables special schemes (monochrome, high-contrast) without
+     regenerating the entire palette. Just change the tone mappings! */
+
+  /* Primary tone mapping (M3 standard: tone 40) */
+  --tone-primary: var(--ref-primary-40);
+  --tone-on-primary: var(--ref-primary-100);
+  --tone-primary-container: var(--ref-primary-90);
+  --tone-on-primary-container: var(--ref-primary-10);
+
+  /* Secondary tone mapping */
+  --tone-secondary: var(--ref-secondary-40);
+  --tone-on-secondary: var(--ref-secondary-100);
+  --tone-secondary-container: var(--ref-secondary-90);
+  --tone-on-secondary-container: var(--ref-secondary-10);
+
+  /* Tertiary tone mapping */
+  --tone-tertiary: var(--ref-tertiary-40);
+  --tone-on-tertiary: var(--ref-tertiary-100);
+  --tone-tertiary-container: var(--ref-tertiary-90);
+  --tone-on-tertiary-container: var(--ref-tertiary-10);
+
+  /* Surface tone mapping */
+  --tone-surface: var(--ref-neutral-99);
+  --tone-on-surface: var(--ref-neutral-10);
+  --tone-surface-container-lowest: var(--ref-neutral-100);
+  --tone-surface-container-low: var(--ref-neutral-95);
+  --tone-surface-container: var(--ref-neutral-90);
+  --tone-surface-container-high: var(--ref-neutral-80);
+  --tone-surface-container-highest: var(--ref-neutral-70);
+  --tone-surface-variant: var(--ref-neutral-variant-90);
+  --tone-on-surface-variant: var(--ref-neutral-variant-30);
+
+  /* Background/outline tone mapping */
+  --tone-background: var(--ref-neutral-99);
+  --tone-on-background: var(--ref-neutral-10);
+  --tone-outline: var(--ref-neutral-variant-50);
+  --tone-outline-variant: var(--ref-neutral-variant-80);
+
+  /* Error tone mapping */
+  --tone-error: var(--ref-error-40);
+  --tone-on-error: var(--ref-error-100);
+  --tone-error-container: var(--ref-error-90);
+  --tone-on-error-container: var(--ref-error-10);
+
+  /* Inverse tone mapping */
+  --tone-inverse-surface: var(--ref-neutral-20);
+  --tone-inverse-on-surface: var(--ref-neutral-95);
+  --tone-inverse-primary: var(--ref-primary-80);
+
+  /* === SEMANTIC COLORS (reference tone mapping layer) === */
+  --color-primary: var(--tone-primary);
+  --color-on-primary: var(--tone-on-primary);
+  --color-primary-container: var(--tone-primary-container);
+  --color-on-primary-container: var(--tone-on-primary-container);
+
+  --color-secondary: var(--tone-secondary);
+  --color-on-secondary: var(--tone-on-secondary);
+  --color-secondary-container: var(--tone-secondary-container);
+  --color-on-secondary-container: var(--tone-on-secondary-container);
+
+  --color-tertiary: var(--tone-tertiary);
+  --color-on-tertiary: var(--tone-on-tertiary);
+  --color-tertiary-container: var(--tone-tertiary-container);
+  --color-on-tertiary-container: var(--tone-on-tertiary-container);
+
+  --color-surface: var(--tone-surface);
+  --color-on-surface: var(--tone-on-surface);
+  --color-surface-container-lowest: var(--tone-surface-container-lowest);
+  --color-surface-container-low: var(--tone-surface-container-low);
+  --color-surface-container: var(--tone-surface-container);
+  --color-surface-container-high: var(--tone-surface-container-high);
+  --color-surface-container-highest: var(--tone-surface-container-highest);
+
+  --color-surface-variant: var(--tone-surface-variant);
+  --color-on-surface-variant: var(--tone-on-surface-variant);
+  --color-background: var(--tone-background);
+  --color-on-background: var(--tone-on-background);
+  --color-outline: var(--tone-outline);
+  --color-outline-variant: var(--tone-outline-variant);
+
+  --color-error: var(--tone-error);
+  --color-on-error: var(--tone-on-error);
+  --color-error-container: var(--tone-error-container);
+  --color-on-error-container: var(--tone-on-error-container);
+
+  --color-success: oklch(0.55 0.18 145);
+  --color-on-success: oklch(0.98 0 0);
+  --color-success-container: oklch(0.92 0.08 145);
+  --color-on-success-container: oklch(0.25 0.1 145);
+
+  --color-warning: oklch(0.62 0.16 85);
+  --color-on-warning: oklch(0.98 0 0);
+  --color-warning-container: oklch(0.92 0.08 85);
+  --color-on-warning-container: oklch(0.25 0.1 85);
+
+  --color-info: oklch(0.58 0.16 245);
+  --color-on-info: oklch(0.98 0 0);
+  --color-info-container: oklch(0.92 0.08 245);
+  --color-on-info-container: oklch(0.25 0.08 245);
+
+  --color-inverse-surface: var(--tone-inverse-surface);
+  --color-inverse-on-surface: var(--tone-inverse-on-surface);
+  --color-inverse-primary: var(--tone-inverse-primary);
+  --color-scrim: rgba(0, 0, 0, 0.32);
+
+  /* Typography */
+  --font-sans: var(--font-inter, system-ui), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  /* === TYPOGRAPHY === */
+  --type-display-large-font: var(--font-sans);
+  --type-display-large-weight: 400;
+  --type-display-large-size: calc(57px * var(--scale-type));
+  --type-display-large-line: calc(64px * var(--scale-type));
+  --type-display-large-tracking: -0.25px;
+  --type-display-medium-font: var(--font-sans);
+  --type-display-medium-weight: 400;
+  --type-display-medium-size: calc(45px * var(--scale-type));
+  --type-display-medium-line: calc(52px * var(--scale-type));
+  --type-display-medium-tracking: 0;
+  --type-display-small-font: var(--font-sans);
+  --type-display-small-weight: 400;
+  --type-display-small-size: calc(36px * var(--scale-type));
+  --type-display-small-line: calc(44px * var(--scale-type));
+  --type-display-small-tracking: 0;
+  --type-headline-large-font: var(--font-sans);
+  --type-headline-large-weight: 400;
+  --type-headline-large-size: calc(32px * var(--scale-type));
+  --type-headline-large-line: calc(40px * var(--scale-type));
+  --type-headline-large-tracking: 0;
+  --type-headline-medium-font: var(--font-sans);
+  --type-headline-medium-weight: 400;
+  --type-headline-medium-size: calc(28px * var(--scale-type));
+  --type-headline-medium-line: calc(36px * var(--scale-type));
+  --type-headline-medium-tracking: 0;
+  --type-headline-small-font: var(--font-sans);
+  --type-headline-small-weight: 400;
+  --type-headline-small-size: calc(24px * var(--scale-type));
+  --type-headline-small-line: calc(32px * var(--scale-type));
+  --type-headline-small-tracking: 0;
+  --type-title-large-font: var(--font-sans);
+  --type-title-large-weight: 400;
+  --type-title-large-size: calc(22px * var(--scale-type));
+  --type-title-large-line: calc(28px * var(--scale-type));
+  --type-title-large-tracking: 0;
+  --type-title-medium-font: var(--font-sans);
+  --type-title-medium-weight: 500;
+  --type-title-medium-size: calc(16px * var(--scale-type));
+  --type-title-medium-line: calc(24px * var(--scale-type));
+  --type-title-medium-tracking: 0.15px;
+  --type-title-small-font: var(--font-sans);
+  --type-title-small-weight: 500;
+  --type-title-small-size: calc(14px * var(--scale-type));
+  --type-title-small-line: calc(20px * var(--scale-type));
+  --type-title-small-tracking: 0.1px;
+  --type-body-large-font: var(--font-sans);
+  --type-body-large-weight: 400;
+  --type-body-large-size: calc(16px * var(--scale-type));
+  --type-body-large-line: calc(24px * var(--scale-type));
+  --type-body-large-tracking: 0.5px;
+  --type-body-medium-font: var(--font-sans);
+  --type-body-medium-weight: 400;
+  --type-body-medium-size: calc(14px * var(--scale-type));
+  --type-body-medium-line: calc(20px * var(--scale-type));
+  --type-body-medium-tracking: 0.25px;
+  --type-body-small-font: var(--font-sans);
+  --type-body-small-weight: 400;
+  --type-body-small-size: calc(12px * var(--scale-type));
+  --type-body-small-line: calc(16px * var(--scale-type));
+  --type-body-small-tracking: 0.4px;
+  --type-label-large-font: var(--font-sans);
+  --type-label-large-weight: 500;
+  --type-label-large-size: calc(14px * var(--scale-type));
+  --type-label-large-line: calc(20px * var(--scale-type));
+  --type-label-large-tracking: 0.1px;
+  --type-label-medium-font: var(--font-sans);
+  --type-label-medium-weight: 500;
+  --type-label-medium-size: calc(12px * var(--scale-type));
+  --type-label-medium-line: calc(16px * var(--scale-type));
+  --type-label-medium-tracking: 0.5px;
+  --type-label-small-font: var(--font-sans);
+  --type-label-small-weight: 500;
+  --type-label-small-size: calc(11px * var(--scale-type));
+  --type-label-small-line: calc(16px * var(--scale-type));
+  --type-label-small-tracking: 0.5px;
+
+  /* === SHAPE (Radius) === */
+  --radius-none: 0px;
+  --radius-xs: calc(4px * var(--scale-radius));
+  --radius-sm: calc(8px * var(--scale-radius));
+  --radius-md: calc(12px * var(--scale-radius));
+  --radius-lg: calc(20px * var(--scale-radius));
+  --radius-xl: calc(32px * var(--scale-radius));
+  --radius-2xl: calc(48px * var(--scale-radius));
+  --radius-full: 9999px;
+
+  /* === ELEVATION === */
+  /* Shadow opacity scale (controlled by data-elevation attribute) */
+  --shadow-opacity: 1;
+  --shadow-0: none;
+  --shadow-1: 0px 1px 3px 1px rgba(0, 0, 0, calc(0.15 * var(--shadow-opacity))), 0px 1px 2px 0px rgba(0, 0, 0, calc(0.30 * var(--shadow-opacity)));
+  --shadow-2: 0px 2px 6px 2px rgba(0, 0, 0, calc(0.15 * var(--shadow-opacity))), 0px 1px 2px 0px rgba(0, 0, 0, calc(0.30 * var(--shadow-opacity)));
+  --shadow-3: 0px 4px 8px 3px rgba(0, 0, 0, calc(0.15 * var(--shadow-opacity))), 0px 1px 3px 0px rgba(0, 0, 0, calc(0.30 * var(--shadow-opacity)));
+  --shadow-4: 0px 6px 10px 4px rgba(0, 0, 0, calc(0.15 * var(--shadow-opacity))), 0px 2px 3px 0px rgba(0, 0, 0, calc(0.30 * var(--shadow-opacity)));
+  --shadow-5: 0px 8px 12px 6px rgba(0, 0, 0, calc(0.15 * var(--shadow-opacity))), 0px 4px 4px 0px rgba(0, 0, 0, calc(0.30 * var(--shadow-opacity)));
+
+  /* === MOTION === */
+  --duration-short: 100ms;
+  --duration-snappy: 150ms;
+  --duration-medium: 250ms;
+  --duration-emphasized: 300ms;
+  --duration-long: 500ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-accelerate: cubic-bezier(0.3, 0, 1, 1);
+  --ease-decelerate: cubic-bezier(0, 0, 0, 1);
+  --ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+
+  /* === OPACITY === */
+  --opacity-hover: 0.08;
+  --opacity-focus: 0.10;
+  --opacity-pressed: 0.10;
+  --opacity-dragged: 0.16;
+  --opacity-disabled: 0.38;
+  --opacity-muted: 0.60;
+
+  /* === ICON SIZES === */
+  --icon-xs: calc(16px * var(--scale-space));
+  --icon-sm: calc(20px * var(--scale-space));
+  --icon-md: calc(24px * var(--scale-space));
+  --icon-lg: calc(32px * var(--scale-space));
+  --icon-xl: calc(48px * var(--scale-space));
+
+  /* === LAYOUT === */
+  --layout-margin: calc(16px * var(--scale-space));
+  --layout-gutter: calc(16px * var(--scale-space));
+  --layout-pane-gap: calc(20px * var(--scale-space));
+  --layout-pane-list: calc(360px * var(--scale-space));
+  --layout-pane-fixed: calc(412px * var(--scale-space));
+  --layout-pane-supporting: calc(400px * var(--scale-space));
+  --layout-rail: calc(72px * var(--scale-space));
+  --layout-drawer: calc(360px * var(--scale-space));
+
+  /* === Z-INDEX === */
+  --z-fab: 500;
+  --z-header: 1000;
+  --z-drawer: 1500;
+  --z-popover: 2000;
+  --z-modal: 3000;
+}
+
+/* ============================================================
+   DARK MODE - CSS-only, no JS required!
+   Works with: .dark class OR prefers-color-scheme
+   Updates the tone mapping layer for dark mode.
+   ============================================================ */
+
+/* System preference dark mode */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    /* Update tone mapping for dark mode */
+    --tone-primary: var(--ref-primary-80);
+    --tone-on-primary: var(--ref-primary-20);
+    --tone-primary-container: var(--ref-primary-30);
+    --tone-on-primary-container: var(--ref-primary-90);
+
+    --tone-secondary: var(--ref-secondary-80);
+    --tone-on-secondary: var(--ref-secondary-20);
+    --tone-secondary-container: var(--ref-secondary-30);
+    --tone-on-secondary-container: var(--ref-secondary-90);
+
+    --tone-tertiary: var(--ref-tertiary-80);
+    --tone-on-tertiary: var(--ref-tertiary-20);
+    --tone-tertiary-container: var(--ref-tertiary-30);
+    --tone-on-tertiary-container: var(--ref-tertiary-90);
+
+    --tone-surface: var(--ref-neutral-6);
+    --tone-on-surface: var(--ref-neutral-90);
+    --tone-surface-container-lowest: var(--ref-neutral-4);
+    --tone-surface-container-low: var(--ref-neutral-10);
+    --tone-surface-container: var(--ref-neutral-12);
+    --tone-surface-container-high: var(--ref-neutral-17);
+    --tone-surface-container-highest: var(--ref-neutral-22);
+    --tone-surface-variant: var(--ref-neutral-variant-30);
+    --tone-on-surface-variant: var(--ref-neutral-variant-80);
+
+    --tone-background: var(--ref-neutral-6);
+    --tone-on-background: var(--ref-neutral-90);
+    --tone-outline: var(--ref-neutral-variant-60);
+    --tone-outline-variant: var(--ref-neutral-variant-30);
+
+    --tone-error: var(--ref-error-80);
+    --tone-on-error: var(--ref-error-20);
+    --tone-error-container: var(--ref-error-30);
+    --tone-on-error-container: var(--ref-error-90);
+
+    --tone-inverse-surface: var(--ref-neutral-90);
+    --tone-inverse-on-surface: var(--ref-neutral-20);
+    --tone-inverse-primary: var(--ref-primary-40);
+
+    --color-success: oklch(0.8 0.18 145);
+    --color-on-success: oklch(0.2 0.1 145);
+    --color-success-container: oklch(0.3 0.1 145);
+    --color-on-success-container: oklch(0.9 0.1 145);
+
+    --color-warning: oklch(0.85 0.15 85);
+    --color-on-warning: oklch(0.2 0.1 85);
+    --color-warning-container: oklch(0.3 0.1 85);
+    --color-on-warning-container: oklch(0.9 0.1 85);
+
+    --color-info: oklch(0.8 0.18 245);
+    --color-on-info: oklch(0.2 0.1 245);
+    --color-info-container: oklch(0.3 0.1 245);
+    --color-on-info-container: oklch(0.9 0.1 245);
+  }
+}
+
+/* Manual .dark class override */
+.dark {
+  /* Update tone mapping for dark mode */
+  --tone-primary: var(--ref-primary-80);
+  --tone-on-primary: var(--ref-primary-20);
+  --tone-primary-container: var(--ref-primary-30);
+  --tone-on-primary-container: var(--ref-primary-90);
+
+  --tone-secondary: var(--ref-secondary-80);
+  --tone-on-secondary: var(--ref-secondary-20);
+  --tone-secondary-container: var(--ref-secondary-30);
+  --tone-on-secondary-container: var(--ref-secondary-90);
+
+  --tone-tertiary: var(--ref-tertiary-80);
+  --tone-on-tertiary: var(--ref-tertiary-20);
+  --tone-tertiary-container: var(--ref-tertiary-30);
+  --tone-on-tertiary-container: var(--ref-tertiary-90);
+
+  --tone-surface: var(--ref-neutral-6);
+  --tone-on-surface: var(--ref-neutral-90);
+  --tone-surface-container-lowest: var(--ref-neutral-4);
+  --tone-surface-container-low: var(--ref-neutral-10);
+  --tone-surface-container: var(--ref-neutral-12);
+  --tone-surface-container-high: var(--ref-neutral-17);
+  --tone-surface-container-highest: var(--ref-neutral-22);
+  --tone-surface-variant: var(--ref-neutral-variant-30);
+  --tone-on-surface-variant: var(--ref-neutral-variant-80);
+
+  --tone-background: var(--ref-neutral-6);
+  --tone-on-background: var(--ref-neutral-90);
+  --tone-outline: var(--ref-neutral-variant-60);
+  --tone-outline-variant: var(--ref-neutral-variant-30);
+
+  --tone-error: var(--ref-error-80);
+  --tone-on-error: var(--ref-error-20);
+  --tone-error-container: var(--ref-error-30);
+  --tone-on-error-container: var(--ref-error-90);
+
+  --tone-inverse-surface: var(--ref-neutral-90);
+  --tone-inverse-on-surface: var(--ref-neutral-20);
+  --tone-inverse-primary: var(--ref-primary-40);
+
+  --color-success: oklch(0.8 0.18 145);
+  --color-on-success: oklch(0.2 0.1 145);
+  --color-success-container: oklch(0.3 0.1 145);
+  --color-on-success-container: oklch(0.9 0.1 145);
+
+  --color-warning: oklch(0.85 0.15 85);
+  --color-on-warning: oklch(0.2 0.1 85);
+  --color-warning-container: oklch(0.3 0.1 85);
+  --color-on-warning-container: oklch(0.9 0.1 85);
+
+  --color-info: oklch(0.8 0.18 245);
+  --color-on-info: oklch(0.2 0.1 245);
+  --color-info-container: oklch(0.3 0.1 245);
+  --color-on-info-container: oklch(0.9 0.1 245);
+}
+
+/* ============================================================
+   COLOR SCHEMES - Color strategy presets
+   Usage: <html data-scheme="monochrome">
+
+   Schemes control the COLOR STRATEGY (tonal, monochrome, neutral).
+   They affect chroma and tone mapping.
+
+   Available schemes:
+   - tonal (default) - Full M3 tonal palette with vibrant colors
+   - monochrome      - Pure grayscale, black/white buttons
+   - neutral         - Low chroma, subtle color hints (professional)
+   ============================================================ */
+
+/* Monochrome scheme - pure grayscale with black primary buttons */
+[data-scheme="monochrome"] {
+  --chroma: 0;
+  --chroma-neutral: 0;
+
+  /* Remap to darker tones for true black buttons */
+  --tone-primary: var(--ref-primary-20);
+  --tone-on-primary: var(--ref-primary-95);
+  --tone-primary-container: var(--ref-primary-90);
+  --tone-on-primary-container: var(--ref-primary-10);
+
+  --tone-secondary: var(--ref-secondary-30);
+  --tone-on-secondary: var(--ref-secondary-95);
+  --tone-secondary-container: var(--ref-secondary-90);
+  --tone-on-secondary-container: var(--ref-secondary-10);
+
+  --tone-tertiary: var(--ref-tertiary-30);
+  --tone-on-tertiary: var(--ref-tertiary-95);
+}
+
+/* Monochrome dark mode */
+.dark[data-scheme="monochrome"],
+[data-scheme="monochrome"].dark {
+  --tone-primary: var(--ref-primary-90);
+  --tone-on-primary: var(--ref-primary-10);
+  --tone-primary-container: var(--ref-primary-20);
+  --tone-on-primary-container: var(--ref-primary-90);
+
+  --tone-secondary: var(--ref-secondary-80);
+  --tone-on-secondary: var(--ref-secondary-10);
+  --tone-secondary-container: var(--ref-secondary-20);
+  --tone-on-secondary-container: var(--ref-secondary-90);
+
+  --tone-tertiary: var(--ref-tertiary-80);
+  --tone-on-tertiary: var(--ref-tertiary-10);
+}
+
+/* Neutral scheme - low saturation, subtle color hints */
+[data-scheme="neutral"] {
+  --chroma: 0.04;
+  --chroma-neutral: 0.01;
+}
+
+/* ============================================================
+   CONTRAST LEVELS - Accessibility modifier
+   Usage: <html data-contrast="high">
+
+   Contrast controls TONE EXTREMITY for accessibility.
+   Can be combined with any scheme.
+
+   Available levels:
+   - standard (default) - M3 baseline contrast
+   - medium             - Slightly boosted for better readability
+   - high               - Maximum contrast for accessibility (WCAG AAA)
+   ============================================================ */
+
+/* Medium contrast - boosted readability (darker primary: tone 30) */
+[data-contrast="medium"] {
+  --tone-primary: var(--ref-primary-30);
+  --tone-on-primary: var(--ref-primary-100);
+  --tone-primary-container: var(--ref-primary-95);
+  --tone-on-primary-container: var(--ref-primary-10);
+
+  --tone-secondary: var(--ref-secondary-30);
+  --tone-on-secondary: var(--ref-secondary-100);
+
+  --tone-on-surface: var(--ref-neutral-10);
+  --tone-outline: var(--ref-neutral-variant-40);
+}
+
+.dark[data-contrast="medium"],
+[data-contrast="medium"].dark {
+  --tone-primary: var(--ref-primary-80);
+  --tone-on-primary: var(--ref-primary-10);
+  --tone-primary-container: var(--ref-primary-30);
+  --tone-on-primary-container: var(--ref-primary-95);
+
+  --tone-secondary: var(--ref-secondary-80);
+  --tone-on-secondary: var(--ref-secondary-10);
+
+  --tone-on-surface: var(--ref-neutral-95);
+  --tone-outline: var(--ref-neutral-variant-70);
+}
+
+/* High contrast - maximum accessibility, WCAG AAA (darkest primary: tone 20) */
+[data-contrast="high"] {
+  --tone-primary: var(--ref-primary-20);
+  --tone-on-primary: var(--ref-primary-100);
+  --tone-primary-container: var(--ref-primary-99);
+  --tone-on-primary-container: var(--ref-primary-0);
+
+  --tone-secondary: var(--ref-secondary-20);
+  --tone-on-secondary: var(--ref-secondary-100);
+  --tone-secondary-container: var(--ref-secondary-99);
+  --tone-on-secondary-container: var(--ref-secondary-0);
+
+  --tone-tertiary: var(--ref-tertiary-20);
+  --tone-on-tertiary: var(--ref-tertiary-100);
+
+  --tone-surface: var(--ref-neutral-100);
+  --tone-on-surface: var(--ref-neutral-0);
+  --tone-background: var(--ref-neutral-100);
+  --tone-on-background: var(--ref-neutral-0);
+  --tone-outline: var(--ref-neutral-variant-20);
+
+  --tone-error: var(--ref-error-20);
+  --tone-on-error: var(--ref-error-100);
+}
+
+.dark[data-contrast="high"],
+[data-contrast="high"].dark {
+  --tone-primary: var(--ref-primary-95);
+  --tone-on-primary: var(--ref-primary-0);
+  --tone-primary-container: var(--ref-primary-10);
+  --tone-on-primary-container: var(--ref-primary-100);
+
+  --tone-secondary: var(--ref-secondary-95);
+  --tone-on-secondary: var(--ref-secondary-0);
+  --tone-secondary-container: var(--ref-secondary-10);
+  --tone-on-secondary-container: var(--ref-secondary-100);
+
+  --tone-tertiary: var(--ref-tertiary-95);
+  --tone-on-tertiary: var(--ref-tertiary-0);
+
+  --tone-surface: var(--ref-neutral-0);
+  --tone-on-surface: var(--ref-neutral-100);
+  --tone-background: var(--ref-neutral-0);
+  --tone-on-background: var(--ref-neutral-100);
+  --tone-outline: var(--ref-neutral-variant-80);
+
+  --tone-error: var(--ref-error-95);
+  --tone-on-error: var(--ref-error-0);
+}
+
+/* ============================================================
+   DENSITY - CSS-only via data attribute
+   Usage: <html data-density="compact">
+   ============================================================ */
+
+[data-density="compact"] {
+  --scale-space: 0.875;
+  --scale-type: 0.9;
+  --scale-radius-density: 0.9;
+}
+
+[data-density="dense"] {
+  --scale-space: 0.75;
+  --scale-type: 0.85;
+  --scale-radius-density: 0.85;
+}
+
+[data-density="comfortable"] {
+  --scale-space: 1.1;
+  --scale-type: 1.0;
+  --scale-radius-density: 1.0;
+}
+
+/* ============================================================
+   RADIUS THEME - CSS-only via data attribute
+   Usage: <html data-radius="soft">
+   Values must match ThemeProvider RADIUS_PRESETS
+   ============================================================ */
+
+[data-radius="none"] {
+  --scale-radius-theme: 0;
+}
+
+[data-radius="minimal"] {
+  --scale-radius-theme: 0.25;
+}
+
+[data-radius="sharp"] {
+  --scale-radius-theme: 0.5;
+}
+
+[data-radius="standard"] {
+  --scale-radius-theme: 1.0;
+}
+
+[data-radius="soft"] {
+  --scale-radius-theme: 1.25;
+}
+
+/* ============================================================
+   ELEVATION - Control shadow intensity
+   Usage: <html data-elevation="subtle">
+
+   Elevation controls SHADOW OPACITY for visual depth.
+   Can be combined with any scheme or contrast level.
+
+   Available levels:
+   - flat        - No shadows (--shadow-opacity: 0)
+   - subtle      - Reduced shadows for minimal UI (--shadow-opacity: 0.5)
+   - standard    - Default M3 shadows (--shadow-opacity: 1)
+   - pronounced  - Stronger shadows for depth (--shadow-opacity: 1.5)
+   ============================================================ */
+
+[data-elevation="flat"] {
+  --shadow-opacity: 0;
+}
+
+[data-elevation="subtle"] {
+  --shadow-opacity: 0.5;
+}
+
+[data-elevation="standard"] {
+  --shadow-opacity: 1;
+}
+
+[data-elevation="pronounced"] {
+  --shadow-opacity: 1.5;
+}
+
+/* ============================================================
+   SCROLLBAR STYLING
+   Consistent scrollbars for all modes
+   ============================================================ */
+
+/* Webkit scrollbar (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-surface-container-low);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-outline-variant);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-outline);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-outline-variant) var(--color-surface-container-low);
+}
+
+/* Dark mode scrollbar adjustments */
+.dark ::-webkit-scrollbar-track,
+:root:not(.light) ::-webkit-scrollbar-track {
+  background: var(--color-surface-container);
+}
+
+.dark ::-webkit-scrollbar-thumb,
+:root:not(.light) ::-webkit-scrollbar-thumb {
+  background: var(--color-outline-variant);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover,
+:root:not(.light) ::-webkit-scrollbar-thumb:hover {
+  background: var(--color-outline);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    scrollbar-color: var(--color-outline-variant) var(--color-surface-container);
+  }
+}
+
+.dark {
+  scrollbar-color: var(--color-outline-variant) var(--color-surface-container);
+}

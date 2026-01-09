@@ -1,0 +1,26 @@
+{
+  "name": "@unisane/tokens",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": "./dist/unisane.css",
+    "./unisane.css": "./dist/unisane.css",
+    "./uni-tokens.css": "./dist/uni-tokens.css",
+    "./uni-theme.css": "./dist/uni-theme.css",
+    "./uni-base.css": "./dist/uni-base.css"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "dev": "node scripts/build.mjs --watch",
+    "lint": "eslint src --max-warnings 0"
+  },
+  "devDependencies": {
+    "chokidar": "^3.5.3",
+    "eslint": "^9.39.1",
+    "vitest": "^4.0.16"
+  }
+}

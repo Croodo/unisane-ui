@@ -13,13 +13,13 @@ This guide covers the build process, starter distribution, and OSS/PRO code stri
 | Monorepo structure | **Implemented** | 30 packages, pnpm workspaces, Turbo |
 | Package builds | **Implemented** | tsup, ESM output, declarations |
 | Codegen (routes/sdk) | **Implemented** | @unisane/devtools |
-| `tools/release/` | **Not Implemented** | Design spec below |
-| `build-starter.ts` | **Not Implemented** | Design spec below |
-| Import transformation | **Not Implemented** | Design spec below |
-| OSS/PRO stripping | **Not Implemented** | Design spec below |
+| `tools/release/` | **Implemented** | @unisane/release-tools package |
+| `build-starter.ts` | **Implemented** | Flattens packages to src/modules/ |
+| Import transformation | **Implemented** | @unisane/* → @/modules/* |
+| OSS/PRO stripping | **Implemented** | @pro-only markers supported |
 | @unisane/cli | **Not Implemented** | Planned for user distribution |
 
-> **Note:** This document describes the **target architecture**. Sections marked "Not Implemented" represent design specifications for future development. The tooling will be built after core features are complete.
+> **Usage:** Run `pnpm build:starter` to build PRO distribution, or `pnpm build:starter:oss` for OSS.
 
 ---
 

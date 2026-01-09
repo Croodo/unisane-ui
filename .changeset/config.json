@@ -1,0 +1,28 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@3.0.0/schema.json",
+  "changelog": [
+    "@changesets/changelog-github",
+    { "repo": "unisane/unisane" }
+  ],
+  "commit": false,
+  "fixed": [],
+  "linked": [
+    ["@unisane/kernel", "@unisane/gateway", "@unisane/contracts"],
+    ["@unisane/auth", "@unisane/identity"],
+    ["@unisane/ui-core", "@unisane/ui-cli", "@unisane/ui-tokens"],
+    ["create-unisane", "unisane", "@unisane/cli-core"]
+  ],
+  "access": "public",
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch",
+  "ignore": [
+    "@unisane/eslint-config",
+    "@unisane/typescript-config",
+    "@unisane/tailwind-config",
+    "saaskit"
+  ],
+  "privatePackages": {
+    "version": false,
+    "tag": false
+  }
+}
