@@ -13,6 +13,12 @@ export { Text } from "./primitives/text";
 export { Surface } from "./primitives/surface";
 export { StateLayer } from "./primitives/state-layer";
 export { FocusRing } from "./primitives/focus-ring";
+export { Label } from "./primitives/label";
+export type { LabelProps } from "./primitives/label";
+export { Input } from "./primitives/input";
+export type { InputProps } from "./primitives/input";
+export { Textarea } from "./primitives/textarea";
+export type { TextareaProps } from "./primitives/textarea";
 export {
   Icon,
   CheckIcon,
@@ -104,7 +110,7 @@ export {
   TableHead,
   TableCell,
 } from "./components/table";
-export { Button } from "./components/button";
+export { Button, buttonVariants } from "./components/button";
 export type { ButtonProps } from "./components/button";
 export { IconButton } from "./components/icon-button";
 export type { IconButtonProps } from "./components/icon-button";

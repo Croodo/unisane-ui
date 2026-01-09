@@ -83,12 +83,12 @@ export type ListFilesInput = z.infer<typeof ZListFiles>;
 // Response Types (for contracts)
 // ---------------------------------------------------------------------------
 export const ZStorageFileResponse = z.object({
-  id: z.string(),
-  tenantId: z.string(),
-  uploaderId: z.string(),
-  key: z.string(),
+  id: z.string().min(1),
+  tenantId: z.string().min(1),
+  uploaderId: z.string().min(1),
+  key: z.string().min(1),
   folder: ZStorageFolder,
-  filename: z.string(),
+  filename: z.string().min(1),
   contentType: ZContentType,
   sizeBytes: z.number(),
   status: ZFileStatus,

@@ -28,10 +28,10 @@ const avatarVariants = cva(
 );
 
 export type AvatarProps = VariantProps<typeof avatarVariants> & {
-  src?: string;
-  alt?: string;
-  fallback?: string;
-  className?: string;
+  src?: string | undefined;
+  alt?: string | undefined;
+  fallback?: string | undefined;
+  className?: string | undefined;
 };
 
 export const Avatar: React.FC<AvatarProps> = ({

@@ -2,13 +2,24 @@ import { listByProviderCursor as tenantIntegrationsCursor } from "../data/tenant
 import { SubscriptionsRepository } from "../data/subscriptions.repository";
 import { InvoicesRepository } from "../data/invoices.repository";
 import { PaymentsRepository } from "../data/payments.repository";
-import { metrics } from "@unisane/kernel";
+import { metrics, logger, ProviderError } from "@unisane/kernel";
 import { toMajorNumberCurrency } from "@unisane/kernel";
 import { getEnv } from "@unisane/kernel";
 import {
   mapStripeSubStatus,
   mapRazorpaySubStatus,
 } from "../domain/mappers";
+
+/**
+ * Configuration error for missing environment variables.
+ * Non-retryable as it requires deployment fix.
+ */
+class ConfigurationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ConfigurationError';
+  }
+}
 
 function qs(params: Record<string, string>): string {
   const u = new URLSearchParams();
@@ -21,13 +32,18 @@ async function stripeGet<T = unknown>(
   params: Record<string, string>
 ): Promise<T> {
   const { STRIPE_SECRET_KEY: key } = getEnv();
-  if (!key) throw new Error("STRIPE_SECRET_KEY is not set");
+  if (!key) throw new ConfigurationError("STRIPE_SECRET_KEY is not set");
   const url = `https://api.stripe.com${path}?${qs(params)}`;
   const res = await fetch(url, { headers: { Authorization: `Bearer ${key}` } });
   const json = (await res.json().catch(() => ({}))) as unknown;
   if (!res.ok) {
-    const msg = (json as { error?: { message?: string } }).error?.message ?? "";
-    throw new Error(`Stripe API error: ${res.status} ${msg}`);
+    const errorObj = json as { error?: { message?: string; code?: string; type?: string } };
+    const msg = errorObj.error?.message ?? `HTTP ${res.status}`;
+    const code = errorObj.error?.code;
+    // 4xx errors are typically non-retryable (bad request, invalid params)
+    // 5xx errors are retryable (server issues)
+    const retryable = res.status >= 500;
+    throw new ProviderError("stripe", new Error(msg), { retryable, providerCode: code });
   }
   return json as T;
 }
@@ -105,8 +121,9 @@ export async function reconcileStripe(
         });
         subs++;
       }
-    } catch {
-      // ignore per-customer failures
+    } catch (err) {
+      const isProviderError = err instanceof ProviderError;
+      logger.warn("reconcile: stripe subscription fetch failed", { err, tenantId, customer, provider: "stripe", retryable: isProviderError ? err.retryable : undefined });
     }
 
     if (deadlineMs && Date.now() > deadlineMs) break;
@@ -160,8 +177,9 @@ export async function reconcileStripe(
           payments++;
         }
       }
-    } catch {
-      // ignore per-customer failures
+    } catch (err) {
+      const isProviderError = err instanceof ProviderError;
+      logger.warn("reconcile: stripe invoice/payment fetch failed", { err, tenantId, customer, provider: "stripe", retryable: isProviderError ? err.retryable : undefined });
     }
   }
   const elapsed = Date.now() - t0;
@@ -179,7 +197,7 @@ export async function reconcileStripe(
 async function rzpGet<T = unknown>(path: string): Promise<T> {
   const { RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET } = getEnv();
   if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET)
-    throw new Error("RAZORPAY_KEY_ID/RAZORPAY_KEY_SECRET is not set");
+    throw new ConfigurationError("RAZORPAY_KEY_ID/RAZORPAY_KEY_SECRET is not set");
   const res = await fetch(`https://api.razorpay.com${path}`, {
     method: "GET",
     headers: {
@@ -192,9 +210,12 @@ async function rzpGet<T = unknown>(path: string): Promise<T> {
   });
   const json = (await res.json().catch(() => ({}))) as unknown;
   if (!res.ok) {
-    const msg =
-      (json as { error?: { description?: string } }).error?.description ?? "";
-    throw new Error(`Razorpay API error: ${res.status} ${msg}`);
+    const errorObj = json as { error?: { description?: string; code?: string } };
+    const msg = errorObj.error?.description ?? `HTTP ${res.status}`;
+    const code = errorObj.error?.code;
+    // 4xx errors are typically non-retryable, 5xx are retryable
+    const retryable = res.status >= 500;
+    throw new ProviderError("razorpay", new Error(msg), { retryable, providerCode: code });
   }
   return json as T;
 }
@@ -227,8 +248,9 @@ export async function reconcileRazorpay(
       });
       subs++;
     }
-  } catch {
-    // ignore sweep errors
+  } catch (err) {
+    const isProviderError = err instanceof ProviderError;
+    logger.warn("reconcile: razorpay subscription sweep failed", { err, provider: "razorpay", retryable: isProviderError ? err.retryable : undefined });
   }
   // Refresh recent payments from DB by provider id
   try {
@@ -257,8 +279,9 @@ export async function reconcileRazorpay(
         payments++;
       }
     }
-  } catch {
-    // ignore sweep errors
+  } catch (err) {
+    const isProviderError = err instanceof ProviderError;
+    logger.warn("reconcile: razorpay payment sweep failed", { err, provider: "razorpay", retryable: isProviderError ? err.retryable : undefined });
   }
   const elapsed = Date.now() - t0;
   metrics.inc("billing_reconcile_runs", {

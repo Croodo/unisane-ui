@@ -2,6 +2,12 @@ import { z } from "zod";
 
 export const ZRFC3339 = z.string().datetime();
 
+/**
+ * Unix timestamp in milliseconds.
+ * Standard format for all timestamp fields across the platform.
+ */
+export const ZUnixMs = z.number().int().positive().describe("Unix timestamp in ms");
+
 export function parseRFC3339(input: string): Date {
   const s = ZRFC3339.parse(input);
   const d = new Date(s);

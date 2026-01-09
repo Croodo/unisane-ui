@@ -129,10 +129,21 @@ This document tracks the implementation status of Unisane monorepo components. U
 | sdk:gen | **Implemented** | Generate SDK clients, hooks, types |
 | sdk:gen --admin-hooks | **Implemented** | Generate admin list params hooks |
 | doctor | **Implemented** | Health checks |
-| openapi:json | **Not Implemented** | OpenAPI spec generation |
+| openapi endpoint | **Partial** | `/api/openapi` works, CLI stub only logs warning |
 | openapi:serve | **Not Implemented** | Swagger UI |
 | crud | **Not Implemented** | CRUD scaffolding |
 | @unisane/test-utils | **Partial** | Testing utilities (stub only) |
+
+### CLI Stub Commands (Registered but Not Functional)
+
+| Command | Status | Notes |
+|---------|--------|-------|
+| `unisane init` | **Stub** | Logs warning |
+| `unisane generate crud` | **Stub** | Logs warning |
+| `unisane db push/pull/seed` | **Stub** | Logs warning |
+| `unisane tenant *` | **Stub** | Logs warning |
+| `unisane billing *` | **Stub** | Logs warning |
+| `unisane cache *` | **Stub** | Logs warning |
 
 ---
 
@@ -144,8 +155,7 @@ This document tracks the implementation status of Unisane monorepo components. U
 | .changeset/ | **Implemented** | Root | Version management with Changesets |
 | .github/workflows/release.yml | **Implemented** | Root | Automated releases |
 | scripts/sync-versions.mjs | **Implemented** | Root | Version synchronization |
-| tools/release/ | **Not Implemented** | Planned | Build scripts for starters |
-| build-starter.ts | **Not Implemented** | Planned | Flatten packages to src/modules/ |
+| build-starter.ts | **Implemented** | `packages/tooling/devtools/src/commands/release/` | Flatten packages to src/modules/ |
 | transform-imports.ts | **Not Implemented** | Planned | @unisane/* → @/modules/* |
 | strip-pro.ts | **Not Implemented** | Planned | OSS/PRO code stripping |
 
@@ -160,8 +170,8 @@ See [build-distribution.md](./build-distribution.md) for detailed design specs.
 | saaskit | **Implemented** | Full-featured SaaS template |
 | Platform layer | **Implemented** | Hexagonal architecture in src/platform/ |
 | SDK generation | **Implemented** | All targets via devtools |
-| Admin pages | **Implemented** | Users, tenants management |
-| Tenant pages | **Implemented** | Dashboard, settings, webhooks, team, API keys, audit |
+| Admin pages | **Partial** | 8/15 pages implemented |
+| Tenant pages | **Partial** | 9/15 pages implemented |
 
 ### Server Table State Pattern
 
@@ -182,22 +192,84 @@ See [build-distribution.md](./build-distribution.md) for detailed design specs.
 > **Completed:** Server Table State Phase 0-5 completed 2026-01-09.
 > See [server-table-state.md](../roadmaps/server-table-state.md) for details.
 
-### Feature Gaps (Phase 4 Analysis)
+### Admin Pages Status
 
-| Feature | Admin UI | Tenant UI | Backend | Notes |
-|---------|----------|-----------|---------|-------|
-| Analytics | ✅ `/admin/overview` | ❌ Missing | ✅ @unisane/analytics | Tenant-level analytics pending |
-| Usage/Quotas | ❌ Missing | ❌ Missing | ✅ @unisane/usage | High priority for tenant visibility |
-| Credits | ❌ Missing | Partial (in billing) | ✅ @unisane/credits | Admin credit management needed |
-| Import/Export | ❌ Missing | ❌ Missing | ✅ @unisane/import-export | Backend ready, UI pending |
-| Notifications | ❌ Missing | ❌ Missing | ✅ @unisane/notify | Email campaigns, preferences |
-| Storage | ❌ Missing | ❌ Missing | ✅ @unisane/storage | File management UI |
-| Media | ❌ Missing | ❌ Missing | ✅ @unisane/media | Asset library |
-| PDF | ❌ Missing | ❌ Missing | ✅ @unisane/pdf | Template management |
-| AI | — | ❌ Missing | ✅ @unisane/ai | Feature controls |
+| Page | Status | Notes |
+|------|--------|-------|
+| `/admin/overview` | **Implemented** | Analytics dashboard |
+| `/admin/tenants` | **Implemented** | Tenant management |
+| `/admin/users` | **Implemented** | User management |
+| `/admin/audit` | **Implemented** | Audit logs |
+| `/admin/flags` | **Implemented** | Feature flags |
+| `/admin/settings` | **Implemented** | Global settings |
+| `/admin/health` | **Implemented** | System health |
+| `/admin/outbox` | **Implemented** | Dead letter queue |
+| `/admin/credits` | **Not Implemented** | Needs admin API route |
+| `/admin/usage` | **Not Implemented** | Needs admin API route |
+| `/admin/import-export` | **Not Implemented** | Needs admin API route |
+| `/admin/notify` | **Not Implemented** | Needs admin API route |
+| `/admin/storage` | **Not Implemented** | Needs admin API route |
+| `/admin/media` | **Not Implemented** | Needs admin API route |
+| `/admin/pdf` | **Not Implemented** | Needs admin API route |
 
-> **Status:** Feature gap analysis completed 2026-01-09.
-> See [MASTER-ROADMAP.md](../roadmaps/MASTER-ROADMAP.md#phase-4-feature-completion-in-progress) for implementation order.
+### Tenant Pages Status
+
+| Page | Status | Notes |
+|------|--------|-------|
+| `/w/[slug]/dashboard` | **Implemented** | Workspace overview |
+| `/w/[slug]/settings` | **Implemented** | Workspace settings |
+| `/w/[slug]/billing` | **Implemented** | Billing & credits |
+| `/w/[slug]/team` | **Implemented** | Team management |
+| `/w/[slug]/account` | **Implemented** | Account settings |
+| `/w/[slug]/apikeys` | **Implemented** | API keys |
+| `/w/[slug]/webhooks` | **Implemented** | Webhooks |
+| `/w/[slug]/audit` | **Implemented** | Audit logs |
+| `/w/[slug]/templates` | **Implemented** | Templates |
+| `/w/[slug]/usage` | **Not Implemented** | API exists, needs UI |
+| `/w/[slug]/import-export` | **Not Implemented** | API exists, needs UI |
+| `/w/[slug]/notify` | **Not Implemented** | API exists, needs UI |
+| `/w/[slug]/storage` | **Not Implemented** | API exists, needs UI |
+| `/w/[slug]/media` | **Not Implemented** | API partial, needs UI |
+| `/w/[slug]/ai` | **Not Implemented** | API exists, needs UI |
+
+### Missing Admin API Routes
+
+| Endpoint | Module | Status |
+|----------|--------|--------|
+| `/admin/credits` | @unisane/credits | **Not Implemented** |
+| `/admin/usage` | @unisane/usage | **Not Implemented** |
+| `/admin/import-export` | @unisane/import-export | **Not Implemented** |
+| `/admin/notify` | @unisane/notify | **Not Implemented** |
+| `/admin/storage` | @unisane/storage | **Not Implemented** |
+| `/admin/media` | @unisane/media | **Not Implemented** |
+| `/admin/pdf` | @unisane/pdf | **Not Implemented** |
+
+> **Status:** Feature gap analysis updated 2026-01-09.
+> See [MASTER-ROADMAP.md](../roadmaps/MASTER-ROADMAP.md#phase-5-feature-completion) for implementation order.
+
+---
+
+## Known Issues
+
+### Critical Issues
+
+| ID | Issue | Impact | Status |
+|----|-------|--------|--------|
+| CRIT-001 | pino v8 vs v9 mismatch | Runtime compatibility | Open |
+| CRIT-002 | AWS SDK 500+ version drift | API compatibility risk | Open |
+| CRIT-003 | Idempotency key naming | API contract confusion | Open |
+
+### High Priority Issues
+
+| ID | Issue | Impact | Status |
+|----|-------|--------|--------|
+| HIGH-001 | @ts-rest version mismatch | Type inference issues | Open |
+| HIGH-002 | TenantId nullability inconsistent | Validation failures | Open |
+| HIGH-003 | @ts-nocheck in generators | No type safety in SDK | Open |
+| HIGH-004 | Empty catch blocks | Silent failures | Open |
+| HIGH-005 | 7 admin API routes missing | Blocks admin UI | Open |
+
+See [MASTER-ROADMAP.md](../roadmaps/MASTER-ROADMAP.md#known-issues-tracker) for full issue tracker.
 
 ---
 
@@ -206,7 +278,7 @@ See [build-distribution.md](./build-distribution.md) for detailed design specs.
 | Area | Status | Notes |
 |------|--------|-------|
 | Test framework | **Partial** | Vitest configured, few tests written |
-| @unisane/data-table tests | **Implemented** | 31 test files |
+| @unisane/data-table tests | **Implemented** | 29 test files |
 | Package tests | **Not Implemented** | Test scripts exist, no test files |
 | Turbo test task | **Not Implemented** | Not in turbo.json |
 
@@ -217,13 +289,15 @@ See [build-distribution.md](./build-distribution.md) for detailed design specs.
 | Document | Status | Notes |
 |----------|--------|-------|
 | ARCHITECTURE.md | **Implemented** | Main architecture overview |
-| build-distribution.md | **Implemented** | Distribution design (marked with status) |
+| build-distribution.md | **Partial** | Design documented, needs status updates |
 | sdk-architecture.md | **Implemented** | SDK patterns (marked with status) |
 | platform-layer.md | **Implemented** | Hexagonal architecture docs |
 | contracts-guide.md | **Implemented** | Contract patterns |
 | developer-experience.md | **Implemented** | DX guidelines |
 | dev-tools.md | **Implemented** | Devtools reference |
 | Design system docs | **Implemented** | 16 component guides |
+| MASTER-ROADMAP.md | **Implemented** | Full roadmap with issue tracker |
+| centralization-plan.md | **Implemented** | Detailed fix checklists |
 
 ---
 
@@ -234,6 +308,8 @@ See [build-distribution.md](./build-distribution.md) for detailed design specs.
 - [Platform Layer](./platform-layer.md) - Hexagonal architecture
 - [Contracts Guide](./contracts-guide.md) - API contract patterns
 - [Developer Experience](./developer-experience.md) - DX guidelines
+- [MASTER-ROADMAP](../roadmaps/MASTER-ROADMAP.md) - Full roadmap and issue tracker
+- [Centralization Plan](../roadmaps/centralization-plan.md) - Fix checklists
 
 ---
 

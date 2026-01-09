@@ -13,7 +13,7 @@ import {
   StatsCards,
   type StatItem,
 } from "@/src/components/dashboard/StatsCards";
-import { Building2, Users, CheckCircle } from "lucide-react";
+import { Icon } from "@unisane/ui/primitives/icon";
 import {
   StatusBadge,
   PlanBadge,
@@ -69,7 +69,7 @@ export default function TenantsClient({
   // Filter options from data
   const planOptions = useMemo(
     () =>
-      Array.from(new Set(remoteProps.data.map((d) => d.plan ?? "free"))).map(
+      Array.from(new Set(remoteProps.data.map((d) => d.planId ?? "free"))).map(
         (p) => ({
           label: String(p).charAt(0).toUpperCase() + String(p).slice(1),
           value: p ?? "free",
@@ -122,14 +122,14 @@ export default function TenantsClient({
         ),
       },
       {
-        key: "plan",
+        key: "planId",
         header: "Plan",
         width: 120,
         sortable: true,
         filterable: true,
         type: "select",
         filterOptions: planOptions,
-        render: (row) => <PlanBadge plan={row.plan ?? "free"} />,
+        render: (row) => <PlanBadge plan={row.planId ?? "free"} />,
       },
       {
         key: "subscription.status",
@@ -420,10 +420,10 @@ export default function TenantsClient({
     const enterprisePlan = stats.facets?.planId?.enterprise ?? 0;
 
     return [
-      { label: "Total Tenants", value: stats.total ?? 0, icon: Building2 },
-      { label: "Free Plan", value: freePlan, icon: Users },
-      { label: "Pro Plan", value: proPlan, icon: CheckCircle },
-      { label: "Enterprise Plan", value: enterprisePlan, icon: CheckCircle },
+      { label: "Total Tenants", value: stats.total ?? 0, icon: "apartment" },
+      { label: "Free Plan", value: freePlan, icon: "group" },
+      { label: "Pro Plan", value: proPlan, icon: "check_circle" },
+      { label: "Enterprise Plan", value: enterprisePlan, icon: "check_circle" },
     ];
   }, [statsQuery.data]);
 
@@ -435,7 +435,7 @@ export default function TenantsClient({
       />
       <div className="mt-4 space-y-4">
         <StatsCards items={statsItems} isLoading={statsQuery.isLoading} />
-        {/* 
+        {/*
           Before: 23 props
           After: spread + 5 props
         */}

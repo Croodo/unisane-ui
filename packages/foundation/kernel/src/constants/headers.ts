@@ -1,3 +1,8 @@
+/**
+ * @deprecated HTTP header constants have moved to @unisane/gateway.
+ * Import HEADER_NAMES from @unisane/gateway instead.
+ * This export is kept for backward compatibility.
+ */
 export const HEADER_NAMES = {
   AUTHORIZATION: 'authorization',
   IDEMPOTENCY_KEY: 'idempotency-key',
@@ -10,4 +15,3 @@ export const HEADER_NAMES = {
   WEBHOOK_TS: 'x-webhook-timestamp',
   CSRF_TOKEN: 'x-csrf-token',
 } as const;
-// no secondary alias; use HEADER_NAMES directly

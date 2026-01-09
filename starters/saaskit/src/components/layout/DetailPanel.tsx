@@ -1,10 +1,11 @@
 "use client";
 
 import { useDetailPanel } from "@/src/context/useDetailPanel";
-import { cn } from "@/src/lib/utils";
-import { X, ChevronLeft, ChevronRight } from "lucide-react";
-import { Button } from "@/src/components/ui/button";
-import { ScrollArea } from "@/src/components/ui/scroll-area";
+import { cn } from "@unisane/ui/lib/utils";
+import { Button } from "@unisane/ui/components/button";
+import { ScrollArea } from "@unisane/ui/components/scroll-area";
+import { Text } from "@unisane/ui/primitives/text";
+import { Icon } from "@unisane/ui/primitives/icon";
 
 const WIDTH_CLASSES = {
   sm: "w-[320px]",
@@ -29,19 +30,21 @@ export function DetailPanel() {
   return (
     <aside
       className={cn(
-        "h-full border-l bg-background flex flex-col shrink-0",
+        "h-full border-l border-outline-variant bg-surface flex flex-col shrink-0",
         "animate-in slide-in-from-right-4 duration-200",
         WIDTH_CLASSES[width]
       )}
     >
       {/* Header */}
-      <header className="flex items-center justify-between gap-2 px-4 py-3 border-b shrink-0">
+      <header className="flex items-center justify-between gap-2 px-4 py-3 border-b border-outline-variant shrink-0">
         <div className="flex-1 min-w-0">
-          <h2 className="text-sm font-semibold truncate">{content.title}</h2>
+          <Text variant="titleSmall" weight="semibold" className="truncate">
+            {content.title}
+          </Text>
           {content.subtitle && (
-            <p className="text-xs text-muted-foreground truncate">
+            <Text variant="bodySmall" color="onSurfaceVariant" className="truncate">
               {content.subtitle}
-            </p>
+            </Text>
           )}
         </div>
 
@@ -50,44 +53,44 @@ export function DetailPanel() {
           {nav && (
             <>
               <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
+                variant="text"
+                size="sm"
+                className="h-8 w-8 p-0"
                 onClick={nav.onPrev}
                 disabled={!nav.canPrev}
                 title="Previous"
               >
-                <ChevronLeft className="h-4 w-4" />
+                <Icon symbol="chevron_left" size="sm" />
               </Button>
               {nav.currentIndex !== undefined &&
                 nav.totalCount !== undefined && (
-                  <span className="text-xs text-muted-foreground tabular-nums px-1">
+                  <Text variant="labelSmall" color="onSurfaceVariant" className="tabular-nums px-1">
                     {nav.currentIndex + 1}/{nav.totalCount}
-                  </span>
+                  </Text>
                 )}
               <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
+                variant="text"
+                size="sm"
+                className="h-8 w-8 p-0"
                 onClick={nav.onNext}
                 disabled={!nav.canNext}
                 title="Next"
               >
-                <ChevronRight className="h-4 w-4" />
+                <Icon symbol="chevron_right" size="sm" />
               </Button>
-              <div className="w-px h-4 bg-border mx-1" />
+              <div className="w-px h-4 bg-outline-variant mx-1" />
             </>
           )}
 
           {/* Close button */}
           <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
+            variant="text"
+            size="sm"
+            className="h-8 w-8 p-0"
             onClick={close}
             title="Close panel"
           >
-            <X className="h-4 w-4" />
+            <Icon symbol="close" size="sm" />
           </Button>
         </div>
       </header>

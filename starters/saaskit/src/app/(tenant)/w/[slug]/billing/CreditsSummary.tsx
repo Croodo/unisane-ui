@@ -1,13 +1,6 @@
 import { hooks } from "@/src/sdk/hooks";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/src/components/ui/card";
-import { Coins } from "lucide-react";
+import { Card } from "@unisane/ui/components/card";
+import { Icon } from "@unisane/ui/primitives/icon";
 
 interface CreditsSummaryProps {
   billingMode: string;
@@ -28,18 +21,18 @@ export function CreditsSummary({ billingMode, tenantId }: CreditsSummaryProps) {
 
   return (
     <Card className="h-full">
-      <CardHeader className="space-y-1.5">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Coins className="size-5 text-primary" />
+      <Card.Header className="space-y-1.5">
+        <Card.Title className="flex items-center gap-2 text-lg">
+          <Icon symbol="monetization_on" size="sm" className="text-primary" />
           <span>Credits</span>
-        </CardTitle>
-        <CardDescription>{modeCopy}</CardDescription>
-      </CardHeader>
-      <CardContent>
+        </Card.Title>
+        <Card.Description>{modeCopy}</Card.Description>
+      </Card.Header>
+      <Card.Content>
         {isLoading ? (
-          <p className="text-sm text-muted-foreground">Loading credits…</p>
+          <p className="text-sm text-on-surface-variant">Loading credits…</p>
         ) : isError ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-on-surface-variant">
             We couldn&apos;t load your credits right now. Please refresh the
             page or try again later.
           </p>
@@ -48,15 +41,15 @@ export function CreditsSummary({ billingMode, tenantId }: CreditsSummaryProps) {
             <span className="text-3xl font-semibold tabular-nums">
               {formatted}
             </span>
-            <span className="text-sm text-muted-foreground">credits available</span>
+            <span className="text-sm text-on-surface-variant">credits available</span>
           </div>
         )}
-      </CardContent>
-      <CardFooter className="pt-2">
-        <p className="text-xs text-muted-foreground">
+      </Card.Content>
+      <Card.Footer className="pt-2">
+        <p className="text-xs text-on-surface-variant">
           Need more credits? Use the top-up options below.
         </p>
-      </CardFooter>
+      </Card.Footer>
     </Card>
   );
 }

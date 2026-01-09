@@ -639,7 +639,201 @@ grep -r "@pro-only" starters/saaskit-oss/src/
 
 ## UI Package Distribution
 
-### UI Component Copying
+### Development vs Distribution Architecture
+
+**Critical Architecture Decision:**
+
+During **development** in the monorepo, saaskit imports UI components from the `@unisane/ui` workspace package using **direct file imports**:
+
+```typescript
+// DEVELOPMENT (in saaskit within monorepo) - Direct file imports
+import { cn } from "@unisane/ui/lib/utils";
+import { Button } from "@unisane/ui/components/button";
+import { Text } from "@unisane/ui/primitives/text";
+import { Icon } from "@unisane/ui/primitives/icon";
+import { ThemeProvider } from "@unisane/ui/layout/theme-provider";
+```
+
+During **distribution** (when user runs `create-unisane`), the build process:
+1. Copies `@unisane/ui` source files with **flattened structure**
+2. Transforms imports according to the rules below
+
+```typescript
+// DISTRIBUTION (user's project after create-unisane)
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Text } from "@/components/ui/text";
+import { Icon } from "@/components/ui/icon";
+import { ThemeProvider } from "@/components/ui/theme-provider";
+```
+
+### Why This Architecture?
+
+| Aspect | Workspace Import (Development) | Local Copy (Distribution) |
+|--------|--------------------------------|---------------------------|
+| Updates | Automatic - changes to @unisane/ui reflect immediately | Manual - user has full control |
+| Customization | None - use library as-is | Full - user owns the code |
+| Dependencies | Requires workspace:* | Self-contained, no workspace deps |
+| Testing | Test with latest UI changes | Test user's actual experience |
+
+### @unisane/ui Source Structure (Development)
+
+```
+packages/ui/core/src/
+├── components/              # 56 component files
+│   ├── button.tsx
+│   ├── card.tsx
+│   ├── dialog.tsx
+│   ├── text-field.tsx
+│   ├── navigation/          # Nested group
+│   │   ├── nav.tsx
+│   │   ├── nav-item.tsx
+│   │   └── nav-group.tsx
+│   └── sidebar/             # Nested group
+│       ├── sidebar.tsx
+│       └── sidebar-context.tsx
+├── primitives/              # 9 primitive files
+│   ├── text.tsx
+│   ├── icon.tsx
+│   ├── surface.tsx
+│   ├── input.tsx
+│   └── ...
+├── layout/                  # 5 layout files
+│   ├── theme-provider.tsx
+│   ├── app-layout.tsx
+│   └── ...
+├── hooks/                   # 5 hook files
+│   ├── use-scroll-lock.ts
+│   └── ...
+├── lib/
+│   └── utils.ts             # cn() utility
+├── types/
+│   └── navigation.ts
+└── index.ts                 # Barrel (backwards compat only)
+```
+
+### Distribution Structure (User's Project)
+
+Following **shadcn conventions** for best DX:
+
+```
+src/
+├── lib/
+│   └── utils.ts                     ← @unisane/ui/lib/utils
+│
+└── components/
+    └── ui/
+        ├── button.tsx               ← components/button.tsx
+        ├── card.tsx                 ← components/card.tsx
+        ├── dialog.tsx               ← components/dialog.tsx
+        ├── text-field.tsx           ← components/text-field.tsx
+        ├── text.tsx                 ← primitives/text.tsx (flattened)
+        ├── icon.tsx                 ← primitives/icon.tsx (flattened)
+        ├── surface.tsx              ← primitives/surface.tsx (flattened)
+        ├── theme-provider.tsx       ← layout/theme-provider.tsx (flattened)
+        ├── app-layout.tsx           ← layout/app-layout.tsx (flattened)
+        ├── navigation/              ← Preserved nested group
+        │   ├── nav.tsx
+        │   ├── nav-item.tsx
+        │   └── nav-group.tsx
+        ├── sidebar/                 ← Preserved nested group
+        │   ├── sidebar.tsx
+        │   └── sidebar-context.tsx
+        └── hooks/                   ← Preserved nested folder
+            ├── use-scroll-lock.ts
+            └── ...
+```
+
+### Import Transformation Rules
+
+| Development Import | Distribution Import | Notes |
+|-------------------|---------------------|-------|
+| `@unisane/ui/lib/utils` | `@/lib/utils` | shadcn convention |
+| `@unisane/ui/components/button` | `@/components/ui/button` | Components flatten |
+| `@unisane/ui/components/card` | `@/components/ui/card` | |
+| `@unisane/ui/primitives/text` | `@/components/ui/text` | Primitives flatten |
+| `@unisane/ui/primitives/icon` | `@/components/ui/icon` | |
+| `@unisane/ui/primitives/surface` | `@/components/ui/surface` | |
+| `@unisane/ui/layout/theme-provider` | `@/components/ui/theme-provider` | Layout flattens |
+| `@unisane/ui/layout/app-layout` | `@/components/ui/app-layout` | |
+| `@unisane/ui/components/sidebar` | `@/components/ui/sidebar` | Nested preserved |
+| `@unisane/ui/components/navigation` | `@/components/ui/navigation` | Nested preserved |
+| `@unisane/ui/hooks/use-scroll-lock` | `@/components/ui/hooks/use-scroll-lock` | Hooks stay nested |
+
+### Key Design Decisions
+
+1. **`lib/utils.ts` → `@/lib/utils`**: Follows shadcn convention where utilities live at project root `lib/` folder
+
+2. **Flat component structure**: Users don't need to remember if something is a "primitive", "component", or "layout" - everything is at `@/components/ui/X`
+
+3. **Nested groups preserved**: Related components like `navigation/` and `sidebar/` stay grouped together
+
+4. **No barrel imports**: Direct file imports only for better tree-shaking and IDE experience
+
+### What Should NOT Be in saaskit/src/components/ui/
+
+During development, the `saaskit/src/components/ui/` directory should **only** contain:
+- **Saaskit-specific components** (e.g., `StatCard`, `StatusBadge`)
+- **NOT** library components that exist in `@unisane/ui`
+
+```
+// CORRECT (during development)
+starters/saaskit/src/components/
+├── ui/
+│   ├── stat-card.tsx        ← Saaskit-specific
+│   └── status-badge.tsx     ← Saaskit-specific
+├── feedback/
+│   └── ErrorCard.tsx        ← App-specific component
+└── layout/
+    └── PageHeader.tsx       ← App-specific component
+
+// INCORRECT (anti-pattern)
+starters/saaskit/src/components/ui/
+├── button.tsx              ← Should import from @unisane/ui
+├── card.tsx                ← Should import from @unisane/ui
+└── ...                     ← Duplicated library components
+```
+
+### Import Pattern: Direct File Imports
+
+**IMPORTANT:** Use direct file imports, NOT barrel imports:
+
+```typescript
+// CORRECT (development) - Direct file imports
+import { cn } from "@unisane/ui/lib/utils";
+import { Button } from "@unisane/ui/components/button";
+import { Text } from "@unisane/ui/primitives/text";
+import { Icon } from "@unisane/ui/primitives/icon";
+import { ThemeProvider } from "@unisane/ui/layout/theme-provider";
+
+// INCORRECT - Barrel imports (avoid)
+import { Button, Text, Icon, cn } from "@unisane/ui";
+```
+
+**Why direct imports?**
+- Better tree-shaking for bundlers
+- Clearer file references for users who want to customize
+- Better IDE "Go to definition" experience
+- Simpler transformation to distribution paths
+
+### @unisane/ui Subpath Exports
+
+The package.json exports are configured to support direct imports:
+
+```json
+{
+  "exports": {
+    ".": { "import": "./dist/index.js" },
+    "./components/*": { "import": "./dist/components/*.js" },
+    "./primitives/*": { "import": "./dist/primitives/*.js" },
+    "./layout/*": { "import": "./dist/layout/*.js" },
+    "./hooks/*": { "import": "./dist/hooks/*.js" },
+    "./lib/*": { "import": "./dist/lib/*.js" }
+  }
+}
+```
+
+### UI Component Copying & Transformation
 
 ```typescript
 // tools/release/src/copy-ui.ts
@@ -649,73 +843,131 @@ import { glob } from "glob";
 import path from "path";
 
 interface CopyUIOptions {
-  srcDir: string;
-  destDir: string;
+  srcDir: string;           // packages/ui/core/src
+  destLibDir: string;       // starters/X/src/lib
+  destComponentsDir: string; // starters/X/src/components/ui
   dryRun?: boolean;
 }
 
 export async function copyUIComponents(options: CopyUIOptions) {
-  const { srcDir, destDir, dryRun } = options;
-
-  // Components to copy
-  const componentDirs = [
-    "components",
-    "primitives",
-    "layout",
-    "lib",
-    "hooks",
-  ];
+  const { srcDir, destLibDir, destComponentsDir, dryRun } = options;
 
   if (!dryRun) {
-    ensureDirSync(destDir);
+    ensureDirSync(destLibDir);
+    ensureDirSync(destComponentsDir);
   }
 
   let copiedCount = 0;
 
-  for (const dir of componentDirs) {
-    const src = path.join(srcDir, dir);
-    const dest = path.join(destDir, dir);
-
-    const files = glob.sync("**/*.{ts,tsx}", { cwd: src });
-
-    for (const file of files) {
-      if (!dryRun) {
-        copySync(path.join(src, file), path.join(dest, file));
-      }
-      copiedCount++;
+  // ═══════════════════════════════════════════════════════════════
+  // 1. Copy lib/utils.ts → src/lib/utils.ts (shadcn convention)
+  // ═══════════════════════════════════════════════════════════════
+  const libSrc = path.join(srcDir, "lib");
+  const libFiles = glob.sync("**/*.{ts,tsx}", { cwd: libSrc });
+  for (const file of libFiles) {
+    if (!dryRun) {
+      copySync(path.join(libSrc, file), path.join(destLibDir, file));
     }
+    copiedCount++;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // 2. Copy components/*.tsx → src/components/ui/*.tsx (flatten)
+  // ═══════════════════════════════════════════════════════════════
+  const componentsSrc = path.join(srcDir, "components");
+  const componentFiles = glob.sync("**/*.{ts,tsx}", { cwd: componentsSrc });
+  for (const file of componentFiles) {
+    if (!dryRun) {
+      copySync(
+        path.join(componentsSrc, file),
+        path.join(destComponentsDir, file)
+      );
+    }
+    copiedCount++;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // 3. Copy primitives/*.tsx → src/components/ui/*.tsx (flatten)
+  // ═══════════════════════════════════════════════════════════════
+  const primitivesSrc = path.join(srcDir, "primitives");
+  const primitiveFiles = glob.sync("*.{ts,tsx}", { cwd: primitivesSrc });
+  for (const file of primitiveFiles) {
+    if (!dryRun) {
+      copySync(
+        path.join(primitivesSrc, file),
+        path.join(destComponentsDir, file) // Flatten to root of ui/
+      );
+    }
+    copiedCount++;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // 4. Copy layout/*.tsx → src/components/ui/*.tsx (flatten)
+  // ═══════════════════════════════════════════════════════════════
+  const layoutSrc = path.join(srcDir, "layout");
+  const layoutFiles = glob.sync("*.{ts,tsx}", { cwd: layoutSrc });
+  for (const file of layoutFiles) {
+    if (!dryRun) {
+      copySync(
+        path.join(layoutSrc, file),
+        path.join(destComponentsDir, file) // Flatten to root of ui/
+      );
+    }
+    copiedCount++;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // 5. Copy hooks/ → src/components/ui/hooks/ (preserve nesting)
+  // ═══════════════════════════════════════════════════════════════
+  const hooksSrc = path.join(srcDir, "hooks");
+  const hooksFiles = glob.sync("**/*.{ts,tsx}", { cwd: hooksSrc });
+  for (const file of hooksFiles) {
+    if (!dryRun) {
+      copySync(
+        path.join(hooksSrc, file),
+        path.join(destComponentsDir, "hooks", file)
+      );
+    }
+    copiedCount++;
   }
 
   console.log(`   Copied ${copiedCount} UI files`);
-
-  // Copy styles
-  const stylesDir = path.join(srcDir, "styles");
-  if (existsSync(stylesDir) && !dryRun) {
-    copySync(stylesDir, path.join(destDir, "..", "styles"));
-  }
 }
 ```
 
-### Output Structure
+### Import Transformation Implementation
 
-```
-starters/saaskit/src/
-├── components/
-│   └── ui/
-│       ├── components/
-│       │   ├── button.tsx
-│       │   ├── dialog.tsx
-│       │   └── ...
-│       ├── primitives/
-│       │   ├── ripple.tsx
-│       │   └── ...
-│       ├── layout/
-│       │   └── theme-provider.tsx
-│       └── lib/
-│           └── utils.ts
-│
-└── styles/
-    └── unisane.css
+```typescript
+// tools/release/src/transform-ui-imports.ts
+
+function transformUIImportPath(importPath: string): string {
+  // @unisane/ui/lib/* → @/lib/*
+  if (importPath.startsWith("@unisane/ui/lib/")) {
+    return importPath.replace("@unisane/ui/lib/", "@/lib/");
+  }
+
+  // @unisane/ui/components/* → @/components/ui/*
+  if (importPath.startsWith("@unisane/ui/components/")) {
+    return importPath.replace("@unisane/ui/components/", "@/components/ui/");
+  }
+
+  // @unisane/ui/primitives/* → @/components/ui/* (flatten)
+  if (importPath.startsWith("@unisane/ui/primitives/")) {
+    return importPath.replace("@unisane/ui/primitives/", "@/components/ui/");
+  }
+
+  // @unisane/ui/layout/* → @/components/ui/* (flatten)
+  if (importPath.startsWith("@unisane/ui/layout/")) {
+    return importPath.replace("@unisane/ui/layout/", "@/components/ui/");
+  }
+
+  // @unisane/ui/hooks/* → @/components/ui/hooks/*
+  if (importPath.startsWith("@unisane/ui/hooks/")) {
+    return importPath.replace("@unisane/ui/hooks/", "@/components/ui/hooks/");
+  }
+
+  return importPath;
+}
 ```
 
 ---

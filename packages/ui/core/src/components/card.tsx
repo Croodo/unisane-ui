@@ -159,10 +159,23 @@ const CardTitle = React.forwardRef<
 ));
 CardTitle.displayName = "CardTitle";
 
+const CardDescription = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLParagraphElement>
+>(({ className, ...props }, ref) => (
+  <p
+    ref={ref}
+    className={cn("text-body-small text-on-surface-variant", className)}
+    {...props}
+  />
+));
+CardDescription.displayName = "CardDescription";
+
 export const Card = Object.assign(CardRoot, {
   Header: CardHeader,
   Content: CardContent,
   Footer: CardFooter,
   Media: CardMedia,
   Title: CardTitle,
+  Description: CardDescription,
 });

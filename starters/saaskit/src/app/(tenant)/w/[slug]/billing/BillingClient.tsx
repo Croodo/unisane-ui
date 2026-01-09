@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { Button } from "@/src/components/ui/button";
-import { ArrowUpRight, CreditCard, Receipt, Wallet, Coins } from "lucide-react";
-import { toast } from "sonner";
+import { Button } from "@unisane/ui/components/button";
+import { Icon } from "@unisane/ui/primitives/icon";
+import { toast } from "@unisane/ui/components/toast";
 import { useSession } from "@/src/hooks/useSession";
 import { hooks } from "@/src/sdk/hooks";
 import { normalizeError } from "@/src/sdk/errors";
@@ -23,7 +23,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "@/src/components/ui/tabs";
+} from "@unisane/ui/components/tabs";
 import { InvoicesTab, PaymentsTab, CreditsTab } from "./components";
 
 /**
@@ -144,10 +144,10 @@ export function BillingClient({ slug }: { slug: string }) {
         title="Billing"
         subtitle="Manage your plan, credits, and billing history."
         actions={
-          <Button asChild size="sm" variant="link" className="gap-1 px-0">
+          <Button asChild size="sm" variant="text" className="gap-1 px-0">
             <Link href="/pricing">
               View plans
-              <ArrowUpRight className="h-3.5 w-3.5" />
+              <Icon symbol="north_east" size="xs" />
             </Link>
           </Button>
         }
@@ -155,19 +155,19 @@ export function BillingClient({ slug }: { slug: string }) {
       <Tabs value={tab} onValueChange={handleTabChange} className="space-y-6">
         <TabsList>
           <TabsTrigger value="overview" className="gap-2">
-            <CreditCard className="h-4 w-4" />
+            <Icon symbol="credit_card" size="sm" />
             Overview
           </TabsTrigger>
           <TabsTrigger value="invoices" className="gap-2">
-            <Receipt className="h-4 w-4" />
+            <Icon symbol="receipt" size="sm" />
             Invoices
           </TabsTrigger>
           <TabsTrigger value="payments" className="gap-2">
-            <Wallet className="h-4 w-4" />
+            <Icon symbol="account_balance_wallet" size="sm" />
             Payments
           </TabsTrigger>
           <TabsTrigger value="credits" className="gap-2">
-            <Coins className="h-4 w-4" />
+            <Icon symbol="monetization_on" size="sm" />
             Credits
           </TabsTrigger>
         </TabsList>

@@ -1,15 +1,18 @@
 "use client";
 
 import { ReactNode, useState } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
-import { cn } from "@/src/lib/utils";
-import { Badge } from "@/src/components/ui/badge";
+import { cn } from "@unisane/ui/lib/utils";
+import { Badge } from "@unisane/ui/components/badge";
+import { Text } from "@unisane/ui/primitives/text";
+import { Icon } from "@unisane/ui/primitives/icon";
 
 export interface RowDetailSectionProps {
   title: string;
-  icon?: ReactNode;
+  /** Material Symbol icon name */
+  icon?: string;
   badge?: ReactNode;
-  badgeVariant?: "default" | "secondary" | "destructive" | "outline";
+  badgeVariant?: "filled" | "tonal" | "outlined";
+  badgeClassName?: string;
   collapsible?: boolean;
   defaultCollapsed?: boolean;
   children: ReactNode;
@@ -20,7 +23,8 @@ export function RowDetailSection({
   title,
   icon,
   badge,
-  badgeVariant = "secondary",
+  badgeVariant = "tonal",
+  badgeClassName,
   collapsible = false,
   defaultCollapsed = false,
   children,
@@ -42,20 +46,22 @@ export function RowDetailSection({
         disabled={!collapsible}
       >
         {collapsible && (
-          <span className="text-on-surface-variant">
-            {isCollapsed ? (
-              <ChevronRight className="h-4 w-4" />
-            ) : (
-              <ChevronDown className="h-4 w-4" />
-            )}
-          </span>
+          <Icon
+            symbol={isCollapsed ? "chevron_right" : "expand_more"}
+            size="sm"
+            className="text-on-surface-variant"
+          />
         )}
-        {icon && <span className="text-on-surface-variant">{icon}</span>}
-        <span className="text-label-medium text-on-surface flex-1">{title}</span>
+        {icon && (
+          <Icon symbol={icon} size="sm" className="text-on-surface-variant" />
+        )}
+        <Text variant="labelMedium" color="onSurface" className="flex-1">
+          {title}
+        </Text>
         {badge &&
           (typeof badge === "string" ? (
-            <Badge variant={badgeVariant} className="text-label-small">
-              {badge}
+            <Badge variant={badgeVariant} className={badgeClassName}>
+              <Text variant="labelSmall">{badge}</Text>
             </Badge>
           ) : (
             badge

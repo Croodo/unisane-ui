@@ -2,7 +2,7 @@
 
 > **Status:** Active
 > **Created:** 2026-01-09
-> **Last Updated:** 2026-01-09
+> **Last Updated:** 2026-01-10
 > **Owner:** Engineering Team
 
 ---
@@ -27,15 +27,19 @@ Build a **unified, centralized platform** for rapid SaaS development where:
 | **Package Organization** | foundation/, modules/, pro/, ui/, tooling/ | Excellent |
 | **Foundation** | kernel + gateway + contracts | Good |
 | **Feature Packages** | 15 modules + 3 PRO | Good |
-| **UI Library** | @unisane/ui + data-table | Good |
+| **UI Library** | @unisane/ui + data-table + sidebar + command + stat-card | Excellent |
+| **UI Consolidation** | saaskit migrated to @unisane/ui (M3 patterns) | Excellent |
 | **SDK Generation** | @unisane/devtools | Good |
-| **Platform Layer** | Hexagonal architecture | Good |
+| **Platform Layer** | Hexagonal architecture | Good (app-specific code correctly placed) |
 | **Linting** | All packages have lint scripts | Good |
 | **Testing** | vitest ^4.0.16, shared base config | Good |
-| **Distribution** | Design only, not built | Blocked |
-| **Contract Registry** | Fragmented | Needs Work |
-| **Schema Organization** | 5 levels, duplication risk | Needs Work |
-| **Admin Configs** | Hardcoded in gateway | Needs Work |
+| **Distribution** | build-starter.ts implemented | Good |
+| **Admin Pages** | 8/15 implemented | Needs Work |
+| **Tenant Pages** | 9/15 implemented | Needs Work |
+| **Dependency Versions** | All aligned | Excellent |
+| **Schema Consistency** | All standardized | Excellent |
+| **Code Quality** | @ts-nocheck in generators (deferred) | Good |
+| **Error Handling** | Complete (GlobalErrorBoundary, ErrorBanner, field errors) | Excellent |
 
 See [implementation-status.md](../architecture/implementation-status.md) for detailed status.
 
@@ -43,53 +47,54 @@ See [implementation-status.md](../architecture/implementation-status.md) for det
 
 ## Strategic Goals
 
-### Goal 1: Complete Feature Development
-Build all planned features before focusing on distribution.
+### Goal 1: Fix Critical Issues
+Address dependency conflicts, schema inconsistencies, and potential bugs.
 
-### Goal 2: Centralize Architecture
-Reduce fragmentation, establish single sources of truth.
+### Goal 2: Complete Feature Development
+Build all planned admin and tenant UI pages.
 
-### Goal 3: Improve Developer Experience
-Better tooling, documentation, error messages.
+### Goal 3: Improve Code Quality
+Remove @ts-nocheck, fix empty catch blocks, standardize patterns.
 
 ### Goal 4: Enable Distribution
-Build tools to ship starters to end users.
+Finalize tools to ship starters to end users.
 
 ---
 
-## Roadmap Phases
+## Completed Phases (Archive)
 
-### Phase 1: Foundation Consolidation (COMPLETED ✅)
+<details>
+<summary><strong>Phase 1: Foundation Consolidation (COMPLETED ✅)</strong></summary>
 
 **Goal:** Fix fragmentation, improve consistency.
 
-| Task | Priority | Status |
-|------|----------|--------|
-| Standardize lint scripts across packages | High | ✅ Done |
-| Add eslint to all packages | High | ✅ Done |
-| Create root eslint.config.mjs | High | ✅ Done |
-| Fix vitest version drift | High | ✅ Done (^4.0.16) |
-| Create shared vitest.base.ts | High | ✅ Done |
-| Standardize pino-pretty version | High | ✅ Done (^13.0.0) |
-| Update SDK generator for page persistence | High | Pending (Phase 4) |
-| Improve SDK naming conventions | Medium | Pending (Phase 4) |
-| Remove @ts-nocheck from generated code | Medium | Pending (Phase 4) |
+| Task | Status |
+|------|--------|
+| Standardize lint scripts across packages | ✅ Done |
+| Add eslint to all packages | ✅ Done |
+| Create root eslint.config.mjs | ✅ Done |
+| Fix vitest version drift | ✅ Done (^4.0.16) |
+| Create shared vitest.base.ts | ✅ Done |
+| Standardize pino-pretty version | ✅ Done (^13.0.0) |
 
-### Phase 2: Package Structure Reorganization (COMPLETED ✅)
+</details>
+
+<details>
+<summary><strong>Phase 2: Package Structure Reorganization (COMPLETED ✅)</strong></summary>
 
 **Goal:** Multi-platform architecture with categorized package folders.
 
-| Task | Priority | Status |
-|------|----------|--------|
-| Create foundation/ folder (kernel, gateway, contracts) | High | ✅ Done |
-| Create modules/ folder (15 shared modules) | High | ✅ Done |
-| Create pro/ folder (analytics, sso, import-export) | High | ✅ Done |
-| Create ui/ folder (core, data-table, tokens, cli) | High | ✅ Done |
-| Create tooling/ folder (devtools, configs, test-utils) | High | ✅ Done |
-| Update pnpm-workspace.yaml | High | ✅ Done |
-| Update all tsconfig.json paths | High | ✅ Done |
-| Verify pnpm install works | High | ✅ Done |
-| Verify turbo build works | High | ✅ Done (31/32 packages) |
+| Task | Status |
+|------|--------|
+| Create foundation/ folder (kernel, gateway, contracts) | ✅ Done |
+| Create modules/ folder (15 shared modules) | ✅ Done |
+| Create pro/ folder (analytics, sso, import-export) | ✅ Done |
+| Create ui/ folder (core, data-table, tokens, cli) | ✅ Done |
+| Create tooling/ folder (devtools, configs, test-utils) | ✅ Done |
+| Update pnpm-workspace.yaml | ✅ Done |
+| Update all tsconfig.json paths | ✅ Done |
+| Verify pnpm install works | ✅ Done |
+| Verify turbo build works | ✅ Done (31/32 packages) |
 
 **Result:**
 ```
@@ -101,63 +106,171 @@ packages/
 └── tooling/      # devtools, test-utils, configs
 ```
 
-### Phase 3: Schema & Contract Centralization (COMPLETED ✅)
+</details>
+
+<details>
+<summary><strong>Phase 3: Schema & Contract Centralization (COMPLETED ✅)</strong></summary>
 
 **Goal:** Single source of truth for schemas and contracts.
 
-| Task | Priority | Status |
-|------|----------|--------|
-| Audit contract files for inline schemas | High | ✅ Done (22 files) |
-| Establish schema hierarchy rules | High | ✅ Done (contracts-guide.md) |
-| Document schema rules | High | ✅ Done |
+| Task | Status |
+|------|--------|
+| Audit contract files for inline schemas | ✅ Done (22 files) |
+| Establish schema hierarchy rules | ✅ Done (contracts-guide.md) |
+| Document schema rules | ✅ Done |
 
-**Result:** Audited all 22 contract files. Found 0 domain schema duplications. All inline schemas are intentionally contract-specific (response DTOs, request bodies, admin queries). Schema rules documented in [contracts-guide.md](../architecture/contracts-guide.md#schema-rules).
+**Result:** Audited all 22 contract files. Found 0 domain schema duplications. Schema rules documented in [contracts-guide.md](../architecture/contracts-guide.md#schema-rules).
 
-**Note:** Admin config self-registration and field registry consolidation moved to Phase 4 (feature completion) as they require more implementation work.
+</details>
 
-### Phase 4: Feature Completion (IN PROGRESS)
+<details>
+<summary><strong>Phase 4.1: Server Table State (COMPLETED ✅)</strong></summary>
 
-**Goal:** Complete all planned features for saaskit.
+**Goal:** Implement server-first data table patterns.
 
-#### 4.1 Completed Tasks
+| Task | Status |
+|------|--------|
+| Server table state pattern (Phase 0-5) | ✅ Done |
+| useServerTable hook | ✅ Done |
+| SDK page persistence | ✅ Done |
+| Apply patterns to admin pages | ✅ Analyzed |
+| Apply patterns to tenant pages | ✅ Analyzed |
 
-| Task | Priority | Status |
-|------|----------|--------|
-| Server table state pattern (Phase 0-5) | High | ✅ Done |
-| useServerTable hook | High | ✅ Done |
-| SDK page persistence | High | ✅ Done |
-| Apply patterns to other admin pages | Medium | ✅ Analyzed (no changes needed) |
-| Apply patterns to tenant pages | Medium | ✅ Analyzed (no changes needed) |
-
-**Server Table State Completed (Phase 0-5):**
+**Result:**
 - `useServerTable` hook at `starters/saaskit/src/hooks/useServerTable.ts`
 - SDK hooks with page persistence in `gen-admin-hooks.ts`
 - UsersClient (server-first) and TenantsClient (client-first) patterns working
 
-See [server-table-state.md](./server-table-state.md) for full details.
+</details>
+
+<details>
+<summary><strong>Phase 4.2: UI Library Consolidation (COMPLETED ✅)</strong></summary>
+
+**Goal:** Migrate saaskit to use @unisane/ui with Material 3 patterns, eliminate local UI component duplication.
+
+| Task | Status |
+|------|--------|
+| Add Command component to @unisane/ui | ✅ Done |
+| Merge SidebarMenuButton/SidebarNavItem into @unisane/ui | ✅ Done |
+| Move StatCard/StatGrid to @unisane/ui | ✅ Done |
+| Update saaskit sidebar imports to @unisane/ui | ✅ Done |
+| Update saaskit command imports to @unisane/ui | ✅ Done |
+| Update saaskit stat-card imports to @unisane/ui | ✅ Done |
+| Replace sonner with @unisane/ui toast | ✅ Done |
+| Delete local duplicate components from saaskit | ✅ Done |
+| Add explicit package.json exports for folder components | ✅ Done |
+
+**Result:**
+
+Components moved to @unisane/ui:
+- `@unisane/ui/components/command` - Command palette (cmdk-based)
+- `@unisane/ui/components/sidebar` - Full sidebar with SidebarMenuButton, SidebarNavItem
+- `@unisane/ui/components/stat-card` - StatCard and StatGrid
+- `@unisane/ui/components/toast` - Toast notifications (replaces sonner)
+
+saaskit cleanup:
+- Deleted `src/components/ui/sidebar/`
+- Deleted `src/components/ui/command.tsx`
+- Deleted `src/components/ui/stat-card.tsx`
+- Deleted `src/components/ui/sonner.tsx`
+- Kept `src/components/ui/status-badge.tsx` (app-specific dependencies)
+
+Package.json exports added:
+- `./components/sidebar` → `./dist/components/sidebar/index.js`
+- `./components/navigation` → `./dist/components/navigation/index.js`
+- `./components/data-table` → `./dist/components/data-table/index.js`
+
+</details>
 
 ---
 
-#### 4.2 Feature Gap Analysis (2026-01-09)
+## Active Phases
 
-**Admin Pages:** 13 exist, 8 modules missing UI
-**Tenant Pages:** 9 exist, 9 modules missing UI
+### Phase 4: Critical Fixes ✅ COMPLETED
+
+**Goal:** Fix critical issues discovered during codebase analysis.
+
+> **Note:** See [centralization-plan.md](./centralization-plan.md) for detailed implementation checklists.
+
+#### 4.1 Dependency Version Conflicts ✅ COMPLETED
+
+All 6 version conflicts resolved.
+
+#### 4.2 Schema & Type Inconsistencies ✅ COMPLETED
+
+| Issue | Status |
+|-------|--------|
+| Idempotency key naming | ✅ Standardized to `idem` |
+| TenantId nullability | ✅ Policy defined |
+| Plan field naming (`planId` vs `plan`) | ✅ Fixed |
+| Timestamp format | ✅ Standardized to Unix ms |
+| Actor field naming | ✅ Policy defined |
+| Pagination limits | ✅ Using kernel constants |
+| ListPageArgs type | ✅ Added to kernel |
+
+#### 4.3 Code Quality Issues ✅ COMPLETED
+
+| Issue | Status |
+|-------|--------|
+| Empty catch blocks | ✅ Added error logging |
+| Race condition in package-manager | ✅ Fixed |
+| Console.log with auth codes | ✅ Replaced with logger |
+| @ts-nocheck in SDK generators | ✅ Documented (deferred - requires upstream ts-rest changes) |
+
+#### 4.4 Code Duplication ✅ COMPLETED
+
+| Pattern | Status |
+|---------|--------|
+| List Args Types | ✅ `ListPageArgs` in kernel |
+| Phone/Email validation | ✅ Using identity module |
+| Error factory | ✅ `createDomainError` in kernel |
+| Repository boilerplate | ✅ Documented (deferred - low priority) |
+
+#### 4.5 Architectural Layer Fixes ✅ COMPLETED
+
+HTTP code moved from kernel to gateway. Kernel files marked @deprecated.
+
+#### 4.6 Enterprise Error Handling ✅ COMPLETED
+
+All error handling improvements implemented:
+
+| Area | Status |
+|------|--------|
+| Backend error consolidation | ✅ Using specific ErrorCode (E1xxx-E8xxx) |
+| `retryable` flag on DomainError | ✅ Added |
+| `FieldError` interface | ✅ Added to kernel |
+| `ValidationError.fromZod()` | ✅ Enhanced |
+| `ProviderError` base class | ✅ Created |
+| Module error codes | ✅ All 18 modules migrated |
+| Vendor error wrapping | ✅ Stripe/Razorpay wrapped |
+| GlobalErrorBoundary | ✅ `src/components/feedback/GlobalErrorBoundary.tsx` |
+| ErrorBanner component | ✅ `src/components/feedback/ErrorBanner.tsx` |
+| Field errors in forms | ✅ `mapFieldErrors` helper in useApiError |
+| Error display strategy | ✅ banner/redirect/inline/toast |
+| Request ID propagation | ✅ Already in generated SDK |
+| Contract error types | ✅ `ZErrorResponse` in contracts |
 
 ---
 
-#### 4.3 Admin Panel Tasks (Priority Order)
+### Phase 5: Feature Completion
 
-| Task | Priority | Backend | Notes |
-|------|----------|---------|-------|
-| Admin credits dashboard | High | ✅ @unisane/credits | View credit consumption across tenants |
-| Admin usage dashboard | High | ✅ @unisane/usage | Monitor quotas and rate limits |
-| Admin import/export management | Medium | ✅ @unisane/import-export | View/manage import/export jobs |
-| Admin notify management | Medium | ✅ @unisane/notify | Email campaigns, notification logs |
-| Admin storage dashboard | Low | ✅ @unisane/storage | Storage quota monitoring |
-| Admin media library | Low | ✅ @unisane/media | Asset management |
-| Admin PDF templates | Low | ✅ @unisane/pdf | Template management |
+**Goal:** Complete all planned admin and tenant UI pages.
 
-**Already Implemented Admin:**
+#### 5.1 Missing Admin API Routes (Prerequisite for UI)
+
+| Endpoint | Module | Priority | Status |
+|----------|--------|----------|--------|
+| `/admin/credits` (stats across tenants) | @unisane/credits | High | ⬜ Not Built |
+| `/admin/usage` (usage dashboard) | @unisane/usage | High | ⬜ Not Built |
+| `/admin/import-export` (job management) | @unisane/import-export | Medium | ⬜ Not Built |
+| `/admin/notify` (campaign management) | @unisane/notify | Medium | ⬜ Not Built |
+| `/admin/storage` (quota monitoring) | @unisane/storage | Low | ⬜ Not Built |
+| `/admin/media` (library management) | @unisane/media | Low | ⬜ Not Built |
+| `/admin/pdf` (template management) | @unisane/pdf | Low | ⬜ Not Built |
+
+#### 5.2 Admin Pages
+
+**Already Implemented (8):**
 - `/admin/overview` - Analytics dashboard ✅
 - `/admin/tenants` - Tenant management ✅
 - `/admin/users` - User management ✅
@@ -167,20 +280,21 @@ See [server-table-state.md](./server-table-state.md) for full details.
 - `/admin/health` - System health ✅
 - `/admin/outbox` - Dead letter queue ✅
 
----
+**To Build (7):**
 
-#### 4.4 Tenant Feature Tasks (Priority Order)
+| Page | Priority | Backend | API Route | Status |
+|------|----------|---------|-----------|--------|
+| Admin credits dashboard | High | ✅ @unisane/credits | ⬜ Needs API | ⬜ Pending |
+| Admin usage dashboard | High | ✅ @unisane/usage | ⬜ Needs API | ⬜ Pending |
+| Admin import/export management | Medium | ✅ @unisane/import-export | ⬜ Needs API | ⬜ Pending |
+| Admin notify management | Medium | ✅ @unisane/notify | ⬜ Needs API | ⬜ Pending |
+| Admin storage dashboard | Low | ✅ @unisane/storage | ⬜ Needs API | ⬜ Pending |
+| Admin media library | Low | ✅ @unisane/media | ⬜ Needs API | ⬜ Pending |
+| Admin PDF templates | Low | ✅ @unisane/pdf | ⬜ Needs API | ⬜ Pending |
 
-| Task | Priority | Backend | Notes |
-|------|----------|---------|-------|
-| Tenant usage dashboard | High | ✅ @unisane/usage | View usage vs quotas |
-| Tenant import/export UI | High | ✅ @unisane/import-export | Export/import workspace data |
-| Tenant notify preferences | Medium | ✅ @unisane/notify | Notification settings |
-| Tenant storage management | Low | ✅ @unisane/storage | File management |
-| Tenant media library | Low | ✅ @unisane/media | Asset uploads |
-| Tenant AI settings | Low | ✅ @unisane/ai | AI feature controls |
+#### 5.3 Tenant Pages
 
-**Already Implemented Tenant:**
+**Already Implemented (9):**
 - `/w/[slug]/dashboard` - Workspace overview ✅
 - `/w/[slug]/settings` - Workspace settings ✅
 - `/w/[slug]/billing` - Billing & credits ✅
@@ -189,123 +303,200 @@ See [server-table-state.md](./server-table-state.md) for full details.
 - `/w/[slug]/apikeys` - API keys ✅
 - `/w/[slug]/webhooks` - Webhooks ✅
 - `/w/[slug]/audit` - Audit logs ✅
+- `/w/[slug]/templates` - Templates ✅
 
----
+**To Build (6):**
 
-#### 4.5 Analytics Enhancement
+| Page | Priority | Backend | API Route | Status |
+|------|----------|---------|-----------|--------|
+| Tenant usage dashboard | High | ✅ @unisane/usage | ✅ Exists | ⬜ Pending |
+| Tenant import/export UI | High | ✅ @unisane/import-export | ✅ Exists | ⬜ Pending |
+| Tenant notify preferences | Medium | ✅ @unisane/notify | ✅ Exists | ⬜ Pending |
+| Tenant storage management | Low | ✅ @unisane/storage | ✅ Exists | ⬜ Pending |
+| Tenant media library | Low | ✅ @unisane/media | ⚠️ Partial | ⬜ Pending |
+| Tenant AI settings | Low | ✅ @unisane/ai | ✅ Exists | ⬜ Pending |
 
-| Task | Priority | Status | Notes |
-|------|----------|--------|-------|
-| Admin analytics dashboard | High | ✅ Done | `/admin/overview` with revenue, users, churn |
-| Tenant analytics page | Medium | Pending | Per-workspace analytics |
-| Custom date range queries | Low | Pending | Currently fixed 30-day windows |
-| Event-based analytics | Low | Pending | Constants exist, not implemented |
+#### 5.4 Recommended Implementation Order
 
----
+**Phase 5a - High Value (Backend Ready):**
+1. Tenant usage dashboard (API exists, just needs UI)
+2. Tenant import/export UI (API exists, just needs UI)
+3. Create admin credits API + dashboard
+4. Create admin usage API + dashboard
 
-#### 4.6 Import/Export Implementation
-
-| Task | Priority | Status | Notes |
-|------|----------|--------|-------|
-| Backend services | High | ✅ Done | Full service/repo/domain layer |
-| REST API routes | High | ✅ Done | 3 tenant endpoints |
-| SDK hooks | High | ✅ Done | Auto-generated React Query hooks |
-| Admin import/export UI | Medium | Pending | Job management, history viewer |
-| Tenant import/export UI | Medium | Pending | File upload, format selection |
-
----
-
-#### 4.7 Recommended Implementation Order
-
-**Phase 4a - High Value, Low Effort:**
-1. Tenant usage dashboard (usage data already exists)
-2. Admin credits dashboard (credit data already exists)
-3. Tenant import/export UI (backend ready, just needs UI)
-
-**Phase 4b - Medium Value:**
-4. Admin import/export management
+**Phase 5b - Medium Value:**
 5. Tenant notify preferences
-6. Tenant analytics page
+6. Admin import/export management (needs API first)
+7. Tenant analytics page
 
-**Phase 4c - Nice-to-Have:**
-7. Admin storage dashboard
-8. Tenant media library
-9. Admin notify management
-10. Admin PDF templates
+**Phase 5c - Nice-to-Have:**
+8. Admin storage dashboard
+9. Tenant media library
+10. Admin notify management
+11. Admin PDF templates
+12. Tenant storage management
+13. Tenant AI settings
 
-### Phase 5: Testing & Quality
+---
+
+### Phase 6: Testing & Quality
 
 **Goal:** Comprehensive test coverage.
 
-| Task | Priority | Document |
-|------|----------|----------|
-| Add tests to all packages | High | [testing.md](../architecture/testing.md) |
-| E2E tests for critical flows | High | - |
-| Performance benchmarks | Medium | - |
-| Bundle size monitoring | Medium | - |
+| Task | Priority | Status |
+|------|----------|--------|
+| Add tests to all packages | High | ⬜ Pending |
+| E2E tests for critical flows | High | ⬜ Pending |
+| Performance benchmarks | Medium | ⬜ Pending |
+| Bundle size monitoring | Medium | ⬜ Pending |
 
-### Phase 6: Distribution
+---
+
+### Phase 7: Distribution
 
 **Goal:** Ship starters to end users.
 
-| Task | Priority | Document |
-|------|----------|----------|
-| Build tools/release/ infrastructure | High | [build-distribution.md](../architecture/build-distribution.md) |
-| Implement import transformation | High | [build-distribution.md](../architecture/build-distribution.md) |
-| OSS/PRO code stripping | Medium | [build-distribution.md](../architecture/build-distribution.md) |
-| create-unisane-app CLI | Medium | - |
+| Task | Priority | Status |
+|------|----------|--------|
+| build-starter.ts | High | ✅ Implemented |
+| Import transformation | High | ⬜ Pending |
+| OSS/PRO code stripping | Medium | ⬜ Pending |
+| create-unisane-app CLI | Medium | ⬜ Pending |
 
-### Phase 7: Documentation & Polish
+**Note:** `build-starter.ts` is implemented at `/packages/tooling/devtools/src/commands/release/build-starter.ts`
+
+---
+
+### Phase 8: Documentation & Polish
 
 **Goal:** Production-ready documentation.
 
-| Task | Priority | Document |
-|------|----------|----------|
-| Complete API documentation | High | - |
-| Migration guides | High | - |
-| Video tutorials | Medium | - |
-| Example projects | Medium | - |
+| Task | Priority | Status |
+|------|----------|--------|
+| Complete API documentation | High | ⬜ Pending |
+| Document OpenAPI endpoint (/api/openapi) | High | ⬜ Pending |
+| Migration guides | High | ⬜ Pending |
+| Video tutorials | Medium | ⬜ Pending |
+| Example projects | Medium | ⬜ Pending |
 
 ---
 
-## Detailed Roadmaps
+## Known Issues Tracker
 
-| Roadmap | Focus | Status |
-|---------|-------|--------|
-| [centralization-plan.md](./centralization-plan.md) | Architecture consolidation | Active |
-| [server-table-state.md](./server-table-state.md) | DataTable patterns | Active |
+### Critical Issues
+
+| ID | Issue | Impact | Status |
+|----|-------|--------|--------|
+| CRIT-001 | pino v8 vs v9 mismatch | Runtime compatibility | ✅ Fixed |
+| CRIT-002 | AWS SDK 500+ version drift | API compatibility risk | ✅ Fixed |
+| CRIT-003 | Idempotency key naming inconsistent | API contract confusion | ⬜ Open |
+| CRIT-004 | Two error systems (Kernel vs Gateway) | Inconsistent error codes | ⬜ Open |
+| CRIT-005 | No global error boundary (frontend) | App crashes on render errors | ✅ Fixed |
+| CRIT-006 | No global error handler (backend) | Raw errors leak to client | ⬜ Open |
+
+### High Priority Issues
+
+| ID | Issue | Impact | Status |
+|----|-------|--------|--------|
+| HIGH-001 | @ts-rest version mismatch | Type inference issues | ✅ Fixed |
+| HIGH-002 | TenantId nullability inconsistent | Validation failures | ✅ Fixed |
+| HIGH-003 | @ts-nocheck in generators | No type safety in SDK | ⬜ Open (deferred) |
+| HIGH-004 | Empty catch blocks in billing | Silent failures | ✅ Fixed |
+| HIGH-005 | 7 admin API routes missing | Blocks admin UI | ⬜ Open |
+| HIGH-008 | Module errors use generic codes | Can't distinguish error types | ✅ Fixed |
+| HIGH-009 | Field errors not displayed in forms | Users don't know which field failed | ✅ Fixed |
+| HIGH-010 | Raw vendor errors not wrapped | Internal details leak to users | ✅ Fixed |
+| HIGH-011 | DomainError missing retryable flag | Frontend can't auto-retry | ✅ Fixed |
+| ~~HIGH-006~~ | ~~600+ lines business logic in platform layer~~ | ~~Won't sync to starters~~ | ❌ Invalid |
+| ~~HIGH-007~~ | ~~Billing used as infrastructure by ai/pdf/webhooks~~ | ~~Unexpected coupling~~ | ❌ Invalid |
+
+### Medium Priority Issues
+
+| ID | Issue | Impact | Status |
+|----|-------|--------|--------|
+| MED-001 | Timestamp format inconsistent | Client parsing issues | ✅ Fixed |
+| MED-002 | List pagination limits vary | Inconsistent UX | ✅ Fixed |
+| MED-003 | Code duplication in repositories | Maintenance burden | ⬜ Open (low priority) |
+| MED-004 | Many CLI commands are stubs | Confusing DX | ⬜ Open |
+| MED-005 | HTTP code in kernel (should be in gateway) | Layer violation | ✅ Fixed |
+| MED-007 | Toast-only errors (auto-dismiss) | Users miss error messages | ✅ Fixed |
+| MED-008 | No error retry mechanism | Users must refresh page | ✅ Fixed |
+| MED-009 | No request ID propagation | Can't trace frontend→backend | ✅ Fixed |
+| MED-010 | Error responses not typed in contracts | No type safety for errors | ✅ Fixed |
+| ~~MED-006~~ | ~~Webhooks has 7 dependencies (over-coupled)~~ | ~~Cascade risk~~ | ❌ Invalid |
 
 ---
 
-## Document Index
+## Removed Issues (Archive)
 
-### Architecture (How things work)
+Issues that were identified but later validated as **correct design decisions** after deep analysis.
 
-| Document | Description | When to Read |
-|----------|-------------|--------------|
-| [ARCHITECTURE.md](../architecture/ARCHITECTURE.md) | Complete platform spec | Understanding the system |
-| [implementation-status.md](../architecture/implementation-status.md) | What's built vs planned | Quick status check |
-| [platform-layer.md](../architecture/platform-layer.md) | Hexagonal architecture | Understanding starters |
-| [sdk-architecture.md](../architecture/sdk-architecture.md) | SDK generation | Working with SDK |
-| [build-distribution.md](../architecture/build-distribution.md) | Distribution design | Shipping starters |
-| [kernel.md](../architecture/kernel.md) | Core utilities | Working with kernel |
-| [contracts-guide.md](../architecture/contracts-guide.md) | API contracts | Creating APIs |
+<details>
+<summary><strong>Platform Layer Business Logic (Invalid)</strong></summary>
 
-### Roadmaps (What to build)
+**Original claim:** 600+ lines of business logic should move to @unisane/metering package.
 
-| Document | Description | When to Read |
-|----------|-------------|--------------|
-| [MASTER-ROADMAP.md](./MASTER-ROADMAP.md) | This document | Overall direction |
-| [centralization-plan.md](./centralization-plan.md) | Architecture fixes | Consolidation work |
-| [server-table-state.md](./server-table-state.md) | DataTable patterns | Table implementation |
+**Analysis result:** These files are **correctly placed** in platform layer:
+- `policy.ts` (205 lines) - Tightly coupled to app-specific plan definitions (`PLAN_DEFS`, `ENTITLEMENTS` constants)
+- `guard.ts` (175 lines) - Depends on policy.ts which is app-specific
+- `registry.ts` (356 lines) - Composition/wiring code, not reusable logic
 
-### Guides (How to do things)
+**Why they belong in platform:**
+- Platform layer IS for app-specific code (Extensions, Adapters, Integrations, Core)
+- These files orchestrate app-specific services with app-specific configuration
+- Extracting would require parameterizing entire plan/entitlements system
+- Each starter should have its own metering policy based on its plans
 
-| Document | Description | When to Read |
-|----------|-------------|--------------|
-| [module-development.md](../architecture/module-development.md) | Creating modules | Building features |
-| [testing.md](../architecture/testing.md) | Test patterns | Writing tests |
-| [troubleshooting.md](../architecture/troubleshooting.md) | Common issues | Debugging |
+</details>
+
+<details>
+<summary><strong>Billing as Infrastructure (Invalid)</strong></summary>
+
+**Original claim:** ai, pdf, webhooks use billing as infrastructure, creating unexpected coupling.
+
+**Analysis result:** Claim was **misleading**:
+
+| Module | Actual Usage | Type |
+|--------|--------------|------|
+| @unisane/ai | `assertActiveSubscriptionForCredits()` | Subscription gate (auth check) |
+| @unisane/pdf | `assertActiveSubscriptionForCredits()` | Subscription gate (auth check) |
+| @unisane/webhooks | `paymentsRepo`, `subscriptionsRepo`, `invoicesRepo` | **TRUE infrastructure** |
+
+**Why this is acceptable:**
+- AI/PDF only call a subscription verification function (auth check, not infrastructure)
+- Webhooks handling billing provider events (Stripe/Razorpay) MUST use billing repos
+- Webhooks is the integration point between payment providers and billing system
+- This coupling is **intentional and correct** - webhooks persist billing events
+
+</details>
+
+<details>
+<summary><strong>Webhooks Over-Coupled (Invalid)</strong></summary>
+
+**Original claim:** Webhooks has 7 dependencies, most of any module.
+
+**Analysis result:** All dependencies are **necessary**:
+- kernel, gateway - Foundation (required by all)
+- billing - Persists payment/subscription data from provider webhooks (intentional)
+- outbox - Reliable webhook delivery (core feature)
+- audit - Audit logging (compliance)
+- identity - Tenant context (required)
+- settings - Feature flags (required)
+
+**Why this is acceptable:** Webhooks is an integration module that bridges external providers with internal systems. High coupling is expected and correct.
+
+</details>
+
+---
+
+## Documentation Corrections Needed
+
+| Document | Issue | Fix Required |
+|----------|-------|--------------|
+| build-distribution.md | Claims build-starter.ts not implemented | Mark as ✅ Implemented |
+| implementation-status.md | OpenAPI marked "Not Implemented" | Mark as ⚠️ Partial (endpoint works, CLI stub) |
+| contracts-guide.md | Shows wrong contract location | Clarify contracts live in starters |
+| implementation-status.md | Missing tenant pages (templates) | Add to list |
 
 ---
 
@@ -317,6 +508,13 @@ See [server-table-state.md](./server-table-state.md) for full details.
 | 2026-01-09 | Plan OSS/PRO split, implement later | Not needed until distribution |
 | 2026-01-09 | Move admin grid gen to devtools | Consolidate SDK generation |
 | 2026-01-09 | Skip testing improvements for now | Feature completion priority |
+| 2026-01-09 | Fix critical dependency issues first | Prevent runtime compatibility issues |
+| 2026-01-09 | Standardize on Unix ms timestamps | Most common, avoids timezone issues |
+| 2026-01-09 | Use `idem` for idempotency keys | Shorter, consistent with kernel |
+| 2026-01-09 | Move HTTP code from kernel to gateway | Kernel should be transport-agnostic (validated: all consumers in gateway) |
+| 2026-01-09 | ~~Create @unisane/metering package~~ | ❌ Rejected: Platform metering code is app-specific (plan defs, entitlements) |
+| 2026-01-09 | ~~Remove billing dependency from ai/pdf/webhooks~~ | ❌ Rejected: ai/pdf use auth gate only; webhooks coupling is intentional |
+| 2026-01-09 | Keep platform metering in platform | App-specific code belongs in platform layer, not packages |
 
 ---
 
@@ -329,17 +527,31 @@ See [server-table-state.md](./server-table-state.md) for full details.
 | Packages with lint script | 30/30 | 30/30 ✅ |
 | Package organization | 5 categories | 5 categories ✅ |
 | Test coverage | ~5% | 80% |
-| Generated code with @ts-nocheck | Many | 0 |
-| Circular dependencies | 0 | 0 |
+| Generated code with @ts-nocheck | 5 files | 0 |
+| Circular dependencies | 0 | 0 ✅ |
+| Dependency version conflicts | 0 | 0 ✅ |
+| Schema inconsistencies | 0 | 0 ✅ |
+
+### Feature Completion
+
+| Metric | Current | Target |
+|--------|---------|--------|
+| Admin pages implemented | 8/15 | 15/15 |
+| Tenant pages implemented | 9/15 | 15/15 |
+| Admin API routes | 8/15 | 15/15 |
+| Backend modules | 18/18 | 18/18 ✅ |
 
 ### Architecture Health
 
 | Metric | Current | Target |
 |--------|---------|--------|
-| Schema duplication levels | 5 | 3 |
-| Hardcoded admin configs | 2 | 0 (self-register) |
-| Manual route handlers | 0 | 0 |
-| Documentation coverage | 60% | 95% |
+| Empty catch blocks | 0 | 0 ✅ |
+| Console.log in production code | 0 | 0 ✅ |
+| Duplicate schema definitions | 0 | 0 ✅ |
+| Documentation accuracy | ~85% | 95% |
+| HTTP code in kernel | 0 (moved to gateway) | 0 ✅ |
+| ~~Business logic in platform layer~~ | N/A | N/A (correctly placed - app-specific) |
+| ~~Billing as infrastructure~~ | N/A | N/A (ai/pdf use auth gate; webhooks coupling is correct) |
 
 ---
 
@@ -348,13 +560,8 @@ See [server-table-state.md](./server-table-state.md) for full details.
 - [Architecture README](../architecture/README.md) - Architecture documentation index
 - [Handbook README](../README.md) - Full handbook index
 - [QUICK-REFERENCE.md](../architecture/QUICK-REFERENCE.md) - Patterns cheat sheet
-
----
-
-**Next Steps:**
-1. Review [centralization-plan.md](./centralization-plan.md) for immediate tasks
-2. Review [server-table-state.md](./server-table-state.md) for DataTable work
-3. Check [implementation-status.md](../architecture/implementation-status.md) before starting any work
+- [centralization-plan.md](./centralization-plan.md) - Architecture consolidation details
+- [server-table-state.md](./server-table-state.md) - DataTable patterns (completed)
 
 ---
 

@@ -1,8 +1,8 @@
 import * as nodeCrypto from 'node:crypto';
 import { HEADER_NAMES } from '../headers';
 import { buildRateKey, rateLimit } from '../middleware/rateLimit';
-import { getRatePolicy } from '@unisane/kernel';
-import type { OpKey } from '@unisane/kernel';
+import { getRatePolicy } from '../rate-limits';
+import type { OpKey } from '../rate-limits';
 import { toHttp } from '../errors/errors';
 import { readRawBody } from '../middleware/rawBody';
 import { withRequest } from '../logger';

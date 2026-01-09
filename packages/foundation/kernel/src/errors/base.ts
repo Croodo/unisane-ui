@@ -6,6 +6,19 @@
  */
 
 /**
+ * Field-level validation error.
+ * Used to map errors to specific form fields.
+ */
+export interface FieldError {
+  /** Field path (e.g., 'email', 'address.city') */
+  field: string;
+  /** Human-readable error message */
+  message: string;
+  /** Optional error code for field-specific errors */
+  code?: string;
+}
+
+/**
  * Serialized error format for API responses.
  */
 export interface ErrorResponse {
@@ -17,6 +30,10 @@ export interface ErrorResponse {
   status: number;
   /** Additional error details (validation errors, etc.) */
   details?: Record<string, unknown>;
+  /** Field-level validation errors */
+  fields?: FieldError[];
+  /** Whether this error can be retried */
+  retryable?: boolean;
 }
 
 /**
@@ -27,6 +44,10 @@ export interface DomainErrorOptions {
   details?: Record<string, unknown>;
   /** The underlying cause of this error */
   cause?: Error;
+  /** Field-level validation errors */
+  fields?: FieldError[];
+  /** Whether this error can be retried (overrides default for error type) */
+  retryable?: boolean;
 }
 
 /**
@@ -54,8 +75,18 @@ export abstract class DomainError extends Error {
   /** HTTP status code for this error */
   abstract readonly status: number;
 
+  /**
+   * Whether this error can be safely retried.
+   * Override in subclass or set via options.
+   * Default: false for most errors, true for 5xx and timeout errors.
+   */
+  readonly retryable: boolean;
+
   /** Additional error details */
   readonly details?: Record<string, unknown>;
+
+  /** Field-level validation errors */
+  readonly fields?: FieldError[];
 
   /** The underlying cause of this error */
   override readonly cause?: Error;
@@ -64,12 +95,24 @@ export abstract class DomainError extends Error {
     super(message);
     this.name = this.constructor.name;
     this.details = options?.details;
+    this.fields = options?.fields;
     this.cause = options?.cause;
+    // Default retryable based on status, can be overridden
+    this.retryable = options?.retryable ?? this.isRetryableByDefault();
 
     // Maintains proper stack trace for where error was thrown (V8 only)
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, this.constructor);
     }
+  }
+
+  /**
+   * Determine if this error is retryable by default.
+   * Override in subclasses for custom logic.
+   * @internal
+   */
+  isRetryableByDefault(): boolean {
+    return false;
   }
 
   /**
@@ -82,6 +125,8 @@ export abstract class DomainError extends Error {
       message: this.message,
       status: this.status,
       ...(this.details && { details: this.details }),
+      ...(this.fields?.length && { fields: this.fields }),
+      ...(this.retryable && { retryable: this.retryable }),
     };
   }
 
@@ -118,4 +163,61 @@ export function wrapError(error: unknown, WrapperClass: new (message: string, op
   const cause = error instanceof Error ? error : undefined;
 
   return new WrapperClass(message, { cause });
+}
+
+/**
+ * Configuration for creating a domain error class.
+ */
+export interface CreateErrorConfig {
+  /** Error code from ErrorCode enum */
+  code: string;
+  /** HTTP status code */
+  status: number;
+  /** Default message (can be overridden in constructor) */
+  defaultMessage?: string;
+  /** Default retryable status (can be overridden per instance) */
+  retryable?: boolean;
+}
+
+/**
+ * Factory function to create domain error classes with minimal boilerplate.
+ *
+ * @example
+ * ```typescript
+ * // Simple error with static message
+ * export const InvalidCredentialsError = createDomainError({
+ *   code: ErrorCode.INVALID_CREDENTIALS,
+ *   status: 401,
+ *   defaultMessage: 'Invalid email or password',
+ * });
+ *
+ * // Error with dynamic message
+ * export const FileNotFoundError = createDomainError({
+ *   code: ErrorCode.FILE_NOT_FOUND,
+ *   status: 404,
+ * });
+ * throw new FileNotFoundError(`File not found: ${fileId}`);
+ *
+ * // Retryable error
+ * export const ServiceTemporarilyUnavailable = createDomainError({
+ *   code: ErrorCode.SERVICE_UNAVAILABLE,
+ *   status: 503,
+ *   retryable: true,
+ * });
+ * ```
+ */
+export function createDomainError(config: CreateErrorConfig) {
+  const { code, status, defaultMessage, retryable: defaultRetryable } = config;
+
+  return class extends DomainError {
+    readonly code = code;
+    readonly status = status;
+
+    constructor(message?: string, options?: DomainErrorOptions) {
+      super(message ?? defaultMessage ?? 'An error occurred', {
+        ...options,
+        retryable: options?.retryable ?? defaultRetryable,
+      });
+    }
+  };
 }

@@ -1,8 +1,7 @@
 /**
  * Settings Domain Errors
  *
- * Module-specific error classes that extend the kernel's DomainError.
- * These provide type-safe error handling with consistent error codes.
+ * Module-specific error classes using generic E1xxx error codes.
  */
 
 import { DomainError, ErrorCode } from '@unisane/kernel';
@@ -29,7 +28,7 @@ export class SettingVersionConflictError extends DomainError {
   readonly status = 409;
 
   constructor(namespace: string, key: string, expectedVersion: number) {
-    super(`Version conflict for setting ${namespace}.${key}: expected version ${expectedVersion}`);
+    super(`Version conflict for setting ${namespace}.${key}: expected version ${expectedVersion}`, { retryable: true });
     this.name = 'SettingVersionConflictError';
   }
 }
@@ -38,7 +37,7 @@ export class SettingVersionConflictError extends DomainError {
  * Thrown when attempting to modify a platform-only setting without admin privileges.
  */
 export class SettingAccessDeniedError extends DomainError {
-  readonly code = ErrorCode.FORBIDDEN;
+  readonly code = ErrorCode.PERMISSION_DENIED;
   readonly status = 403;
 
   constructor(namespace: string, key: string) {

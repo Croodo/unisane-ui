@@ -6,13 +6,13 @@ import { hooks } from "@/src/sdk/hooks";
 import type { WebhooksListEventsItem } from "@/src/sdk/types";
 import { PageHeader } from "@/src/context/usePageHeader";
 import { useSession } from "@/src/hooks/useSession";
-import { Card, CardContent } from "@/src/components/ui/card";
+import { Card } from "@unisane/ui/components/card";
 import {
   StatusBadge,
   DirectionBadge,
   HttpStatusBadge,
 } from "@/src/components/ui/status-badge";
-import { Webhook } from "lucide-react";
+import { Icon } from "@unisane/ui/primitives/icon";
 
 export default function WebhooksClient() {
   const { me } = useSession();
@@ -39,7 +39,7 @@ export default function WebhooksClient() {
         header: "Event",
         width: 200,
         render: (row) => (
-          <span className="font-mono text-xs text-muted-foreground">
+          <span className="font-mono text-xs text-on-surface-variant">
             {row.id.length > 20
               ? `${row.id.slice(0, 8)}…${row.id.slice(-6)}`
               : row.id}
@@ -73,7 +73,7 @@ export default function WebhooksClient() {
           row.provider ? (
             <span className="capitalize">{row.provider}</span>
           ) : (
-            <span className="text-muted-foreground">—</span>
+            <span className="text-on-surface-variant">—</span>
           ),
       },
       {
@@ -88,7 +88,7 @@ export default function WebhooksClient() {
               {row.target}
             </span>
           ) : (
-            <span className="text-muted-foreground">—</span>
+            <span className="text-on-surface-variant">—</span>
           ),
       },
       {
@@ -96,7 +96,7 @@ export default function WebhooksClient() {
         header: "Created",
         width: 180,
         render: (row) => (
-          <span className="text-muted-foreground text-sm">
+          <span className="text-on-surface-variant text-sm">
             {new Date(row.createdAt).toLocaleString()}
           </span>
         ),
@@ -116,14 +116,14 @@ export default function WebhooksClient() {
 
       {dataset.length === 0 && !isLoading ? (
         <Card>
-          <CardContent className="py-10 text-center">
-            <Webhook className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
+          <Card.Content className="py-10 text-center">
+            <Icon symbol="webhook" size="lg" className="mx-auto text-on-surface-variant mb-4" />
             <h3 className="text-lg font-medium mb-2">No webhook events yet</h3>
-            <p className="text-sm text-muted-foreground max-w-md mx-auto">
+            <p className="text-sm text-on-surface-variant max-w-md mx-auto">
               Webhook events will appear here when your workspace sends or
               receives webhooks from external services.
             </p>
-          </CardContent>
+          </Card.Content>
         </Card>
       ) : (
         <DataTable<WebhooksListEventsItem>

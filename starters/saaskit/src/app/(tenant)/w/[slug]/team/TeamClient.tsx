@@ -1,21 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Button } from "@/src/components/ui/button";
-import { Badge } from "@/src/components/ui/badge";
+import { Button } from "@unisane/ui/components/button";
+import { Badge } from "@unisane/ui/components/badge";
 import { useSession } from "@/src/hooks/useSession";
-import { toast } from "sonner";
+import { toast } from "@unisane/ui/components/toast";
 import { normalizeError } from "@/src/sdk/errors";
 import { hooks } from "@/src/sdk/hooks";
 import { DataTable } from "@unisane/data-table";
 import type { Column } from "@unisane/data-table";
-import {
-  UserPlus,
-  ShieldCheck,
-  ShieldOff,
-  Users,
-  MoreVertical,
-} from "lucide-react";
+import { Icon } from "@unisane/ui/primitives/icon";
 import { EmptyState } from "@/src/components/feedback";
 import { PageHeader } from "@/src/context/usePageHeader";
 import {
@@ -23,17 +17,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/src/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/src/components/ui/alert-dialog";
+} from "@unisane/ui/components/dropdown-menu";
+import { ConfirmDialog } from "@unisane/ui/components/confirm-dialog";
 import type { MembershipsListItem } from "@/src/sdk/types";
 
 /**
@@ -157,14 +142,14 @@ export function TeamClient() {
           const initial = displayName.charAt(0).toUpperCase();
           return (
             <div className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-sm font-medium">
+              <div className="h-8 w-8 rounded-full bg-surface-container flex items-center justify-center text-sm font-medium">
                 {initial}
               </div>
               <div className="flex flex-col">
                 <div className="flex items-center gap-2">
                   <span className="font-medium">{displayName}</span>
                   {isCurrentUser && (
-                    <Badge variant="outline" className="text-xs">
+                    <Badge variant="outlined" className="text-xs">
                       You
                     </Badge>
                   )}
@@ -177,7 +162,7 @@ export function TeamClient() {
                     | undefined;
                   if (userEmail && userName && userEmail !== userName) {
                     return (
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-xs text-on-surface-variant">
                         {userEmail}
                       </span>
                     );
@@ -186,8 +171,8 @@ export function TeamClient() {
                 })()}
               </div>
               {memberIsAdmin && (
-                <Badge variant="secondary" className="ml-auto">
-                  <ShieldCheck className="h-3 w-3 mr-1" />
+                <Badge variant="tonal" className="ml-auto">
+                  <Icon symbol="verified_user" size="xs" className="mr-1" />
                   Admin
                 </Badge>
               )}
@@ -203,13 +188,13 @@ export function TeamClient() {
           (row.roles ?? []).length > 0 ? (
             <div className="flex flex-wrap gap-1">
               {row.roles.map((r: { roleId: string }) => (
-                <Badge key={r.roleId} variant="outline" className="text-xs">
+                <Badge key={r.roleId} variant="outlined" className="text-xs">
                   {r.roleId}
                 </Badge>
               ))}
             </div>
           ) : (
-            <span className="text-muted-foreground text-sm">Member</span>
+            <span className="text-on-surface-variant text-sm">Member</span>
           ),
       },
       {
@@ -238,8 +223,8 @@ export function TeamClient() {
           return (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <MoreVertical className="h-4 w-4" />
+                <Button variant="text" size="sm" className="h-8 w-8 p-0">
+                  <Icon symbol="more_vert" size="sm" />
                   <span className="sr-only">Actions</span>
                 </Button>
               </DropdownMenuTrigger>
@@ -255,7 +240,7 @@ export function TeamClient() {
                     }}
                     disabled={removeRole.isPending}
                   >
-                    <ShieldOff className="h-4 w-4 mr-2" />
+                    <Icon symbol="shield" size="sm" className="mr-2" />
                     Remove Admin
                   </DropdownMenuItem>
                 ) : (
@@ -269,7 +254,7 @@ export function TeamClient() {
                     }}
                     disabled={addRole.isPending}
                   >
-                    <ShieldCheck className="h-4 w-4 mr-2" />
+                    <Icon symbol="verified_user" size="sm" className="mr-2" />
                     Make Admin
                   </DropdownMenuItem>
                 )}
@@ -282,9 +267,9 @@ export function TeamClient() {
                     });
                   }}
                   disabled={removeMember.isPending}
-                  className="text-destructive"
+                  className="text-error"
                 >
-                  <UserPlus className="h-4 w-4 mr-2 rotate-45" />
+                  <Icon symbol="person_remove" size="sm" className="mr-2" />
                   Remove from Workspace
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -307,7 +292,7 @@ export function TeamClient() {
 
       {items.length === 0 && !isLoading ? (
         <EmptyState
-          icon={Users}
+          icon="group"
           title="No team members yet"
           description="You're the only member of this workspace. Invite functionality coming soon."
           action={{
@@ -326,72 +311,38 @@ export function TeamClient() {
       )}
 
       {/* Remove Admin Confirmation Dialog */}
-      <AlertDialog
+      <ConfirmDialog
         open={removeAdminDialog.open}
-        onOpenChange={(open) => {
+        onOpenChange={(open: boolean) => {
           if (!open) {
             setRemoveAdminDialog({ open: false, userId: "", userName: "" });
           }
         }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Remove Admin Privileges</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to remove admin privileges from{" "}
-              <span className="font-medium">{removeAdminDialog.userName}</span>?
-              They will no longer be able to manage workspace settings and
-              members.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={removeRole.isPending}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleRemoveAdmin}
-              disabled={removeRole.isPending}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {removeRole.isPending ? "Removing…" : "Remove Admin"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        title="Remove Admin Privileges"
+        description={`Are you sure you want to remove admin privileges from ${removeAdminDialog.userName}? They will no longer be able to manage workspace settings and members.`}
+        variant="danger"
+        confirmLabel="Remove Admin"
+        cancelLabel="Cancel"
+        onConfirm={handleRemoveAdmin}
+        loading={removeRole.isPending}
+      />
 
       {/* Remove Member Confirmation Dialog */}
-      <AlertDialog
+      <ConfirmDialog
         open={removeMemberDialog.open}
-        onOpenChange={(open) => {
+        onOpenChange={(open: boolean) => {
           if (!open) {
             setRemoveMemberDialog({ open: false, userId: "", userName: "" });
           }
         }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Remove Member</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to remove{" "}
-              <span className="font-medium">{removeMemberDialog.userName}</span>{" "}
-              from this workspace? They will lose access to all workspace
-              resources.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={removeMember.isPending}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleRemoveMember}
-              disabled={removeMember.isPending}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {removeMember.isPending ? "Removing…" : "Remove Member"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        title="Remove Member"
+        description={`Are you sure you want to remove ${removeMemberDialog.userName} from this workspace? They will lose access to all workspace resources.`}
+        variant="danger"
+        confirmLabel="Remove Member"
+        cancelLabel="Cancel"
+        onConfirm={handleRemoveMember}
+        loading={removeMember.isPending}
+      />
     </>
   );
 }

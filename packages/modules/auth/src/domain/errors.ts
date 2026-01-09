@@ -1,13 +1,13 @@
 /**
  * Auth Domain Errors
  *
- * Module-specific error classes that extend the kernel's DomainError.
+ * Module-specific error classes using E2xxx error codes.
  */
 
 import { DomainError, ErrorCode } from '@unisane/kernel';
 
 export class InvalidCredentialsError extends DomainError {
-  readonly code = ErrorCode.UNAUTHORIZED;
+  readonly code = ErrorCode.INVALID_CREDENTIALS;
   readonly status = 401;
 
   constructor() {
@@ -17,7 +17,7 @@ export class InvalidCredentialsError extends DomainError {
 }
 
 export class AccountLockedError extends DomainError {
-  readonly code = ErrorCode.FORBIDDEN;
+  readonly code = ErrorCode.ACCOUNT_LOCKED;
   readonly status = 403;
 
   constructor(lockedUntil: Date) {
@@ -27,7 +27,7 @@ export class AccountLockedError extends DomainError {
 }
 
 export class OtpExpiredError extends DomainError {
-  readonly code = ErrorCode.GONE;
+  readonly code = ErrorCode.INVALID_TOKEN;
   readonly status = 410;
 
   constructor() {
@@ -37,7 +37,7 @@ export class OtpExpiredError extends DomainError {
 }
 
 export class OtpInvalidError extends DomainError {
-  readonly code = ErrorCode.UNAUTHORIZED;
+  readonly code = ErrorCode.INVALID_MFA_CODE;
   readonly status = 401;
 
   constructor() {
@@ -51,13 +51,16 @@ export class OtpRateLimitError extends DomainError {
   readonly status = 429;
 
   constructor(retryAfterSec: number) {
-    super(`Too many OTP requests. Retry after ${retryAfterSec} seconds`);
+    super(`Too many OTP requests. Retry after ${retryAfterSec} seconds`, {
+      details: { retryAfterSec },
+      retryable: true,
+    });
     this.name = 'OtpRateLimitError';
   }
 }
 
 export class ResetTokenExpiredError extends DomainError {
-  readonly code = ErrorCode.GONE;
+  readonly code = ErrorCode.PASSWORD_RESET_EXPIRED;
   readonly status = 410;
 
   constructor() {
@@ -67,7 +70,7 @@ export class ResetTokenExpiredError extends DomainError {
 }
 
 export class ResetTokenInvalidError extends DomainError {
-  readonly code = ErrorCode.UNAUTHORIZED;
+  readonly code = ErrorCode.INVALID_TOKEN;
   readonly status = 401;
 
   constructor() {
@@ -77,7 +80,7 @@ export class ResetTokenInvalidError extends DomainError {
 }
 
 export class CsrfMismatchError extends DomainError {
-  readonly code = ErrorCode.FORBIDDEN;
+  readonly code = ErrorCode.CSRF_INVALID;
   readonly status = 403;
 
   constructor() {
@@ -87,7 +90,7 @@ export class CsrfMismatchError extends DomainError {
 }
 
 export class PhoneVerificationExpiredError extends DomainError {
-  readonly code = ErrorCode.GONE;
+  readonly code = ErrorCode.INVALID_TOKEN;
   readonly status = 410;
 
   constructor() {
@@ -97,7 +100,7 @@ export class PhoneVerificationExpiredError extends DomainError {
 }
 
 export class PhoneVerificationInvalidError extends DomainError {
-  readonly code = ErrorCode.UNAUTHORIZED;
+  readonly code = ErrorCode.INVALID_MFA_CODE;
   readonly status = 401;
 
   constructor() {
@@ -107,11 +110,41 @@ export class PhoneVerificationInvalidError extends DomainError {
 }
 
 export class PasswordTooWeakError extends DomainError {
-  readonly code = ErrorCode.VALIDATION_ERROR;
+  readonly code = ErrorCode.WEAK_PASSWORD;
   readonly status = 400;
 
   constructor(reason: string) {
     super(`Password too weak: ${reason}`);
     this.name = 'PasswordTooWeakError';
+  }
+}
+
+export class SessionExpiredError extends DomainError {
+  readonly code = ErrorCode.SESSION_EXPIRED;
+  readonly status = 401;
+
+  constructor() {
+    super('Session has expired');
+    this.name = 'SessionExpiredError';
+  }
+}
+
+export class MfaRequiredError extends DomainError {
+  readonly code = ErrorCode.MFA_REQUIRED;
+  readonly status = 403;
+
+  constructor() {
+    super('Multi-factor authentication required');
+    this.name = 'MfaRequiredError';
+  }
+}
+
+export class OAuthError extends DomainError {
+  readonly code = ErrorCode.OAUTH_ERROR;
+  readonly status = 401;
+
+  constructor(provider: string, reason: string) {
+    super(`OAuth authentication failed for ${provider}: ${reason}`);
+    this.name = 'OAuthError';
   }
 }

@@ -34,8 +34,8 @@ export interface UseGroupedDataReturn<T> {
  * Generate a stable hash for data array.
  * Uses row IDs for O(n) performance instead of full serialization.
  */
-function generateDataHash<T extends { id: string }>(data: T[]): string {
-  if (data.length === 0) return "empty";
+function generateDataHash<T extends { id: string }>(data: T[] | null | undefined): string {
+  if (!data || !Array.isArray(data) || data.length === 0) return "empty";
   if (data.length > 1000) {
     // For large datasets, sample to keep hashing fast
     const sample = [
@@ -54,7 +54,7 @@ function generateDataHash<T extends { id: string }>(data: T[]): string {
  * Generate cache key from grouping parameters
  */
 function generateCacheKey<T extends { id: string }>(
-  data: T[],
+  data: T[] | null | undefined,
   groupByKeys: string[],
   expandedGroups: Set<string>
 ): string {
@@ -105,8 +105,8 @@ export function useGroupedData<T extends { id: string }>({
 
   // Build grouped data with memoization
   const result = useMemo(() => {
-    // Not grouping - return empty
-    if (!enabled || groupByKeys.length === 0 || data.length === 0) {
+    // Not grouping or null/undefined data - return empty
+    if (!enabled || groupByKeys.length === 0 || !data || !Array.isArray(data) || data.length === 0) {
       return {
         groupedData: [] as RowGroup<T>[],
         isGrouped: false,

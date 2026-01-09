@@ -97,7 +97,7 @@ export function createDefaultGuard() {
       getWindow: ({ feature, window }) =>
         getWindow({ feature, window }) as Promise<number>,
       increment: ({ feature, n, idempotencyKey }) =>
-        increment({ feature, n, idempotencyKey }).then(
+        increment({ feature, n, idem: idempotencyKey }).then(
           () => undefined
         ),
     },

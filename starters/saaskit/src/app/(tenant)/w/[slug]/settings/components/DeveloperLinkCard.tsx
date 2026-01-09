@@ -1,35 +1,35 @@
 import Link from "next/link";
-import { Card, CardContent } from "@/src/components/ui/card";
-import { ChevronRight } from "lucide-react";
+import { Card } from "@unisane/ui/components/card";
+import { Icon } from "@unisane/ui/primitives/icon";
 
 interface DeveloperLinkCardProps {
   href: string;
-  icon: React.ElementType;
+  icon: string;
   title: string;
   description: string;
 }
 
 export function DeveloperLinkCard({
   href,
-  icon: Icon,
+  icon,
   title,
   description,
 }: DeveloperLinkCardProps) {
   return (
     <Link href={href} className="block">
-      <Card className="transition-colors hover:bg-muted/50">
-        <CardContent className="flex items-center gap-4 p-4">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-            <Icon className="h-5 w-5 text-muted-foreground" />
+      <Card className="transition-colors hover:bg-surface-container/50">
+        <Card.Content className="flex items-center gap-4 p-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-container">
+            <Icon symbol={icon} size="sm" className="text-on-surface-variant" />
           </div>
           <div className="flex-1 min-w-0">
             <h4 className="text-sm font-medium">{title}</h4>
-            <p className="text-xs text-muted-foreground truncate">
+            <p className="text-xs text-on-surface-variant truncate">
               {description}
             </p>
           </div>
-          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-        </CardContent>
+          <Icon symbol="chevron_right" size="sm" className="text-on-surface-variant" />
+        </Card.Content>
       </Card>
     </Link>
   );

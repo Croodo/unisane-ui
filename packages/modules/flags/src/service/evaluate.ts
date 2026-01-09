@@ -1,6 +1,6 @@
 import { isEnabledForSubject } from "./overrides";
 import { ExposuresRepo } from "../data/exposures.repository";
-import { getEnv } from "@unisane/kernel";
+import { getEnv, logger } from "@unisane/kernel";
 import type { EvaluateFlagsArgs, EvalCtx } from "../domain/types";
 
 export type { EvaluateFlagsArgs };
@@ -45,7 +45,7 @@ export async function evaluateFlags(args: EvaluateFlagsArgs) {
         timestamp: new Date().toISOString(),
       }).catch((err) => {
         // Suppress logging errors to avoid impacting the user
-        console.error("Failed to log flag exposure", err);
+        logger.warn("flags: failed to log flag exposure", { err });
       });
     })
   );

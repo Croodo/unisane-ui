@@ -1,22 +1,16 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/src/components/ui/select";
+import { Select } from "@unisane/ui/components/select";
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "@/src/components/ui/tabs";
-import { Button } from "@/src/components/ui/button";
-import { toast } from "sonner";
-import { Loader2, Save } from "lucide-react";
+} from "@unisane/ui/components/tabs";
+import { Button } from "@unisane/ui/components/button";
+import { toast } from "@unisane/ui/components/toast";
+import { Icon } from "@unisane/ui/primitives/icon";
 import { hooks } from "@/src/sdk/hooks/generated/hooks";
 import { SettingCard } from "./components/SettingCard";
 import { SettingsSearch } from "./components/SettingsSearch";
@@ -108,7 +102,7 @@ export default function AdminSettingsClient() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold">Platform Settings</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-on-surface-variant">
             Manage environment-specific platform configuration
           </p>
         </div>
@@ -117,32 +111,32 @@ export default function AdminSettingsClient() {
             <Button
               onClick={handleBulkSave}
               disabled={isBulkSaving}
-              variant="default"
+              variant="filled"
             >
               {isBulkSaving ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Icon symbol="progress_activity" size="sm" className="mr-2 animate-spin" />
                   Saving...
                 </>
               ) : (
                 <>
-                  <Save className="mr-2 h-4 w-4" />
+                  <Icon symbol="save" size="sm" className="mr-2" />
                   Save All Changes ({pendingChanges.size})
                 </>
               )}
             </Button>
           )}
           <div className="w-[180px]">
-            <Select value={env} onValueChange={setEnv}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select Environment" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="dev">Development</SelectItem>
-                <SelectItem value="stage">Staging</SelectItem>
-                <SelectItem value="prod">Production</SelectItem>
-              </SelectContent>
-            </Select>
+            <Select
+              value={env}
+              onChange={setEnv}
+              placeholder="Select Environment"
+              options={[
+                { value: "dev", label: "Development" },
+                { value: "stage", label: "Staging" },
+                { value: "prod", label: "Production" },
+              ]}
+            />
           </div>
         </div>
       </div>
@@ -198,7 +192,7 @@ export default function AdminSettingsClient() {
       ) : (
         <div className="space-y-4 mt-6">
           {displaySettings.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
+            <div className="text-center py-12 text-on-surface-variant">
               No settings found matching {searchQuery}
             </div>
           ) : (

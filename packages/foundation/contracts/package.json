@@ -17,14 +17,14 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
-    "@ts-rest/core": "^3.45.0",
-    "zod": "^3.22.0"
+    "@ts-rest/core": "^3.52.1",
+    "zod": "^3.23.0"
   },
   "devDependencies": {
     "@unisane/typescript-config": "workspace:*",
     "eslint": "^9.39.1",
     "tsup": "^8.0.0",
-    "typescript": "^5.3.0",
+    "typescript": "^5.9.2",
     "vitest": "^4.0.16"
   }
 }

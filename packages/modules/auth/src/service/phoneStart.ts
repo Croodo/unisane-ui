@@ -1,4 +1,4 @@
-import { kv, randomDigits } from "@unisane/kernel";
+import { kv, randomDigits, logger } from "@unisane/kernel";
 import { ERR } from "@unisane/gateway";
 import { phoneVerifyKey } from "../domain/keys";
 import { normalizePhoneE164, usersRepository } from "@unisane/identity";
@@ -23,9 +23,11 @@ export async function phoneStart(args: {
   // In dev, log the code for testing; in prod this should send via SMS provider
   const { APP_ENV } = await import("@unisane/kernel").then((m) => m.getEnv());
   if (APP_ENV !== "prod") {
-    console.log(
-      `[auth:dev] phoneStart user=${userId} phone=${phone.slice(0, 6)}*** code=${code}`
-    );
+    logger.info("phoneStart: dev-mode verification code", {
+      userId,
+      phoneMasked: phone.slice(0, 6) + "***",
+      code,
+    });
   }
   return { sent: true };
 }

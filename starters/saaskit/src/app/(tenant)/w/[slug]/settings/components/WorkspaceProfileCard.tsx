@@ -1,16 +1,15 @@
 "use client";
 
 import { useMemo } from "react";
-import { Input } from "@/src/components/ui/input";
-import { Textarea } from "@/src/components/ui/textarea";
-import { Label } from "@/src/components/ui/label";
-import { toast } from "sonner";
+import { Input } from "@unisane/ui/primitives/input";
+import { Textarea } from "@unisane/ui/primitives/textarea";
+import { Label } from "@unisane/ui/primitives/label";
+import { toast } from "@unisane/ui/components/toast";
 import { hooks } from "@/src/sdk/hooks";
 import type { SettingsGetResponse as SettingsGet } from "@/src/sdk/types";
 import { normalizeError } from "@/src/sdk/errors";
 import { FormCard } from "@/src/components/forms";
 import { useFormCard } from "@/src/hooks/useFormCard";
-import { Building2 } from "lucide-react";
 
 interface WorkspaceProfileCardProps {
   tenantId?: string | undefined;
@@ -86,7 +85,7 @@ export function WorkspaceProfileCard({ tenantId }: WorkspaceProfileCardProps) {
     <FormCard
       title="Workspace Profile"
       description="Basic information about your workspace."
-      icon={Building2}
+      icon="apartment"
       onSave={handleSave}
       onDiscard={form.reset}
       saving={patch.isPending}
@@ -100,7 +99,7 @@ export function WorkspaceProfileCard({ tenantId }: WorkspaceProfileCardProps) {
           onChange={(e) => form.setValue("name", e.target.value)}
           placeholder="My Workspace"
         />
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-on-surface-variant">
           This name is shown in the sidebar and workspace switcher.
         </p>
       </div>

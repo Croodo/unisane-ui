@@ -16,9 +16,9 @@ import {
   SidebarCollapsibleGroup,
   SidebarBackdrop,
   SidebarInset,
-} from "@/src/components/ui/sidebar";
-import { TopAppBar } from "@/src/components/ui/top-app-bar";
-import { IconButton } from "@/src/components/ui/icon-button";
+} from "@unisane/ui/components/sidebar";
+import { TopAppBar } from "@unisane/ui/components/top-app-bar";
+import { IconButton } from "@unisane/ui/components/icon-button";
 import { RailUserMenu } from "@/src/components/layout/RailUserMenu";
 import { AdminBanner } from "@/src/components/admin";
 import { useSession } from "@/src/hooks/useSession";

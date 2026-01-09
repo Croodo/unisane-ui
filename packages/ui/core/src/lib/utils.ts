@@ -142,27 +142,31 @@ export interface SlotProps extends React.HTMLAttributes<HTMLElement> {
   children: React.ReactNode;
 }
 
-export function Slot({ children, ...props }: SlotProps) {
-  if (isValidElement(children)) {
-    const childProps = children.props as Record<string, unknown>;
-    return cloneElement(children as React.ReactElement<Record<string, unknown>>, {
-      ...props,
-      ...childProps,
-      className: cn(props.className as string | undefined, childProps.className as string | undefined),
-    });
-  }
+export const Slot = React.forwardRef<HTMLElement, SlotProps>(
+  ({ children, ...props }, ref) => {
+    if (isValidElement(children)) {
+      const childProps = children.props as Record<string, unknown>;
+      return cloneElement(children as React.ReactElement<Record<string, unknown>>, {
+        ...props,
+        ...childProps,
+        ref,
+        className: cn(props.className as string | undefined, childProps.className as string | undefined),
+      });
+    }
 
-  // Development warning for invalid children
-  if (process.env.NODE_ENV !== "production") {
-    const childType = children === null ? "null" :
-                      children === undefined ? "undefined" :
-                      Array.isArray(children) ? "array" :
-                      typeof children;
-    console.warn(
-      `[Slot] Expected a single React element child for asChild pattern, but received: ${childType}. ` +
-      `The Slot will render nothing. Ensure you pass a single element (e.g., <a>, <Link>) as the child.`
-    );
-  }
+    // Development warning for invalid children
+    if (process.env.NODE_ENV !== "production") {
+      const childType = children === null ? "null" :
+                        children === undefined ? "undefined" :
+                        Array.isArray(children) ? "array" :
+                        typeof children;
+      console.warn(
+        `[Slot] Expected a single React element child for asChild pattern, but received: ${childType}. ` +
+        `The Slot will render nothing. Ensure you pass a single element (e.g., <a>, <Link>) as the child.`
+      );
+    }
 
-  return null;
-}
+    return null;
+  }
+);
+Slot.displayName = "Slot";

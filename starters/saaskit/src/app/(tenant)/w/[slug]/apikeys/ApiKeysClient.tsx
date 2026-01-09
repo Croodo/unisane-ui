@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import { Button } from "@/src/components/ui/button";
-import { Input } from "@/src/components/ui/input";
-import { Label } from "@/src/components/ui/label";
-import { Badge } from "@/src/components/ui/badge";
-import { toast } from "sonner";
+import { Button } from "@unisane/ui/components/button";
+import { Input } from "@unisane/ui/primitives/input";
+import { Label } from "@unisane/ui/primitives/label";
+import { Badge } from "@unisane/ui/components/badge";
+import { toast } from "@unisane/ui/components/toast";
 import { useSession } from "@/src/hooks/useSession";
 import { hooks } from "@/src/sdk/hooks";
 import type { ApikeysListItem, ApikeysCreateResponse } from "@/src/sdk/types";
@@ -13,40 +13,17 @@ import { useApiError } from "@/src/hooks/useApiError";
 import { DataTable } from "@unisane/data-table";
 import type { Column } from "@unisane/data-table";
 import { PageHeader } from "@/src/context/usePageHeader";
-import { Card, CardContent } from "@/src/components/ui/card";
-import { Alert, AlertDescription, AlertTitle } from "@/src/components/ui/alert";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/src/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/src/components/ui/alert-dialog";
-import {
-  Copy,
-  Check,
-  AlertTriangle,
-  KeyRound,
-  Plus,
-  MoreVertical,
-} from "lucide-react";
+import { Card } from "@unisane/ui/components/card";
+import { Alert } from "@unisane/ui/components/alert";
+import { Dialog } from "@unisane/ui/components/dialog";
+import { ConfirmDialog } from "@unisane/ui/components/confirm-dialog";
+import { Icon } from "@unisane/ui/primitives/icon";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/src/components/ui/dropdown-menu";
+} from "@unisane/ui/components/dropdown-menu";
 
 /**
  * Formats key ID for display: shows first 8 chars with ellipsis
@@ -167,7 +144,7 @@ export function ApiKeysClient() {
         render: (row) => (
           <div className="flex flex-col">
             <span className="font-medium">{row.name || "Unnamed key"}</span>
-            <span className="text-xs text-muted-foreground font-mono">
+            <span className="text-xs text-on-surface-variant font-mono">
               {formatKeyId(row.id)}
             </span>
           </div>
@@ -180,13 +157,13 @@ export function ApiKeysClient() {
           (row.scopes ?? []).length > 0 ? (
             <div className="flex flex-wrap gap-1">
               {row.scopes.map((s: string) => (
-                <Badge key={s} variant="secondary">
+                <Badge key={s} variant="tonal">
                   {s}
                 </Badge>
               ))}
             </div>
           ) : (
-            <span className="text-muted-foreground">No scopes</span>
+            <span className="text-on-surface-variant">No scopes</span>
           ),
       },
       {
@@ -204,8 +181,8 @@ export function ApiKeysClient() {
         render: (row) => (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <MoreVertical className="h-4 w-4" />
+              <Button variant="text" size="sm" className="h-8 w-8 p-0">
+                <Icon symbol="more_vert" size="sm" />
                 <span className="sr-only">Actions</span>
               </Button>
             </DropdownMenuTrigger>
@@ -219,7 +196,7 @@ export function ApiKeysClient() {
                   });
                 }}
                 disabled={!tenantId || revoke.isPending}
-                className="text-destructive focus:text-destructive"
+                className="text-error focus:text-error"
               >
                 Revoke Key
               </DropdownMenuItem>
@@ -244,7 +221,7 @@ export function ApiKeysClient() {
             className="gap-2"
             size="sm"
           >
-            <Plus className="h-4 w-4" />
+            <Icon symbol="add" size="sm" />
             Create Key
           </Button>
         }
@@ -253,17 +230,17 @@ export function ApiKeysClient() {
       <div className="space-y-6">
         {dataset.length === 0 && !isLoading && (
           <Card>
-            <CardContent className="py-10 text-center">
-              <KeyRound className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
+            <Card.Content className="py-10 text-center">
+              <Icon symbol="key" size="lg" className="mx-auto text-on-surface-variant mb-4" />
               <h3 className="text-lg font-medium mb-2">No API keys yet</h3>
-              <p className="text-sm text-muted-foreground mb-4">
+              <p className="text-sm text-on-surface-variant mb-4">
                 Create an API key to access your workspace programmatically.
               </p>
               <Button onClick={() => setCreateOpen(true)} className="gap-2">
-                <Plus className="h-4 w-4" />
+                <Icon symbol="add" size="sm" />
                 Create your first key
               </Button>
-            </CardContent>
+            </Card.Content>
           </Card>
         )}
 
@@ -279,193 +256,159 @@ export function ApiKeysClient() {
       </div>
 
       {/* Create Key Dialog */}
-      <Dialog open={createOpen && !newToken} onOpenChange={setCreateOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create API Key</DialogTitle>
-            <DialogDescription>
-              Create a new API key for programmatic access to your workspace.
-            </DialogDescription>
-          </DialogHeader>
-          <form
-            className="space-y-4"
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (!tenantId) return;
-              const scopesArr = scopes
-                .split(",")
-                .map((s) => s.trim())
-                .filter(Boolean);
-              if (scopesArr.length === 0) {
-                toast.error("At least one scope is required");
-                return;
-              }
-              create.mutate({
-                params: { tenantId },
-                body: {
-                  scopes: scopesArr,
-                  ...(name ? { name } : {}),
-                },
-              });
-            }}
-          >
-            <div className="space-y-2">
-              <Label htmlFor="name">Name (optional)</Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g., Production server"
-              />
-              <p className="text-xs text-muted-foreground">
-                A friendly name to identify this key.
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="scopes">Scopes</Label>
-              <Input
-                id="scopes"
-                value={scopes}
-                onChange={(e) => setScopes(e.target.value)}
-                placeholder="read, write"
-              />
-              <p className="text-xs text-muted-foreground">
-                Comma-separated list of permissions (e.g., read, write, admin).
-              </p>
-            </div>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setCreateOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={!tenantId || create.isPending}>
-                {create.isPending ? "Creating…" : "Create Key"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
+      <Dialog
+        open={createOpen && !newToken}
+        onClose={() => setCreateOpen(false)}
+        title="Create API Key"
+      >
+        <p className="text-on-surface-variant mb-4">
+          Create a new API key for programmatic access to your workspace.
+        </p>
+        <form
+          className="space-y-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!tenantId) return;
+            const scopesArr = scopes
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean);
+            if (scopesArr.length === 0) {
+              toast.error("At least one scope is required");
+              return;
+            }
+            create.mutate({
+              params: { tenantId },
+              body: {
+                scopes: scopesArr,
+                ...(name ? { name } : {}),
+              },
+            });
+          }}
+        >
+          <div className="space-y-2">
+            <Label htmlFor="name">Name (optional)</Label>
+            <Input
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g., Production server"
+            />
+            <p className="text-xs text-on-surface-variant">
+              A friendly name to identify this key.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="scopes">Scopes</Label>
+            <Input
+              id="scopes"
+              value={scopes}
+              onChange={(e) => setScopes(e.target.value)}
+              placeholder="read, write"
+            />
+            <p className="text-xs text-on-surface-variant">
+              Comma-separated list of permissions (e.g., read, write, admin).
+            </p>
+          </div>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button
+              type="button"
+              variant="text"
+              onClick={() => setCreateOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={!tenantId || create.isPending}>
+              {create.isPending ? "Creating…" : "Create Key"}
+            </Button>
+          </div>
+        </form>
       </Dialog>
 
       {/* Token Display Dialog */}
-      <Dialog open={Boolean(newToken)} onOpenChange={handleCloseTokenDialog}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Check className="h-5 w-5 text-green-500" />
-              API Key Created
-            </DialogTitle>
-            <DialogDescription>
-              {newToken?.name
-                ? `Your key "${newToken.name}" has been created.`
-                : "Your API key has been created."}
-            </DialogDescription>
-          </DialogHeader>
-
-          <Alert variant="destructive" className="bg-amber-50 border-amber-200">
-            <AlertTriangle className="h-4 w-4 text-amber-600" />
-            <AlertTitle className="text-amber-800">
-              Save this token now
-            </AlertTitle>
-            <AlertDescription className="text-amber-700">
-              This is the only time you&apos;ll see this token. Copy it now and
-              store it securely.
-            </AlertDescription>
-          </Alert>
-
-          <div className="space-y-2">
-            <Label>API Token</Label>
-            <div className="flex gap-2">
-              <code className="flex-1 p-3 bg-muted rounded-md text-sm font-mono break-all select-all">
-                {newToken?.token}
-              </code>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className="shrink-0"
-                onClick={handleCopyToken}
-              >
-                {newToken?.copied ? (
-                  <Check className="h-4 w-4 text-green-500" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-          </div>
-
-          <DialogFooter>
+      <Dialog
+        open={Boolean(newToken)}
+        onClose={handleCloseTokenDialog}
+        title="API Key Created"
+        icon={<Icon symbol="check_circle" size="md" className="text-primary" />}
+        className="sm:max-w-lg"
+        actions={
+          <>
             <Button
               onClick={handleCopyToken}
-              variant={newToken?.copied ? "outline" : "default"}
+              variant={newToken?.copied ? "outlined" : "filled"}
             >
               {newToken?.copied ? "Copied!" : "Copy Token"}
             </Button>
-            <Button variant="outline" onClick={handleCloseTokenDialog}>
+            <Button variant="text" onClick={handleCloseTokenDialog}>
               Done
             </Button>
-          </DialogFooter>
-        </DialogContent>
+          </>
+        }
+      >
+        <p className="text-on-surface-variant mb-4">
+          {newToken?.name
+            ? `Your key "${newToken.name}" has been created.`
+            : "Your API key has been created."}
+        </p>
+
+        <Alert variant="warning" title="Save this token now">
+          This is the only time you&apos;ll see this token. Copy it now and
+          store it securely.
+        </Alert>
+
+        <div className="space-y-2 mt-4">
+          <Label>API Token</Label>
+          <div className="flex gap-2">
+            <code className="flex-1 p-3 bg-surface-container rounded-md text-sm font-mono break-all select-all">
+              {newToken?.token}
+            </code>
+            <Button
+              type="button"
+              variant="outlined"
+              size="sm"
+              className="shrink-0 h-10 w-10 p-0"
+              onClick={handleCopyToken}
+            >
+              {newToken?.copied ? (
+                <Icon symbol="check" size="sm" className="text-primary" />
+              ) : (
+                <Icon symbol="content_copy" size="sm" />
+              )}
+            </Button>
+          </div>
+        </div>
       </Dialog>
 
       {/* Close Token Confirmation Dialog */}
-      <AlertDialog open={closeTokenDialog} onOpenChange={setCloseTokenDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Close Without Copying?</AlertDialogTitle>
-            <AlertDialogDescription>
-              You haven&apos;t copied the token yet. Are you sure you want to
-              close? You won&apos;t be able to see this token again.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Go Back</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmCloseToken}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Close Anyway
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={closeTokenDialog}
+        onOpenChange={setCloseTokenDialog}
+        title="Close Without Copying?"
+        description="You haven't copied the token yet. Are you sure you want to close? You won't be able to see this token again."
+        variant="warning"
+        confirmLabel="Close Anyway"
+        cancelLabel="Go Back"
+        onConfirm={handleConfirmCloseToken}
+      />
 
       {/* Revoke Key Confirmation Dialog */}
-      <AlertDialog
+      <ConfirmDialog
         open={revokeDialog.open}
         onOpenChange={(open) => {
           if (!open) {
             setRevokeDialog({ open: false, keyId: "", keyName: "" });
           }
         }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Revoke API Key</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to revoke{" "}
-              <span className="font-medium">{revokeDialog.keyName}</span>? This
-              action cannot be undone and any applications using this key will
-              stop working immediately.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={revoke.isPending}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleRevokeKey}
-              disabled={revoke.isPending}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {revoke.isPending ? "Revoking…" : "Revoke Key"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        title="Revoke API Key"
+        description={`Are you sure you want to revoke "${revokeDialog.keyName}"? This action cannot be undone and any applications using this key will stop working immediately.`}
+        variant="danger"
+        confirmLabel={revoke.isPending ? "Revoking…" : "Revoke Key"}
+        cancelLabel="Cancel"
+        onConfirm={handleRevokeKey}
+        loading={revoke.isPending}
+        disabled={revoke.isPending}
+      />
     </>
   );
 }

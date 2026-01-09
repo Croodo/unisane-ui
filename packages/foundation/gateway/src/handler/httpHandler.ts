@@ -8,7 +8,7 @@ import { withRequest } from "../logger";
 import { guard } from '../middleware/guard';
 import type { GuardOpts as GuardOptsInternal } from '../middleware/guard';
 import { observeHttp } from "../telemetry";
-import type { OpKey } from "@unisane/kernel";
+import type { OpKey } from "../rate-limits";
 import { ctx, createContext } from "@unisane/kernel";
 
 type HandlerOpts = {

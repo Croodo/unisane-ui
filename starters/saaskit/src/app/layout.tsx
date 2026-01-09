@@ -6,9 +6,10 @@ import "./globals.css";
 import "@material-symbols/font-400/outlined.css";
 import { SessionProvider } from "@/src/context/SessionContext";
 import { AppProviders } from "@/src/app/providers";
-import { Toaster } from "@/src/components/ui/sonner";
-import { ThemeProvider } from "@/src/components/ui/layout/theme-provider";
-import type { ThemeConfig, Theme } from "@/src/components/ui/layout/theme-provider";
+import { Toaster } from "@unisane/ui/components/toast";
+import { ThemeProvider } from "@unisane/ui/layout/theme-provider";
+import type { ThemeConfig, Theme } from "@unisane/ui/layout/theme-provider";
+import { GlobalErrorBoundary } from "@/src/components/feedback/GlobalErrorBoundary";
 
 export const metadata: Metadata = {
   title: "SaasKit",
@@ -48,12 +49,14 @@ export default function RootLayout({
       data-theme-mode={themeConfig.theme}
     >
       <body className="antialiased" suppressHydrationWarning>
-        <ThemeProvider>
-          <AppProviders>
-            <SessionProvider>{children}</SessionProvider>
-          </AppProviders>
-          <Toaster position="bottom-right" />
-        </ThemeProvider>
+        <GlobalErrorBoundary>
+          <ThemeProvider>
+            <AppProviders>
+              <SessionProvider>{children}</SessionProvider>
+            </AppProviders>
+            <Toaster position="bottom-right" />
+          </ThemeProvider>
+        </GlobalErrorBoundary>
       </body>
     </html>
   );

@@ -1,14 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import type { FormEvent } from 'react';
+import type { FormEvent, ChangeEvent } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@unisane/ui/components/button';
+import { Label } from '@unisane/ui/primitives/label';
+import { Input } from '@unisane/ui/primitives/input';
+import { Alert } from '@unisane/ui/components/alert';
+import { Icon } from '@unisane/ui/primitives/icon';
+import { Text } from '@unisane/ui/primitives/text';
 import Link from 'next/link';
-import { ArrowLeft, CheckCircle2, Mail } from 'lucide-react';
 
 export function ForgotPasswordForm() {
   const searchParams = useSearchParams();
@@ -44,25 +45,25 @@ export function ForgotPasswordForm() {
     const loginHref = `/login${callbackURL ? `?next=${encodeURIComponent(callbackURL)}` : ''}`;
     return (
       <div className="flex flex-col items-center gap-6 text-center">
-        <div className="rounded-full bg-green-100 p-3 text-green-700 dark:bg-green-900/30 dark:text-green-300">
-          <CheckCircle2 className="h-6 w-6" />
+        <div className="rounded-full bg-primary-container p-3 text-primary">
+          <Icon symbol="check_circle" size="md" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-lg font-medium">Check your email</h2>
-          <p className="text-sm text-muted-foreground">
+          <Text as="h2" variant="titleMedium">Check your email</Text>
+          <Text variant="bodySmall" color="onSurfaceVariant">
             If an account exists for that email, we sent a password reset link.
             Be sure to check your spam folder.
-          </p>
+          </Text>
         </div>
         <div className="flex w-full flex-col gap-3">
           <Link href={loginHref} className="w-full">
-            <Button variant="default" className="w-full gap-2">
-              <Mail className="h-4 w-4" /> Back to sign in
+            <Button variant="filled" className="w-full gap-2">
+              <Icon symbol="mail" size="sm" /> Back to sign in
             </Button>
           </Link>
           <Link href="/" className="w-full">
-            <Button variant="outline" className="w-full gap-2">
-              <ArrowLeft className="h-4 w-4" /> Return Home
+            <Button variant="outlined" className="w-full gap-2">
+              <Icon symbol="arrow_back" size="sm" /> Return Home
             </Button>
           </Link>
         </div>
@@ -74,35 +75,46 @@ export function ForgotPasswordForm() {
   return (
     <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
       <div className="flex flex-col gap-2">
-        <Label htmlFor="email" className="text-xs font-medium text-muted-foreground">Email address</Label>
-        <InputGroup>
-          <InputGroupAddon>
-            <Mail className="h-4 w-4 text-muted-foreground/70" />
-          </InputGroupAddon>
-          <InputGroupInput
+        <Label htmlFor="email" className="text-label-small text-on-surface-variant">
+          Email address
+        </Label>
+        <div className="relative">
+          <Icon
+            symbol="mail"
+            size="sm"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant"
+          />
+          <Input
             id="email"
             type="email"
             autoComplete="email"
             required
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
             placeholder="name@example.com"
-            className="placeholder:text-muted-foreground/40"
+            className="pl-10"
           />
-        </InputGroup>
-        <p className="text-xs text-muted-foreground">We’ll email you a link to reset your password.</p>
+        </div>
+        <Text variant="labelSmall" color="onSurfaceVariant">
+          We'll email you a link to reset your password.
+        </Text>
       </div>
-      {error ? (
-        <Alert variant="destructive" className="py-2">
-          <AlertDescription>{error}</AlertDescription>
+
+      {error && (
+        <Alert variant="error" title="Error">
+          {error}
         </Alert>
-      ) : null}
+      )}
+
       <div className="flex flex-col gap-4">
-        <Button type="submit" disabled={isSubmitting} className="w-full font-medium">
+        <Button type="submit" disabled={isSubmitting} className="w-full">
           {isSubmitting ? 'Sending…' : 'Send reset link'}
         </Button>
-        <Link href={loginHref} className="flex items-center justify-center text-sm font-medium text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="mr-2 h-4 w-4" /> Back to sign in
+        <Link
+          href={loginHref}
+          className="flex items-center justify-center text-body-small font-medium text-on-surface-variant hover:text-on-surface"
+        >
+          <Icon symbol="arrow_back" size="sm" className="mr-2" /> Back to sign in
         </Link>
       </div>
     </form>

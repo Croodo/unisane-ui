@@ -6,22 +6,17 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   DropdownMenuSub,
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
-} from "@/src/components/ui/dropdown-menu";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/src/components/ui/avatar";
-import { Badge } from "@/src/components/ui/badge";
-import { Icon } from "@/src/components/ui/icon";
-import { IconButton } from "@/src/components/ui/icon-button";
-import { useTheme } from "@/src/components/ui/layout/theme-provider";
+} from "@unisane/ui/components/dropdown-menu";
+import { Avatar } from "@unisane/ui/components/avatar";
+import { Badge } from "@unisane/ui/components/badge";
+import { Icon } from "@unisane/ui/primitives/icon";
+import { IconButton } from "@unisane/ui/components/icon-button";
+import { useTheme } from "@unisane/ui/layout/theme-provider";
 
 type UserInfo = {
   displayName?: string | null | undefined;
@@ -91,10 +86,7 @@ export function RailUserMenu({
       <DropdownMenuTrigger asChild>
         <IconButton variant="standard" ariaLabel="Account menu">
           {user?.imageUrl ? (
-            <Avatar size="sm">
-              <AvatarImage src={user.imageUrl} />
-              <AvatarFallback>{initials}</AvatarFallback>
-            </Avatar>
+            <Avatar src={user.imageUrl} fallback={initials} size="sm" />
           ) : (
             <Icon>account_circle</Icon>
           )}
@@ -102,23 +94,22 @@ export function RailUserMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent
         className="min-w-64"
-        side="top"
-        align="start"
+        side="right"
+        align="end"
         sideOffset={8}
+        avoidCollisions={true}
+        collisionPadding={16}
       >
         {/* User Header */}
-        <DropdownMenuLabel className="p-0 font-normal">
+        <div className="p-0 font-normal">
           <div className="flex items-center gap-3 px-3 py-3">
-            <Avatar>
-              {user?.imageUrl && <AvatarImage src={user.imageUrl} />}
-              <AvatarFallback>{initials}</AvatarFallback>
-            </Avatar>
+            <Avatar src={user?.imageUrl || undefined} fallback={initials} />
             <div className="grid flex-1 text-left leading-tight">
               <span className="font-semibold text-on-surface">{displayName}</span>
               <span className="text-xs text-on-surface-variant">{email}</span>
             </div>
           </div>
-        </DropdownMenuLabel>
+        </div>
         <DropdownMenuSeparator />
 
         {/* Navigation Links for Tenant */}
@@ -162,7 +153,7 @@ export function RailUserMenu({
             <DropdownMenuItem
               icon={<Icon size="sm" className="text-error">admin_panel_settings</Icon>}
               trailingIcon={
-                <Badge variant="outline" className="text-[10px] h-5">
+                <Badge variant="outlined" className="text-[10px] h-5">
                   Super
                 </Badge>
               }

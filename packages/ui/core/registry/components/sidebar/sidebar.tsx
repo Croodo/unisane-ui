@@ -46,10 +46,16 @@ export function MaterialIcon({ icon, active = false, size = 20, className }: Mat
 
 export interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
+  /** shadcn compatibility: variant style (currently ignored, for API compat) */
+  variant?: "sidebar" | "floating" | "inset";
+  /** shadcn compatibility: collapsible behavior (currently ignored, for API compat) */
+  collapsible?: "offcanvas" | "icon" | "none";
 }
 
 export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(
-  ({ children, className, ...props }, ref) => {
+  ({ children, className, variant, collapsible, ...props }, ref) => {
+    // variant and collapsible props are accepted for shadcn compatibility
+    // but the actual behavior is controlled via SidebarProvider context
     return (
       <div ref={ref} className={cn("flex h-full", className)} {...props}>
         {children}
@@ -407,7 +413,93 @@ export const SidebarMenu = forwardRef<HTMLElement, SidebarMenuProps>(
 );
 SidebarMenu.displayName = "SidebarMenu";
 
-export interface SidebarMenuItemProps {
+// ─── SHADCN-COMPATIBLE SIDEBAR MENU ITEM (WRAPPER) ─────────────────────────
+
+export interface SidebarMenuItemProps extends React.HTMLAttributes<HTMLLIElement> {
+  children: React.ReactNode;
+}
+
+export const SidebarMenuItem = forwardRef<HTMLLIElement, SidebarMenuItemProps>(
+  ({ children, className, ...props }, ref) => {
+    return (
+      <li ref={ref} className={cn("list-none", className)} {...props}>
+        {children}
+      </li>
+    );
+  }
+);
+SidebarMenuItem.displayName = "SidebarMenuItem";
+
+// ─── SHADCN-COMPATIBLE SIDEBAR MENU BUTTON ─────────────────────────────────
+
+export interface SidebarMenuButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  asChild?: boolean;
+  isActive?: boolean;
+  tooltip?: string;
+  size?: "default" | "sm" | "lg";
+  variant?: "default" | "outline";
+}
+
+export const SidebarMenuButton = forwardRef<HTMLButtonElement, SidebarMenuButtonProps>(
+  ({ children, className, asChild, isActive, tooltip, size = "default", variant = "default", ...props }, ref) => {
+    const sidebar = useSidebar();
+
+    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+      props.onClick?.(e);
+      if (sidebar.isMobile) {
+        sidebar.setMobileOpen(false);
+      }
+    };
+
+    const buttonClasses = cn(
+      "flex w-full items-center gap-2 rounded-md px-2 py-1.5",
+      "text-sm transition-colors duration-short cursor-pointer",
+      "relative overflow-hidden select-none outline-none",
+      "focus-visible:ring-2 focus-visible:ring-primary",
+      size === "sm" && "py-1 text-xs",
+      size === "lg" && "py-2.5 text-base",
+      isActive
+        ? "bg-secondary-container text-on-secondary-container font-medium"
+        : "text-on-surface-variant hover:bg-on-surface/8 hover:text-on-surface",
+      variant === "outline" && "border border-outline-variant",
+      props.disabled && "opacity-38 cursor-not-allowed pointer-events-none",
+      className
+    );
+
+    if (asChild && isValidElement(children)) {
+      return (
+        <Slot
+          ref={ref as React.Ref<HTMLElement>}
+          className={buttonClasses}
+          data-active={isActive || undefined}
+          title={tooltip}
+          {...props}
+        >
+          {children}
+        </Slot>
+      );
+    }
+
+    return (
+      <button
+        ref={ref}
+        className={buttonClasses}
+        data-active={isActive || undefined}
+        title={tooltip}
+        onClick={handleClick}
+        {...props}
+      >
+        <Ripple disabled={!!props.disabled} />
+        {children}
+      </button>
+    );
+  }
+);
+SidebarMenuButton.displayName = "SidebarMenuButton";
+
+// ─── PROPS-BASED SIDEBAR NAV ITEM ─────────────────────────────────────────────
+
+export interface SidebarNavItemProps {
   id?: string;
   href?: string;
   icon?: React.ReactNode | string;
@@ -420,7 +512,7 @@ export interface SidebarMenuItemProps {
   asChild?: boolean;
 }
 
-export function SidebarMenuItem({
+export function SidebarNavItem({
   id,
   href,
   icon,
@@ -431,7 +523,7 @@ export function SidebarMenuItem({
   children,
   className,
   asChild,
-}: SidebarMenuItemProps) {
+}: SidebarNavItemProps) {
   const sidebar = useSidebar();
   const isControlled = active !== undefined;
   const isActive = isControlled ? active : id ? sidebar.activeId === id : false;
@@ -449,7 +541,7 @@ export function SidebarMenuItem({
 
   const innerContent = (
     <>
-      <Ripple disabled={disabled} />
+      <Ripple disabled={!!disabled} />
       {icon && (
         <span className="shrink-0">
           <MaterialIcon icon={icon} active={isActive} size={20} />
@@ -595,13 +687,15 @@ export const SidebarInset = forwardRef<HTMLElement, SidebarInsetProps>(
       <main
         ref={ref}
         className={cn(
-          "flex-1 min-h-screen flex flex-col",
+          "flex-1 flex flex-col",
           "bg-surface",
           "transition-[margin] duration-emphasized ease-emphasized",
           // Responsive: top margin for mobile/tablet (TopAppBar), none for desktop
           "mt-16 expanded:mt-0",
           // Responsive: no left margin on mobile/tablet, applied via style on desktop
           "ml-0",
+          // Height and overflow for proper scrolling
+          "h-screen overflow-y-auto overflow-x-hidden",
           className
         )}
         style={{

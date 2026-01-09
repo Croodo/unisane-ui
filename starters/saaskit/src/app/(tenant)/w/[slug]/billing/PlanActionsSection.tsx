@@ -1,6 +1,6 @@
-import { Button } from "@/src/components/ui/button";
-import { Input } from "@/src/components/ui/input";
-import { Label } from "@/src/components/ui/label";
+import { Button } from "@unisane/ui/components/button";
+import { Input } from "@unisane/ui/primitives/input";
+import { Label } from "@unisane/ui/primitives/label";
 import type { PlanId } from "@/src/shared/constants/plan";
 
 export type PlanActionsSectionProps = {
@@ -57,7 +57,7 @@ export function PlanActionsSection({
             <div className="flex gap-2">
               <Button
                 className="w-full"
-                variant="outline"
+                variant="outlined"
                 disabled={!canChangeSeats}
                 onClick={onChangeSeats}
               >

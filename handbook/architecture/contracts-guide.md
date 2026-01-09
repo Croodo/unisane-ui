@@ -1058,6 +1058,23 @@ Level 5: starters/saaskit/sdk/types.ts           → Generated
    const PLANS = ['free', 'pro', 'business'] as const;
    ```
 
+### TenantId Nullability Policy
+
+| Context | Schema | Example |
+|---------|--------|---------|
+| **Input schemas** | Omit tenantId | `ZCreateFile` - tenantId from context |
+| **Entity responses** (tenant-scoped) | `z.string().min(1)` | `ZStorageFileResponse.tenantId` |
+| **User context responses** | `z.string().nullable()` | `ZMeOut.tenantId` (user may have no tenant) |
+| **Admin list filters** | `z.string().optional()` | `ZAdminFilters.tenantId` (filter param) |
+
+**Rules:**
+1. Never accept `tenantId` in request body - always use context via `getTenantId()`
+2. Tenant-scoped entity responses MUST have required `tenantId: z.string().min(1)`
+3. User context responses (like `/me`) MAY have nullable tenantId
+4. Admin filters MAY have optional tenantId for cross-tenant queries
+
+---
+
 ### Audit Results (2026-01-09)
 
 Audited all 22 contract files in `starters/saaskit/src/contracts/`. Findings:

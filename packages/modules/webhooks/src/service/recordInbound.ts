@@ -86,8 +86,8 @@ export async function recordInboundEvent(args: {
               await addSuppression({ email, reason: nt, provider: 'ses', tenantId: null });
             }
           }
-        } catch {
-          // ignore parse errors
+        } catch (err) {
+          baseLog.warn("ses webhook: failed to parse SNS message", { err });
         }
       }
     }

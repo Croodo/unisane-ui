@@ -1,8 +1,8 @@
 "use client";
 
 import { forwardRef } from "react";
-import { cn } from "@/src/lib/utils";
-import { Skeleton } from "@/src/components/ui/skeleton";
+import { cn } from "@unisane/ui/lib/utils";
+import { Skeleton } from "@unisane/ui/components/skeleton";
 
 export type LoadingCardProps = React.HTMLAttributes<HTMLDivElement> & {
   lines?: number;

@@ -106,8 +106,8 @@ export function useProcessedData<T extends { id: string }>({
   const debouncedColumnFilters = useDebounce(columnFilters, filterDebounceMs);
 
   return useMemo(() => {
-    // Guard against empty data (early return for performance)
-    if (data.length === 0) {
+    // Guard against null/undefined/empty data (early return for safety and performance)
+    if (!data || !Array.isArray(data) || data.length === 0) {
       return [];
     }
 

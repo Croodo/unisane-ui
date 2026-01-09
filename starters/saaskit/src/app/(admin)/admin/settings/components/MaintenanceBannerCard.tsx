@@ -1,17 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Button } from "@/src/components/ui/button";
-import { Textarea } from "@/src/components/ui/textarea";
-import { Label } from "@/src/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/src/components/ui/select";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Button } from "@unisane/ui/components/button";
+import { Textarea } from "@unisane/ui/primitives/textarea";
+import { Label } from "@unisane/ui/primitives/label";
+import { Select } from "@unisane/ui/components/select";
+import { Icon } from "@unisane/ui/primitives/icon";
 
 interface MaintenanceBannerValue {
   enabled: boolean;
@@ -96,8 +90,8 @@ export function MaintenanceBannerCard({
   if (loading) {
     return (
       <div className="rounded-lg border bg-card p-4">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" />
+        <div className="flex items-center gap-2 text-sm text-on-surface-variant">
+          <Icon symbol="progress_activity" size="sm" className="animate-spin" />
           Loading...
         </div>
       </div>
@@ -108,7 +102,7 @@ export function MaintenanceBannerCard({
     <div className="rounded-lg border bg-card p-4 space-y-3">
       <div>
         <h3 className="text-sm font-medium">Maintenance Banner</h3>
-        <p className="text-xs text-muted-foreground mt-1">
+        <p className="text-xs text-on-surface-variant mt-1">
           Display a global banner across all workspaces during maintenance
           windows
         </p>
@@ -140,35 +134,31 @@ export function MaintenanceBannerCard({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="banner-variant">Variant</Label>
           <Select
+            label="Variant"
             value={variant}
-            onValueChange={(val) => handleChange("variant", val)}
-          >
-            <SelectTrigger id="banner-variant" className="max-w-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="info">Info</SelectItem>
-              <SelectItem value="warning">Warning</SelectItem>
-              <SelectItem value="danger">Danger</SelectItem>
-            </SelectContent>
-          </Select>
-          <p className="text-xs text-muted-foreground">
+            onChange={(val) => handleChange("variant", val)}
+            options={[
+              { value: "info", label: "Info" },
+              { value: "warning", label: "Warning" },
+              { value: "danger", label: "Danger" },
+            ]}
+          />
+          <p className="text-xs text-on-surface-variant">
             Controls the visual style used by the runtime banner renderer
           </p>
         </div>
 
         {validationError && (
-          <div className="flex items-center gap-1.5 text-xs text-destructive">
-            <AlertCircle className="h-3 w-3" />
+          <div className="flex items-center gap-1.5 text-xs text-error">
+            <Icon symbol="error" size="sm" />
             <span>{validationError}</span>
           </div>
         )}
       </div>
 
       <div className="flex items-center justify-between pt-2">
-        <div className="text-xs text-muted-foreground">
+        <div className="text-xs text-on-surface-variant">
           {namespace}.{settingKey}
         </div>
         <Button
@@ -178,7 +168,7 @@ export function MaintenanceBannerCard({
         >
           {saving ? (
             <>
-              <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+              <Icon symbol="progress_activity" size="sm" className="mr-2 animate-spin" />
               Saving...
             </>
           ) : (

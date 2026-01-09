@@ -9,7 +9,6 @@ import {
   StatsCards,
   type StatItem,
 } from "@/src/components/dashboard/StatsCards";
-import { Users, ShieldAlert, UserCheck } from "lucide-react";
 import { useServerTable } from "@/src/hooks/useServerTable";
 
 interface UsersClientProps {
@@ -61,7 +60,7 @@ export default function UsersClient({
         render: (row) => (
           <div className="flex flex-col">
             <span className="font-medium break-all">{row.email}</span>
-            <span className="text-xs text-muted-foreground">{row.id}</span>
+            <span className="text-xs text-on-surface-variant">{row.id}</span>
           </div>
         ),
       },
@@ -120,9 +119,9 @@ export default function UsersClient({
     const standardUsers = stats?.facets?.globalRole?.["user"] ?? 0;
 
     return [
-      { label: "Total Users", value: total, icon: Users },
-      { label: "Super Admins", value: superAdmins, icon: ShieldAlert },
-      { label: "Standard Users", value: standardUsers, icon: UserCheck },
+      { label: "Total Users", value: total, icon: "group" },
+      { label: "Super Admins", value: superAdmins, icon: "shield" },
+      { label: "Standard Users", value: standardUsers, icon: "verified_user" },
     ];
   }, [stats]);
 

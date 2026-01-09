@@ -1,5 +1,5 @@
 import React from 'react';
-import { cn } from '@/src/lib/utils';
+import { cn } from '@unisane/ui/lib/utils';
 import Inset from '@/src/components/layout/Inset';
 
 export function PageHeader({

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Input } from "@/src/components/ui/input";
-import { Search } from "lucide-react";
+import { Input } from "@unisane/ui/primitives/input";
+import { Icon } from "@unisane/ui/primitives/icon";
 
 interface SettingsSearchProps {
   onSearch: (query: string) => void;
@@ -22,13 +22,13 @@ export function SettingsSearch({ onSearch, placeholder = "Search settings..." }:
 
   return (
     <div className="relative">
-      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <Icon symbol="search" size="sm" className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" />
       <Input
         type="text"
         placeholder={placeholder}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        className="pl-9"
+        className="pl-10"
       />
     </div>
   );

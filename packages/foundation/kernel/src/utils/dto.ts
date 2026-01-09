@@ -34,3 +34,19 @@ export type SeekPageWithSort = z.infer<typeof ZSeekPageWithSort>;
 export function clampInt(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, Math.floor(value)));
 }
+
+/**
+ * Standard pagination arguments for list service functions.
+ * Use this type for service function signatures to ensure consistency.
+ */
+export type ListPageArgs = {
+  cursor?: string | null;
+  limit: number;
+};
+
+/**
+ * Standard pagination arguments with optional sort.
+ */
+export type ListPageArgsWithSort = ListPageArgs & {
+  sort?: string;
+};

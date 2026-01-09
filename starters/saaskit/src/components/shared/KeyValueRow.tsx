@@ -1,10 +1,10 @@
 "use client";
 
 import { ReactNode, useState } from "react";
-import { Check, Copy } from "lucide-react";
-import { cn } from "@/src/lib/utils";
-import { IconButton } from "@/src/components/ui/icon-button";
-import { toast } from "@/src/components/ui/toast";
+import { cn } from "@unisane/ui/lib/utils";
+import { Icon } from "@unisane/ui/primitives/icon";
+import { IconButton } from "@unisane/ui/components/icon-button";
+import { toast } from "@unisane/ui/components/toast";
 
 export interface KeyValueRowProps {
   label: string;
@@ -77,16 +77,17 @@ export function KeyValueRow({
         </span>
         {copyable && value && (
           <IconButton
-            variant="text"
+            variant="standard"
             size="sm"
             className="h-5 w-5 flex-shrink-0"
             onClick={handleCopy}
+            ariaLabel="Copy"
           >
-            {copied ? (
-              <Check className="h-3 w-3 text-success" />
-            ) : (
-              <Copy className="h-3 w-3" />
-            )}
+            <Icon
+              symbol={copied ? "check" : "content_copy"}
+              size="xs"
+              className={copied ? "text-primary" : undefined}
+            />
           </IconButton>
         )}
       </div>

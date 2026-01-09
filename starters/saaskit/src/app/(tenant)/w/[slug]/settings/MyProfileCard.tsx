@@ -1,26 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Input } from "@/src/components/ui/input";
-import { Label } from "@/src/components/ui/label";
-import { Button } from "@/src/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/src/components/ui/select";
-import { toast } from "sonner";
+import { Input } from "@unisane/ui/primitives/input";
+import { Label } from "@unisane/ui/primitives/label";
+import { Button } from "@unisane/ui/components/button";
+import { Select } from "@unisane/ui/components/select";
+import { toast } from "@unisane/ui/components/toast";
 import { SUPPORTED_LOCALES } from "@/src/shared/constants/i18n";
 import { normalizePhoneE164, normalizeUsername } from "@/src/shared/normalize";
 import { normalizeError } from "@/src/sdk/errors";
 import { hooks } from "@/src/sdk/hooks";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/src/components/ui/popover";
+import { Popover } from "@unisane/ui/components/popover";
 import {
   Command,
   CommandEmpty,
@@ -28,8 +18,8 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@/src/components/ui/command";
-import { CircleCheck, LoaderCircle, OctagonX } from "lucide-react";
+} from "@unisane/ui/components/command";
+import { Icon } from "@unisane/ui/primitives/icon";
 
 function useDebouncedValue<T>(value: T, delayMs = 300): T {
   const [debounced, setDebounced] = useState(value);
@@ -165,14 +155,14 @@ export function MyProfileCard() {
 
         <div className="overflow-hidden rounded-lg border bg-background">
           <div className="grid gap-2 border-b px-4 py-3 sm:grid-cols-[200px_minmax(0,1fr)] sm:items-center">
-            <Label className="text-sm font-medium text-muted-foreground">
+            <Label className="text-sm font-medium text-on-surface-variant">
               Email
             </Label>
             <div className="sm:flex sm:justify-end">
               <div className="space-y-1 w-full max-w-xs">
-                <Input value={emailVal} disabled className="bg-muted/40" />
+                <Input value={emailVal} disabled className="bg-surface-container/40" />
                 {emailVal ? (
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-xs text-on-surface-variant">
                     {emailVerified === true
                       ? "Email verified"
                       : emailVerified === false
@@ -186,7 +176,7 @@ export function MyProfileCard() {
 
           <div className="grid gap-2 border-b px-4 py-3 sm:grid-cols-[200px_minmax(0,1fr)] sm:items-center">
             <Label
-              className="text-sm font-medium text-muted-foreground"
+              className="text-sm font-medium text-on-surface-variant"
               htmlFor="displayName"
             >
               Display name
@@ -207,12 +197,12 @@ export function MyProfileCard() {
           <div className="grid gap-2 border-b px-4 py-3 sm:grid-cols-[200px_minmax(0,1fr)] sm:items-center">
             <div className="space-y-1">
               <Label
-                className="text-sm font-medium text-muted-foreground"
+                className="text-sm font-medium text-on-surface-variant"
                 htmlFor="username"
               >
                 Username
               </Label>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-on-surface-variant">
                 Nickname or short name used in the app.
               </p>
             </div>
@@ -229,18 +219,18 @@ export function MyProfileCard() {
                   <div className="flex items-center gap-1.5 text-xs">
                     {uQ.isFetching ? (
                       <>
-                        <LoaderCircle className="h-3 w-3 animate-spin text-muted-foreground" />
-                        <span className="text-muted-foreground">Checking…</span>
+                        <Icon symbol="progress_activity" size="xs" className="animate-spin text-on-surface-variant" />
+                        <span className="text-on-surface-variant">Checking…</span>
                       </>
                     ) : uQ.data?.available === false ? (
                       <>
-                        <OctagonX className="h-3 w-3 text-destructive" />
-                        <span className="text-destructive">Not available</span>
+                        <Icon symbol="error" size="xs" className="text-error" />
+                        <span className="text-error">Not available</span>
                       </>
                     ) : uQ.data?.available === true ? (
                       <>
-                        <CircleCheck className="h-3 w-3 text-emerald-500 dark:text-emerald-400" />
-                        <span className="text-emerald-600 dark:text-emerald-400">
+                        <Icon symbol="check_circle" size="xs" className="text-primary" />
+                        <span className="text-primary">
                           Available
                         </span>
                       </>
@@ -253,7 +243,7 @@ export function MyProfileCard() {
 
           <div className="grid gap-2 border-b px-4 py-3 sm:grid-cols-[200px_minmax(0,1fr)] sm:items-center">
             <Label
-              className="text-sm font-medium text-muted-foreground"
+              className="text-sm font-medium text-on-surface-variant"
               htmlFor="firstName"
             >
               First name
@@ -273,7 +263,7 @@ export function MyProfileCard() {
 
           <div className="grid gap-2 border-b px-4 py-3 sm:grid-cols-[200px_minmax(0,1fr)] sm:items-center">
             <Label
-              className="text-sm font-medium text-muted-foreground"
+              className="text-sm font-medium text-on-surface-variant"
               htmlFor="lastName"
             >
               Last name
@@ -293,7 +283,7 @@ export function MyProfileCard() {
 
           <div className="grid gap-2 border-b px-4 py-3 sm:grid-cols-[200px_minmax(0,1fr)] sm:items-start">
             <Label
-              className="text-sm font-medium text-muted-foreground"
+              className="text-sm font-medium text-on-surface-variant"
               htmlFor="phone"
             >
               Phone (+E.164)
@@ -311,7 +301,7 @@ export function MyProfileCard() {
                   />
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="outlined"
                     size="sm"
                     onClick={sendPhoneCode}
                   >
@@ -319,7 +309,7 @@ export function MyProfileCard() {
                   </Button>
                 </div>
                 {phoneVal && (
-                  <div className="space-y-0.5 text-xs text-muted-foreground">
+                  <div className="space-y-0.5 text-xs text-on-surface-variant">
                     <div>
                       {pQ.isFetching
                         ? "Checking…"
@@ -359,7 +349,7 @@ export function MyProfileCard() {
                         } catch {}
                       }}
                     />
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-on-surface-variant">
                       Press Enter to verify
                     </span>
                   </div>
@@ -369,65 +359,58 @@ export function MyProfileCard() {
           </div>
 
           <div className="grid gap-2 border-b px-4 py-3 sm:grid-cols-[200px_minmax(0,1fr)] sm:items-center">
-            <Label className="text-sm font-medium text-muted-foreground">
+            <Label className="text-sm font-medium text-on-surface-variant">
               Locale
             </Label>
             <div className="sm:flex sm:justify-end">
               <div className="w-full max-w-xs">
                 <Select
                   value={localeVal}
-                  onValueChange={(val) => setPf((p) => ({ ...p, locale: val }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SUPPORTED_LOCALES.map((l) => (
-                      <SelectItem key={l} value={l}>
-                        {l}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onChange={(val: string) => setPf((p) => ({ ...p, locale: val }))}
+                  options={SUPPORTED_LOCALES.map((l: string) => ({
+                    value: l,
+                    label: l,
+                  }))}
+                />
               </div>
             </div>
           </div>
 
           <div className="grid gap-2 px-4 py-3 sm:grid-cols-[200px_minmax(0,1fr)] sm:items-center">
-            <Label className="text-sm font-medium text-muted-foreground">
+            <Label className="text-sm font-medium text-on-surface-variant">
               Timezone
             </Label>
             <div className="sm:flex sm:justify-end">
               <div className="w-full max-w-xs">
-                <Popover>
-                  <PopoverTrigger asChild>
+                <Popover
+                  trigger={
                     <Button
-                      variant="outline"
+                      variant="outlined"
                       className="w-full justify-between"
                     >
                       <span className="truncate text-left">
                         {timezoneVal || "Select timezone"}
                       </span>
-                      <span className="ml-2 text-xs text-muted-foreground">
+                      <span className="ml-2 text-xs text-on-surface-variant">
                         Change
                       </span>
                     </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="p-0" align="start">
+                  }
+                  content={
                     <Command>
                       <CommandInput placeholder="Search timezones…" />
                       <CommandList>
                         <CommandEmpty>No timezone found.</CommandEmpty>
                         <CommandGroup>
                           {(typeof Intl !== "undefined" &&
-                          (Intl as any).supportedValuesOf
-                            ? (Intl as any).supportedValuesOf("timeZone")
+                          (Intl as { supportedValuesOf?: (key: string) => string[] }).supportedValuesOf
+                            ? (Intl as { supportedValuesOf: (key: string) => string[] }).supportedValuesOf("timeZone")
                             : [timezoneVal]
                           ).map((tz: string) => (
                             <CommandItem
                               key={tz}
                               value={tz}
-                              onSelect={(val) =>
+                              onSelect={(val: string) =>
                                 setPf((p) => ({ ...p, timezone: val }))
                               }
                             >
@@ -437,13 +420,14 @@ export function MyProfileCard() {
                         </CommandGroup>
                       </CommandList>
                     </Command>
-                  </PopoverContent>
-                </Popover>
+                  }
+                  align="start"
+                />
               </div>
             </div>
           </div>
 
-          <div className="flex justify-end border-t bg-muted/40 px-4 py-3">
+          <div className="flex justify-end border-t bg-surface-container/40 px-4 py-3">
             <Button type="button" disabled={saveDisabled} onClick={saveProfile}>
               Save changes
             </Button>

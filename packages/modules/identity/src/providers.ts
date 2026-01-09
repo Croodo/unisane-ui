@@ -5,6 +5,8 @@
  * The TenantsRepo is injected at application bootstrap time.
  */
 
+import { InternalError } from '@unisane/kernel';
+
 /**
  * Minimal interface for tenant repository operations needed by identity.
  * This avoids importing the full @unisane/tenants package.
@@ -42,7 +44,7 @@ export function configureIdentityProviders(p: IdentityProviders): void {
  */
 export function getTenantsRepo(): TenantsRepoLike {
   if (!globalForIdentity.__identityProviders?.tenantsRepo) {
-    throw new Error('TenantsRepo not configured. Call configureIdentityProviders() at bootstrap.');
+    throw new InternalError('TenantsRepo not configured. Call configureIdentityProviders() at bootstrap.');
   }
   return globalForIdentity.__identityProviders.tenantsRepo;
 }

@@ -3,15 +3,14 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSession } from '@/src/hooks/useSession';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar } from '@unisane/ui/components/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '@unisane/ui/components/dropdown-menu';
 
 export function AppHeader() {
   const router = useRouter();
@@ -58,13 +57,11 @@ export function AppHeader() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button aria-label="Account" className="rounded-full border p-1 hover:bg-muted">
-                  <Avatar className="size-6">
-                    <AvatarFallback>U</AvatarFallback>
-                  </Avatar>
+                  <Avatar fallback="U" className="size-6" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Account</DropdownMenuLabel>
+                <div className="px-2 py-1.5 text-sm font-semibold">Account</div>
                 <DropdownMenuItem asChild>
                   <Link href={me.tenantSlug ? `/w/${me.tenantSlug}/dashboard` : me.tenantId ? '/workspaces' : '/welcome'}>Open workspace</Link>
                 </DropdownMenuItem>

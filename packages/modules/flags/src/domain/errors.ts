@@ -1,9 +1,14 @@
 /**
  * Flags Domain Errors
+ *
+ * Module-specific error classes using generic E1xxx error codes.
  */
 
 import { DomainError, ErrorCode } from '@unisane/kernel';
 
+/**
+ * Thrown when a feature flag is not found.
+ */
 export class FlagNotFoundError extends DomainError {
   readonly code = ErrorCode.NOT_FOUND;
   readonly status = 404;
@@ -14,8 +19,11 @@ export class FlagNotFoundError extends DomainError {
   }
 }
 
+/**
+ * Thrown when a feature flag is disabled.
+ */
 export class FlagDisabledError extends DomainError {
-  readonly code = ErrorCode.FORBIDDEN;
+  readonly code = ErrorCode.FEATURE_NOT_AVAILABLE;
   readonly status = 403;
 
   constructor(flagKey: string) {
@@ -24,6 +32,9 @@ export class FlagDisabledError extends DomainError {
   }
 }
 
+/**
+ * Thrown when a feature flag value is invalid.
+ */
 export class InvalidFlagValueError extends DomainError {
   readonly code = ErrorCode.VALIDATION_ERROR;
   readonly status = 400;

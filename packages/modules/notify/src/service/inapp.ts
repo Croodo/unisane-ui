@@ -3,7 +3,7 @@ import type {
   InappReceiptView,
 } from "../domain/types";
 import { NotificationsRepository } from "../data/notifications.repository";
-import { getTenantId, getUserId, redis, events } from "@unisane/kernel";
+import { getTenantId, getUserId, redis, events, logger } from "@unisane/kernel";
 import { KV } from "@unisane/kernel";
 import { NOTIFY_EVENTS } from "../domain/constants";
 
@@ -127,7 +127,7 @@ export async function sendInapp(args: SendInappArgs) {
     });
     await redis.publish(channel, payload);
   } catch (err) {
-    console.warn("[notify/inapp] Redis publish failed:", err);
+    logger.warn("notify/inapp: redis publish failed", { err });
   }
 
   await events.emit(NOTIFY_EVENTS.SENT, {

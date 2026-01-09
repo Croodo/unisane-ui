@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { OpKey } from './rate-limits';
+import type { WebhookInboundOpKey } from './rate-limits';
 
 export const WEBHOOK_PROVIDERS = ['stripe', 'razorpay', 'resend', 'ses'] as const;
 export type WebhookProvider = (typeof WEBHOOK_PROVIDERS)[number];
@@ -17,13 +17,13 @@ export function isWebhookProvider(x: string): x is WebhookProvider {
   return (WEBHOOK_PROVIDERS as readonly string[]).includes(x);
 }
 
-const WEBHOOKS_IN_OPS_MAP: Record<WebhookProvider, OpKey> = {
+const WEBHOOKS_IN_OPS_MAP: Record<WebhookProvider, WebhookInboundOpKey> = {
   stripe: 'webhooks.in.stripe',
   razorpay: 'webhooks.in.razorpay',
   resend: 'webhooks.in.resend',
   ses: 'webhooks.in.ses',
 };
 
-export function getInboundWebhookOp(provider: WebhookProvider): OpKey {
+export function getInboundWebhookOp(provider: WebhookProvider): WebhookInboundOpKey {
   return WEBHOOKS_IN_OPS_MAP[provider];
 }

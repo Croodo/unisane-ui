@@ -22,7 +22,7 @@ export async function exportAdminTenants(args: {
     "id",
     "slug",
     "name",
-    "plan",
+    "planId",
     "membersCount",
     "adminsCount",
     "apiKeysCount",
@@ -39,7 +39,7 @@ export async function exportAdminTenants(args: {
     id: string;
     slug: string;
     name: string;
-    plan: string;
+    planId: string;
     membersCount?: number;
     adminsCount?: number;
     apiKeysCount?: number;
@@ -60,7 +60,7 @@ export async function exportAdminTenants(args: {
       id: t.id,
       slug: t.slug,
       name: t.name,
-      plan: t.plan,
+      planId: t.planId,
       membersCount: t.membersCount ?? 0,
       adminsCount: t.adminsCount ?? 0,
       apiKeysCount: t.apiKeysCount ?? 0,

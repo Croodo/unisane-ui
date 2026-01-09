@@ -325,6 +325,6 @@ export const ZCdnUrlRequest = z.object({
 export const ZCdnUrlResponse = z.object({
   url: z.string(),
   cdnUrl: z.string().optional(), // If different from storage URL
-  expiresAt: z.number().optional(), // Unix timestamp
+  expiresAt: z.number().optional().describe("Unix timestamp in ms"),
   cacheControl: z.string().optional(),
 });

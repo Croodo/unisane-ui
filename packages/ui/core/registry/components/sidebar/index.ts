@@ -13,6 +13,8 @@ export {
   SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarNavItem,
   SidebarTrigger,
   SidebarBackdrop,
   SidebarInset,
@@ -31,8 +33,18 @@ export type {
   SidebarGroupLabelProps,
   SidebarMenuProps,
   SidebarMenuItemProps,
+  SidebarMenuButtonProps,
+  SidebarNavItemProps,
   SidebarTriggerProps,
   SidebarBackdropProps,
   SidebarInsetProps,
   SidebarCollapsibleGroupProps,
 } from "./sidebar";
+
+// Compatibility exports for shadcn-style sidebar API
+export const SIDEBAR_WIDTH = "280px";
+export const SIDEBAR_WIDTH_ICON = "72px";
+
+// SidebarGroupContent is an alias for SidebarContent (shadcn pattern)
+import { SidebarContent as _SidebarContent } from "./sidebar";
+export { _SidebarContent as SidebarGroupContent };

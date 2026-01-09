@@ -11,38 +11,58 @@ import { ErrorCode } from './catalog';
 /**
  * Internal server error (500).
  * Use for unexpected errors that shouldn't happen.
+ * Retryable by default as it may be a transient issue.
  */
 export class InternalError extends DomainError {
   readonly code = ErrorCode.INTERNAL_ERROR;
   readonly status = 500;
 
   constructor(message = 'An unexpected error occurred', options?: DomainErrorOptions) {
-    super(message, options);
+    super(message, { retryable: true, ...options });
   }
 }
 
 /**
  * Validation error (400).
  * Use when request data fails validation.
+ * Includes field-level errors for form integration.
  */
 export class ValidationError extends DomainError {
   readonly code = ErrorCode.VALIDATION_ERROR;
   readonly status = 400;
 
-  constructor(message: string, details?: Record<string, unknown>) {
-    super(message, { details });
+  constructor(message: string, details?: Record<string, unknown>, options?: DomainErrorOptions) {
+    super(message, { details, ...options });
   }
 
   /**
    * Create from Zod validation errors.
+   * Populates both legacy `details` (for backward compat) and new `fields` array.
    */
-  static fromZod(errors: Array<{ path: (string | number)[]; message: string }>): ValidationError {
+  static fromZod(errors: Array<{ path: (string | number)[]; message: string; code?: string }>): ValidationError {
     const details: Record<string, string> = {};
+    const fields: Array<{ field: string; message: string; code?: string }> = [];
+
     for (const err of errors) {
       const path = err.path.join('.');
       details[path] = err.message;
+      fields.push({
+        field: path,
+        message: err.message,
+        ...(err.code && { code: err.code }),
+      });
     }
-    return new ValidationError('Validation failed', details);
+
+    return new ValidationError('Validation failed', details, { fields });
+  }
+
+  /**
+   * Create a validation error for a single field.
+   */
+  static forField(field: string, message: string, code?: string): ValidationError {
+    return new ValidationError(`Invalid ${field}: ${message}`, { [field]: message }, {
+      fields: [{ field, message, ...(code && { code }) }],
+    });
   }
 }
 
@@ -101,6 +121,7 @@ export class UnauthorizedError extends DomainError {
 /**
  * Rate limit error (429).
  * Use when rate limit is exceeded.
+ * Retryable after the specified delay.
  */
 export class RateLimitError extends DomainError {
   readonly code = ErrorCode.RATE_LIMITED;
@@ -113,7 +134,7 @@ export class RateLimitError extends DomainError {
     const message = limit
       ? `Rate limit of ${limit} requests exceeded. Retry after ${retryAfter} seconds.`
       : `Rate limit exceeded. Retry after ${retryAfter} seconds.`;
-    super(message, { details: { retryAfter, limit } });
+    super(message, { details: { retryAfter, limit }, retryable: true });
     this.retryAfter = retryAfter;
   }
 }
@@ -121,26 +142,31 @@ export class RateLimitError extends DomainError {
 /**
  * Timeout error (408).
  * Use when an operation times out.
+ * Retryable by default as timeouts are often transient.
  */
 export class TimeoutError extends DomainError {
   readonly code = ErrorCode.TIMEOUT;
   readonly status = 408;
 
   constructor(operation: string, timeoutMs: number) {
-    super(`${operation} timed out after ${timeoutMs}ms`);
+    super(`${operation} timed out after ${timeoutMs}ms`, { retryable: true });
   }
 }
 
 /**
  * Service unavailable error (503).
  * Use when a service is temporarily unavailable.
+ * Retryable by default as it indicates a transient condition.
  */
 export class ServiceUnavailableError extends DomainError {
   readonly code = ErrorCode.SERVICE_UNAVAILABLE;
   readonly status = 503;
 
   constructor(service = 'Service', retryAfter?: number) {
-    super(`${service} is temporarily unavailable`, retryAfter ? { details: { retryAfter } } : undefined);
+    super(`${service} is temporarily unavailable`, {
+      details: retryAfter ? { retryAfter } : undefined,
+      retryable: true,
+    });
   }
 }
 
@@ -180,5 +206,53 @@ export class UnprocessableError extends DomainError {
 
   constructor(message: string, details?: Record<string, unknown>) {
     super(message, { details });
+  }
+}
+
+/**
+ * Provider/external service error.
+ * Use when an external service (Stripe, AWS, etc.) returns an error.
+ * Retryable by default as external service errors are often transient.
+ *
+ * @example
+ * ```typescript
+ * try {
+ *   await stripe.customers.create({ email });
+ * } catch (err) {
+ *   throw new ProviderError('stripe', err);
+ * }
+ * ```
+ */
+export class ProviderError extends DomainError {
+  readonly code = ErrorCode.EXTERNAL_API_ERROR;
+  readonly status = 502;
+
+  /** Name of the external provider (e.g., 'stripe', 'aws', 'mongodb') */
+  readonly provider: string;
+
+  /** Original error code from the provider, if available */
+  readonly providerCode?: string;
+
+  constructor(
+    provider: string,
+    cause: unknown,
+    options?: { retryable?: boolean; providerCode?: string }
+  ) {
+    const message = cause instanceof Error ? cause.message : String(cause);
+    super(`${provider} error: ${message}`, {
+      cause: cause instanceof Error ? cause : undefined,
+      details: { provider, ...(options?.providerCode && { providerCode: options.providerCode }) },
+      retryable: options?.retryable ?? true,
+    });
+    this.provider = provider;
+    this.providerCode = options?.providerCode;
+  }
+
+  /**
+   * Create a non-retryable provider error.
+   * Use when the error is due to invalid input rather than transient issues.
+   */
+  static nonRetryable(provider: string, cause: unknown, providerCode?: string): ProviderError {
+    return new ProviderError(provider, cause, { retryable: false, providerCode });
   }
 }

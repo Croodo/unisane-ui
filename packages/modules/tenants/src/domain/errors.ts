@@ -1,8 +1,7 @@
 /**
  * Tenant Domain Errors
  *
- * Module-specific error classes that extend the kernel's DomainError.
- * These provide type-safe error handling with consistent error codes.
+ * Module-specific error classes using E4xxx error codes.
  */
 
 import { DomainError, ErrorCode } from '@unisane/kernel';
@@ -11,7 +10,7 @@ import { DomainError, ErrorCode } from '@unisane/kernel';
  * Thrown when a tenant is not found by ID or slug.
  */
 export class TenantNotFoundError extends DomainError {
-  readonly code = ErrorCode.NOT_FOUND;
+  readonly code = ErrorCode.TENANT_NOT_FOUND;
   readonly status = 404;
 
   constructor(identifier: string, byField: 'id' | 'slug' = 'id') {
@@ -24,7 +23,7 @@ export class TenantNotFoundError extends DomainError {
  * Thrown when attempting to create a tenant with a slug that already exists.
  */
 export class TenantSlugConflictError extends DomainError {
-  readonly code = ErrorCode.CONFLICT;
+  readonly code = ErrorCode.SLUG_TAKEN;
   readonly status = 409;
 
   constructor(slug: string) {
@@ -37,7 +36,7 @@ export class TenantSlugConflictError extends DomainError {
  * Thrown when a user attempts to access a tenant they don't belong to.
  */
 export class TenantAccessDeniedError extends DomainError {
-  readonly code = ErrorCode.FORBIDDEN;
+  readonly code = ErrorCode.PERMISSION_DENIED;
   readonly status = 403;
 
   constructor(tenantId: string) {
@@ -63,7 +62,7 @@ export class TenantHasActiveSubscriptionError extends DomainError {
  * Thrown when a membership operation fails.
  */
 export class MembershipNotFoundError extends DomainError {
-  readonly code = ErrorCode.NOT_FOUND;
+  readonly code = ErrorCode.MEMBER_NOT_FOUND;
   readonly status = 404;
 
   constructor(tenantId: string, userId: string) {
@@ -76,8 +75,8 @@ export class MembershipNotFoundError extends DomainError {
  * Thrown when attempting to remove the last owner of a tenant.
  */
 export class LastOwnerError extends DomainError {
-  readonly code = ErrorCode.PRECONDITION_FAILED;
-  readonly status = 412;
+  readonly code = ErrorCode.LAST_OWNER;
+  readonly status = 400;
 
   constructor(tenantId: string) {
     super(`Cannot remove the last owner of tenant ${tenantId}`);
@@ -89,7 +88,7 @@ export class LastOwnerError extends DomainError {
  * Thrown when an invitation has expired.
  */
 export class InvitationExpiredError extends DomainError {
-  readonly code = ErrorCode.GONE;
+  readonly code = ErrorCode.INVITATION_EXPIRED;
   readonly status = 410;
 
   constructor(invitationId: string) {
@@ -102,11 +101,50 @@ export class InvitationExpiredError extends DomainError {
  * Thrown when an invitation is not found.
  */
 export class InvitationNotFoundError extends DomainError {
-  readonly code = ErrorCode.NOT_FOUND;
+  readonly code = ErrorCode.INVITATION_NOT_FOUND;
   readonly status = 404;
 
   constructor(invitationId: string) {
     super(`Invitation not found: ${invitationId}`);
     this.name = 'InvitationNotFoundError';
+  }
+}
+
+/**
+ * Thrown when a member already exists in the tenant.
+ */
+export class MemberAlreadyExistsError extends DomainError {
+  readonly code = ErrorCode.MEMBER_EXISTS;
+  readonly status = 409;
+
+  constructor(tenantId: string, userId: string) {
+    super(`User ${userId} is already a member of tenant ${tenantId}`);
+    this.name = 'MemberAlreadyExistsError';
+  }
+}
+
+/**
+ * Thrown when tenant creation limit is reached.
+ */
+export class TenantLimitReachedError extends DomainError {
+  readonly code = ErrorCode.TENANT_LIMIT;
+  readonly status = 403;
+
+  constructor(limit: number) {
+    super(`Tenant limit reached. Maximum allowed: ${limit}`);
+    this.name = 'TenantLimitReachedError';
+  }
+}
+
+/**
+ * Thrown when a role is not found.
+ */
+export class RoleNotFoundError extends DomainError {
+  readonly code = ErrorCode.ROLE_NOT_FOUND;
+  readonly status = 404;
+
+  constructor(role: string) {
+    super(`Role not found: ${role}`);
+    this.name = 'RoleNotFoundError';
   }
 }

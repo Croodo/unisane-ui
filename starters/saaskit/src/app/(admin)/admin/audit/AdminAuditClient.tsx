@@ -1,18 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
-import {
-  Clock,
-  User,
-  Database,
-  FileText,
-  Hash,
-  ArrowRight,
-  Globe,
-} from "lucide-react";
 import { DataTable, type Column } from "@unisane/data-table";
 import { RowDetailSection, KeyValueRow } from "@/src/components/shared";
-import { Badge } from "@/src/components/ui/badge";
+import { Badge } from "@unisane/ui/components/badge";
 import { hooks } from "@/src/sdk/hooks/generated/hooks";
 import { type AuditAdminListItem } from "@/src/sdk/types";
 import {
@@ -42,7 +33,7 @@ const columns: Column<AuditAdminListItem>[] = [
     header: "Action",
     width: 180,
     render: (row) => (
-      <Badge variant="outline" className="font-mono text-xs">
+      <Badge variant="outlined" className="font-mono text-xs">
         {row.action}
       </Badge>
     ),
@@ -52,7 +43,7 @@ const columns: Column<AuditAdminListItem>[] = [
     header: "Resource",
     width: 140,
     render: (row) => (
-      <span className="text-muted-foreground">{row.resourceType}</span>
+      <span className="text-on-surface-variant">{row.resourceType}</span>
     ),
   },
   {
@@ -60,7 +51,7 @@ const columns: Column<AuditAdminListItem>[] = [
     header: "Actor",
     width: 180,
     render: (row) =>
-      row.actorName ?? <span className="text-muted-foreground">System</span>,
+      row.actorName ?? <span className="text-on-surface-variant">System</span>,
   },
   {
     key: "tenantId",
@@ -70,7 +61,7 @@ const columns: Column<AuditAdminListItem>[] = [
       row.tenantId ? (
         <span className="font-mono text-xs truncate">{row.tenantId}</span>
       ) : (
-        <span className="text-muted-foreground">—</span>
+        <span className="text-on-surface-variant">—</span>
       ),
   },
 ];
@@ -81,7 +72,7 @@ const columns: Column<AuditAdminListItem>[] = [
 function AuditDetailContent({ audit }: { audit: AuditAdminListItem }) {
   return (
     <div className="space-y-4">
-      <RowDetailSection icon={<Clock className="h-4 w-4" />} title="Event">
+      <RowDetailSection icon="schedule" title="Event">
         <KeyValueRow label="Action" value={audit.action} />
         <KeyValueRow
           label="Timestamp"
@@ -96,7 +87,7 @@ function AuditDetailContent({ audit }: { audit: AuditAdminListItem }) {
         />
       </RowDetailSection>
 
-      <RowDetailSection icon={<User className="h-4 w-4" />} title="Actor">
+      <RowDetailSection icon="person" title="Actor">
         <KeyValueRow label="Name" value={audit.actorName ?? "System"} />
         <KeyValueRow label="Email" value={audit.actorEmail} />
         <KeyValueRow
@@ -108,10 +99,7 @@ function AuditDetailContent({ audit }: { audit: AuditAdminListItem }) {
         />
       </RowDetailSection>
 
-      <RowDetailSection
-        icon={<Database className="h-4 w-4" />}
-        title="Resource"
-      >
+      <RowDetailSection icon="storage" title="Resource">
         <KeyValueRow label="Type" value={audit.resourceType} />
         <KeyValueRow
           label="ID"
@@ -122,7 +110,7 @@ function AuditDetailContent({ audit }: { audit: AuditAdminListItem }) {
         />
       </RowDetailSection>
 
-      <RowDetailSection icon={<Hash className="h-4 w-4" />} title="Tenant">
+      <RowDetailSection icon="tag" title="Tenant">
         <KeyValueRow
           label="Tenant ID"
           value={audit.tenantId}
@@ -134,7 +122,7 @@ function AuditDetailContent({ audit }: { audit: AuditAdminListItem }) {
 
       {(audit.before !== undefined || audit.after !== undefined) && (
         <RowDetailSection
-          icon={<ArrowRight className="h-4 w-4" />}
+          icon="arrow_forward"
           title="Changes"
           badge={
             audit.before !== undefined && audit.after !== undefined
@@ -145,25 +133,30 @@ function AuditDetailContent({ audit }: { audit: AuditAdminListItem }) {
           }
           badgeVariant={
             audit.after !== undefined && audit.before === undefined
-              ? "default"
+              ? "filled"
               : audit.before !== undefined && audit.after === undefined
-                ? "destructive"
-                : "secondary"
+                ? "filled"
+                : "tonal"
+          }
+          badgeClassName={
+            audit.before !== undefined && audit.after === undefined
+              ? "bg-error text-on-error"
+              : ""
           }
         >
           {audit.before !== undefined && (
             <div className="mb-3">
-              <p className="text-xs font-medium text-muted-foreground mb-1">
+              <p className="text-xs font-medium text-on-surface-variant mb-1">
                 Before
               </p>
-              <pre className="text-xs bg-destructive/10 text-destructive rounded p-2 overflow-auto max-h-40">
+              <pre className="text-xs bg-error/10 text-error rounded p-2 overflow-auto max-h-40">
                 {formatChangeValue(audit.before)}
               </pre>
             </div>
           )}
           {audit.after !== undefined && (
             <div>
-              <p className="text-xs font-medium text-muted-foreground mb-1">
+              <p className="text-xs font-medium text-on-surface-variant mb-1">
                 After
               </p>
               <pre className="text-xs bg-green-500/10 text-green-700 dark:text-green-400 rounded p-2 overflow-auto max-h-40">
@@ -176,7 +169,7 @@ function AuditDetailContent({ audit }: { audit: AuditAdminListItem }) {
 
       {(audit.ip || audit.ua) && (
         <RowDetailSection
-          icon={<Globe className="h-4 w-4" />}
+          icon="language"
           title="Client Info"
           collapsible
           defaultCollapsed
@@ -187,7 +180,7 @@ function AuditDetailContent({ audit }: { audit: AuditAdminListItem }) {
       )}
 
       <RowDetailSection
-        icon={<FileText className="h-4 w-4" />}
+        icon="receipt_long"
         title="IDs"
         collapsible
         defaultCollapsed

@@ -112,15 +112,55 @@ function getTargetDir(type: string, config: UnisaneConfig, cwd: string): string 
   return path.join(basePath, 'components', 'ui');
 }
 
-function transformImports(content: string, config: UnisaneConfig): string {
+/**
+ * Transform imports from registry source format to target project format.
+ *
+ * Registry sources use:
+ * - `@/lib/utils` for lib imports
+ * - `./foo` or `../foo` for relative component imports
+ *
+ * This transforms them to the target project's alias format based on unisane.json config.
+ */
+function transformImports(content: string, config: UnisaneConfig, srcFile: string): string {
   const componentsAlias = config.aliases?.components || '@/components/ui';
   const libAlias = config.aliases?.lib || '@/lib';
   const hooksAlias = config.aliases?.hooks || '@/hooks';
 
-  return content
+  let result = content;
+
+  // Transform @ui/... imports (if any exist in older registry format)
+  result = result
     .replace(/from\s+['"]@ui\/(primitives|layout|components)\/([^'"]+)['"]/g, `from '${componentsAlias}/$2'`)
     .replace(/from\s+['"]@ui\/lib\/([^'"]+)['"]/g, `from '${libAlias}/$1'`)
     .replace(/from\s+['"]@ui\/hooks\/([^'"]+)['"]/g, `from '${hooksAlias}/$1'`);
+
+  // Transform @/lib/... imports (current registry format)
+  // e.g., `from "@/lib/utils"` -> `from "@/src/lib/utils"` (if libAlias is @/src/lib)
+  result = result.replace(
+    /from\s+['"]@\/lib\/([^'"]+)['"]/g,
+    `from '${libAlias}/$1'`
+  );
+
+  // Transform @/hooks/... imports
+  result = result.replace(
+    /from\s+['"]@\/hooks\/([^'"]+)['"]/g,
+    `from '${hooksAlias}/$1'`
+  );
+
+  // Transform relative imports that go up directories (e.g., ../ripple, ./sidebar-context)
+  // These are used in multi-file components like sidebar/sidebar.tsx importing ../ripple
+  // Since we flatten to components/ui/, we need to convert these to same-directory imports
+  //
+  // Match patterns like:
+  // - from "../ripple" -> from "./ripple"
+  // - from "./sidebar-context" -> from "./sidebar-context" (no change needed)
+  // - from "../../foo" -> from "./foo"
+  result = result.replace(
+    /from\s+['"](\.\.\/)+([^'"]+)['"]/g,
+    `from './$2'`
+  );
+
+  return result;
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -251,7 +291,7 @@ export async function uiAdd(options: UiAddOptions = {}): Promise<number> {
 
       try {
         let content = readFileSync(srcFile, 'utf-8');
-        content = transformImports(content, config);
+        content = transformImports(content, config, file);
         writeFileSync(destFile, content);
         copied.push(path.relative(cwd, destFile));
       } catch {

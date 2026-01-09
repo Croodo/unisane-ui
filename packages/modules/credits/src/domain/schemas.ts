@@ -1,11 +1,10 @@
 import { z } from "zod";
-import { ZIdem } from "@unisane/kernel";
-import { ZRFC3339 } from "@unisane/kernel";
+import { ZIdem, ZUnixMs } from "@unisane/kernel";
 
 export const ZGrantTokens = z.object({
   amount: z.number().int().positive(),
   reason: z.string().min(2),
-  expiresAt: ZRFC3339.optional(),
+  expiresAt: ZUnixMs.optional(),
   idem: ZIdem,
 });
 

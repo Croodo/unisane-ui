@@ -1,24 +1,21 @@
 "use client";
 
-import { Bell, Check, Trash2 } from "lucide-react";
-import { Button } from "@/src/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/src/components/ui/popover";
-import { ScrollArea } from "@/src/components/ui/scroll-area";
-import { cn } from "@/src/lib/utils";
+import { Button } from "@unisane/ui/components/button";
+import { Icon } from "@unisane/ui/primitives/icon";
+import { Text } from "@unisane/ui/primitives/text";
+import { Popover } from "@unisane/ui/components/popover";
+import { ScrollArea } from "@unisane/ui/components/scroll-area";
+import { cn } from "@unisane/ui/lib/utils";
 import { hooks } from "@/src/sdk/hooks";
 import type { NotifyListInappItem } from "@/src/sdk/types";
 import { formatDistanceToNow } from "date-fns";
 import { useState } from "react";
 
 const CATEGORY_COLORS: Record<string, string> = {
-  billing: "bg-blue-500",
-  alerts: "bg-red-500",
-  product_updates: "bg-purple-500",
-  system: "bg-gray-500",
+  billing: "bg-primary",
+  alerts: "bg-error",
+  product_updates: "bg-tertiary",
+  system: "bg-on-surface-variant",
 };
 
 function NotificationItem({
@@ -31,57 +28,57 @@ function NotificationItem({
   onDelete: () => void;
 }) {
   const isUnread = !notification.readAt;
-  const categoryColor = CATEGORY_COLORS[notification.category] || "bg-gray-500";
+  const categoryColor = CATEGORY_COLORS[notification.category] || "bg-on-surface-variant";
 
   return (
     <div
       className={cn(
-        "flex gap-3 p-3 border-b last:border-b-0 transition-colors",
-        isUnread ? "bg-muted/50" : "bg-background"
+        "flex gap-3 p-3 border-b border-outline-variant last:border-b-0 transition-colors",
+        isUnread ? "bg-surface-container-low" : "bg-surface"
       )}
     >
       <div
         className={cn("w-2 h-2 rounded-full mt-2 shrink-0", categoryColor)}
       />
       <div className="flex-1 min-w-0">
-        <p className={cn("text-sm", isUnread && "font-medium")}>
+        <Text variant="bodyMedium" className={cn(isUnread && "font-medium")}>
           {notification.title}
-        </p>
-        <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
+        </Text>
+        <Text variant="bodySmall" color="onSurfaceVariant" className="line-clamp-2 mt-0.5">
           {notification.body}
-        </p>
-        <p className="text-xs text-muted-foreground mt-1">
+        </Text>
+        <Text variant="labelSmall" color="onSurfaceVariant" className="mt-1">
           {formatDistanceToNow(new Date(notification.createdAt), {
             addSuffix: true,
           })}
-        </p>
+        </Text>
       </div>
       <div className="flex flex-col gap-1 shrink-0">
         {isUnread && (
           <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6"
+            variant="text"
+            size="sm"
+            className="h-6 w-6 p-0"
             onClick={(e) => {
               e.stopPropagation();
               onMarkRead();
             }}
             title="Mark as read"
           >
-            <Check className="h-3 w-3" />
+            <Icon symbol="check" size="xs" />
           </Button>
         )}
         <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6 text-muted-foreground hover:text-destructive"
+          variant="text"
+          size="sm"
+          className="h-6 w-6 p-0 text-on-surface-variant hover:text-error"
           onClick={(e) => {
             e.stopPropagation();
             onDelete();
           }}
           title="Delete"
         >
-          <Trash2 className="h-3 w-3" />
+          <Icon symbol="delete" size="xs" />
         </Button>
       </div>
     </div>
@@ -171,65 +168,70 @@ export function NotificationBell({ tenantId }: NotificationBellProps) {
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
+    <Popover
+      open={open}
+      onOpenChange={setOpen}
+      trigger={
+        <Button variant="text" size="sm" className="relative p-2">
+          <Icon symbol="notifications" size="sm" />
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center font-medium">
+            <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-error text-on-error text-label-small flex items-center justify-center font-medium">
               {unreadCount > 99 ? "99+" : unreadCount}
             </span>
           )}
         </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="end">
-        <div className="flex items-center justify-between px-4 py-3 border-b">
-          <h4 className="font-semibold text-sm">Notifications</h4>
-          <div className="flex gap-1">
-            {unreadCount > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 text-xs"
-                onClick={handleMarkAllSeen}
-              >
-                Mark all read
-              </Button>
-            )}
-            {notifications.length > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 text-xs text-muted-foreground"
-                onClick={handleDeleteAll}
-              >
-                Clear all
-              </Button>
-            )}
+      }
+      align="end"
+      content={
+        <div className="w-80 p-0">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-outline-variant">
+            <Text variant="titleSmall">Notifications</Text>
+            <div className="flex gap-1">
+              {unreadCount > 0 && (
+                <Button
+                  variant="text"
+                  size="sm"
+                  className="h-7 text-label-small"
+                  onClick={handleMarkAllSeen}
+                >
+                  Mark all read
+                </Button>
+              )}
+              {notifications.length > 0 && (
+                <Button
+                  variant="text"
+                  size="sm"
+                  className="h-7 text-label-small text-on-surface-variant"
+                  onClick={handleDeleteAll}
+                >
+                  Clear all
+                </Button>
+              )}
+            </div>
           </div>
+          <ScrollArea className="h-[300px]">
+            {isLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <Text variant="bodyMedium" color="onSurfaceVariant">Loading...</Text>
+              </div>
+            ) : notifications.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full gap-2 text-on-surface-variant">
+                <Icon symbol="notifications_off" size="lg" />
+                <Text variant="bodyMedium">No notifications</Text>
+              </div>
+            ) : (
+              notifications.map((notification) => (
+                <NotificationItem
+                  key={notification.id}
+                  notification={notification}
+                  onMarkRead={() => handleMarkRead(notification.id)}
+                  onDelete={() => handleDelete(notification.id)}
+                />
+              ))
+            )}
+          </ScrollArea>
         </div>
-        <ScrollArea className="h-[300px]">
-          {isLoading ? (
-            <div className="flex items-center justify-center h-full">
-              <p className="text-sm text-muted-foreground">Loading...</p>
-            </div>
-          ) : notifications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full gap-2 text-muted-foreground">
-              <Bell className="h-8 w-8" />
-              <p className="text-sm">No notifications</p>
-            </div>
-          ) : (
-            notifications.map((notification) => (
-              <NotificationItem
-                key={notification.id}
-                notification={notification}
-                onMarkRead={() => handleMarkRead(notification.id)}
-                onDelete={() => handleDelete(notification.id)}
-              />
-            ))
-          )}
-        </ScrollArea>
-      </PopoverContent>
-    </Popover>
+      }
+    />
   );
 }

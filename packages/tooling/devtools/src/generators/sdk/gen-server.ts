@@ -353,24 +353,25 @@ function generateRouteImplementation(g: RouteGroup, r: AppRouteEntry, isAdmin: b
     : `  out['${g.name}'] = out['${g.name}'] ?? {};`;
 
   // Generate argument parsing logic
+  // Note: We cast query assignments to Record<string, unknown> because args[n] is typed as unknown
   let argParsing: string;
   if (!hasBody) {
     if (paramNames.length === 0) {
-      argParsing = `if (!isFull) { if (args.length >= 1) a.query = args[0]; }`;
+      argParsing = `if (!isFull) { if (args.length >= 1) a.query = args[0] as Record<string, unknown>; }`;
     } else if (singleParam) {
       const p = paramNames[0];
-      argParsing = `if (!isFull) { if (args.length >= 1) a.params = { ${p}: args[0] }; if (args.length >= 2) a.query = args[1]; }`;
+      argParsing = `if (!isFull) { if (args.length >= 1) a.params = { ${p}: args[0] }; if (args.length >= 2) a.query = args[1] as Record<string, unknown>; }`;
     } else {
-      argParsing = `if (!isFull) { if (args.length >= 1) a.params = args[0]; if (args.length >= 2) a.query = args[1]; }`;
+      argParsing = `if (!isFull) { if (args.length >= 1) a.params = args[0]; if (args.length >= 2) a.query = args[1] as Record<string, unknown>; }`;
     }
   } else {
     if (paramNames.length === 0) {
-      argParsing = `if (!isFull) { if (args.length >= 1) a.body = args[0]; if (args.length >= 2) a.query = args[1]; }`;
+      argParsing = `if (!isFull) { if (args.length >= 1) a.body = args[0]; if (args.length >= 2) a.query = args[1] as Record<string, unknown>; }`;
     } else if (singleParam) {
       const p = paramNames[0];
-      argParsing = `if (!isFull) { if (args.length >= 2) { a.params = { ${p}: args[0] }; a.body = args[1]; if (args.length >= 3) a.query = args[2]; } }`;
+      argParsing = `if (!isFull) { if (args.length >= 2) { a.params = { ${p}: args[0] }; a.body = args[1]; if (args.length >= 3) a.query = args[2] as Record<string, unknown>; } }`;
     } else {
-      argParsing = `if (!isFull) { if (args.length >= 2) { a.params = args[0]; a.body = args[1]; if (args.length >= 3) a.query = args[2]; } }`;
+      argParsing = `if (!isFull) { if (args.length >= 2) { a.params = args[0]; a.body = args[1]; if (args.length >= 3) a.query = args[2] as Record<string, unknown>; } }`;
     }
   }
 

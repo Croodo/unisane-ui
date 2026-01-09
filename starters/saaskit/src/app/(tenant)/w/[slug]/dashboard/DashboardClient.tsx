@@ -4,29 +4,15 @@ import Link from "next/link";
 import { useSession } from "@/src/hooks/useSession";
 import { hooks } from "@/src/sdk/hooks";
 import { PageHeader } from "@/src/context/usePageHeader";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/src/components/ui/card";
-import { Button } from "@/src/components/ui/button";
-import {
-  Users,
-  KeyRound,
-  CreditCard,
-  Coins,
-  ArrowRight,
-  CheckCircle2,
-  Circle,
-} from "lucide-react";
+import { Card } from "@unisane/ui/components/card";
+import { Button } from "@unisane/ui/components/button";
+import { Icon } from "@unisane/ui/primitives/icon";
 
 interface StatCardProps {
   title: string;
   value: string | number;
   description?: string;
-  icon: React.ElementType;
+  icon: string;
   href?: string;
   loading?: boolean;
 }
@@ -35,28 +21,28 @@ function StatCard({
   title,
   value,
   description,
-  icon: Icon,
+  icon,
   href,
   loading,
 }: StatCardProps) {
   const content = (
-    <Card className="hover:bg-muted/50 transition-colors">
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
+    <Card className="hover:bg-surface-container/50 transition-colors">
+      <Card.Header className="flex flex-row items-center justify-between pb-2">
+        <Card.Title className="text-sm font-medium text-on-surface-variant">
           {title}
-        </CardTitle>
-        <Icon className="h-4 w-4 text-muted-foreground" />
-      </CardHeader>
-      <CardContent>
+        </Card.Title>
+        <Icon symbol={icon} size="sm" className="text-on-surface-variant" />
+      </Card.Header>
+      <Card.Content>
         {loading ? (
-          <div className="h-8 w-16 bg-muted animate-pulse rounded" />
+          <div className="h-8 w-16 bg-surface-container animate-pulse rounded" />
         ) : (
           <div className="text-2xl font-bold">{value}</div>
         )}
         {description && (
-          <p className="text-xs text-muted-foreground mt-1">{description}</p>
+          <p className="text-xs text-on-surface-variant mt-1">{description}</p>
         )}
-      </CardContent>
+      </Card.Content>
     </Card>
   );
 
@@ -73,18 +59,19 @@ interface ChecklistItemProps {
 }
 
 function ChecklistItem({ done, title, href }: ChecklistItemProps) {
-  const Icon = done ? CheckCircle2 : Circle;
   const content = (
     <div
       className={`flex items-center gap-3 py-2 px-3 rounded-md ${
-        done ? "text-muted-foreground" : "hover:bg-muted/50"
+        done ? "text-on-surface-variant" : "hover:bg-surface-container/50"
       }`}
     >
       <Icon
-        className={`h-4 w-4 ${done ? "text-green-500" : "text-muted-foreground"}`}
+        symbol={done ? "check_circle" : "circle"}
+        size="sm"
+        className={done ? "text-primary" : "text-on-surface-variant"}
       />
       <span className={done ? "line-through" : ""}>{title}</span>
-      {!done && href && <ArrowRight className="h-3 w-3 ml-auto" />}
+      {!done && href && <Icon symbol="arrow_forward" size="xs" className="ml-auto" />}
     </div>
   );
 
@@ -174,28 +161,28 @@ export function DashboardClient({ slug }: DashboardClientProps) {
           <StatCard
             title="Team Members"
             value={hasMoreMembers ? `${membersCount}+` : membersCount}
-            icon={Users}
+            icon="group"
             href={`${base}/team`}
             loading={membersQuery.isLoading}
           />
           <StatCard
             title="API Keys"
             value={apiKeysCount}
-            icon={KeyRound}
+            icon="key"
             href={`${base}/apikeys`}
             loading={apiKeysQuery.isLoading}
           />
           <StatCard
             title="Credits"
             value={creditsBalance.toLocaleString()}
-            icon={Coins}
+            icon="monetization_on"
             href={`${base}/billing?tab=credits`}
             loading={creditsQuery.isLoading}
           />
           <StatCard
             title="Billing"
             value="Active"
-            icon={CreditCard}
+            icon="credit_card"
             href={`${base}/billing`}
           />
         </div>
@@ -204,13 +191,13 @@ export function DashboardClient({ slug }: DashboardClientProps) {
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Getting Started */}
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Getting Started</CardTitle>
-              <CardDescription>
+            <Card.Header>
+              <Card.Title className="text-base">Getting Started</Card.Title>
+              <Card.Description>
                 Complete these steps to set up your workspace.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-1">
+              </Card.Description>
+            </Card.Header>
+            <Card.Content className="space-y-1">
               <ChecklistItem done={true} title="Create your workspace" />
               <ChecklistItem
                 done={hasApiKey}
@@ -227,43 +214,43 @@ export function DashboardClient({ slug }: DashboardClientProps) {
                 title="Configure settings"
                 href={`${base}/settings`}
               />
-            </CardContent>
+            </Card.Content>
           </Card>
 
           {/* Quick Actions */}
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Quick Actions</CardTitle>
-              <CardDescription>
+            <Card.Header>
+              <Card.Title className="text-base">Quick Actions</Card.Title>
+              <Card.Description>
                 Common tasks you can do right now.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-2 sm:grid-cols-2">
-              <Button variant="outline" asChild className="justify-start gap-2">
+              </Card.Description>
+            </Card.Header>
+            <Card.Content className="grid gap-2 sm:grid-cols-2">
+              <Button variant="outlined" asChild className="justify-start gap-2">
                 <Link href={`${base}/apikeys`}>
-                  <KeyRound className="h-4 w-4" />
+                  <Icon symbol="key" size="sm" />
                   Create API Key
                 </Link>
               </Button>
-              <Button variant="outline" asChild className="justify-start gap-2">
+              <Button variant="outlined" asChild className="justify-start gap-2">
                 <Link href={`${base}/team`}>
-                  <Users className="h-4 w-4" />
+                  <Icon symbol="group" size="sm" />
                   Manage Team
                 </Link>
               </Button>
-              <Button variant="outline" asChild className="justify-start gap-2">
+              <Button variant="outlined" asChild className="justify-start gap-2">
                 <Link href={`${base}/billing`}>
-                  <CreditCard className="h-4 w-4" />
+                  <Icon symbol="credit_card" size="sm" />
                   View Billing
                 </Link>
               </Button>
-              <Button variant="outline" asChild className="justify-start gap-2">
+              <Button variant="outlined" asChild className="justify-start gap-2">
                 <Link href={`${base}/settings`}>
-                  <Coins className="h-4 w-4" />
+                  <Icon symbol="settings" size="sm" />
                   Settings
                 </Link>
               </Button>
-            </CardContent>
+            </Card.Content>
           </Card>
         </div>
       </div>

@@ -1,14 +1,12 @@
 import { getTenantId } from '@unisane/kernel';
+import type { ListPageArgs, WebhookDirection, WebhookEventStatus } from '@unisane/kernel';
 import { WebhooksRepo } from '../data/webhooks.repository';
-import type { WebhookDirection, WebhookEventStatus } from '@unisane/kernel';
 
 // ════════════════════════════════════════════════════════════════════════════
 // List Events
 // ════════════════════════════════════════════════════════════════════════════
 
-export type ListEventsArgs = {
-  limit: number;
-  cursor?: string;
+export type ListEventsArgs = ListPageArgs & {
   direction?: 'in' | 'out';
   status?: string;
 };

@@ -38,12 +38,12 @@ export interface Toast {
 
 export interface ToastOptions {
   message: string;
-  description?: string;
+  description?: string | undefined;
   variant?: ToastVariant;
   icon?: React.ReactNode;
   action?: ToastAction;
-  duration?: number;
-  dismissible?: boolean;
+  duration?: number | undefined;
+  dismissible?: boolean | undefined;
 }
 
 // ─── STYLING ─────────────────────────────────────────────────────────────────

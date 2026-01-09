@@ -10,7 +10,7 @@ export async function readAdminTenant(args: ReadAdminTenantArgs): Promise<{
   id: string;
   slug: string;
   name: string;
-  plan: string;
+  planId: string;
   membersCount?: number;
   adminsCount?: number;
   apiKeysCount?: number;
@@ -47,7 +47,7 @@ export async function readAdminTenant(args: ReadAdminTenantArgs): Promise<{
     id: t.id,
     slug: String((t as { slug?: string }).slug ?? ""),
     name: String((t as { name?: string }).name ?? ""),
-    plan: planId,
+    planId: planId,
     membersCount: mMap.get(args.tenantId)?.membersCount ?? 0,
     adminsCount: mMap.get(args.tenantId)?.adminsCount ?? 0,
     apiKeysCount: apiMap.get(args.tenantId) ?? 0,

@@ -1,7 +1,7 @@
 /**
  * Identity Domain Errors
  *
- * Module-specific error classes and utilities.
+ * Module-specific error classes using E5xxx error codes.
  */
 
 import { DomainError, ErrorCode } from '@unisane/kernel';
@@ -32,7 +32,7 @@ export function isDuplicateKeyError(e: unknown): boolean {
  * Thrown when a user is not found by ID, email, or username.
  */
 export class UserNotFoundError extends DomainError {
-  readonly code = ErrorCode.NOT_FOUND;
+  readonly code = ErrorCode.USER_NOT_FOUND;
   readonly status = 404;
 
   constructor(identifier: string, byField: 'id' | 'email' | 'username' = 'id') {
@@ -45,7 +45,7 @@ export class UserNotFoundError extends DomainError {
  * Thrown when attempting to create a user with an email that already exists.
  */
 export class EmailAlreadyExistsError extends DomainError {
-  readonly code = ErrorCode.CONFLICT;
+  readonly code = ErrorCode.EMAIL_EXISTS;
   readonly status = 409;
 
   constructor(email: string) {
@@ -58,7 +58,7 @@ export class EmailAlreadyExistsError extends DomainError {
  * Thrown when attempting to use a username that's already taken.
  */
 export class UsernameAlreadyExistsError extends DomainError {
-  readonly code = ErrorCode.CONFLICT;
+  readonly code = ErrorCode.USERNAME_EXISTS;
   readonly status = 409;
 
   constructor(username: string) {
@@ -71,7 +71,7 @@ export class UsernameAlreadyExistsError extends DomainError {
  * Thrown when attempting to use a phone number that's already registered.
  */
 export class PhoneAlreadyExistsError extends DomainError {
-  readonly code = ErrorCode.CONFLICT;
+  readonly code = ErrorCode.PHONE_EXISTS;
   readonly status = 409;
 
   constructor(phone: string) {
@@ -97,7 +97,7 @@ export class ApiKeyNotFoundError extends DomainError {
  * Thrown when an API key has been revoked.
  */
 export class ApiKeyRevokedError extends DomainError {
-  readonly code = ErrorCode.FORBIDDEN;
+  readonly code = ErrorCode.INVALID_API_KEY;
   readonly status = 403;
 
   constructor(keyId: string) {
@@ -110,8 +110,8 @@ export class ApiKeyRevokedError extends DomainError {
  * Thrown when attempting to create more API keys than allowed.
  */
 export class ApiKeyLimitExceededError extends DomainError {
-  readonly code = ErrorCode.PRECONDITION_FAILED;
-  readonly status = 412;
+  readonly code = ErrorCode.API_KEY_LIMIT;
+  readonly status = 403;
 
   constructor(limit: number) {
     super(`API key limit exceeded. Maximum allowed: ${limit}`);
@@ -123,7 +123,7 @@ export class ApiKeyLimitExceededError extends DomainError {
  * Thrown when a membership is not found.
  */
 export class MembershipNotFoundError extends DomainError {
-  readonly code = ErrorCode.NOT_FOUND;
+  readonly code = ErrorCode.MEMBER_NOT_FOUND;
   readonly status = 404;
 
   constructor(tenantId: string, userId: string) {
@@ -136,7 +136,7 @@ export class MembershipNotFoundError extends DomainError {
  * Thrown when a user doesn't have the required role.
  */
 export class InsufficientRoleError extends DomainError {
-  readonly code = ErrorCode.FORBIDDEN;
+  readonly code = ErrorCode.PERMISSION_DENIED;
   readonly status = 403;
 
   constructor(requiredRole: string) {
@@ -149,7 +149,7 @@ export class InsufficientRoleError extends DomainError {
  * Thrown when email format is invalid.
  */
 export class InvalidEmailError extends DomainError {
-  readonly code = ErrorCode.VALIDATION_ERROR;
+  readonly code = ErrorCode.INVALID_EMAIL;
   readonly status = 400;
 
   constructor(email: string) {
@@ -168,5 +168,18 @@ export class InvalidPhoneError extends DomainError {
   constructor(phone: string) {
     super(`Invalid phone format: ${phone}`);
     this.name = 'InvalidPhoneError';
+  }
+}
+
+/**
+ * Thrown when user profile is incomplete.
+ */
+export class ProfileIncompleteError extends DomainError {
+  readonly code = ErrorCode.PROFILE_INCOMPLETE;
+  readonly status = 400;
+
+  constructor(missingFields: string[]) {
+    super(`Profile incomplete. Missing fields: ${missingFields.join(', ')}`);
+    this.name = 'ProfileIncompleteError';
   }
 }

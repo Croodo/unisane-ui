@@ -84,6 +84,26 @@
         "icon"
       ]
     },
+    "input": {
+      "name": "Input",
+      "type": "primitives:ui",
+      "description": "Input component",
+      "files": [
+        "primitives/input.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    "label": {
+      "name": "Label",
+      "type": "primitives:ui",
+      "description": "Label component",
+      "files": [
+        "primitives/label.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
     "menu": {
       "name": "Menu",
       "type": "primitives:ui",
@@ -120,6 +140,16 @@
       "description": "Text component",
       "files": [
         "primitives/text.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": []
+    },
+    "textarea": {
+      "name": "Textarea",
+      "type": "primitives:ui",
+      "description": "Textarea component",
+      "files": [
+        "primitives/textarea.tsx"
       ],
       "dependencies": [],
       "registryDependencies": []
@@ -367,6 +397,19 @@
         "text",
         "icon",
         "ripple"
+      ]
+    },
+    "command": {
+      "name": "Command",
+      "type": "components:ui",
+      "description": "Command component",
+      "files": [
+        "components/command.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "icon",
+        "dialog"
       ]
     },
     "confirm-dialog": {
@@ -729,6 +772,20 @@
       ],
       "dependencies": [],
       "registryDependencies": []
+    },
+    "stat-card": {
+      "name": "StatCard",
+      "type": "components:ui",
+      "description": "StatCard component",
+      "files": [
+        "components/stat-card.tsx"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "text",
+        "icon",
+        "card"
+      ]
     },
     "stepper": {
       "name": "Stepper",

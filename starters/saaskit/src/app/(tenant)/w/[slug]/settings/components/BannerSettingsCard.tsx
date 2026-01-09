@@ -1,23 +1,16 @@
 "use client";
 
 import { useMemo } from "react";
-import { Label } from "@/src/components/ui/label";
-import { Button } from "@/src/components/ui/button";
-import { Textarea } from "@/src/components/ui/textarea";
-import { toast } from "sonner";
+import { Label } from "@unisane/ui/primitives/label";
+import { Button } from "@unisane/ui/components/button";
+import { Textarea } from "@unisane/ui/primitives/textarea";
+import { toast } from "@unisane/ui/components/toast";
 import { hooks } from "@/src/sdk/hooks";
 import type { SettingsGetResponse as SettingsGet } from "@/src/sdk/types";
 import { normalizeError } from "@/src/sdk/errors";
 import { FormCard } from "@/src/components/forms";
 import { useFormCard } from "@/src/hooks/useFormCard";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/src/components/ui/select";
-import { Megaphone } from "lucide-react";
+import { Select } from "@unisane/ui/components/select";
 
 interface BannerValue extends Record<string, unknown> {
   message: string;
@@ -113,7 +106,7 @@ export function BannerSettingsCard({ tenantId }: BannerSettingsCardProps) {
     <FormCard
       title="Workspace banner"
       description="Optional announcement shown at the top of your workspace."
-      icon={Megaphone}
+      icon="campaign"
       hideFooter
     >
       <div className="grid gap-4 md:grid-cols-[2fr,1fr]">
@@ -131,30 +124,26 @@ export function BannerSettingsCard({ tenantId }: BannerSettingsCardProps) {
           <Label>Variant</Label>
           <Select
             value={form.value.variant}
-            onValueChange={(v) =>
-              form.setValue("variant", v as BannerValue["variant"])
+            onChange={(v: string) =>
+              form.setValue("variant", v as "success" | "warning" | "info")
             }
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select style" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="info">Info</SelectItem>
-              <SelectItem value="warning">Warning</SelectItem>
-              <SelectItem value="success">Success</SelectItem>
-            </SelectContent>
-          </Select>
+            options={[
+              { value: "success", label: "Success" },
+              { value: "warning", label: "Warning" },
+              { value: "info", label: "Info" },
+            ]}
+          />
         </div>
       </div>
 
       <div className="flex items-center justify-between gap-2 pt-2">
-        <div className="text-xs text-muted-foreground">
+        <div className="text-xs text-on-surface-variant">
           Version: {form.version ?? "—"}
         </div>
         <div className="flex gap-2">
           <Button
             type="button"
-            variant="outline"
+            variant="outlined"
             size="sm"
             disabled={!tenantId || isSaving}
             onClick={handleClear}

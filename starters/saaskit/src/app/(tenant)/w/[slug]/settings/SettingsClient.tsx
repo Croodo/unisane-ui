@@ -8,8 +8,8 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "@/src/components/ui/tabs";
-import { KeyRound, Webhook, FileText, Settings2 } from "lucide-react";
+} from "@unisane/ui/components/tabs";
+import { Icon } from "@unisane/ui/primitives/icon";
 import {
   BannerSettingsCard,
   WorkspaceProfileCard,
@@ -54,11 +54,11 @@ export function SettingsClient() {
       <Tabs value={tab} onValueChange={handleTabChange} className="space-y-6">
         <TabsList>
           <TabsTrigger value="general" className="gap-2">
-            <Settings2 className="h-4 w-4" />
+            <Icon symbol="settings" size="sm" />
             General
           </TabsTrigger>
           <TabsTrigger value="developer" className="gap-2">
-            <KeyRound className="h-4 w-4" />
+            <Icon symbol="key" size="sm" />
             Developer
           </TabsTrigger>
         </TabsList>
@@ -72,24 +72,24 @@ export function SettingsClient() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <DeveloperLinkCard
               href={`${base}/apikeys`}
-              icon={KeyRound}
+              icon="key"
               title="API Keys"
               description="Manage API keys for programmatic access"
             />
             <DeveloperLinkCard
               href={`${base}/webhooks`}
-              icon={Webhook}
+              icon="webhook"
               title="Webhooks"
               description="View inbound and outbound webhook events"
             />
             <DeveloperLinkCard
               href={`${base}/audit`}
-              icon={FileText}
+              icon="description"
               title="Audit Log"
               description="Review activity and changes in your workspace"
             />
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-on-surface-variant">
             Access developer tools and integrations for your workspace.
           </p>
         </TabsContent>

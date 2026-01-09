@@ -1,6 +1,6 @@
 import React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@/src/lib/utils";
+import { cn } from "@unisane/ui/lib/utils";
 
 const stateLayerVariants = cva(
   "absolute inset-0 pointer-events-none transition-opacity duration-medium ease-standard opacity-0 z-0",

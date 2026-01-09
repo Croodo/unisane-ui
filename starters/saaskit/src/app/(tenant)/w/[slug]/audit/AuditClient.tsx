@@ -6,8 +6,8 @@ import { hooks } from "@/src/sdk/hooks";
 import type { AuditListItem } from "@/src/sdk/types";
 import { PageHeader } from "@/src/context/usePageHeader";
 import { useSession } from "@/src/hooks/useSession";
-import { ScrollText, Clock, Database, ArrowRight, User } from "lucide-react";
-import { Card, CardContent } from "@/src/components/ui/card";
+import { Icon } from "@unisane/ui/primitives/icon";
+import { Card } from "@unisane/ui/components/card";
 import {
   useDetailPanelNavigation,
   type DetailPanelContent,
@@ -25,7 +25,7 @@ function formatChangeValue(value: unknown): string {
 function AuditDetailContent({ audit }: { audit: AuditListItem }) {
   return (
     <div className="space-y-4">
-      <RowDetailSection icon={<Clock className="h-4 w-4" />} title="Event">
+      <RowDetailSection icon="schedule" title="Event">
         <KeyValueRow label="Action" value={audit.action} />
         <KeyValueRow
           label="Timestamp"
@@ -33,7 +33,7 @@ function AuditDetailContent({ audit }: { audit: AuditListItem }) {
         />
       </RowDetailSection>
 
-      <RowDetailSection icon={<User className="h-4 w-4" />} title="Actor">
+      <RowDetailSection icon="person" title="Actor">
         <KeyValueRow
           label="Name"
           value={(audit as any).actorName ?? "System"}
@@ -48,10 +48,7 @@ function AuditDetailContent({ audit }: { audit: AuditListItem }) {
         />
       </RowDetailSection>
 
-      <RowDetailSection
-        icon={<Database className="h-4 w-4" />}
-        title="Resource"
-      >
+      <RowDetailSection icon="storage" title="Resource">
         <KeyValueRow label="Type" value={audit.resourceType} />
         <KeyValueRow
           label="ID"
@@ -65,7 +62,7 @@ function AuditDetailContent({ audit }: { audit: AuditListItem }) {
       {((audit as any).before !== undefined ||
         (audit as any).after !== undefined) && (
         <RowDetailSection
-          icon={<ArrowRight className="h-4 w-4" />}
+          icon="arrow_forward"
           title="Changes"
           badge={
             (audit as any).before !== undefined &&
@@ -78,29 +75,29 @@ function AuditDetailContent({ audit }: { audit: AuditListItem }) {
           badgeVariant={
             (audit as any).after !== undefined &&
             (audit as any).before === undefined
-              ? "default"
+              ? "filled"
               : (audit as any).before !== undefined &&
                   (audit as any).after === undefined
-                ? "destructive"
-                : "secondary"
+                ? "filled"
+                : "tonal"
           }
         >
           {(audit as any).before !== undefined && (
             <div className="mb-3">
-              <p className="text-xs font-medium text-muted-foreground mb-1">
+              <p className="text-xs font-medium text-on-surface-variant mb-1">
                 Before
               </p>
-              <pre className="text-xs bg-destructive/10 text-destructive rounded p-2 overflow-auto max-h-40">
+              <pre className="text-xs bg-error/10 text-error rounded p-2 overflow-auto max-h-40">
                 {formatChangeValue((audit as any).before)}
               </pre>
             </div>
           )}
           {(audit as any).after !== undefined && (
             <div>
-              <p className="text-xs font-medium text-muted-foreground mb-1">
+              <p className="text-xs font-medium text-on-surface-variant mb-1">
                 After
               </p>
-              <pre className="text-xs bg-green-500/10 text-green-700 dark:text-green-400 rounded p-2 overflow-auto max-h-40">
+              <pre className="text-xs bg-primary/10 text-primary rounded p-2 overflow-auto max-h-40">
                 {formatChangeValue((audit as any).after)}
               </pre>
             </div>
@@ -168,7 +165,7 @@ export default function AuditClient() {
         header: "Resource",
         width: 140,
         render: (row) => (
-          <span className="text-muted-foreground">{row.resourceType}</span>
+          <span className="text-on-surface-variant">{row.resourceType}</span>
         ),
       },
       {
@@ -184,7 +181,7 @@ export default function AuditClient() {
             <span className={isCurrentUser ? "font-medium" : ""}>
               {displayName}
               {isCurrentUser && (
-                <span className="text-xs text-muted-foreground ml-1">
+                <span className="text-xs text-on-surface-variant ml-1">
                   (you)
                 </span>
               )}
@@ -213,14 +210,14 @@ export default function AuditClient() {
 
       {dataset.length === 0 && !isLoading ? (
         <Card>
-          <CardContent className="py-10 text-center">
-            <ScrollText className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
+          <Card.Content className="py-10 text-center">
+            <Icon symbol="receipt_long" size="lg" className="mx-auto text-on-surface-variant mb-4" />
             <h3 className="text-lg font-medium mb-2">No activity yet</h3>
-            <p className="text-sm text-muted-foreground max-w-md mx-auto">
+            <p className="text-sm text-on-surface-variant max-w-md mx-auto">
               Actions like creating API keys, changing settings, or managing
               team members will appear here.
             </p>
-          </CardContent>
+          </Card.Content>
         </Card>
       ) : (
         <DataTable<AuditListItem>

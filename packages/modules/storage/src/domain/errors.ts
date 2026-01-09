@@ -1,8 +1,7 @@
 /**
  * Storage Domain Errors
  *
- * Module-specific error classes that extend the kernel's DomainError.
- * These provide type-safe error handling with consistent error codes.
+ * Module-specific error classes using E6xxx error codes.
  */
 
 import { DomainError, ErrorCode } from '@unisane/kernel';
@@ -11,7 +10,7 @@ import { DomainError, ErrorCode } from '@unisane/kernel';
  * Thrown when a file is not found by ID or key.
  */
 export class FileNotFoundError extends DomainError {
-  readonly code = ErrorCode.NOT_FOUND;
+  readonly code = ErrorCode.FILE_NOT_FOUND;
   readonly status = 404;
 
   constructor(identifier: string, byField: 'id' | 'key' = 'id') {
@@ -50,8 +49,8 @@ export class FileAlreadyDeletedError extends DomainError {
  * Thrown when file content type is not allowed.
  */
 export class ContentTypeNotAllowedError extends DomainError {
-  readonly code = ErrorCode.VALIDATION_ERROR;
-  readonly status = 400;
+  readonly code = ErrorCode.INVALID_FILE_TYPE;
+  readonly status = 415;
 
   constructor(contentType: string) {
     super(`Content type '${contentType}' is not allowed`);
@@ -63,8 +62,8 @@ export class ContentTypeNotAllowedError extends DomainError {
  * Thrown when file size exceeds the limit for its content type.
  */
 export class FileSizeExceededError extends DomainError {
-  readonly code = ErrorCode.VALIDATION_ERROR;
-  readonly status = 400;
+  readonly code = ErrorCode.FILE_TOO_LARGE;
+  readonly status = 413;
 
   constructor(sizeBytes: number, maxBytes: number, contentType: string) {
     super(`File size ${sizeBytes} bytes exceeds limit of ${maxBytes} bytes for ${contentType}`);
@@ -76,8 +75,8 @@ export class FileSizeExceededError extends DomainError {
  * Thrown when storage quota is exceeded for a tenant.
  */
 export class StorageQuotaExceededError extends DomainError {
-  readonly code = ErrorCode.PRECONDITION_FAILED;
-  readonly status = 412;
+  readonly code = ErrorCode.STORAGE_QUOTA_EXCEEDED;
+  readonly status = 403;
 
   constructor(tenantId: string, usedBytes: number, limitBytes: number) {
     super(`Storage quota exceeded for tenant ${tenantId}: ${usedBytes}/${limitBytes} bytes`);
@@ -102,11 +101,11 @@ export class FileAccessDeniedError extends DomainError {
  * Thrown when presigned URL generation fails.
  */
 export class PresignedUrlError extends DomainError {
-  readonly code = ErrorCode.INTERNAL_ERROR;
+  readonly code = ErrorCode.UPLOAD_FAILED;
   readonly status = 500;
 
   constructor(operation: 'upload' | 'download', reason: string) {
-    super(`Failed to generate ${operation} URL: ${reason}`);
+    super(`Failed to generate ${operation} URL: ${reason}`, { retryable: true });
     this.name = 'PresignedUrlError';
   }
 }

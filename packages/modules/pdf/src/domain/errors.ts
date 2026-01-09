@@ -1,19 +1,27 @@
 /**
  * PDF Domain Errors
+ *
+ * Module-specific error classes using generic E1xxx error codes.
  */
 
 import { DomainError, ErrorCode } from '@unisane/kernel';
 
+/**
+ * Thrown when PDF generation fails.
+ */
 export class PdfGenerationError extends DomainError {
   readonly code = ErrorCode.INTERNAL_ERROR;
   readonly status = 500;
 
   constructor(reason: string) {
-    super(`PDF generation failed: ${reason}`);
+    super(`PDF generation failed: ${reason}`, { retryable: true });
     this.name = 'PdfGenerationError';
   }
 }
 
+/**
+ * Thrown when a PDF template is not found.
+ */
 export class TemplateNotFoundError extends DomainError {
   readonly code = ErrorCode.NOT_FOUND;
   readonly status = 404;
@@ -24,6 +32,9 @@ export class TemplateNotFoundError extends DomainError {
   }
 }
 
+/**
+ * Thrown when a PDF template is invalid.
+ */
 export class InvalidTemplateError extends DomainError {
   readonly code = ErrorCode.VALIDATION_ERROR;
   readonly status = 400;

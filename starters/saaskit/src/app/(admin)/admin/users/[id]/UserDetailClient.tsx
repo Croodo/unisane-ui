@@ -3,32 +3,17 @@
 import Link from "next/link";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { PageHeader } from "@/src/context/usePageHeader";
-import { StatCard, StatGrid } from "@/src/components/ui/stat-card";
+import { StatCard, StatGrid } from "@unisane/ui/components/stat-card";
 import { EmptyState } from "@/src/components/feedback/EmptyState";
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "@/src/components/ui/tabs";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/src/components/ui/card";
-import { Badge } from "@/src/components/ui/badge";
-import {
-  User,
-  Building2,
-  Key,
-  Activity,
-  Mail,
-  Phone,
-  Shield,
-  Calendar,
-  Clock,
-} from "lucide-react";
+} from "@unisane/ui/components/tabs";
+import { Card } from "@unisane/ui/components/card";
+import { Badge } from "@unisane/ui/components/badge";
+import { Icon } from "@unisane/ui/primitives/icon";
 import type {
   UsersAdminReadResponse,
   UsersAdminMembershipsByUserItem,
@@ -63,10 +48,10 @@ export function UserDetailClient({ user, memberships }: UserDetailClientProps) {
         title={user.displayName || user.email}
         subtitle={
           <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">{user.email}</span>
+            <span className="text-on-surface-variant">{user.email}</span>
             {user.role && (
               <Badge
-                variant={user.role === "super-admin" ? "default" : "secondary"}
+                variant={user.role === "super-admin" ? "filled" : "tonal"}
               >
                 {user.role}
               </Badge>
@@ -78,19 +63,19 @@ export function UserDetailClient({ user, memberships }: UserDetailClientProps) {
       <Tabs value={tab} onValueChange={handleTabChange} className="space-y-6">
         <TabsList>
           <TabsTrigger value="overview" className="gap-2">
-            <User className="h-4 w-4" />
+            <Icon symbol="person" size="sm" />
             Overview
           </TabsTrigger>
           <TabsTrigger value="memberships" className="gap-2">
-            <Building2 className="h-4 w-4" />
+            <Icon symbol="apartment" size="sm" />
             Memberships
           </TabsTrigger>
           <TabsTrigger value="keys" className="gap-2">
-            <Key className="h-4 w-4" />
+            <Icon symbol="key" size="sm" />
             API Keys
           </TabsTrigger>
           <TabsTrigger value="activity" className="gap-2">
-            <Activity className="h-4 w-4" />
+            <Icon symbol="monitoring" size="sm" />
             Activity
           </TabsTrigger>
         </TabsList>
@@ -98,22 +83,22 @@ export function UserDetailClient({ user, memberships }: UserDetailClientProps) {
         <TabsContent value="overview" className="space-y-6">
           <StatGrid columns={4}>
             <StatCard
-              icon={Building2}
+              icon="apartment"
               label="Tenants"
               value={user.tenantsCount ?? 0}
             />
             <StatCard
-              icon={Shield}
+              icon="shield"
               label="Admin Tenants"
               value={user.adminTenantsCount ?? 0}
             />
             <StatCard
-              icon={Key}
+              icon="key"
               label="API Keys Created"
               value={user.apiKeysCreatedCount ?? 0}
             />
             <StatCard
-              icon={Clock}
+              icon="schedule"
               label="Last Activity"
               value={
                 user.lastActivityAt
@@ -124,22 +109,22 @@ export function UserDetailClient({ user, memberships }: UserDetailClientProps) {
           </StatGrid>
 
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base">User Details</CardTitle>
-            </CardHeader>
-            <CardContent>
+            <Card.Header>
+              <Card.Title className="text-base">User Details</Card.Title>
+            </Card.Header>
+            <Card.Content>
               <dl className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                 <div>
-                  <dt className="text-muted-foreground">Display Name</dt>
+                  <dt className="text-on-surface-variant">Display Name</dt>
                   <dd className="font-medium">{user.displayName ?? "—"}</dd>
                 </div>
                 <div>
-                  <dt className="text-muted-foreground">Global Role</dt>
+                  <dt className="text-on-surface-variant">Global Role</dt>
                   <dd className="font-medium">{user.role ?? "—"}</dd>
                 </div>
                 <div>
-                  <dt className="text-muted-foreground flex items-center gap-1">
-                    <Mail className="h-3 w-3" /> Email Verified
+                  <dt className="text-on-surface-variant flex items-center gap-1">
+                    <Icon symbol="mail" size="sm" /> Email Verified
                   </dt>
                   <dd className="font-medium">
                     {user.emailVerified == null
@@ -150,8 +135,8 @@ export function UserDetailClient({ user, memberships }: UserDetailClientProps) {
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-muted-foreground flex items-center gap-1">
-                    <Phone className="h-3 w-3" /> Phone Verified
+                  <dt className="text-on-surface-variant flex items-center gap-1">
+                    <Icon symbol="phone" size="sm" /> Phone Verified
                   </dt>
                   <dd className="font-medium">
                     {user.phoneVerified == null
@@ -162,8 +147,8 @@ export function UserDetailClient({ user, memberships }: UserDetailClientProps) {
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-muted-foreground flex items-center gap-1">
-                    <Calendar className="h-3 w-3" /> Sessions Revoked
+                  <dt className="text-on-surface-variant flex items-center gap-1">
+                    <Icon symbol="calendar_today" size="sm" /> Sessions Revoked
                   </dt>
                   <dd className="font-medium">
                     {user.sessionsRevokedAt
@@ -172,23 +157,23 @@ export function UserDetailClient({ user, memberships }: UserDetailClientProps) {
                   </dd>
                 </div>
               </dl>
-            </CardContent>
+            </Card.Content>
           </Card>
         </TabsContent>
 
         <TabsContent value="memberships">
           {memberships.length === 0 ? (
             <EmptyState
-              icon={Building2}
+              icon="apartment"
               title="No memberships"
               description="This user is not a member of any workspace."
             />
           ) : (
             <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Tenant Memberships</CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
+              <Card.Header>
+                <Card.Title className="text-base">Tenant Memberships</Card.Title>
+              </Card.Header>
+              <Card.Content className="p-0">
                 <div className="divide-y">
                   {memberships.map((m) => (
                     <div
@@ -199,7 +184,7 @@ export function UserDetailClient({ user, memberships }: UserDetailClientProps) {
                         <div className="font-medium">
                           {m.tenantName ?? m.tenantSlug ?? m.tenantId}
                         </div>
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-sm text-on-surface-variant">
                           Roles: {(m.roles ?? []).join(", ") || "member"}
                         </div>
                       </div>
@@ -212,14 +197,14 @@ export function UserDetailClient({ user, memberships }: UserDetailClientProps) {
                     </div>
                   ))}
                 </div>
-              </CardContent>
+              </Card.Content>
             </Card>
           )}
         </TabsContent>
 
         <TabsContent value="keys">
           <EmptyState
-            icon={Key}
+            icon="key"
             title="API Keys"
             description="API keys created by this user will be listed here. This feature is coming soon."
           />
@@ -227,7 +212,7 @@ export function UserDetailClient({ user, memberships }: UserDetailClientProps) {
 
         <TabsContent value="activity">
           <EmptyState
-            icon={Activity}
+            icon="monitoring"
             title="User Activity"
             description="User activity (actorId audit) is planned. Current audit endpoints are tenant-scoped."
           />

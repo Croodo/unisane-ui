@@ -24,16 +24,16 @@
   "dependencies": {
     "@unisane/kernel": "workspace:*",
     "jose": "^5.0.0",
-    "pino": "^8.16.0",
+    "pino": "^9.14.0",
     "pino-pretty": "^13.0.0",
-    "zod": "^3.22.0"
+    "zod": "^3.23.0"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
     "@unisane/typescript-config": "workspace:*",
     "eslint": "^9.39.1",
     "tsup": "^8.0.0",
-    "typescript": "^5.3.0",
+    "typescript": "^5.9.2",
     "vitest": "^4.0.16"
   }
 }

@@ -1,18 +1,12 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
-import { Button } from "@/src/components/ui/button";
-import { Input } from "@/src/components/ui/input";
-import { Textarea } from "@/src/components/ui/textarea";
-import { Label } from "@/src/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/src/components/ui/select";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Button } from "@unisane/ui/components/button";
+import { Input } from "@unisane/ui/primitives/input";
+import { Textarea } from "@unisane/ui/primitives/textarea";
+import { Label } from "@unisane/ui/primitives/label";
+import { Select } from "@unisane/ui/components/select";
+import { Icon } from "@unisane/ui/primitives/icon";
 import type { SettingConfig } from "../types";
 
 interface SettingCardProps {
@@ -68,8 +62,8 @@ export function SettingCard({
   const renderInput = () => {
     if (loading) {
       return (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" />
+        <div className="flex items-center gap-2 text-sm text-on-surface-variant">
+          <Icon symbol="progress_activity" size="sm" className="animate-spin" />
           Loading...
         </div>
       );
@@ -112,19 +106,10 @@ export function SettingCard({
         return (
           <Select
             value={String(value ?? "")}
-            onValueChange={(val) => handleChange(val)}
-          >
-            <SelectTrigger className="max-w-xs">
-              <SelectValue placeholder={config.placeholder || "Select..."} />
-            </SelectTrigger>
-            <SelectContent>
-              {config.options?.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            onChange={(val) => handleChange(val)}
+            placeholder={config.placeholder || "Select..."}
+            options={config.options ?? []}
+          />
         );
 
       case "textarea":
@@ -169,14 +154,14 @@ export function SettingCard({
           <Label htmlFor={`${config.namespace}-${config.key}`}>
             {config.label}
           </Label>
-          <p className="text-sm text-muted-foreground">{config.description}</p>
+          <p className="text-sm text-on-surface-variant">{config.description}</p>
         </div>
 
         <div className="space-y-2">
           {renderInput()}
           {validationError && (
-            <div className="flex items-center gap-1.5 text-xs text-destructive">
-              <AlertCircle className="h-3 w-3" />
+            <div className="flex items-center gap-1.5 text-xs text-error">
+              <Icon symbol="error" size="sm" />
               <span>{validationError}</span>
             </div>
           )}
@@ -188,7 +173,7 @@ export function SettingCard({
             disabled={loading || saving || !hasChanges || !!validationError}
             size="sm"
           >
-            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {saving && <Icon symbol="progress_activity" size="sm" className="mr-2 animate-spin" />}
             Save Changes
           </Button>
         </div>

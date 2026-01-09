@@ -44,7 +44,7 @@ const ZTenantOut = z.object({
   id: z.string(),
   name: z.string(),
   slug: z.string().optional(),
-  plan: ZPlanId,
+  planId: ZPlanId,
 });
 
 // NOTE: contracts should not be used as a shared types module in UI.
@@ -186,7 +186,7 @@ export const tenantsContract = c.router({
                 id: z.string(),
                 slug: z.string(),
                 name: z.string(),
-                plan: ZPlanId,
+                planId: ZPlanId,
                 membersCount: z.number().optional(),
                 adminsCount: z.number().optional(),
                 apiKeysCount: z.number().optional(),
@@ -254,7 +254,7 @@ export const tenantsContract = c.router({
               id: z.string(),
               slug: z.string(),
               name: z.string(),
-              plan: ZPlanId,
+              planId: ZPlanId,
               membersCount: z.number().optional(),
               adminsCount: z.number().optional(),
               apiKeysCount: z.number().optional(),

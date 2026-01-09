@@ -4,7 +4,9 @@ import { DuplicateRowIdError } from "../errors";
  * Validates that all row IDs are unique.
  * @throws DuplicateRowIdError if duplicate IDs are found
  */
-export function validateRowIds<T extends { id: string }>(data: T[]): void {
+export function validateRowIds<T extends { id: string }>(data: T[] | null | undefined): void {
+  if (!data || !Array.isArray(data)) return;
+
   const seen = new Set<string>();
   const duplicates: string[] = [];
 
@@ -25,7 +27,9 @@ export function validateRowIds<T extends { id: string }>(data: T[]): void {
  * Checks for duplicate row IDs without throwing.
  * @returns Array of duplicate IDs, or empty array if all unique
  */
-export function findDuplicateRowIds<T extends { id: string }>(data: T[]): string[] {
+export function findDuplicateRowIds<T extends { id: string }>(data: T[] | null | undefined): string[] {
+  if (!data || !Array.isArray(data)) return [];
+
   const seen = new Set<string>();
   const duplicates = new Set<string>();
 
@@ -43,8 +47,9 @@ export function findDuplicateRowIds<T extends { id: string }>(data: T[]): string
 /**
  * Ensures each row in the data array has a unique `id` field.
  * If a row doesn't have an `id`, generates one based on index.
+ * Returns an empty array if data is null, undefined, or not an array.
  *
- * @param data - Array of data rows
+ * @param data - Array of data rows (or null/undefined)
  * @param validateUnique - If true, validates that all IDs are unique after assignment (default: false)
  * @throws DuplicateRowIdError if validateUnique is true and duplicates are found
  *
@@ -53,17 +58,21 @@ export function findDuplicateRowIds<T extends { id: string }>(data: T[]): string
  * is effectively T[] since (T & { id: string }) = T in that case.
  */
 export function ensureRowIds<T extends Record<string, unknown>>(
-  data: T[],
+  data: T[] | null | undefined,
   validateUnique?: boolean
 ): Array<T & { id: string }>;
 export function ensureRowIds<T extends { id: string }>(
-  data: T[],
+  data: T[] | null | undefined,
   validateUnique?: boolean
 ): T[];
 export function ensureRowIds<T extends Record<string, unknown>>(
-  data: T[],
+  data: T[] | null | undefined,
   validateUnique: boolean = false
 ): Array<T & { id: string }> {
+  if (!data || !Array.isArray(data)) {
+    return [];
+  }
+
   const result = data.map((row, index) => {
     if (row.id !== undefined && row.id !== null) {
       return { ...row, id: String(row.id) };

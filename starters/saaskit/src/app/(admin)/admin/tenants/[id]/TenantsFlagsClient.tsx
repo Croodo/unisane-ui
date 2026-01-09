@@ -8,13 +8,13 @@ import {
 import type { FlagKey } from "@/src/shared/constants/feature-flags";
 import type { AppEnv } from "@/src/shared/constants/env";
 import { hooks } from "@/src/sdk/hooks";
-import { Button } from "@/src/components/ui/button";
-import { Separator } from "@/src/components/ui/separator";
-import { Badge } from "@/src/components/ui/badge";
-import { toast } from "sonner";
+import { Button } from "@unisane/ui/components/button";
+import { Divider } from "@unisane/ui/components/divider";
+import { Badge } from "@unisane/ui/components/badge";
+import { toast } from "@unisane/ui/components/toast";
 import { useSession } from "@/src/context/SessionContext";
-import { Input } from "@/src/components/ui/input";
-import { Label } from "@/src/components/ui/label";
+import { Input } from "@unisane/ui/primitives/input";
+import { Label } from "@unisane/ui/primitives/label";
 
 interface Props {
   env: AppEnv;
@@ -97,7 +97,7 @@ function Row({
           <span className="text-sm font-medium">{flag.label}</span>
           {flag.platformOnly && (
             <Badge
-              variant="outline"
+              variant="outlined"
               className="text-[10px] px-1.5 py-0 h-5 uppercase"
             >
               Platform
@@ -149,7 +149,7 @@ function Row({
         </div>
         <Button
           size="sm"
-          variant={effective ? "default" : "outline"}
+          variant={effective ? "filled" : "outlined"}
           disabled={pending || overrideDisabled}
           onClick={() => {
             const expiresAt = expiry
@@ -166,7 +166,7 @@ function Row({
         </Button>
         <Button
           size="sm"
-          variant="ghost"
+          variant="text"
           disabled={pending || !ovr || overrideDisabled}
           onClick={() =>
             clearOvr.mutate({
@@ -232,7 +232,7 @@ export function TenantsFlagsClient({ env, tenantId }: Props) {
               globalDefault={byKey.get(flag.key)}
               canPublish={!!canPublish}
             />
-            {idx < flags.length - 1 ? <Separator /> : null}
+            {idx < flags.length - 1 ? <Divider /> : null}
           </div>
         ))}
       </div>

@@ -1,4 +1,5 @@
 import { getTenantId } from "@unisane/kernel";
+import type { ListPageArgs } from "@unisane/kernel";
 import { listPage } from "../data/audit.repository";
 import { usersRepository } from "@unisane/identity";
 
@@ -6,12 +7,7 @@ import { usersRepository } from "@unisane/identity";
 // List Audit
 // ════════════════════════════════════════════════════════════════════════════
 
-export type ListAuditArgs = {
-  cursor?: string;
-  limit: number;
-};
-
-export async function listAudit(args: ListAuditArgs) {
+export async function listAudit(args: ListPageArgs) {
   const tenantId = getTenantId();
   const { rows, nextCursor, prevCursor } = await listPage({
     tenantId,

@@ -74,7 +74,7 @@ export async function listAdminTenants(args: {
     id: string;
     slug: string;
     name: string;
-    plan: string;
+    planId: string;
     membersCount?: number;
     adminsCount?: number;
     apiKeysCount?: number;
@@ -170,7 +170,7 @@ export async function listAdminTenants(args: {
     id: t.id,
     slug: t.slug,
     name: t.name,
-    plan: t.planId,
+    planId: t.planId,
     membersCount: t.membersCount,
     adminsCount: t.adminsCount,
     apiKeysCount: t.apiKeysCount,

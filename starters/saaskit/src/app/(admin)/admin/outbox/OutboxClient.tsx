@@ -5,7 +5,7 @@ import type { Column } from "@unisane/data-table";
 import { hooks } from "@/src/sdk/hooks";
 import type { OutboxAdminDeadListItem, OutboxAdminDeadListResponse } from "@/src/sdk/types";
 import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toast } from "@unisane/ui/components/toast";
 import { RATE_LIMIT_POLICIES } from "@/src/shared/constants/rate-limits";
 import { PageHeader } from "@/src/context/usePageHeader";
 

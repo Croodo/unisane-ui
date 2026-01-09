@@ -8,11 +8,11 @@ import {
   PLAN_SETTING_KEYS,
   WEBHOOKS_SETTING_KEYS,
 } from "@/src/shared/constants/settings";
-import { Input } from "@/src/components/ui/input";
-import { Textarea } from "@/src/components/ui/textarea";
-import { Label } from "@/src/components/ui/label";
-import { Button } from "@/src/components/ui/button";
-import { toast } from "sonner";
+import { Input } from "@unisane/ui/primitives/input";
+import { Textarea } from "@unisane/ui/primitives/textarea";
+import { Label } from "@unisane/ui/primitives/label";
+import { Button } from "@unisane/ui/components/button";
+import { toast } from "@unisane/ui/components/toast";
 import { normalizeError } from "@/src/sdk/errors";
 
 function PlanOverridesCard({ tenantId }: { tenantId: string }) {
@@ -132,7 +132,7 @@ function PlanOverridesCard({ tenantId }: { tenantId: string }) {
         <div className="flex gap-2">
           <Button
             type="button"
-            variant="outline"
+            variant="outlined"
             disabled={isSaving}
             onClick={() => {
               patch.mutate({
@@ -270,7 +270,7 @@ function WebhooksAllowedHostsCard({ tenantId }: { tenantId: string }) {
         <div className="flex gap-2">
           <Button
             type="button"
-            variant="outline"
+            variant="outlined"
             disabled={isSaving}
             onClick={() => {
               patch.mutate({

@@ -1,15 +1,17 @@
 import React from "react";
-import type { LucideIcon } from "lucide-react";
 import { cva } from "class-variance-authority";
 import type { VariantProps } from "class-variance-authority";
-import { cn } from "@/src/lib/utils";
-import { Card } from "@/src/components/ui/card";
+import { cn } from "@unisane/ui/lib/utils";
+import { Card } from "@unisane/ui/components/card";
+import { Icon } from "@unisane/ui/primitives/icon";
+import { Text } from "@unisane/ui/primitives/text";
 import { Area, AreaChart, ResponsiveContainer } from "recharts";
 
 export interface StatItem {
   label: string;
   value: string | number;
-  icon?: LucideIcon;
+  /** Material Symbol icon name */
+  icon?: string;
   trend?: {
     value: number;
     direction: "up" | "down" | "neutral";
@@ -66,7 +68,7 @@ export const StatsCards = ({
     return (
       <div className={cn(statsCardsVariants({ columns }), className)}>
         {[...Array(columns || 4)].map((_, i) => (
-          <Card key={i} className="h-32 animate-pulse bg-muted" />
+          <Card key={i} className="h-32 animate-pulse bg-surface-container" />
         ))}
       </div>
     );
@@ -81,32 +83,33 @@ export const StatsCards = ({
         >
           <div className="flex flex-col z-10 relative">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-muted-foreground">
+              <Text variant="labelMedium" color="onSurfaceVariant">
                 {item.label}
-              </span>
+              </Text>
               {item.icon && (
-                <item.icon className="w-4 h-4 text-muted-foreground" />
+                <Icon symbol={item.icon} size="sm" className="text-on-surface-variant" />
               )}
             </div>
             <div className="flex items-end gap-2">
-              <span className="text-2xl font-semibold tracking-tight">
+              <Text variant="headlineMedium" weight="semibold">
                 {typeof item.value === "number"
                   ? item.value.toLocaleString()
                   : item.value}
-              </span>
+              </Text>
               {item.trend && (
-                <span
+                <Text
+                  variant="labelSmall"
+                  weight="medium"
                   className={cn(
-                    "text-xs font-medium mb-1",
-                    item.trend.direction === "up" && "text-green-600",
-                    item.trend.direction === "down" && "text-red-600",
-                    item.trend.direction === "neutral" &&
-                      "text-muted-foreground"
+                    "mb-1",
+                    item.trend.direction === "up" && "text-primary",
+                    item.trend.direction === "down" && "text-error",
+                    item.trend.direction === "neutral" && "text-on-surface-variant"
                   )}
                 >
                   {item.trend.direction === "up" ? "+" : ""}
                   {item.trend.value}%
-                </span>
+                </Text>
               )}
             </div>
           </div>

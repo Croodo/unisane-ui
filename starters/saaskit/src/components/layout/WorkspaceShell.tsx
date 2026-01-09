@@ -15,9 +15,9 @@ import {
   SidebarCollapsibleGroup,
   SidebarBackdrop,
   SidebarInset,
-} from "@/src/components/ui/sidebar";
-import { TopAppBar } from "@/src/components/ui/top-app-bar";
-import { IconButton } from "@/src/components/ui/icon-button";
+} from "@unisane/ui/components/sidebar";
+import { TopAppBar } from "@unisane/ui/components/top-app-bar";
+import { IconButton } from "@unisane/ui/components/icon-button";
 import { RailUserMenu } from "@/src/components/layout/RailUserMenu";
 import { useSession } from "@/src/hooks/useSession";
 import { PERM } from "@/src/shared/rbac/permissions";
@@ -351,7 +351,7 @@ function WorkspaceShellContent({
 // WorkspaceShell (with Provider)
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { SidebarProvider } from "@/src/components/ui/sidebar";
+import { SidebarProvider } from "@unisane/ui/components/sidebar";
 
 interface WorkspaceShellProps {
   children: React.ReactNode;

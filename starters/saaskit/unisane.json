@@ -1,0 +1,9 @@
+{
+  "$schema": "https://unisane.dev/schemas/unisane.json",
+  "srcDir": "src",
+  "aliases": {
+    "components": "@/src/components/ui",
+    "lib": "@/src/lib",
+    "hooks": "@/src/hooks"
+  }
+}

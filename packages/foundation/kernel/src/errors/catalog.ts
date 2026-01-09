@@ -102,6 +102,14 @@ export enum ErrorCode {
   PAYMENT_METHOD_REQUIRED = 'E3009',
   /** Insufficient credits */
   INSUFFICIENT_CREDITS = 'E3010',
+  /** Invoice not found */
+  INVOICE_NOT_FOUND = 'E3011',
+  /** Billing customer not found */
+  CUSTOMER_NOT_FOUND = 'E3012',
+  /** Refund amount exceeded */
+  REFUND_EXCEEDED = 'E3013',
+  /** Already refunded */
+  ALREADY_REFUNDED = 'E3014',
 
   // ============================================
   // Tenant/Organization Errors (E4xxx)
@@ -142,6 +150,12 @@ export enum ErrorCode {
   PASSWORD_RESET_EXPIRED = 'E5004',
   /** Profile incomplete */
   PROFILE_INCOMPLETE = 'E5005',
+  /** Username already taken */
+  USERNAME_EXISTS = 'E5006',
+  /** Phone number already in use */
+  PHONE_EXISTS = 'E5007',
+  /** API key limit exceeded */
+  API_KEY_LIMIT = 'E5008',
 
   // ============================================
   // Storage/Media Errors (E6xxx)
@@ -172,6 +186,12 @@ export enum ErrorCode {
   INTEGRATION_NOT_CONFIGURED = 'E7004',
   /** External API error */
   EXTERNAL_API_ERROR = 'E7005',
+  /** Webhook limit exceeded */
+  WEBHOOK_LIMIT_EXCEEDED = 'E7006',
+  /** Notification delivery failed */
+  NOTIFICATION_FAILED = 'E7007',
+  /** Template not found */
+  TEMPLATE_NOT_FOUND = 'E7008',
 
   // ============================================
   // AI/ML Errors (E8xxx)
@@ -240,6 +260,10 @@ export const ErrorCatalog: Record<ErrorCode, ErrorCatalogEntry> = {
   [ErrorCode.INVALID_COUPON]: { message: 'Invalid or expired coupon', status: 400 },
   [ErrorCode.PAYMENT_METHOD_REQUIRED]: { message: 'Payment method required', status: 402 },
   [ErrorCode.INSUFFICIENT_CREDITS]: { message: 'Insufficient credits', status: 402 },
+  [ErrorCode.INVOICE_NOT_FOUND]: { message: 'Invoice not found', status: 404 },
+  [ErrorCode.CUSTOMER_NOT_FOUND]: { message: 'Billing customer not found', status: 404 },
+  [ErrorCode.REFUND_EXCEEDED]: { message: 'Refund amount exceeds available balance', status: 400 },
+  [ErrorCode.ALREADY_REFUNDED]: { message: 'Payment has already been refunded', status: 409 },
 
   // Tenant (E4xxx)
   [ErrorCode.TENANT_NOT_FOUND]: { message: 'Organization not found', status: 404 },
@@ -259,6 +283,9 @@ export const ErrorCatalog: Record<ErrorCode, ErrorCatalogEntry> = {
   [ErrorCode.INVALID_EMAIL]: { message: 'Invalid email format', status: 400 },
   [ErrorCode.PASSWORD_RESET_EXPIRED]: { message: 'Password reset link has expired', status: 410 },
   [ErrorCode.PROFILE_INCOMPLETE]: { message: 'Profile is incomplete', status: 400 },
+  [ErrorCode.USERNAME_EXISTS]: { message: 'Username already taken', status: 409 },
+  [ErrorCode.PHONE_EXISTS]: { message: 'Phone number already in use', status: 409 },
+  [ErrorCode.API_KEY_LIMIT]: { message: 'API key limit exceeded', status: 403 },
 
   // Storage (E6xxx)
   [ErrorCode.FILE_NOT_FOUND]: { message: 'File not found', status: 404 },
@@ -273,6 +300,9 @@ export const ErrorCatalog: Record<ErrorCode, ErrorCatalogEntry> = {
   [ErrorCode.WEBHOOK_NOT_FOUND]: { message: 'Webhook endpoint not found', status: 404 },
   [ErrorCode.INTEGRATION_NOT_CONFIGURED]: { message: 'Integration not configured', status: 400 },
   [ErrorCode.EXTERNAL_API_ERROR]: { message: 'External service error', status: 502 },
+  [ErrorCode.WEBHOOK_LIMIT_EXCEEDED]: { message: 'Webhook limit exceeded', status: 403 },
+  [ErrorCode.NOTIFICATION_FAILED]: { message: 'Notification delivery failed', status: 502 },
+  [ErrorCode.TEMPLATE_NOT_FOUND]: { message: 'Template not found', status: 404 },
 
   // AI (E8xxx)
   [ErrorCode.AI_QUOTA_EXCEEDED]: { message: 'AI usage quota exceeded', status: 403 },

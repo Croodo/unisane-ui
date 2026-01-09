@@ -9,40 +9,21 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   useSidebar,
-} from "@/src/components/ui/sidebar";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/src/components/ui/avatar";
+} from "@unisane/ui/components/sidebar";
+import { Avatar } from "@unisane/ui/components/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   DropdownMenuSub,
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-} from "@/src/components/ui/dropdown-menu";
-import { Badge } from "@/src/components/ui/badge";
-import {
-  ChevronsUpDown,
-  LogOut,
-  User,
-  Settings,
-  Moon,
-  Sun,
-  Monitor,
-  Palette,
-  Shield,
-  Building2,
-  Sparkles,
-} from "lucide-react";
-import { cn } from "@/src/lib/utils";
+} from "@unisane/ui/components/dropdown-menu";
+import { Badge } from "@unisane/ui/components/badge";
+import { Icon } from "@unisane/ui/primitives/icon";
+import { cn } from "@unisane/ui/lib/utils";
 
 type UserInfo = {
   displayName?: string | null | undefined;
@@ -76,8 +57,8 @@ export function SidebarUserMenu({
 }: SidebarUserMenuProps) {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
-  const { state } = useSidebar();
-  const isCollapsed = state === "collapsed";
+  const { expanded } = useSidebar();
+  const isCollapsed = !expanded;
   const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {
@@ -115,27 +96,27 @@ export function SidebarUserMenu({
       {!isCollapsed && (
         <SidebarMenuItem>
           <div className="flex items-center justify-between px-2 py-1.5">
-            <span className="text-xs font-medium text-muted-foreground">
+            <span className="text-label-small font-medium text-on-surface-variant">
               Theme
             </span>
-            <div className="flex items-center gap-0.5 rounded-md border bg-muted/50 p-0.5">
+            <div className="flex items-center gap-0.5 rounded-lg border border-outline-variant bg-surface-container-low p-0.5">
               <ThemeButton
                 theme="light"
                 currentTheme={currentTheme}
                 onClick={() => setTheme("light")}
-                icon={<Sun className="h-3 w-3" />}
+                icon={<Icon symbol="light_mode" size="xs" />}
               />
               <ThemeButton
                 theme="system"
                 currentTheme={currentTheme}
                 onClick={() => setTheme("system")}
-                icon={<Monitor className="h-3 w-3" />}
+                icon={<Icon symbol="desktop_windows" size="xs" />}
               />
               <ThemeButton
                 theme="dark"
                 currentTheme={currentTheme}
                 onClick={() => setTheme("dark")}
-                icon={<Moon className="h-3 w-3" />}
+                icon={<Icon symbol="dark_mode" size="xs" />}
               />
             </div>
           </div>
@@ -148,55 +129,53 @@ export function SidebarUserMenu({
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
-              className="bg-muted hover:bg-muted/80 data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              className="bg-surface-container-low hover:bg-surface-container data-[state=open]:bg-surface-container-high data-[state=open]:text-on-surface"
             >
-              <Avatar className="h-8 w-8 rounded-full ring-2 ring-background">
-                {user?.imageUrl && <AvatarImage src={user.imageUrl} />}
-                <AvatarFallback className="rounded-full bg-gradient-to-br from-primary/80 to-primary text-primary-foreground text-xs font-semibold">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight">
+              <Avatar
+                src={user?.imageUrl || undefined}
+                alt={displayName}
+                fallback={initials}
+                className="h-8 w-8 rounded-full ring-2 ring-surface"
+              />
+              <div className="grid flex-1 text-left leading-tight">
                 <div className="flex items-center gap-1.5">
-                  <span className="truncate font-semibold">{displayName}</span>
+                  <span className="truncate text-body-medium font-semibold">{displayName}</span>
                   {isAdmin && (
                     <Badge
-                      variant="secondary"
+                      variant="tonal"
                       className="h-4 px-1 text-[10px] font-medium"
                     >
-                      <Shield className="mr-0.5 h-2.5 w-2.5" />
+                      <Icon symbol="shield" size="xs" className="mr-0.5" />
                       Admin
                     </Badge>
                   )}
                 </div>
-                <span className="truncate text-xs text-muted-foreground">
+                <span className="truncate text-label-small text-on-surface-variant">
                   {email}
                 </span>
               </div>
-              <ChevronsUpDown className="ml-auto size-4 text-muted-foreground" />
+              <Icon symbol="unfold_more" size="sm" className="ml-auto text-on-surface-variant" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
             className="w-[--radix-dropdown-menu-trigger-width] min-w-64 rounded-xl"
-            side="top"
             align="end"
-            sideOffset={8}
           >
             {/* User Header */}
-            <DropdownMenuLabel className="p-0 font-normal">
+            <div className="p-0 font-normal">
               <div className="flex items-center gap-3 px-3 py-3">
-                <Avatar className="h-10 w-10 rounded-full ring-2 ring-muted">
-                  {user?.imageUrl && <AvatarImage src={user.imageUrl} />}
-                  <AvatarFallback className="rounded-full bg-gradient-to-br from-primary/80 to-primary text-primary-foreground font-semibold">
-                    {initials}
-                  </AvatarFallback>
-                </Avatar>
+                <Avatar
+                  src={user?.imageUrl || undefined}
+                  alt={displayName}
+                  fallback={initials}
+                  className="h-10 w-10 rounded-full ring-2 ring-outline-variant"
+                />
                 <div className="grid flex-1 text-left leading-tight">
-                  <span className="font-semibold">{displayName}</span>
-                  <span className="text-xs text-muted-foreground">{email}</span>
+                  <span className="text-body-medium font-semibold">{displayName}</span>
+                  <span className="text-label-small text-on-surface-variant">{email}</span>
                 </div>
               </div>
-            </DropdownMenuLabel>
+            </div>
             <DropdownMenuSeparator />
 
             {/* Navigation Links */}
@@ -207,7 +186,7 @@ export function SidebarUserMenu({
                     href={`${basePath}/account`}
                     className="flex items-center gap-2"
                   >
-                    <User className="h-4 w-4 text-muted-foreground" />
+                    <Icon symbol="person" size="sm" className="text-on-surface-variant" />
                     <span>My Account</span>
                   </Link>
                 </DropdownMenuItem>
@@ -216,7 +195,7 @@ export function SidebarUserMenu({
                     href={`${basePath}/settings`}
                     className="flex items-center gap-2"
                   >
-                    <Settings className="h-4 w-4 text-muted-foreground" />
+                    <Icon symbol="settings" size="sm" className="text-on-surface-variant" />
                     <span>Workspace Settings</span>
                   </Link>
                 </DropdownMenuItem>
@@ -232,7 +211,7 @@ export function SidebarUserMenu({
               >
                 <Link href={link.href} className="flex items-center gap-2">
                   {link.icon ?? (
-                    <Sparkles className="h-4 w-4 text-muted-foreground" />
+                    <Icon symbol="star" size="sm" className="text-on-surface-variant" />
                   )}
                   <span>{link.label}</span>
                 </Link>
@@ -248,9 +227,9 @@ export function SidebarUserMenu({
                     href="/admin/overview"
                     className="flex items-center gap-2"
                   >
-                    <Shield className="h-4 w-4 text-orange-500" />
+                    <Icon symbol="shield" size="sm" className="text-tertiary" />
                     <span>Admin Console</span>
-                    <Badge variant="outline" className="ml-auto text-[10px]">
+                    <Badge variant="outlined" className="ml-auto text-[10px]">
                       Super
                     </Badge>
                   </Link>
@@ -267,7 +246,7 @@ export function SidebarUserMenu({
                     href={`/w/${user.tenantSlug}/dashboard`}
                     className="flex items-center gap-2"
                   >
-                    <Building2 className="h-4 w-4 text-muted-foreground" />
+                    <Icon symbol="apartment" size="sm" className="text-on-surface-variant" />
                     <span>Back to Workspace</span>
                   </Link>
                 </DropdownMenuItem>
@@ -280,27 +259,31 @@ export function SidebarUserMenu({
                 <DropdownMenuSeparator />
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger className="flex items-center gap-2">
-                    <Palette className="h-4 w-4 text-muted-foreground" />
+                    <Icon symbol="palette" size="sm" className="text-on-surface-variant" />
                     <span>Theme</span>
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
-                    <DropdownMenuRadioGroup
-                      value={currentTheme ?? "system"}
-                      onValueChange={setTheme}
+                    <DropdownMenuItem
+                      onClick={() => setTheme("light")}
+                      className={cn("gap-2", currentTheme === "light" && "bg-surface-container")}
                     >
-                      <DropdownMenuRadioItem value="light" className="gap-2">
-                        <Sun className="h-4 w-4" />
-                        Light
-                      </DropdownMenuRadioItem>
-                      <DropdownMenuRadioItem value="system" className="gap-2">
-                        <Monitor className="h-4 w-4" />
-                        System
-                      </DropdownMenuRadioItem>
-                      <DropdownMenuRadioItem value="dark" className="gap-2">
-                        <Moon className="h-4 w-4" />
-                        Dark
-                      </DropdownMenuRadioItem>
-                    </DropdownMenuRadioGroup>
+                      <Icon symbol="light_mode" size="sm" />
+                      Light
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setTheme("system")}
+                      className={cn("gap-2", currentTheme === "system" && "bg-surface-container")}
+                    >
+                      <Icon symbol="desktop_windows" size="sm" />
+                      System
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setTheme("dark")}
+                      className={cn("gap-2", currentTheme === "dark" && "bg-surface-container")}
+                    >
+                      <Icon symbol="dark_mode" size="sm" />
+                      Dark
+                    </DropdownMenuItem>
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
               </>
@@ -309,9 +292,9 @@ export function SidebarUserMenu({
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={handleSignOut}
-              className="cursor-pointer text-destructive focus:text-destructive"
+              className="cursor-pointer text-error focus:text-error"
             >
-              <LogOut className="mr-2 h-4 w-4" />
+              <Icon symbol="logout" size="sm" className="mr-2" />
               <span>Sign out</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -341,10 +324,10 @@ function ThemeButton({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex h-6 w-6 items-center justify-center rounded-sm transition-all",
+        "flex h-6 w-6 items-center justify-center rounded-md transition-all",
         isActive
-          ? "bg-background text-foreground shadow-sm"
-          : "text-muted-foreground hover:text-foreground"
+          ? "bg-surface text-on-surface shadow-sm"
+          : "text-on-surface-variant hover:text-on-surface"
       )}
       title={theme.charAt(0).toUpperCase() + theme.slice(1)}
     >

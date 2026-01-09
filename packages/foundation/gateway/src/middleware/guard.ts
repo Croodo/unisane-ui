@@ -7,8 +7,8 @@ import { HEADER_NAMES } from "../headers";
 import { ERR } from "../errors/errors";
 import { buildRateKey, rateLimit, ipFrom } from './rateLimit';
 import type { RateResult } from './rateLimit';
-import { getRatePolicy } from '@unisane/kernel';
-import type { OpKey } from '@unisane/kernel';
+import { getRatePolicy } from '../rate-limits';
+import type { OpKey } from '../rate-limits';
 import { incRateLimited } from "../telemetry";
 import { assertCsrfForCookieAuth } from "./csrf";
 

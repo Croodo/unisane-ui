@@ -9,7 +9,7 @@ export const ZPasswordSignup = z.object({
   username: z.string().trim().regex(/^[a-z0-9_.]{3,30}$/i).optional(),
   firstName: z.string().trim().max(80).optional(),
   lastName: z.string().trim().max(80).optional(),
-  phone: z.string().trim().regex(/^\+[1-9][0-9]{7,14}$/).optional(),
+  phone: ZPhoneE164.optional(),
   locale: ZLocale.default(DEFAULT_LOCALE),
   timezone: z.string().trim().optional(),
 });

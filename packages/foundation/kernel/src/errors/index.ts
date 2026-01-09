@@ -37,8 +37,9 @@ export {
   DomainError,
   isDomainError,
   wrapError,
+  createDomainError,
 } from './base';
-export type { ErrorResponse, DomainErrorOptions } from './base';
+export type { ErrorResponse, DomainErrorOptions, CreateErrorConfig, FieldError } from './base';
 
 // Error catalog
 export {
@@ -64,4 +65,5 @@ export {
   BadRequestError,
   PreconditionFailedError,
   UnprocessableError,
+  ProviderError,
 } from './common';

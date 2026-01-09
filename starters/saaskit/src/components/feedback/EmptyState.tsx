@@ -1,14 +1,15 @@
 "use client";
 
 import { forwardRef } from "react";
-import { cn } from "@/src/lib/utils";
-import { Button } from "@/src/components/ui/button";
-import { Inbox } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { cn } from "@unisane/ui/lib/utils";
+import { Surface } from "@unisane/ui/primitives/surface";
+import { Text } from "@unisane/ui/primitives/text";
+import { Button } from "@unisane/ui/components/button";
+import { Icon } from "@unisane/ui/primitives/icon";
 
 export type EmptyStateProps = React.HTMLAttributes<HTMLDivElement> & {
-  /** Icon to display (defaults to Inbox) */
-  icon?: LucideIcon;
+  /** Material Symbol icon name (defaults to "inbox") */
+  icon?: string;
   /** Main title text */
   title: string;
   /** Description text */
@@ -18,6 +19,7 @@ export type EmptyStateProps = React.HTMLAttributes<HTMLDivElement> & {
     label: string;
     onClick?: () => void;
     disabled?: boolean;
+    icon?: string;
   };
   /** Secondary link */
   link?: {
@@ -29,21 +31,21 @@ export type EmptyStateProps = React.HTMLAttributes<HTMLDivElement> & {
 };
 
 /**
- * EmptyState - Consistent empty state display
+ * EmptyState - Consistent empty state display using Material 3 design.
  *
  * @example
  * <EmptyState
- *   icon={Users}
+ *   icon="group"
  *   title="No team members"
  *   description="Invite your first team member to get started."
- *   action={{ label: "Invite member", onClick: handleInvite }}
+ *   action={{ label: "Invite member", onClick: handleInvite, icon: "person_add" }}
  * />
  */
 const EmptyState = forwardRef<HTMLDivElement, EmptyStateProps>(
   (
     {
       className,
-      icon: Icon = Inbox,
+      icon = "inbox",
       title,
       description,
       action,
@@ -53,28 +55,31 @@ const EmptyState = forwardRef<HTMLDivElement, EmptyStateProps>(
     },
     ref
   ) => {
-    const sizeClasses = {
+    const sizeConfig = {
       sm: {
         wrapper: "py-6",
-        icon: "h-8 w-8",
-        title: "text-sm",
-        description: "text-xs",
+        iconContainer: "size-14",
+        iconSize: "md" as const,
+        titleVariant: "titleSmall" as const,
+        descVariant: "bodySmall" as const,
       },
       default: {
         wrapper: "py-12",
-        icon: "h-12 w-12",
-        title: "text-base",
-        description: "text-sm",
+        iconContainer: "size-20",
+        iconSize: "lg" as const,
+        titleVariant: "titleMedium" as const,
+        descVariant: "bodyMedium" as const,
       },
       lg: {
         wrapper: "py-16",
-        icon: "h-16 w-16",
-        title: "text-lg",
-        description: "text-base",
+        iconContainer: "size-24",
+        iconSize: "xl" as const,
+        titleVariant: "titleLarge" as const,
+        descVariant: "bodyLarge" as const,
       },
     };
 
-    const s = sizeClasses[size];
+    const s = sizeConfig[size];
 
     return (
       <div
@@ -86,37 +91,54 @@ const EmptyState = forwardRef<HTMLDivElement, EmptyStateProps>(
         )}
         {...props}
       >
-        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted mb-4">
-          <Icon className={cn("text-muted-foreground", s.icon)} />
-        </div>
-        <h3 className={cn("font-semibold text-foreground", s.title)}>
+        <Surface
+          tone="surfaceContainerHigh"
+          rounded="full"
+          className={cn("flex items-center justify-center mb-4", s.iconContainer)}
+        >
+          <Icon
+            symbol={icon}
+            size={s.iconSize}
+            className="text-on-surface-variant"
+          />
+        </Surface>
+
+        <Text variant={s.titleVariant} weight="semibold" className="text-on-surface">
           {title}
-        </h3>
+        </Text>
+
         {description && (
-          <p
-            className={cn("mt-1 max-w-sm text-muted-foreground", s.description)}
+          <Text
+            variant={s.descVariant}
+            color="onSurfaceVariant"
+            className="mt-1 max-w-sm"
           >
             {description}
-          </p>
+          </Text>
         )}
+
         {(action || link) && (
           <div className="mt-4 flex items-center gap-3">
             {action && (
               <Button
                 size="sm"
+                variant="filled"
                 onClick={action.onClick}
                 disabled={action.disabled}
+                icon={action.icon ? <Icon symbol={action.icon} size="sm" /> : undefined}
               >
                 {action.label}
               </Button>
             )}
             {link && (
-              <a
-                href={link.href}
-                className="text-sm text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
+              <Text
+                as="span"
+                variant="labelMedium"
+                color="primary"
+                className="cursor-pointer hover:underline underline-offset-4"
               >
-                {link.label}
-              </a>
+                <a href={link.href}>{link.label}</a>
+              </Text>
             )}
           </div>
         )}

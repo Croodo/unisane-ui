@@ -1,7 +1,7 @@
 import React, { isValidElement, cloneElement } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn, Slot } from "@/src/lib/utils";
-import { Ripple } from "@/src/components/ui/ripple";
+import { cn, Slot } from "@unisane/ui/lib/utils";
+import { Ripple } from "@unisane/ui/components/ripple";
 
 const menuVariants = cva(
   "min-w-50 bg-surface shadow-2 border border-outline-variant/20 overflow-hidden",

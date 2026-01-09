@@ -31,7 +31,7 @@ import { increment, getWindow, rollupHour, rollupDay } from "@unisane/usage";
 await increment({
   feature: "api_calls",
   n: 1,
-  idempotencyKey: requestId, // Optional deduplication
+  idem: requestId, // Optional deduplication
 });
 
 // Get usage for current window

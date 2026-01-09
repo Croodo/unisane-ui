@@ -1,12 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Button } from "@/src/components/ui/button";
+import { Button } from "@unisane/ui/components/button";
 import { useSession } from "@/src/hooks/useSession";
 import { hooks } from "@/src/sdk/hooks";
-import { toast } from "sonner";
+import { toast } from "@unisane/ui/components/toast";
 import { normalizeError } from "@/src/sdk/errors";
-import { Check } from "lucide-react";
+import { Icon } from "@unisane/ui/primitives/icon";
 import type { BillingConfigResponse } from "@/src/sdk/types";
 
 export function PricingClient() {
@@ -97,7 +97,7 @@ export function PricingClient() {
         <h1 className="text-4xl sm:text-5xl font-bold text-foreground mb-4 tracking-tight">
           Choose your plan
         </h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+        <p className="text-lg text-on-surface-variant max-w-2xl mx-auto">
           {cfgLoading
             ? "Loading plans…"
             : cfgError
@@ -108,13 +108,13 @@ export function PricingClient() {
 
       {isSubscriptionMode && (plans?.length ?? 0) > 0 && (
         <div className="flex justify-center mb-12">
-          <div className="inline-flex items-center rounded-lg border border-border bg-muted/30 p-1">
+          <div className="inline-flex items-center rounded-lg border border-border bg-surface-container/30 p-1">
             <button
               type="button"
               className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
                 cadence === "month"
                   ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-on-surface-variant hover:text-foreground"
               }`}
               onClick={() => setCadence("month")}
               aria-pressed={cadence === "month"}
@@ -126,7 +126,7 @@ export function PricingClient() {
               className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
                 cadence === "year"
                   ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-on-surface-variant hover:text-foreground"
               }`}
               onClick={() => setCadence("year")}
               aria-pressed={cadence === "year"}
@@ -140,12 +140,12 @@ export function PricingClient() {
       <div className="grid gap-8 lg:grid-cols-3 md:grid-cols-2">
         {cfgLoading && (plans?.length ?? 0) === 0 && (
           <div className="rounded-2xl border border-border bg-card p-8">
-            <p className="text-sm text-muted-foreground">Loading plans…</p>
+            <p className="text-sm text-on-surface-variant">Loading plans…</p>
           </div>
         )}
         {!cfgLoading && !cfgError && (plans?.length ?? 0) === 0 && (
           <div className="rounded-2xl border border-border bg-card p-8">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-on-surface-variant">
               No plans configured yet.
             </p>
           </div>
@@ -251,7 +251,7 @@ export function PricingClient() {
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-on-surface-variant">
                     {meta.tagline}
                   </p>
                 </div>
@@ -263,7 +263,7 @@ export function PricingClient() {
                     </span>
                     {priceLabel !== "Free" &&
                       priceLabel !== "Contact sales" && (
-                        <span className="text-muted-foreground">
+                        <span className="text-on-surface-variant">
                           /{cadence === "year" ? "year" : "month"}
                         </span>
                       )}
@@ -278,7 +278,7 @@ export function PricingClient() {
                 <ul className="space-y-3 flex-1 mb-8">
                   {highlights.map((item: string) => (
                     <li key={item} className="flex items-start gap-3">
-                      <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                      <Icon symbol="check" size="sm" className="text-primary shrink-0 mt-0.5" />
                       <span className="text-sm text-foreground">{item}</span>
                     </li>
                   ))}
@@ -288,7 +288,7 @@ export function PricingClient() {
                   className="w-full"
                   size="lg"
                   disabled={primaryDisabled}
-                  variant={isRecommendedTier ? "default" : "outline"}
+                  variant={isRecommendedTier ? "filled" : "outlined"}
                   onClick={() => {
                     if (isFreeTier) {
                       if (loading) return;
@@ -338,7 +338,7 @@ export function PricingClient() {
 
       {!loading && !hasWorkspace && (
         <div className="text-center mt-16 pt-8 border-t border-border">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-on-surface-variant">
             Need a workspace?{" "}
             <a
               href="/welcome"

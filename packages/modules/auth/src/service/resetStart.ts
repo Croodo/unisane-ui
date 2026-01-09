@@ -1,4 +1,4 @@
-import { connectDb, kv, getEnv, randomToken } from "@unisane/kernel";
+import { connectDb, kv, getEnv, randomToken, logger, InternalError } from "@unisane/kernel";
 import { AuthCredentialRepo } from "../data/auth.repository";
 import { normalizeEmail } from "@unisane/identity";
 
@@ -38,7 +38,7 @@ export async function resetStart(input: {
       await OutboxRepo.markProcessed(enq.id);
     } catch (err) {
       // best-effort; leave queued for job-based delivery
-      console.error('[resetStart] Immediate email send failed, falling back to job:', err);
+      logger.warn("resetStart: immediate email send failed, falling back to job", { err });
     }
   } catch {}
   return { sent: true };
@@ -78,7 +78,7 @@ function pickBase(redirectTo: string | undefined, allowed: string[]): string {
   if (allowed.length) return allowed[0]!;
   // In production, do not fall back to localhost — require configuration
   if (APP_ENV === "prod") {
-    throw new Error(
+    throw new InternalError(
       "ALLOWED_ORIGINS must include at least one origin in production"
     );
   }

@@ -1,11 +1,11 @@
 import { z } from 'zod';
-import { ZRFC3339 } from '@unisane/kernel';
+import { ZRFC3339, ZIdem } from '@unisane/kernel';
 
 export const ZUsageIncrement = z.object({
   feature: z.string().min(1),
   n: z.number().int().positive().default(1),
   at: ZRFC3339.optional(),
-  idempotencyKey: z.string().min(8).optional(),
+  idem: ZIdem.optional(),
 });
 
 export const ZGetWindow = z.object({

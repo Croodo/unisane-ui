@@ -1,9 +1,11 @@
 "use client";
 
 import { forwardRef } from "react";
-import { cn } from "@/src/lib/utils";
-import { Button } from "@/src/components/ui/button";
-import { AlertCircle, RefreshCw } from "lucide-react";
+import { cn } from "@unisane/ui/lib/utils";
+import { Surface } from "@unisane/ui/primitives/surface";
+import { Text } from "@unisane/ui/primitives/text";
+import { Button } from "@unisane/ui/components/button";
+import { Icon } from "@unisane/ui/primitives/icon";
 
 export type ErrorCardProps = React.HTMLAttributes<HTMLDivElement> & {
   title?: string | undefined;
@@ -12,6 +14,10 @@ export type ErrorCardProps = React.HTMLAttributes<HTMLDivElement> & {
   onRetry?: (() => void) | undefined;
 };
 
+/**
+ * ErrorCard - Displays error information with optional retry action.
+ * Uses Material 3 error container colors and typography.
+ */
 const ErrorCard = forwardRef<HTMLDivElement, ErrorCardProps>(
   (
     {
@@ -25,42 +31,45 @@ const ErrorCard = forwardRef<HTMLDivElement, ErrorCardProps>(
     ref
   ) => {
     return (
-      <div
+      <Surface
         ref={ref}
-        className={cn(
-          "rounded-lg border border-destructive/20 bg-destructive/5 p-6",
-          className
-        )}
+        tone="errorContainer"
+        rounded="md"
+        className={cn("p-6 border border-error/20", className)}
         {...props}
       >
-        <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-destructive/10">
-            <AlertCircle className="h-5 w-5 text-destructive" />
+        <div className="flex items-start gap-4">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-error/10">
+            <Icon symbol="error" className="text-error" size="sm" />
           </div>
-          <div className="flex-1 space-y-2">
-            <h3 className="font-semibold text-destructive">{title}</h3>
+          <div className="flex-1 flex flex-col gap-2">
+            <Text variant="titleMedium" color="error" weight="semibold">
+              {title}
+            </Text>
             {message && (
-              <p className="text-sm text-muted-foreground">{message}</p>
+              <Text variant="bodyMedium" color="onSurfaceVariant">
+                {message}
+              </Text>
             )}
             {requestId && (
-              <p className="text-xs text-muted-foreground font-mono">
+              <Text variant="labelSmall" color="onSurfaceVariant" className="font-mono">
                 Ref: {requestId}
-              </p>
+              </Text>
             )}
             {onRetry && (
               <Button
-                variant="outline"
+                variant="outlined"
                 size="sm"
                 onClick={onRetry}
-                className="mt-2"
+                className="mt-2 self-start"
+                icon={<Icon symbol="refresh" size="sm" />}
               >
-                <RefreshCw className="mr-2 h-4 w-4" />
                 Try again
               </Button>
             )}
           </div>
         </div>
-      </div>
+      </Surface>
     );
   }
 );

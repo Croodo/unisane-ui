@@ -1,6 +1,6 @@
 import React, { forwardRef } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@/src/lib/utils";
+import { cn } from "@unisane/ui/lib/utils";
 
 const surfaceVariants = cva("relative transition-colors", {
   variants: {

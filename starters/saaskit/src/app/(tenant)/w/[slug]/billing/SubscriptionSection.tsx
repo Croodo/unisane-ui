@@ -1,34 +1,11 @@
-import { Button } from "@/src/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/src/components/ui/card";
-import { Badge } from "@/src/components/ui/badge";
+import { useState, useTransition } from "react";
+import { Button } from "@unisane/ui/components/button";
+import { Card } from "@unisane/ui/components/card";
+import { Badge } from "@unisane/ui/components/badge";
 import { PLAN_META } from "@/src/shared/constants/plan";
 import type { PlanId } from "@/src/shared/constants/plan";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/src/components/ui/alert-dialog";
-import {
-  BadgeCheck,
-  Box,
-  CreditCard,
-  Info,
-  Loader2,
-  Sparkles,
-} from "lucide-react";
+import { ConfirmDialog } from "@unisane/ui/components/confirm-dialog";
+import { Icon } from "@unisane/ui/primitives/icon";
 
 export type SubscriptionSectionProps = {
   cfgLoading: boolean;
@@ -63,6 +40,8 @@ export function SubscriptionSection({
   portalPending,
   cancelPending,
 }: SubscriptionSectionProps) {
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const rawStatus = (status ?? "").toLowerCase();
   const isCanceled =
     rawStatus === "canceled" || rawStatus === "incomplete_expired";
@@ -93,49 +72,56 @@ export function SubscriptionSection({
         ? "monthly"
         : "per period";
 
+  const handleCancel = () => {
+    startTransition(() => {
+      onCancelAtPeriodEnd();
+      setDialogOpen(false);
+    });
+  };
+
   return (
     <Card className="h-full">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0">
+      <Card.Header className="flex flex-row items-center justify-between space-y-0">
         <div className="space-y-1.5">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <CreditCard className="size-5 text-primary" />
+          <Card.Title className="flex items-center gap-2 text-lg">
+            <Icon symbol="credit_card" size="sm" className="text-primary" />
             <span>Subscription</span>
-          </CardTitle>
-          <CardDescription>
+          </Card.Title>
+          <Card.Description>
             Your current plan and subscription status.
-          </CardDescription>
+          </Card.Description>
         </div>
         {isSubscriptionMode && hasSubscription && !cfgLoading && !cfgError && (
-          <Badge variant="secondary" className="text-xs px-3 py-1">
+          <Badge variant="tonal" className="text-xs px-3 py-1">
             {statusLabel}
           </Badge>
         )}
-      </CardHeader>
-      <CardContent>
+      </Card.Header>
+      <Card.Content>
         {cfgLoading ? (
-          <div className="flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-            <Loader2 className="size-4 animate-spin" />
+          <div className="flex items-center gap-2 rounded-md border bg-surface-container/40 px-3 py-2 text-sm text-on-surface-variant">
+            <Icon symbol="progress_activity" size="sm" className="animate-spin" />
             <span>Loading billing details…</span>
           </div>
         ) : cfgError ? (
-          <div className="flex items-start gap-2 rounded-md border bg-destructive/5 px-3 py-2 text-sm text-destructive">
-            <Info className="mt-0.5 size-4" />
+          <div className="flex items-start gap-2 rounded-md border bg-error/5 px-3 py-2 text-sm text-error">
+            <Icon symbol="info" size="sm" className="mt-0.5" />
             <span>
               We couldn&apos;t load your billing details. Please refresh the
               page or contact support if this keeps happening.
             </span>
           </div>
         ) : !isSubscriptionMode ? (
-          <div className="flex items-start gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-            <Info className="mt-0.5 size-4" />
+          <div className="flex items-start gap-2 rounded-md border bg-surface-container/40 px-3 py-2 text-sm text-on-surface-variant">
+            <Icon symbol="info" size="sm" className="mt-0.5" />
             <span>
               Subscriptions aren&apos;t enabled for this workspace. If you think
               this is a mistake, please contact support.
             </span>
           </div>
         ) : !hasSubscription ? (
-          <div className="flex items-start gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-            <Info className="mt-0.5 size-4" />
+          <div className="flex items-start gap-2 rounded-md border bg-surface-container/40 px-3 py-2 text-sm text-on-surface-variant">
+            <Icon symbol="info" size="sm" className="mt-0.5" />
             <span>
               You don&apos;t have an active subscription yet. Use the pricing
               page to start a plan.
@@ -146,17 +132,17 @@ export function SubscriptionSection({
             <div className="flex items-center gap-4">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary">
                 {tier === "free" ? (
-                  <Box className="h-5 w-5 text-muted-foreground" />
+                  <Icon symbol="inventory_2" size="sm" className="text-on-surface-variant" />
                 ) : tier === "pro" ? (
-                  <BadgeCheck className="h-5 w-5 text-sky-600" />
+                  <Icon symbol="verified" size="sm" className="text-sky-600" />
                 ) : (
-                  <Sparkles className="h-5 w-5 text-emerald-600" />
+                  <Icon symbol="auto_awesome" size="sm" className="text-emerald-600" />
                 )}
               </div>
               <div>
                 <div className="mb-1">
                   <Badge
-                    variant={tier === "free" ? "secondary" : "default"}
+                    variant={tier === "free" ? "tonal" : "filled"}
                     className={
                       tier === "business"
                         ? "px-3 py-1 text-sm font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200"
@@ -166,7 +152,7 @@ export function SubscriptionSection({
                     {planLabel}
                   </Badge>
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-on-surface-variant">
                   {(() => {
                     if (isIncomplete) {
                       return "Setup is incomplete. Complete payment in the billing portal to activate your subscription.";
@@ -195,18 +181,18 @@ export function SubscriptionSection({
             </div>
           </div>
         )}
-      </CardContent>
+      </Card.Content>
       {isSubscriptionMode && hasSubscription && !cfgLoading && !cfgError && (
-        <CardFooter className="border-t bg-muted/40 px-6 py-4 flex items-center justify-between">
+        <Card.Footer className="border-t bg-surface-container/40 px-6 py-4 flex items-center justify-between">
           {isCanceled ? (
             <>
-              <span className="text-sm text-muted-foreground">
+              <span className="text-sm text-on-surface-variant">
                 This subscription has been canceled. To resume or change your
                 plan, use the billing portal.
               </span>
               <Button
                 size="sm"
-                variant="outline"
+                variant="outlined"
                 disabled={!tenantId || portalPending}
                 onClick={onOpenPortal}
               >
@@ -215,13 +201,13 @@ export function SubscriptionSection({
             </>
           ) : isIncomplete ? (
             <>
-              <span className="text-sm text-muted-foreground">
+              <span className="text-sm text-on-surface-variant">
                 The initial payment is incomplete. Complete or retry payment in
                 the billing portal to activate your subscription.
               </span>
               <Button
                 size="sm"
-                variant="outline"
+                variant="outlined"
                 disabled={!tenantId || portalPending}
                 onClick={onOpenPortal}
               >
@@ -230,47 +216,34 @@ export function SubscriptionSection({
             </>
           ) : (
             <>
-              <span className="text-sm text-muted-foreground">
+              <span className="text-sm text-on-surface-variant">
                 This subscription renews automatically each billing period. You
                 can cancel at the end of the current period.
               </span>
               <div className="flex items-center gap-2">
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-destructive hover:text-destructive"
-                      disabled={!tenantId || cancelPending}
-                    >
-                      Cancel at period end
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        Cancel subscription at period end?
-                      </AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This will schedule the subscription to cancel at the end
-                        of the current billing period. You can usually resume
-                        from the billing portal before that date.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Keep subscription</AlertDialogCancel>
-                      <AlertDialogAction
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        onClick={onCancelAtPeriodEnd}
-                      >
-                        Confirm cancel
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
                 <Button
                   size="sm"
-                  variant="outline"
+                  variant="text"
+                  className="text-error hover:text-error"
+                  disabled={!tenantId || cancelPending}
+                  onClick={() => setDialogOpen(true)}
+                >
+                  Cancel at period end
+                </Button>
+                <ConfirmDialog
+                  open={dialogOpen}
+                  onOpenChange={setDialogOpen}
+                  title="Cancel subscription at period end?"
+                  description="This will schedule the subscription to cancel at the end of the current billing period. You can usually resume from the billing portal before that date."
+                  variant="danger"
+                  confirmLabel="Confirm cancel"
+                  cancelLabel="Keep subscription"
+                  onConfirm={handleCancel}
+                  loading={isPending}
+                />
+                <Button
+                  size="sm"
+                  variant="outlined"
                   disabled={!tenantId || portalPending}
                   onClick={onOpenPortal}
                 >
@@ -279,7 +252,7 @@ export function SubscriptionSection({
               </div>
             </>
           )}
-        </CardFooter>
+        </Card.Footer>
       )}
     </Card>
   );

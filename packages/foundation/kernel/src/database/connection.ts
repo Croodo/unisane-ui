@@ -1,6 +1,7 @@
 import { MongoClient, ReadConcern, WriteConcern } from "mongodb";
 import type { Db, Collection, Document } from "mongodb";
 import { getEnv } from "../env";
+import { ProviderError } from "../errors/common";
 
 // --- MongoDB Node.js driver helper ---
 // Use global object to share connection state across module instances in Next.js/Turbopack
@@ -52,7 +53,7 @@ export async function connectDb(): Promise<MongoClient> {
   const env = getEnv();
   const uri = env.MONGODB_URI;
   if (!uri) {
-    throw new Error("MONGODB_URI is required when using mongo provider");
+    throw new ProviderError("mongodb", new Error("MONGODB_URI is required when using mongo provider"), { retryable: false });
   }
 
   const dbName = parseDbName(uri);
@@ -95,7 +96,11 @@ export async function connectDb(): Promise<MongoClient> {
       state.mongoClient = null;
       state.mongoDb = null;
       state.mongoDbName = null;
-      throw error;
+      // Wrap MongoDB connection errors with ProviderError for consistent error handling
+      if (error instanceof ProviderError) {
+        throw error;
+      }
+      throw new ProviderError("mongodb", error, { retryable: true });
     } finally {
       // Clear the lock so future calls can attempt connection if needed
       state.connectingPromise = null;
@@ -107,7 +112,7 @@ export async function connectDb(): Promise<MongoClient> {
 
 export function db(): Db {
   if (!state.mongoDb) {
-    throw new Error("Mongo not connected — call connectDb() first");
+    throw new ProviderError("mongodb", new Error("Mongo not connected — call connectDb() first"), { retryable: false });
   }
   return state.mongoDb;
 }

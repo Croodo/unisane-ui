@@ -49,6 +49,7 @@ export * from './query/filterParams';
 // Request/Response utilities
 export * from './request';
 export * from './headers';
+export * from './rate-limits';
 export * from './logger';
 export * from './telemetry';
 

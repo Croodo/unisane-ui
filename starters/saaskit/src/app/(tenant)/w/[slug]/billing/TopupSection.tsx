@@ -1,14 +1,7 @@
-import { Button } from "@/src/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/src/components/ui/card";
-import { cn } from "@/src/lib/utils";
-import { Check, CreditCard, PlusCircle } from "lucide-react";
+import { Button } from "@unisane/ui/components/button";
+import { Card } from "@unisane/ui/components/card";
+import { cn } from "@unisane/ui/lib/utils";
+import { Icon } from "@unisane/ui/primitives/icon";
 
 export type TopupSectionProps = {
   isTopupMode: boolean;
@@ -30,16 +23,16 @@ export function TopupSection({
   if (!isTopupMode) return null;
   return (
     <Card className="h-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <PlusCircle className="size-5 text-primary" />
+      <Card.Header>
+        <Card.Title className="flex items-center gap-2 text-lg">
+          <Icon symbol="add_circle" size="sm" className="text-primary" />
           <span>Top up credits</span>
-        </CardTitle>
-        <CardDescription>
+        </Card.Title>
+        <Card.Description>
           Pay once to add more credits to this workspace.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+        </Card.Description>
+      </Card.Header>
+      <Card.Content className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
         {options.map((opt) => {
           const isSelected = opt.id === selectedId;
           const creditsLabel = opt.credits.toLocaleString();
@@ -61,16 +54,16 @@ export function TopupSection({
                     "flex h-4 w-4 items-center justify-center rounded-full border",
                     isSelected
                       ? "border-primary bg-primary text-primary-foreground"
-                      : "border-muted-foreground"
+                      : "border-on-surface-variant"
                   )}
                 >
-                  {isSelected && <Check className="h-3 w-3" />}
+                  {isSelected && <Icon symbol="check" size="xs" />}
                 </span>
                 <div className="flex flex-col">
                   <span className="font-medium">
                     {creditsLabel} credits
                   </span>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-xs text-on-surface-variant">
                     {opt.label} one-time
                   </span>
                 </div>
@@ -79,17 +72,17 @@ export function TopupSection({
             </button>
           );
         })}
-      </CardContent>
-      <CardFooter className="pt-2 justify-end">
+      </Card.Content>
+      <Card.Footer className="pt-2 justify-end">
         <Button
           className="inline-flex items-center gap-2"
           disabled={!canCreateTopup}
           onClick={onCreateTopup}
         >
-          <CreditCard className="h-4 w-4" />
+          <Icon symbol="credit_card" size="sm" />
           Purchase credits
         </Button>
-      </CardFooter>
+      </Card.Footer>
     </Card>
   );
 }

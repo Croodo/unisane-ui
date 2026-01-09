@@ -1,22 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Input } from "@/src/components/ui/input";
-import { Textarea } from "@/src/components/ui/textarea";
-import { Label } from "@/src/components/ui/label";
-import { Button } from "@/src/components/ui/button";
-import { Separator } from "@/src/components/ui/separator";
-import { toast } from "sonner";
+import { Input } from "@unisane/ui/primitives/input";
+import { Textarea } from "@unisane/ui/primitives/textarea";
+import { Label } from "@unisane/ui/primitives/label";
+import { Button } from "@unisane/ui/components/button";
+import { Divider } from "@unisane/ui/components/divider";
+import { toast } from "@unisane/ui/components/toast";
 import { hooks } from "@/src/sdk/hooks";
 import type { SettingsGetResponse as SettingsGet } from "@/src/sdk/types";
 import { normalizeError } from "@/src/sdk/errors";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/src/components/ui/card";
+import { Card } from "@unisane/ui/components/card";
 
 interface AdvancedSettingsCardProps {
   tenantId?: string | undefined;
@@ -123,7 +117,7 @@ function SettingEditor({
         </Button>
         <Button
           type="button"
-          variant="outline"
+          variant="outlined"
           size="sm"
           disabled={!tenantId || !ns || !keyName || patch.isPending}
           onClick={() => {
@@ -168,13 +162,13 @@ export function AdvancedSettingsCard({ tenantId }: AdvancedSettingsCardProps) {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Advanced settings</CardTitle>
-        <CardDescription>
+      <Card.Header>
+        <Card.Title className="text-base">Advanced settings</Card.Title>
+        <Card.Description>
           Read and patch arbitrary namespaced settings for this workspace.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
+        </Card.Description>
+      </Card.Header>
+      <Card.Content className="space-y-4">
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
           <div className="space-y-2">
             <Label htmlFor="ns">Namespace</Label>
@@ -206,7 +200,7 @@ export function AdvancedSettingsCard({ tenantId }: AdvancedSettingsCardProps) {
           </div>
         </div>
 
-        <Separator />
+        <Divider />
 
         <SettingEditor
           key={editorKey}
@@ -215,7 +209,7 @@ export function AdvancedSettingsCard({ tenantId }: AdvancedSettingsCardProps) {
           keyName={key}
           data={data ?? null}
         />
-      </CardContent>
+      </Card.Content>
     </Card>
   );
 }

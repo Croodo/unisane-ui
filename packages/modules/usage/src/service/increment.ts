@@ -6,14 +6,14 @@ export type IncrementUsageArgs = {
   feature: string;
   n?: number;
   at?: Date;
-  idempotencyKey?: string;
+  idem?: string;
 };
 
 export async function increment(args: IncrementUsageArgs) {
   const tenantId = getTenantId();
   const n = args.n ?? 1;
-  if (args.idempotencyKey) {
-    const idemKey = usageIdemKey(args.idempotencyKey);
+  if (args.idem) {
+    const idemKey = usageIdemKey(args.idem);
     const ok = await kv.set(idemKey, "1", { NX: true, PX: 10 * 60 * 1000 });
     if (!ok) return { ok: true as const, deduped: true as const };
   }

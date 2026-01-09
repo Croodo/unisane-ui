@@ -51,7 +51,7 @@ export const Icon = forwardRef<HTMLElement, IconProps>(
         <span
           ref={ref as React.Ref<HTMLSpanElement>}
           className={cn(
-            "material-symbols-outlined select-none inline-flex items-center justify-center align-middle shrink-0",
+            "material-symbols-outlined select-none inline-flex items-center justify-center align-middle shrink-0 leading-none",
             isScale && sizeClasses,
             className
           )}

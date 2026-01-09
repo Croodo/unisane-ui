@@ -1,18 +1,18 @@
 "use client";
 
 import { forwardRef } from "react";
-import { cn } from "@/src/lib/utils";
-import { Button } from "@/src/components/ui/button";
-import { Loader2 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { cn } from "@unisane/ui/lib/utils";
+import { Button } from "@unisane/ui/components/button";
+import { Icon } from "@unisane/ui/primitives/icon";
+import { Text } from "@unisane/ui/primitives/text";
 
 export type FormCardProps = React.HTMLAttributes<HTMLDivElement> & {
   /** Card title */
   title: string;
   /** Optional description below title */
   description?: string;
-  /** Optional icon next to title */
-  icon?: LucideIcon;
+  /** Material Symbol icon name */
+  icon?: string;
   /** Save callback - shows Save button when provided */
   onSave?: () => void | Promise<void>;
   /** Discard callback - shows Discard button when hasChanges is true */
@@ -34,7 +34,7 @@ export type FormCardProps = React.HTMLAttributes<HTMLDivElement> & {
  * <FormCard
  *   title="Workspace Profile"
  *   description="Basic information"
- *   icon={Building2}
+ *   icon="apartment"
  *   onSave={handleSave}
  *   onDiscard={handleDiscard}
  *   saving={isSaving}
@@ -49,7 +49,7 @@ const FormCard = forwardRef<HTMLDivElement, FormCardProps>(
       className,
       title,
       description,
-      icon: Icon,
+      icon,
       onSave,
       onDiscard,
       saving,
@@ -66,22 +66,27 @@ const FormCard = forwardRef<HTMLDivElement, FormCardProps>(
     return (
       <div
         ref={ref}
-        className={cn("rounded-lg border bg-card shadow-sm", className)}
+        className={cn(
+          "rounded-xl border border-outline-variant bg-surface-container-lowest",
+          className
+        )}
         {...props}
       >
         {/* Header */}
         <div className="flex items-start gap-3 p-6 pb-0">
-          {Icon && (
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted">
-              <Icon className="h-4 w-4 text-muted-foreground" />
+          {icon && (
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-surface-container">
+              <Icon symbol={icon} size="sm" className="text-on-surface-variant" />
             </div>
           )}
           <div className="space-y-1">
-            <h3 className="font-semibold leading-none tracking-tight">
+            <Text as="h3" variant="titleMedium">
               {title}
-            </h3>
+            </Text>
             {description && (
-              <p className="text-sm text-muted-foreground">{description}</p>
+              <Text variant="bodySmall" color="onSurfaceVariant">
+                {description}
+              </Text>
             )}
           </div>
         </div>
@@ -97,7 +102,7 @@ const FormCard = forwardRef<HTMLDivElement, FormCardProps>(
             {hasChanges && onDiscard && (
               <Button
                 type="button"
-                variant="ghost"
+                variant="text"
                 size="sm"
                 onClick={onDiscard}
                 disabled={saving}
@@ -112,7 +117,7 @@ const FormCard = forwardRef<HTMLDivElement, FormCardProps>(
                 onClick={onSave}
                 disabled={saving || !hasChanges}
               >
-                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {saving && <Icon symbol="progress_activity" size="sm" className="mr-2 animate-spin" />}
                 Save Changes
               </Button>
             )}

@@ -69,6 +69,7 @@ export function installDependencies(cwd: string, pm: PackageManager): Promise<vo
   return new Promise((resolve, reject) => {
     const args = pm === 'yarn' ? [] : ['install'];
     const command = pm;
+    let settled = false;
 
     const child = spawn(command, args, {
       cwd,
@@ -77,6 +78,8 @@ export function installDependencies(cwd: string, pm: PackageManager): Promise<vo
     });
 
     child.on('close', (code) => {
+      if (settled) return;
+      settled = true;
       if (code !== 0) {
         reject(new Error(`${pm} install failed with exit code ${code}`));
         return;
@@ -84,7 +87,11 @@ export function installDependencies(cwd: string, pm: PackageManager): Promise<vo
       resolve();
     });
 
-    child.on('error', reject);
+    child.on('error', (err) => {
+      if (settled) return;
+      settled = true;
+      reject(err);
+    });
   });
 }
 

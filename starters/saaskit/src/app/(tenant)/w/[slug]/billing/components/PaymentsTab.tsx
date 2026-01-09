@@ -6,17 +6,11 @@ import type { BillingListPaymentsItem } from "@/src/sdk/types";
 import { DataTable } from "@unisane/data-table";
 import type { Column } from "@unisane/data-table";
 import { normalizeError } from "@/src/sdk/errors";
-import { Button } from "@/src/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/src/components/ui/dialog";
-import { Input } from "@/src/components/ui/input";
-import { Label } from "@/src/components/ui/label";
-import { toast } from "sonner";
+import { Button } from "@unisane/ui/components/button";
+import { Dialog } from "@unisane/ui/components/dialog";
+import { Input } from "@unisane/ui/primitives/input";
+import { Label } from "@unisane/ui/primitives/label";
+import { toast } from "@unisane/ui/components/toast";
 import { formatCurrency } from "@/src/shared/currency";
 import { StatusBadge } from "@/src/components/ui/status-badge";
 
@@ -85,7 +79,7 @@ export function PaymentsTab({ tenantId }: PaymentsTabProps) {
         render: (row) => (
           <Button
             size="sm"
-            variant="outline"
+            variant="outlined"
             disabled={
               !tenantId || refund.isPending || row.status !== "succeeded"
             }
@@ -112,30 +106,13 @@ export function PaymentsTab({ tenantId }: PaymentsTabProps) {
         tableId="tenant-payments"
       />
 
-      <Dialog open={refundOpen} onOpenChange={setRefundOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Refund payment</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div className="text-sm text-muted-foreground">
-              Payment ID: {refundPaymentId}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="amt">Amount (optional)</Label>
-              <Input
-                id="amt"
-                type="number"
-                min={0}
-                step="0.01"
-                value={refundAmount}
-                onChange={(e) => setRefundAmount(e.target.value)}
-                placeholder="Leave blank for full refund"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRefundOpen(false)}>
+      <Dialog
+        open={refundOpen}
+        onClose={() => setRefundOpen(false)}
+        title="Refund payment"
+        actions={
+          <>
+            <Button variant="text" onClick={() => setRefundOpen(false)}>
               Cancel
             </Button>
             <Button
@@ -160,8 +137,26 @@ export function PaymentsTab({ tenantId }: PaymentsTabProps) {
             >
               {refund.isPending ? "Submitting…" : "Submit refund"}
             </Button>
-          </DialogFooter>
-        </DialogContent>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <div className="text-sm text-muted-foreground">
+            Payment ID: {refundPaymentId}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="amt">Amount (optional)</Label>
+            <Input
+              id="amt"
+              type="number"
+              min={0}
+              step="0.01"
+              value={refundAmount}
+              onChange={(e) => setRefundAmount(e.target.value)}
+              placeholder="Leave blank for full refund"
+            />
+          </div>
+        </div>
       </Dialog>
     </>
   );

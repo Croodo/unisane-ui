@@ -4,8 +4,8 @@
 
 /* Content sources for Tailwind v4 to scan for class usage */
 @source "../../src/**/*.{js,ts,jsx,tsx,mdx}";
-@source "../../../../packages/ui/src/**/*.{js,ts,jsx,tsx,mdx}";
-@source "../../../../packages/data-table/src/**/*.{js,ts,jsx,tsx,mdx}";
+@source "../../../../packages/ui/core/src/**/*.{js,ts,jsx,tsx,mdx}";
+@source "../../../../packages/ui/data-table/src/**/*.{js,ts,jsx,tsx,mdx}";
 
 /* Dark mode variant */
 @custom-variant dark (&:is(.dark *));

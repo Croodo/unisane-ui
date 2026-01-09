@@ -5,13 +5,7 @@ import { DataTable } from "@unisane/data-table";
 import type { Column } from "@unisane/data-table";
 import { hooks } from "@/src/sdk/hooks";
 import type { CreditsLedgerItem } from "@/src/sdk/types";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/src/components/ui/card";
+import { Card } from "@unisane/ui/components/card";
 
 interface CreditsTabProps {
   tenantId?: string | undefined;
@@ -37,10 +31,10 @@ function CreditsSummaryCards({ tenantId }: { tenantId?: string | undefined }) {
   return (
     <div className="grid gap-4 md:grid-cols-3">
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">Total credits</CardTitle>
-        </CardHeader>
-        <CardContent>
+        <Card.Header className="pb-2">
+          <Card.Title className="text-base">Total credits</Card.Title>
+        </Card.Header>
+        <Card.Content>
           {isLoading ? (
             <p className="text-sm text-muted-foreground">Loading…</p>
           ) : isError ? (
@@ -53,16 +47,16 @@ function CreditsSummaryCards({ tenantId }: { tenantId?: string | undefined }) {
               </span>
             </div>
           )}
-        </CardContent>
+        </Card.Content>
       </Card>
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">From subscription</CardTitle>
-          <CardDescription>
+        <Card.Header className="pb-2">
+          <Card.Title className="text-base">From subscription</Card.Title>
+          <Card.Description>
             Credits granted with your plan each billing period.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+          </Card.Description>
+        </Card.Header>
+        <Card.Content>
           {isLoading ? (
             <p className="text-sm text-muted-foreground">Loading…</p>
           ) : isError ? (
@@ -72,16 +66,16 @@ function CreditsSummaryCards({ tenantId }: { tenantId?: string | undefined }) {
               {subAvailable.toLocaleString()}
             </div>
           )}
-        </CardContent>
+        </Card.Content>
       </Card>
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">From top‑ups</CardTitle>
-          <CardDescription>
+        <Card.Header className="pb-2">
+          <Card.Title className="text-base">From top‑ups</Card.Title>
+          <Card.Description>
             Additional credits you&apos;ve purchased.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+          </Card.Description>
+        </Card.Header>
+        <Card.Content>
           {isLoading ? (
             <p className="text-sm text-muted-foreground">Loading…</p>
           ) : isError ? (
@@ -91,7 +85,7 @@ function CreditsSummaryCards({ tenantId }: { tenantId?: string | undefined }) {
               {topupAvailable.toLocaleString()}
             </div>
           )}
-        </CardContent>
+        </Card.Content>
       </Card>
     </div>
   );

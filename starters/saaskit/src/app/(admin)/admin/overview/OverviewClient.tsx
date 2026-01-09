@@ -7,7 +7,6 @@ import {
   StatsCards,
   type StatItem,
 } from "@/src/components/dashboard/StatsCards";
-import { Users, TrendingDown, CreditCard, Building2 } from "lucide-react";
 
 export default function OverviewClient() {
   // Analytics query for dashboard metrics
@@ -31,7 +30,7 @@ export default function OverviewClient() {
       {
         label: "Total Revenue",
         value: `$${data.revenue.value.toLocaleString()}`,
-        icon: CreditCard,
+        icon: "credit_card",
         trend: {
           value: Math.abs(data.revenue.trend ?? 0),
           direction:
@@ -46,7 +45,7 @@ export default function OverviewClient() {
       {
         label: "Active Users",
         value: data.activeUsers.value,
-        icon: Users,
+        icon: "group",
         trend: {
           value: Math.abs(data.activeUsers.trend ?? 0),
           direction:
@@ -61,7 +60,7 @@ export default function OverviewClient() {
       {
         label: "Churn Rate",
         value: `${data.churnRate.value}%`,
-        icon: TrendingDown,
+        icon: "trending_down",
         trend: {
           value: Math.abs(data.churnRate.trend ?? 0),
           direction: (data.churnRate.trend ?? 0) < 0 ? "up" : "down", // Lower churn rate is better (green if down)
@@ -71,7 +70,7 @@ export default function OverviewClient() {
       {
         label: "Total Tenants",
         value: totalTenants,
-        icon: Building2,
+        icon: "apartment",
       },
     ];
   }, [analyticsQuery.data]);

@@ -58,6 +58,6 @@
     "@types/tar": "^6.1.11",
     "@types/validate-npm-package-name": "^4.0.2",
     "tsup": "^8.0.0",
-    "typescript": "^5.3.0"
+    "typescript": "^5.9.2"
   }
 }
