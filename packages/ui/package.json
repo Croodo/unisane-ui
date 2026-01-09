@@ -65,7 +65,8 @@
     "eslint": "^9.39.1",
     "tailwindcss": "^4.1.16",
     "tsc-alias": "^1.8.10",
-    "typescript": "5.9.2"
+    "typescript": "5.9.2",
+    "vitest": "^4.0.16"
   },
   "dependencies": {
     "@tanstack/react-virtual": "^3.13.13",

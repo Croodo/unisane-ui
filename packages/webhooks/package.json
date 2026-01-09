@@ -12,24 +12,26 @@
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts --clean",
     "dev": "tsup src/index.ts --format esm --dts --watch",
+    "lint": "eslint src --max-warnings 0",
     "test": "vitest run",
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
-    "@unisane/kernel": "workspace:*",
-    "@unisane/tenants": "workspace:*",
-    "@unisane/settings": "workspace:*",
+    "@unisane/billing": "workspace:*",
     "@unisane/credits": "workspace:*",
-    "@unisane/notify": "workspace:*",
-    "zod": "^3.22.0",
     "@unisane/gateway": "workspace:*",
+    "@unisane/kernel": "workspace:*",
+    "@unisane/notify": "workspace:*",
+    "@unisane/settings": "workspace:*",
+    "@unisane/tenants": "workspace:*",
     "mongodb": "^7.0.0",
-    "@unisane/billing": "workspace:*"
+    "zod": "^3.22.0"
   },
   "devDependencies": {
     "@unisane/typescript-config": "workspace:*",
+    "eslint": "^9.39.1",
     "tsup": "^8.0.0",
     "typescript": "^5.3.0",
-    "vitest": "^1.0.0"
+    "vitest": "^4.0.16"
   }
 }

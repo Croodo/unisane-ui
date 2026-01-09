@@ -15,9 +15,12 @@
   },
   "scripts": {
     "build": "node scripts/build.mjs",
-    "dev": "node scripts/build.mjs --watch"
+    "dev": "node scripts/build.mjs --watch",
+    "lint": "eslint src --max-warnings 0"
   },
   "devDependencies": {
-    "chokidar": "^3.5.3"
+    "chokidar": "^3.5.3",
+    "eslint": "^9.39.1",
+    "vitest": "^4.0.16"
   }
 }

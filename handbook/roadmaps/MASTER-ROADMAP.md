@@ -29,11 +29,12 @@ Build a **unified, centralized platform** for rapid SaaS development where:
 | **UI Library** | @unisane/ui + data-table | Good |
 | **SDK Generation** | @unisane/devtools | Good |
 | **Platform Layer** | Hexagonal architecture | Good |
+| **Linting** | All packages have lint scripts | Good |
+| **Testing** | vitest ^4.0.16, shared base config | Good |
 | **Distribution** | Design only, not built | Blocked |
 | **Contract Registry** | Fragmented | Needs Work |
 | **Schema Organization** | 5 levels, duplication risk | Needs Work |
 | **Admin Configs** | Hardcoded in gateway | Needs Work |
-| **Testing** | Minimal (data-table only) | Needs Work |
 
 See [implementation-status.md](../architecture/implementation-status.md) for detailed status.
 
@@ -57,17 +58,21 @@ Build tools to ship starters to end users.
 
 ## Roadmap Phases
 
-### Phase 1: Foundation Consolidation (Current)
+### Phase 1: Foundation Consolidation (COMPLETED ✅)
 
 **Goal:** Fix fragmentation, improve consistency.
 
-| Task | Priority | Document |
-|------|----------|----------|
-| Standardize lint scripts across packages | High | [centralization-plan.md](./centralization-plan.md) |
-| Fix vitest version drift | High | [centralization-plan.md](./centralization-plan.md) |
-| Update SDK generator for page persistence | High | [server-table-state.md](./server-table-state.md) |
-| Improve SDK naming conventions | Medium | [server-table-state.md](./server-table-state.md) |
-| Remove @ts-nocheck from generated code | Medium | [server-table-state.md](./server-table-state.md) |
+| Task | Priority | Status |
+|------|----------|--------|
+| Standardize lint scripts across packages | High | ✅ Done |
+| Add eslint to all packages | High | ✅ Done |
+| Create root eslint.config.mjs | High | ✅ Done |
+| Fix vitest version drift | High | ✅ Done (^4.0.16) |
+| Create shared vitest.base.ts | High | ✅ Done |
+| Standardize pino-pretty version | High | ✅ Done (^13.0.0) |
+| Update SDK generator for page persistence | High | Pending (Phase 4) |
+| Improve SDK naming conventions | Medium | Pending (Phase 4) |
+| Remove @ts-nocheck from generated code | Medium | Pending (Phase 4) |
 
 ### Phase 2: Package Structure Reorganization
 

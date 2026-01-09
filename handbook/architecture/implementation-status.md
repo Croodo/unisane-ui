@@ -26,6 +26,10 @@ This document tracks the implementation status of Unisane monorepo components. U
 | TypeScript configs | **Implemented** | `packages/typescript-config` | Base, library, react-library, nextjs |
 | ESLint configs | **Implemented** | `packages/eslint-config` | Base, next-js, react-internal |
 | Tailwind configs | **Implemented** | `packages/tailwind-config` | Shared styles, PostCSS |
+| Root ESLint config | **Implemented** | `eslint.config.mjs` | Shared config for all packages |
+| Lint scripts | **Implemented** | All packages | `eslint src --max-warnings 0` |
+| Vitest base config | **Implemented** | `vitest.base.ts` | Shared test config |
+| Vitest version | **Implemented** | All packages | Standardized to ^4.0.16 |
 
 ### Package Structure Reorganization
 

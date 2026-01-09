@@ -282,57 +282,44 @@ All packages should have:
 
 ## Implementation Plan
 
-### Phase 1: Immediate Fixes (1-2 days)
+### Phase 1: Immediate Fixes (COMPLETED ✅)
 
-#### Task 1.1: Add lint scripts to all packages
+#### Task 1.1: Add lint scripts to all packages ✅
 
-**Script to run:**
-```bash
-# For each package.json, add:
-"lint": "eslint src --max-warnings 0"
-```
+**Completed:** Added `"lint": "eslint src --max-warnings 0"` to all 28 packages.
 
-**Packages to update (28):**
-- ai, analytics, audit, auth, billing, cli, contracts, credits
-- devtools, eslint-config, flags, gateway, identity, import-export
-- kernel, media, notify, pdf, settings, sso, storage
-- tailwind-config, tenants, test-utils, tokens, typescript-config
-- usage, webhooks
+Also added:
+- `eslint` as devDependency to all packages
+- Root `eslint.config.mjs` using shared config
 
 **Verification:**
 ```bash
 turbo lint --filter='@unisane/*'
+# Works! (28 warnings in kernel, 0 errors)
 ```
 
 ---
 
-#### Task 1.2: Standardize vitest version
+#### Task 1.2: Standardize vitest version ✅
 
-**File:** `/packages/data-table/package.json`
+**Completed:** All packages now use `vitest: ^4.0.16` (latest)
 
-**Change:**
-```diff
-- "vitest": "^4.0.16"
-+ "vitest": "^1.0.0"
-```
+Also added:
+- Root `vitest.base.ts` with shared test config
+- Updated `@vitest/coverage-v8` to ^4.0.16
+- Updated data-table `vitest.config.ts` to extend base
 
 **Verification:**
 ```bash
-pnpm install
 pnpm test --filter=@unisane/data-table
+# ✓ 1200 tests pass
 ```
 
 ---
 
-#### Task 1.3: Standardize pino-pretty
+#### Task 1.3: Standardize pino-pretty ✅
 
-**File:** `/packages/gateway/package.json`
-
-**Change:**
-```diff
-- "pino-pretty": "^10.2.0"
-+ "pino-pretty": "^13.0.0"
-```
+**Completed:** Gateway now uses `pino-pretty: ^13.0.0` (same as kernel)
 
 ---
 

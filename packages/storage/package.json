@@ -16,19 +16,21 @@
   "scripts": {
     "build": "tsup src/index.ts src/client.ts --format esm --dts --clean",
     "dev": "tsup src/index.ts --format esm --dts --watch",
+    "lint": "eslint src --max-warnings 0",
     "test": "vitest run",
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
-    "@unisane/kernel": "workspace:*",
-    "zod": "^3.22.0",
     "@unisane/gateway": "workspace:*",
-    "mongodb": "^7.0.0"
+    "@unisane/kernel": "workspace:*",
+    "mongodb": "^7.0.0",
+    "zod": "^3.22.0"
   },
   "devDependencies": {
     "@unisane/typescript-config": "workspace:*",
+    "eslint": "^9.39.1",
     "tsup": "^8.0.0",
     "typescript": "^5.3.0",
-    "vitest": "^1.0.0"
+    "vitest": "^4.0.16"
   }
 }
