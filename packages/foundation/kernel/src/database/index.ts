@@ -82,6 +82,9 @@ export type { StatsResult } from './aggregations';
 // ObjectId utilities
 export { maybeObjectId } from './objectid';
 
+// Index management
+export { ensureIndexes, listIndexes, dropIndexes, INDEX_DEFINITIONS } from './indexes';
+
 /**
  * Check if an error is a duplicate key error (Mongo or MySQL).
  * Useful for handling unique constraint violations across database providers.

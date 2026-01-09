@@ -171,6 +171,7 @@ export * from "./unwrap";
  * Generate query keys factory
  *
  * Uses extracted types instead of contract imports for browser safety.
+ * Objects are serialized to stable JSON strings for proper cache key comparison.
  */
 function generateKeys(groups: RouteGroup[]): string {
   const headerComment = header('sdk:gen --hooks');
@@ -197,10 +198,11 @@ function generateKeys(groups: RouteGroup[]): string {
       const entries = routes
         .map((r) => {
           const Op = pascalCase(r.name);
-          // Use extracted type instead of ClientInferRequest
+          // Serialize params/query to stable strings for proper cache key comparison
+          // This ensures { status: 'active' } === { status: 'active' } for cache hits
           return `    ${r.name}: (args?: ${Group}${Op}Request) => {
       const a = args as { params?: unknown; query?: unknown } | undefined;
-      return ["${g.name}", "${r.name}", a?.params ?? null, a?.query ?? null] as const;
+      return ["${g.name}", "${r.name}", stableKey(a?.params), stableKey(a?.query)] as const;
     },`;
         })
         .join('\n');
@@ -213,6 +215,24 @@ function generateKeys(groups: RouteGroup[]): string {
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // Types extracted at code-gen time (browser-safe, no contract imports)
 ${typeImports}
+
+/**
+ * Convert an object to a stable string for cache key comparison.
+ * Sorts keys for deterministic output and handles null/undefined.
+ */
+function stableKey(obj: unknown): string | null {
+  if (obj === undefined || obj === null) return null;
+  if (typeof obj !== 'object') return String(obj);
+  try {
+    // Sort keys for deterministic serialization
+    const sortedKeys = Object.keys(obj as Record<string, unknown>).sort();
+    const sorted: Record<string, unknown> = {};
+    for (const k of sortedKeys) sorted[k] = (obj as Record<string, unknown>)[k];
+    return JSON.stringify(sorted);
+  } catch {
+    return null;
+  }
+}
 
 export const keys = {
 ${keysBody}
@@ -429,11 +449,81 @@ export function use${Group}${Op}ForTenant(
 }
 
 /**
+ * Determine the invalidation strategy for a mutation
+ */
+function getMutationInvalidationStrategy(method: string, routeName: string): 'list' | 'specific' | 'domain' {
+  const nameLower = routeName.toLowerCase();
+  const methodUpper = method.toUpperCase();
+
+  // Create operations should invalidate list queries
+  if (methodUpper === 'POST' && (nameLower.includes('create') || nameLower.includes('add') || nameLower.includes('register'))) {
+    return 'list';
+  }
+
+  // Delete operations should invalidate lists and the specific entity
+  if (methodUpper === 'DELETE' || nameLower.includes('delete') || nameLower.includes('remove')) {
+    return 'list';
+  }
+
+  // Update/patch operations should invalidate specific entity queries
+  if (methodUpper === 'PATCH' || methodUpper === 'PUT' || nameLower.includes('update') || nameLower.includes('patch')) {
+    return 'specific';
+  }
+
+  // Default: invalidate entire domain (safest but least efficient)
+  return 'domain';
+}
+
+/**
  * Generate a mutation hook (for POST/PUT/PATCH/DELETE operations)
+ * Uses granular invalidation to avoid over-fetching
  */
 function generateMutationHook(group: RouteGroup, route: AppRouteEntry): string {
   const Group = pascalCase(group.name);
   const Op = pascalCase(route.name);
+  const strategy = getMutationInvalidationStrategy(route.method, route.name);
+  const paramNames = extractParamNames(route.path);
+  const hasParams = paramNames.length > 0;
+
+  // Generate the invalidation logic based on strategy
+  let invalidationCode: string;
+  switch (strategy) {
+    case 'list':
+      // Invalidate list operations (anything containing 'list' in the key)
+      invalidationCode = `// Invalidate list queries after create/delete
+      void qc.invalidateQueries({
+        predicate: (query) =>
+          Array.isArray(query.queryKey) &&
+          query.queryKey[0] === "${group.name}" &&
+          String(query.queryKey[1] ?? '').toLowerCase().includes('list'),
+      });`;
+      break;
+    case 'specific':
+      // Invalidate queries matching the specific entity params
+      if (hasParams) {
+        invalidationCode = `// Invalidate queries for this specific entity
+      const p = (variables as any)?.params;
+      if (p && typeof p === 'object') {
+        void qc.invalidateQueries({
+          predicate: (query) => {
+            if (!Array.isArray(query.queryKey) || query.queryKey[0] !== "${group.name}") return false;
+            const qkParams = query.queryKey[2];
+            if (!qkParams || typeof qkParams !== 'string') return false;
+            try {
+              const parsed = JSON.parse(qkParams);
+              return Object.entries(p).every(([k, v]) => parsed[k] === v);
+            } catch { return false; }
+          },
+        });
+      }`;
+      } else {
+        invalidationCode = `void qc.invalidateQueries({ queryKey: ["${group.name}"], exact: false });`;
+      }
+      break;
+    default:
+      // Domain-wide invalidation
+      invalidationCode = `void qc.invalidateQueries({ queryKey: ["${group.name}"], exact: false });`;
+  }
 
   return `/** ${route.method} ${route.path} (mutation) */
 export function use${Group}${Op}(
@@ -447,7 +537,7 @@ export function use${Group}${Op}(
     },
     ...options,
     onSuccess: (data: D${Group}${Op}, variables: T${Group}${Op}, ctx: unknown) => {
-      void qc.invalidateQueries({ queryKey: ["${group.name}"], exact: false });
+      ${invalidationCode}
       options?.onSuccess?.(data, variables, ctx);
     },
   }) as UseMutationResult<D${Group}${Op}, unknown, T${Group}${Op}, unknown>;

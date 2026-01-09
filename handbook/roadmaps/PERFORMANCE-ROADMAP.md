@@ -581,20 +581,20 @@ retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
 
 ## Implementation Checklist
 
-### Week 1
-- [ ] P1.1 Add response compression
-- [ ] P1.2 Fix notification N+1 query
-- [ ] P1.3 Add credits balance caching
-- [ ] P1.4 Memoize SDK client initialization
+### Week 1 ✅ COMPLETED
+- [x] P1.1 Add response compression
+- [x] P1.2 Fix notification N+1 query
+- [x] P1.3 Add credits balance caching
+- [x] P1.4 Memoize SDK client initialization
+- [x] P1.5 Configure staleTime by data type
 
-### Week 2
-- [ ] P1.5 Configure staleTime by data type
-- [ ] P2.1 Define MongoDB indexes
-- [ ] P2.4 Add Next.js code splitting config
+### Week 2 ✅ COMPLETED
+- [x] P2.1 Define MongoDB indexes (`ensureIndexes()` in kernel)
+- [x] P2.2 Fix query key serialization (`stableKey()` function)
+- [x] P2.3 Implement granular invalidation (list/specific/domain strategies)
 
 ### Week 3-4
-- [ ] P2.2 Fix query key serialization
-- [ ] P2.3 Implement granular invalidation
+- [ ] P2.4 Add Next.js code splitting config
 - [ ] P2.5 Optimize useProcessedData hook
 
 ### Month 2
