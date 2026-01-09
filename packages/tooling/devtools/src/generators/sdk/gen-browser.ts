@@ -251,6 +251,58 @@ async function ensureCsrfToken(): Promise<string | undefined> {
 // Prevents duplicate concurrent requests to the same URL
 const inflightRequests = new Map<string, Promise<unknown>>();
 
+// Retry configuration
+const RETRY_CONFIG = {
+  maxRetries: 3,
+  baseDelayMs: 1000,
+  maxDelayMs: 30000,
+  // Status codes that trigger a retry
+  retryableStatuses: new Set([408, 429, 500, 502, 503, 504]),
+} as const;
+
+/**
+ * Determine if an error is retryable
+ */
+function isRetryable(error: unknown): boolean {
+  // Network errors (fetch throws)
+  if (error instanceof TypeError && error.message.includes('fetch')) return true;
+
+  // HTTP errors with retryable status codes
+  const status = (error as { status?: number })?.status;
+  if (status && RETRY_CONFIG.retryableStatuses.has(status)) return true;
+
+  // Specific error codes that are retryable
+  const code = (error as { code?: string })?.code;
+  if (code === 'RATE_LIMITED' || code === 'SERVICE_UNAVAILABLE') return true;
+
+  return false;
+}
+
+/**
+ * Calculate exponential backoff delay with jitter
+ */
+function getRetryDelay(attempt: number, retryAfterHeader?: string | null): number {
+  // Respect Retry-After header if present
+  if (retryAfterHeader) {
+    const seconds = parseInt(retryAfterHeader, 10);
+    if (!isNaN(seconds) && seconds > 0) {
+      return Math.min(seconds * 1000, RETRY_CONFIG.maxDelayMs);
+    }
+  }
+
+  // Exponential backoff: baseDelay * 2^attempt with jitter
+  const exponentialDelay = RETRY_CONFIG.baseDelayMs * Math.pow(2, attempt);
+  const jitter = Math.random() * 0.3 * exponentialDelay; // 0-30% jitter
+  return Math.min(exponentialDelay + jitter, RETRY_CONFIG.maxDelayMs);
+}
+
+/**
+ * Sleep for a given number of milliseconds
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function doFetch<R>(
   method: string,
   path: string,
@@ -277,39 +329,77 @@ async function doFetch<R>(
   }
 
   const fetchPromise = (async () => {
-    try {
-      const res = await fetch(url, {
-        method,
-        credentials: 'include',
-        headers: { 'content-type': 'application/json', ...h },
-        ...(typeof body !== 'undefined' ? { body: JSON.stringify(body) } : {}),
-      });
-      const status = res.status;
-      const jsonUnknown: unknown = await res.json().catch(() => undefined);
-      if (status >= 400) {
-        const jsonObj = (jsonUnknown && typeof jsonUnknown === 'object') ? (jsonUnknown as Record<string, unknown>) : {};
-        const errObj = (jsonObj['error'] as { code?: unknown; message?: unknown; requestId?: unknown; fields?: unknown } | undefined) ?? {};
-        const e: Error & { status?: number; code?: string; requestId?: string; fields?: unknown } = new Error(
-          typeof errObj?.message === 'string' ? (errObj.message as string) : 'HTTP_ERROR'
-        );
-        e.status = status;
-        if (typeof errObj?.code === 'string') e.code = errObj.code;
-        if (typeof errObj?.requestId === 'string') e.requestId = errObj.requestId as string;
-        if (typeof errObj?.fields !== 'undefined') e.fields = errObj.fields;
+    let lastError: unknown;
+    let retryAfterHeader: string | null = null;
+
+    for (let attempt = 0; attempt <= RETRY_CONFIG.maxRetries; attempt++) {
+      try {
+        // Wait before retry (skip on first attempt)
+        if (attempt > 0) {
+          const delay = getRetryDelay(attempt - 1, retryAfterHeader);
+          await sleep(delay);
+        }
+
+        const res = await fetch(url, {
+          method,
+          credentials: 'include',
+          headers: { 'content-type': 'application/json', ...h },
+          ...(typeof body !== 'undefined' ? { body: JSON.stringify(body) } : {}),
+        });
+
+        const status = res.status;
+        retryAfterHeader = res.headers.get('Retry-After');
+        const jsonUnknown: unknown = await res.json().catch(() => undefined);
+
+        if (status >= 400) {
+          const jsonObj = (jsonUnknown && typeof jsonUnknown === 'object') ? (jsonUnknown as Record<string, unknown>) : {};
+          const errObj = (jsonObj['error'] as { code?: unknown; message?: unknown; requestId?: unknown; fields?: unknown } | undefined) ?? {};
+          const e: Error & { status?: number; code?: string; requestId?: string; fields?: unknown; retryable?: boolean } = new Error(
+            typeof errObj?.message === 'string' ? (errObj.message as string) : 'HTTP_ERROR'
+          );
+          e.status = status;
+          if (typeof errObj?.code === 'string') e.code = errObj.code;
+          if (typeof errObj?.requestId === 'string') e.requestId = errObj.requestId as string;
+          if (typeof errObj?.fields !== 'undefined') e.fields = errObj.fields;
+          e.retryable = RETRY_CONFIG.retryableStatuses.has(status);
+
+          // Check if we should retry
+          if (isRetryable(e) && attempt < RETRY_CONFIG.maxRetries) {
+            lastError = e;
+            continue;
+          }
+
+          throw e;
+        }
+
+        // Success - parse and return response
+        const jsonOk = (jsonUnknown && typeof jsonUnknown === 'object') ? (jsonUnknown as Record<string, unknown>) : ({} as Record<string, unknown>);
+        const b = (jsonOk['body'] ?? jsonUnknown) as unknown;
+        if (b && typeof b === 'object' && 'data' in (b as Record<string, unknown>)) return (b as { data: unknown }).data as R;
+        return b as R;
+
+      } catch (e) {
+        lastError = e;
+
+        // Network errors are retryable
+        if (isRetryable(e) && attempt < RETRY_CONFIG.maxRetries) {
+          continue;
+        }
+
         throw e;
       }
-      const jsonOk = (jsonUnknown && typeof jsonUnknown === 'object') ? (jsonUnknown as Record<string, unknown>) : ({} as Record<string, unknown>);
-      const b = (jsonOk['body'] ?? jsonUnknown) as unknown;
-      if (b && typeof b === 'object' && 'data' in (b as Record<string, unknown>)) return (b as { data: unknown }).data as R;
-      return b as R;
-    } finally {
-      // Clean up inflight cache after request completes
-      if (isGet) inflightRequests.delete(url);
     }
+
+    // Should never reach here, but throw last error just in case
+    throw lastError;
   })();
 
   // Cache GET requests while inflight
-  if (isGet) inflightRequests.set(url, fetchPromise);
+  if (isGet) {
+    inflightRequests.set(url, fetchPromise);
+    // Clean up cache when promise resolves or rejects
+    fetchPromise.finally(() => inflightRequests.delete(url));
+  }
 
   return fetchPromise;
 }`;

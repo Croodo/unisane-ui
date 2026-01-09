@@ -604,10 +604,10 @@ retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
 - [x] P3.4 Add prefetch hooks (usePrefetch, usePrefetchPagination)
 - [x] P3.5 Fix wildcard exports (explicit exports in shared/index.ts)
 
-### Month 3+
-- [ ] P4.1 Add proxy.ts (Next.js 16+ pattern)
-- [ ] P4.2 Implement cache invalidation events
-- [ ] P4.3 Add automatic retry logic
+### Month 3+ ✅ COMPLETED
+- [x] P4.1 Add proxy.ts (Next.js 16+ pattern)
+- [x] P4.2 Implement cache invalidation events
+- [x] P4.3 Add automatic retry logic
 
 ---
 
