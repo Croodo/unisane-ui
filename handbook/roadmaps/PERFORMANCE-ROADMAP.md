@@ -599,10 +599,10 @@ retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
 - [x] P3.1 Add request deduplication (inflight request cache in SDK)
 - [x] P3.2 Configure MongoDB pool (connection settings with env vars)
 
-### Month 2 (In Progress)
+### Month 2 ✅ COMPLETED
 - [x] P3.3 Consolidate credits queries ($facet aggregation)
 - [x] P3.4 Add prefetch hooks (usePrefetch, usePrefetchPagination)
-- [ ] P3.5 Fix wildcard exports
+- [x] P3.5 Fix wildcard exports (explicit exports in shared/index.ts)
 
 ### Month 3+
 - [ ] P4.1 Add proxy.ts (Next.js 16+ pattern)
