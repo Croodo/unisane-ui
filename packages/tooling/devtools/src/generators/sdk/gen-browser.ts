@@ -247,6 +247,10 @@ async function ensureCsrfToken(): Promise<string | undefined> {
   } catch { return undefined; }
 }
 
+// Inflight request deduplication cache for GET requests
+// Prevents duplicate concurrent requests to the same URL
+const inflightRequests = new Map<string, Promise<unknown>>();
+
 async function doFetch<R>(
   method: string,
   path: string,
@@ -264,30 +268,50 @@ async function doFetch<R>(
     if (csrf) h[HEADER_NAMES.CSRF_TOKEN] = csrf;
   }
   const url = buildUrl(path, params, query);
-  const res = await fetch(url, {
-    method,
-    credentials: 'include',
-    headers: { 'content-type': 'application/json', ...h },
-    ...(typeof body !== 'undefined' ? { body: JSON.stringify(body) } : {}),
-  });
-  const status = res.status;
-  const jsonUnknown: unknown = await res.json().catch(() => undefined);
-  if (status >= 400) {
-    const jsonObj = (jsonUnknown && typeof jsonUnknown === 'object') ? (jsonUnknown as Record<string, unknown>) : {};
-    const errObj = (jsonObj['error'] as { code?: unknown; message?: unknown; requestId?: unknown; fields?: unknown } | undefined) ?? {};
-    const e: Error & { status?: number; code?: string; requestId?: string; fields?: unknown } = new Error(
-      typeof errObj?.message === 'string' ? (errObj.message as string) : 'HTTP_ERROR'
-    );
-    e.status = status;
-    if (typeof errObj?.code === 'string') e.code = errObj.code;
-    if (typeof errObj?.requestId === 'string') e.requestId = errObj.requestId as string;
-    if (typeof errObj?.fields !== 'undefined') e.fields = errObj.fields;
-    throw e;
+
+  // For GET requests, deduplicate concurrent identical requests
+  const isGet = method.toUpperCase() === 'GET';
+  if (isGet) {
+    const existing = inflightRequests.get(url);
+    if (existing) return existing as Promise<R>;
   }
-  const jsonOk = (jsonUnknown && typeof jsonUnknown === 'object') ? (jsonUnknown as Record<string, unknown>) : ({} as Record<string, unknown>);
-  const b = (jsonOk['body'] ?? jsonUnknown) as unknown;
-  if (b && typeof b === 'object' && 'data' in (b as Record<string, unknown>)) return (b as { data: unknown }).data as R;
-  return b as R;
+
+  const fetchPromise = (async () => {
+    try {
+      const res = await fetch(url, {
+        method,
+        credentials: 'include',
+        headers: { 'content-type': 'application/json', ...h },
+        ...(typeof body !== 'undefined' ? { body: JSON.stringify(body) } : {}),
+      });
+      const status = res.status;
+      const jsonUnknown: unknown = await res.json().catch(() => undefined);
+      if (status >= 400) {
+        const jsonObj = (jsonUnknown && typeof jsonUnknown === 'object') ? (jsonUnknown as Record<string, unknown>) : {};
+        const errObj = (jsonObj['error'] as { code?: unknown; message?: unknown; requestId?: unknown; fields?: unknown } | undefined) ?? {};
+        const e: Error & { status?: number; code?: string; requestId?: string; fields?: unknown } = new Error(
+          typeof errObj?.message === 'string' ? (errObj.message as string) : 'HTTP_ERROR'
+        );
+        e.status = status;
+        if (typeof errObj?.code === 'string') e.code = errObj.code;
+        if (typeof errObj?.requestId === 'string') e.requestId = errObj.requestId as string;
+        if (typeof errObj?.fields !== 'undefined') e.fields = errObj.fields;
+        throw e;
+      }
+      const jsonOk = (jsonUnknown && typeof jsonUnknown === 'object') ? (jsonUnknown as Record<string, unknown>) : ({} as Record<string, unknown>);
+      const b = (jsonOk['body'] ?? jsonUnknown) as unknown;
+      if (b && typeof b === 'object' && 'data' in (b as Record<string, unknown>)) return (b as { data: unknown }).data as R;
+      return b as R;
+    } finally {
+      // Clean up inflight cache after request completes
+      if (isGet) inflightRequests.delete(url);
+    }
+  })();
+
+  // Cache GET requests while inflight
+  if (isGet) inflightRequests.set(url, fetchPromise);
+
+  return fetchPromise;
 }`;
 }
 

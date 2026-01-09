@@ -23,6 +23,9 @@ const BaseEnvSchema = z.object({
   DB_PROVIDER: ZDbProvider.optional(),
   // Mongo
   MONGODB_URI: z.string().url().optional(),
+  // MongoDB connection pool tuning (optional, sensible defaults provided)
+  MONGODB_MAX_POOL_SIZE: z.coerce.number().int().positive().optional(),
+  MONGODB_MIN_POOL_SIZE: z.coerce.number().int().nonnegative().optional(),
   // MySQL (variant)
   MYSQL_URL: z.string().url().optional(),
   // MySQL connection variables (optional alternative to MYSQL_URL)

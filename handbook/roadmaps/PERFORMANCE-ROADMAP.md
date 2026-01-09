@@ -593,14 +593,14 @@ retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
 - [x] P2.2 Fix query key serialization (`stableKey()` function)
 - [x] P2.3 Implement granular invalidation (list/specific/domain strategies)
 
-### Week 3-4
-- [ ] P2.4 Add Next.js code splitting config
-- [ ] P2.5 Optimize useProcessedData hook
+### Week 3-4 ✅ COMPLETED
+- [x] P2.4 Add Next.js code splitting config (skipped - optimizePackageImports not needed)
+- [x] P2.5 Optimize useProcessedData hook (WeakMap row value cache)
+- [x] P3.1 Add request deduplication (inflight request cache in SDK)
+- [x] P3.2 Configure MongoDB pool (connection settings with env vars)
 
 ### Month 2
-- [ ] P3.1 Add request deduplication
-- [ ] P3.2 Consolidate credits queries
-- [ ] P3.3 Configure MongoDB pool
+- [ ] P3.3 Consolidate credits queries
 - [ ] P3.4 Add prefetch hooks
 - [ ] P3.5 Fix wildcard exports
 

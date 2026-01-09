@@ -68,8 +68,25 @@ export async function connectDb(): Promise<MongoClient> {
       }
 
       const client = new MongoClient(uri, {
+        // ─── CONNECTION POOL SETTINGS ─────────────────────────────────────
+        // Pool size tuning for typical SaaS workload
+        // Default is 100, which is often too high for serverless/edge environments
+        maxPoolSize: env.MONGODB_MAX_POOL_SIZE ?? 50,
+        minPoolSize: env.MONGODB_MIN_POOL_SIZE ?? 5,
+        // How long a connection can be idle before being closed (5 minutes)
+        maxIdleTimeMS: 300_000,
+        // Wait time for a connection from the pool (30 seconds)
+        waitQueueTimeoutMS: 30_000,
+
+        // ─── TIMEOUT SETTINGS ─────────────────────────────────────────────
         // Timeout set for serverless cold starts - 5 seconds is reasonable for Vercel/Lambda
         serverSelectionTimeoutMS: 5000,
+        // Socket timeout for operations (60 seconds for long-running queries)
+        socketTimeoutMS: 60_000,
+        // Connection timeout (10 seconds)
+        connectTimeoutMS: 10_000,
+
+        // ─── RETRY & RELIABILITY ──────────────────────────────────────────
         // Automatic retry on transient network failures
         retryWrites: true,
         retryReads: true,
@@ -79,6 +96,10 @@ export async function connectDb(): Promise<MongoClient> {
         // Default read concern: majority ensures we only read committed data
         // Prevents reading data that might be rolled back during failover
         readConcern: new ReadConcern("majority"),
+
+        // ─── COMPRESSION ──────────────────────────────────────────────────
+        // Enable compression for large payloads (reduce bandwidth)
+        compressors: ["zstd", "snappy", "zlib"],
       });
 
       await client.connect();

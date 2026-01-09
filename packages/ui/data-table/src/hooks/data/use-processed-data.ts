@@ -150,9 +150,31 @@ export function useProcessedData<T extends { id: string }>({
     // ─── BUILD COLUMN LOOKUP MAP (cached for performance) ─────────────────────
     // This prevents O(n) column lookups for each filter/sort operation
     const columnMap = new Map<string, Column<T>>();
+    const columnKeys: string[] = [];
     for (const col of columns) {
-      columnMap.set(String(col.key), col);
+      const key = String(col.key);
+      columnMap.set(key, col);
+      columnKeys.push(key);
     }
+
+    // ─── ROW VALUE CACHE ──────────────────────────────────────────────────────
+    // Cache extracted values per row to avoid repeated getNestedValue calls
+    // This is especially important when search, filter, and sort all access the same fields
+    const rowValueCache = new WeakMap<T, Map<string, unknown>>();
+
+    const getCachedValue = (row: T, key: string): unknown => {
+      let rowCache = rowValueCache.get(row);
+      if (!rowCache) {
+        rowCache = new Map();
+        rowValueCache.set(row, rowCache);
+      }
+      if (rowCache.has(key)) {
+        return rowCache.get(key);
+      }
+      const value = getNestedValue(row, key);
+      rowCache.set(key, value);
+      return value;
+    };
 
     // ─── SEARCH ───────────────────────────────────────────────────────────────
     if (debouncedSearchText.trim()) {
@@ -160,8 +182,8 @@ export function useProcessedData<T extends { id: string }>({
 
       result = result.filter((row) => {
         // Short-circuit: return true on first match
-        for (const col of columns) {
-          const value = getNestedValue(row, String(col.key));
+        for (const key of columnKeys) {
+          const value = getCachedValue(row, key);
           if (value === null || value === undefined) continue;
           if (String(value).toLowerCase().includes(searchLower)) {
             return true;
@@ -208,8 +230,8 @@ export function useProcessedData<T extends { id: string }>({
               continue;
             }
           } else {
-            // Default filtering logic
-            const cellValue = getNestedValue(row, key);
+            // Default filtering logic - use cached value
+            const cellValue = getCachedValue(row, key);
             if (!matchesFilter(cellValue, filterValue)) {
               return false;
             }
@@ -255,9 +277,9 @@ export function useProcessedData<T extends { id: string }>({
               comparison = 0;
             }
           } else {
-            // Default sorting by column value
-            const aValue = getNestedValue(a, key);
-            const bValue = getNestedValue(b, key);
+            // Default sorting by column value - use cached values
+            const aValue = getCachedValue(a, key);
+            const bValue = getCachedValue(b, key);
             comparison = compareValues(aValue, bValue);
           }
 
