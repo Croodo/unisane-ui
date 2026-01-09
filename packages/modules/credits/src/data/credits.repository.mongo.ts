@@ -236,6 +236,112 @@ export const CreditsRepoMongo: CreditsRepoPort = {
       otherGrants: row?.otherGrants ?? 0,
     };
   },
+  /**
+   * Combined aggregation for breakdown - returns totals AND grants by reason in a single query.
+   * Uses $facet to avoid two separate collection scans.
+   */
+  async totalsWithBreakdown(tenantId, now = new Date()) {
+    // Helper conditions for grant expiry check
+    const grantNotExpired = {
+      $and: [
+        { $eq: ['$kind', 'grant'] },
+        { $or: [{ $eq: ['$expiresAt', null] }, { $gt: ['$expiresAt', now] }] },
+      ],
+    };
+
+    const agg = await ledgerCol()
+      .aggregate<{
+        totals: Array<{ grants: number; burns: number }>;
+        byReason: Array<{ subscriptionGrants: number; topupGrants: number; otherGrants: number }>;
+      }>([
+        { $match: { tenantId } },
+        {
+          $facet: {
+            // First facet: total grants and burns
+            totals: [
+              {
+                $group: {
+                  _id: null,
+                  grants: {
+                    $sum: { $cond: [grantNotExpired, '$amount', 0] },
+                  },
+                  burns: {
+                    $sum: { $cond: [{ $eq: ['$kind', 'burn'] }, '$amount', 0] },
+                  },
+                },
+              },
+            ],
+            // Second facet: grants broken down by reason
+            byReason: [
+              {
+                $group: {
+                  _id: null,
+                  subscriptionGrants: {
+                    $sum: {
+                      $cond: [
+                        {
+                          $and: [
+                            grantNotExpired,
+                            { $regexMatch: { input: { $ifNull: ['$reason', ''] }, regex: /^subscription:/ } },
+                          ],
+                        },
+                        '$amount',
+                        0,
+                      ],
+                    },
+                  },
+                  topupGrants: {
+                    $sum: {
+                      $cond: [
+                        {
+                          $and: [
+                            grantNotExpired,
+                            { $regexMatch: { input: { $ifNull: ['$reason', ''] }, regex: /^(purchase(?::|$)|topup:)/ } },
+                          ],
+                        },
+                        '$amount',
+                        0,
+                      ],
+                    },
+                  },
+                  otherGrants: {
+                    $sum: {
+                      $cond: [
+                        {
+                          $and: [
+                            grantNotExpired,
+                            { $not: [{ $regexMatch: { input: { $ifNull: ['$reason', ''] }, regex: /^subscription:/ } }] },
+                            { $not: [{ $regexMatch: { input: { $ifNull: ['$reason', ''] }, regex: /^(purchase(?::|$)|topup:)/ } }] },
+                          ],
+                        },
+                        '$amount',
+                        0,
+                      ],
+                    },
+                  },
+                },
+              },
+            ],
+          },
+        },
+      ])
+      .toArray();
+
+    const totalsRow = agg[0]?.totals?.[0];
+    const byReasonRow = agg[0]?.byReason?.[0];
+
+    const grants = totalsRow?.grants ?? 0;
+    const burns = totalsRow?.burns ?? 0;
+
+    return {
+      grants,
+      burns,
+      available: grants - burns,
+      subscriptionGrants: byReasonRow?.subscriptionGrants ?? 0,
+      topupGrants: byReasonRow?.topupGrants ?? 0,
+      otherGrants: byReasonRow?.otherGrants ?? 0,
+    };
+  },
   async listLedgerPage(args) {
     type Row = { _id: unknown; kind?: CreditKind; amount?: number; reason?: string; feature?: FeatureKey | null; createdAt?: Date; expiresAt?: Date | null };
     const sortVec = [

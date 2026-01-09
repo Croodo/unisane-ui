@@ -1,6 +1,6 @@
 import {
   totalsAvailable,
-  totalsGrantsByReason,
+  totalsWithBreakdown,
 } from "../data/credits.repository";
 import type {
   CreditsBreakdown,
@@ -50,12 +50,16 @@ export async function invalidateBalanceCache(tenantId: string): Promise<void> {
 export async function breakdown(): Promise<CreditsBreakdown> {
   const tenantId = getTenantId();
   const now = new Date();
-  const { grants, burns, available } = await totalsAvailable(tenantId, now);
+
+  // Single aggregation query using $facet - avoids two separate collection scans
   const {
+    grants,
+    burns,
+    available,
     subscriptionGrants,
     topupGrants: rawTopupGrants,
     otherGrants: rawOtherGrants,
-  } = await totalsGrantsByReason(tenantId, now);
+  } = await totalsWithBreakdown(tenantId, now);
 
   const norm = (n: number) => (Number.isFinite(n) && n > 0 ? n : 0);
 

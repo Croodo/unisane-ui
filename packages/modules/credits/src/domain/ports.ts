@@ -8,5 +8,17 @@ export interface CreditsRepoPort {
   // Admin/stats: credits available grouped by tenantId
   getBalancesByTenantIds(tenantIds: string[], now?: Date): Promise<Map<string, number>>;
   totalsGrantsByReason(tenantId: string, now?: Date): Promise<{ subscriptionGrants: number; topupGrants: number; otherGrants: number }>;
+  /**
+   * Combined aggregation returning totals AND grants by reason in a single query.
+   * Uses $facet to avoid two separate collection scans - use for breakdown().
+   */
+  totalsWithBreakdown(tenantId: string, now?: Date): Promise<{
+    grants: number;
+    burns: number;
+    available: number;
+    subscriptionGrants: number;
+    topupGrants: number;
+    otherGrants: number;
+  }>;
   listLedgerPage(args: { tenantId: string; limit: number; cursor?: string }): Promise<{ rows: LedgerEntry[]; nextCursor?: string }>;
 }

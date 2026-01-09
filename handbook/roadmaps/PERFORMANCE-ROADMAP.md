@@ -599,8 +599,8 @@ retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
 - [x] P3.1 Add request deduplication (inflight request cache in SDK)
 - [x] P3.2 Configure MongoDB pool (connection settings with env vars)
 
-### Month 2
-- [ ] P3.3 Consolidate credits queries
+### Month 2 (In Progress)
+- [x] P3.3 Consolidate credits queries ($facet aggregation)
 - [ ] P3.4 Add prefetch hooks
 - [ ] P3.5 Fix wildcard exports
 

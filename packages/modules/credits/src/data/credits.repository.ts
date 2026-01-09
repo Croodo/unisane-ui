@@ -32,6 +32,24 @@ export async function totalsGrantsByReason(
   return repo.totalsGrantsByReason(tenantId, now);
 }
 
+/**
+ * Combined aggregation for breakdown - returns totals AND grants by reason in a single query.
+ * Uses $facet to avoid two separate collection scans.
+ */
+export async function totalsWithBreakdown(
+  tenantId: string,
+  now = new Date()
+): Promise<{
+  grants: number;
+  burns: number;
+  available: number;
+  subscriptionGrants: number;
+  topupGrants: number;
+  otherGrants: number;
+}> {
+  return repo.totalsWithBreakdown(tenantId, now);
+}
+
 export async function listLedgerPage(args: { tenantId: string; limit: number; cursor?: string }): Promise<{ rows: LedgerEntry[]; nextCursor?: string }>{
   return repo.listLedgerPage(args);
 }
