@@ -93,12 +93,28 @@ export async function genServer(options: GenServerOptions): Promise<void> {
   // Generate the serverApi factory function
   const serverApiFactory = generateServerApiFactory(groups);
 
+  // Helper function for filter encoding (inlined in generated file)
+  const filterEncoderHelper = `
+/** Base64url encode filters for URL safety (matches server expectation) */
+function encodeFilters(query: Record<string, unknown> | undefined): Record<string, unknown> | undefined {
+  if (!query || typeof query !== 'object') return query;
+  const filters = query.filters;
+  if (filters && typeof filters === 'object' && !Array.isArray(filters)) {
+    const json = JSON.stringify(filters);
+    const encoded = Buffer.from(json, 'utf8').toString('base64url');
+    return { ...query, filters: encoded };
+  }
+  return query;
+}`;
+
   const content = [
     headerComment,
     `import { createServerContracts } from '@/src/sdk/contracts';`,
     `import type { Contracts } from '@/src/sdk/contracts';`,
     `import type { ClientInferRequest, ClientInferResponseBody } from '@ts-rest/core';`,
     typeImports,
+    '',
+    filterEncoderHelper,
     '',
     typeHelpers,
     '',
@@ -373,8 +389,10 @@ function generateRouteImplementation(g: RouteGroup, r: AppRouteEntry, isAdmin: b
   (${targetPath} as Record<string, unknown>)['${opName}'] = async (...args: unknown[]) => {
     const first = args[0] as Record<string, unknown> | undefined;
     const isFull = first && typeof first === 'object' && (('params' in first) || ('query' in first) || ('body' in first));
-    let a = (isFull ? first : {}) as { params?: unknown; query?: unknown; body?: unknown };
+    let a = (isFull ? first : {}) as { params?: unknown; query?: Record<string, unknown>; body?: unknown };
     ${argParsing}
+    // Encode filters for URL safety before ts-rest serializes them
+    if (a.query) a.query = encodeFilters(a.query) as Record<string, unknown>;
     const fn = (client as any)['${g.name}']['${r.name}'] as (x?: object) => Promise<{ status?: number; body?: unknown }>;
     const res = await fn(a as object);
     const r0 = res as { status?: number; body?: unknown };

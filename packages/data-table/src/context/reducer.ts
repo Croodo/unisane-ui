@@ -293,11 +293,8 @@ export function dataTableReducer(
       return { ...state, columnWidths: {} };
 
     case "SET_COLUMN_PIN":
-      if (action.position === null) {
-        const next = { ...state.columnPinState };
-        delete next[action.key];
-        return { ...state, columnPinState: next };
-      }
+      // Always store the position (including null) - this ensures user override
+      // takes precedence over column definition's pinned value
       return {
         ...state,
         columnPinState: { ...state.columnPinState, [action.key]: action.position },

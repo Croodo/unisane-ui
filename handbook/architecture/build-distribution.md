@@ -6,6 +6,23 @@ This guide covers the build process, starter distribution, and OSS/PRO code stri
 
 ---
 
+## Implementation Status
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| Monorepo structure | **Implemented** | 30 packages, pnpm workspaces, Turbo |
+| Package builds | **Implemented** | tsup, ESM output, declarations |
+| Codegen (routes/sdk) | **Implemented** | @unisane/devtools |
+| `tools/release/` | **Not Implemented** | Design spec below |
+| `build-starter.ts` | **Not Implemented** | Design spec below |
+| Import transformation | **Not Implemented** | Design spec below |
+| OSS/PRO stripping | **Not Implemented** | Design spec below |
+| @unisane/cli | **Not Implemented** | Planned for user distribution |
+
+> **Note:** This document describes the **target architecture**. Sections marked "Not Implemented" represent design specifications for future development. The tooling will be built after core features are complete.
+
+---
+
 ## Table of Contents
 
 1. [Overview](#overview)
@@ -89,6 +106,9 @@ packages/ui/                            │   └── ui/
 
 ### Directory Structure
 
+> **Status:** The `tools/release/` directory is **planned but not yet implemented**. Codegen currently lives in `@unisane/devtools` package.
+
+**Planned structure:**
 ```
 tools/
 ├── release/
@@ -98,17 +118,26 @@ tools/
 │       ├── transform-imports.ts  # Import rewriting
 │       ├── copy-ui.ts            # UI component copying
 │       └── generate-package.ts   # package.json generation
-│
-└── codegen/
-    └── src/
-        ├── routes-gen.ts         # Route handler generation
-        ├── sdk-gen.ts            # SDK generation
-        └── types-gen.ts          # Type generation
+```
+
+**Currently implemented (in packages/devtools):**
+```
+packages/devtools/
+└── src/
+    ├── cli.ts                    # CLI entry point
+    ├── commands/
+    │   ├── routes/gen.ts         # Route handler generation
+    │   └── sdk/gen.ts            # SDK generation
+    └── generators/
+        ├── routes/               # Route templates
+        └── sdk/                  # SDK templates
 ```
 
 ---
 
 ## build-starter.ts Deep Dive
+
+> **Status: Not Implemented** — This section describes the planned design specification.
 
 ### Command
 

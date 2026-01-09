@@ -1,63 +1,89 @@
 import { notFound, redirect } from "next/navigation";
 import { createApi } from "@/src/sdk/server";
-import type { UsersAdminListResponse as AdminUsersList } from "@/src/sdk/types";
 import UsersClient from "./UsersClient";
-import { deriveAdminUserListQuery } from "@/src/sdk/registries/admin.users.grid";
+
+const DEFAULT_SORT = "-updatedAt";
+const DEFAULT_LIMIT = 25;
 
 export default async function AdminUsersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ cursor?: string; sort?: string; q?: string; filters?: string; limit?: string }>;
+  searchParams: Promise<{
+    cursor?: string;
+    sort?: string;
+    q?: string;
+    limit?: string;
+    page?: string;
+  }>;
 }) {
-  const { cursor, sort, q, filters, limit } = await searchParams;
-  const { query, uiFilters } = deriveAdminUserListQuery({
-    cursor: cursor ?? null,
-    sort: sort ?? null,
-    q: q ?? null,
-    filters: filters ?? null,
-    ...(limit ? { limit: Number(limit) } : {}),
-    defaults: { sort: "-updatedAt", limit: 25 },
-  });
+  const params = await searchParams;
+
+  // Build query from URL params
+  const currentSort = params.sort || DEFAULT_SORT;
+  const currentLimit = Math.min(Math.max(Number(params.limit) || DEFAULT_LIMIT, 1), 100);
+  const currentSearch = params.q || "";
+  // Page is tracked in URL for display purposes (cursor is source of truth for data)
+  const currentPage = Math.max(1, Number(params.page) || 1);
+
+  const query = {
+    sort: currentSort,
+    limit: currentLimit,
+    ...(params.cursor && { cursor: params.cursor }),
+    ...(currentSearch && { filters: { q: currentSearch } }),
+  };
+
   const api = await createApi();
 
-  let seed: AdminUsersList;
   try {
-    seed = await api.admin.users.list({ query });
+    // Fetch data and stats in parallel
+    // Stats API now supports filters for accurate filtered count
+    const statsFilters = currentSearch ? { filters: { q: currentSearch } } : undefined;
+    const [data, stats] = await Promise.all([
+      api.admin.users.list({ query }),
+      api.admin.users.stats(statsFilters).catch(() => undefined),
+    ]);
+
+    return (
+      <section className="py-6">
+        <UsersClient
+          data={data.items}
+          nextCursor={data.nextCursor}
+          prevCursor={data.prevCursor}
+          stats={stats}
+          currentSort={currentSort}
+          currentSearch={currentSearch}
+          currentLimit={currentLimit}
+          currentPage={currentPage}
+        />
+      </section>
+    );
   } catch (e) {
-    const status = (e as Error & { status?: number }).status;
-    const requestId = (e as Error & { requestId?: string }).requestId;
-    if (status === 401) return redirect(`/login?next=${encodeURIComponent("/admin")}`);
-    if (status === 403) return notFound();
-    if (status === 500) {
+    const err = e as Error & { status?: number; requestId?: string };
+
+    if (err.status === 401) {
+      return redirect(`/login?next=${encodeURIComponent("/admin/users")}`);
+    }
+    if (err.status === 403) {
+      return notFound();
+    }
+    if (err.status === 500) {
       return (
         <section className="py-6 space-y-3">
           <h2 className="text-lg font-semibold">Users</h2>
           <div className="rounded border bg-muted/30 p-4 text-sm">
             <div className="font-medium">Cannot load admin users.</div>
             <div className="mt-1 text-muted-foreground">
-              The server returned a 500 error. In local/dev, this usually means
-              the database isn’t reachable. Ensure MongoDB is running and
-              MONGODB_URI is set correctly.
+              Server error. Ensure MongoDB is running and MONGODB_URI is set.
             </div>
-            {requestId ? (
+            {err.requestId && (
               <div className="mt-2 text-muted-foreground">
-                Reference ID: <span className="font-mono">{requestId}</span>
+                Reference: <span className="font-mono">{err.requestId}</span>
               </div>
-            ) : null}
+            )}
           </div>
         </section>
       );
     }
     throw e;
   }
-  return (
-    <section className="py-6">
-      <UsersClient
-        initial={seed}
-        sort={query.sort as string}
-        limit={query.limit}
-        initialFilters={uiFilters}
-      />
-    </section>
-  );
 }

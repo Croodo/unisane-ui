@@ -1,122 +1,443 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import * as DialogPrimitive from "@radix-ui/react-dialog"
-import { X } from "lucide-react"
+import React, { useEffect, useRef, useId, forwardRef } from "react";
+import { cn } from "@/src/lib/utils";
+import { Text } from "@/src/primitives/text";
+import { Surface } from "@/src/primitives/surface";
+import { Ripple } from "./ripple";
+import { useScrollLock } from "@/src/hooks/use-scroll-lock";
 
-import { cn } from "@/lib/utils"
-
-const Dialog = DialogPrimitive.Root
-
-const DialogTrigger = DialogPrimitive.Trigger
-
-const DialogPortal = DialogPrimitive.Portal
-
-const DialogClose = DialogPrimitive.Close
-
-const DialogOverlay = React.forwardRef<
-  React.ElementRef<typeof DialogPrimitive.Overlay>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
->(({ className, ...props }, ref) => (
-  <DialogPrimitive.Overlay
-    ref={ref}
-    className={cn(
-      "fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
-      className
-    )}
-    {...props}
-  />
-))
-DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
-
-const DialogContent = React.forwardRef<
-  React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => (
-  <DialogPortal>
-    <DialogOverlay />
-    <DialogPrimitive.Content
-      ref={ref}
-      className={cn(
-        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",
-        className
-      )}
-      {...props}
-    >
-      {children}
-      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
-        <X className="h-4 w-4" />
-        <span className="sr-only">Close</span>
-      </DialogPrimitive.Close>
-    </DialogPrimitive.Content>
-  </DialogPortal>
-))
-DialogContent.displayName = DialogPrimitive.Content.displayName
-
-const DialogHeader = ({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) => (
-  <div
-    className={cn(
-      "flex flex-col space-y-1.5 text-center sm:text-left",
-      className
-    )}
-    {...props}
-  />
-)
-DialogHeader.displayName = "DialogHeader"
-
-const DialogFooter = ({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) => (
-  <div
-    className={cn(
-      "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2",
-      className
-    )}
-    {...props}
-  />
-)
-DialogFooter.displayName = "DialogFooter"
-
-const DialogTitle = React.forwardRef<
-  React.ElementRef<typeof DialogPrimitive.Title>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>
->(({ className, ...props }, ref) => (
-  <DialogPrimitive.Title
-    ref={ref}
-    className={cn(
-      "text-lg font-semibold leading-none tracking-tight",
-      className
-    )}
-    {...props}
-  />
-))
-DialogTitle.displayName = DialogPrimitive.Title.displayName
-
-const DialogDescription = React.forwardRef<
-  React.ElementRef<typeof DialogPrimitive.Description>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description>
->(({ className, ...props }, ref) => (
-  <DialogPrimitive.Description
-    ref={ref}
-    className={cn("text-sm text-muted-foreground", className)}
-    {...props}
-  />
-))
-DialogDescription.displayName = DialogPrimitive.Description.displayName
-
-export {
-  Dialog,
-  DialogPortal,
-  DialogOverlay,
-  DialogClose,
-  DialogTrigger,
-  DialogContent,
-  DialogHeader,
-  DialogFooter,
-  DialogTitle,
-  DialogDescription,
+export interface DialogProps {
+  open: boolean;
+  onClose: () => void;
+  title?: string;
+  children: React.ReactNode;
+  actions?: React.ReactNode;
+  icon?: React.ReactNode;
+  contentClassName?: string | undefined;
+  className?: string | undefined;
 }
+
+export const ControlledDialog = forwardRef<HTMLDivElement, DialogProps>(
+  (
+    {
+      open,
+      onClose,
+      title,
+      children,
+      actions,
+      icon,
+      contentClassName,
+      className,
+    },
+    ref
+  ) => {
+    const dialogRef = useRef<HTMLDivElement>(null);
+    const previousActiveElement = useRef<HTMLElement | null>(null);
+    const titleId = useId();
+    const descId = useId();
+    const setRefs = (node: HTMLDivElement | null) => {
+      dialogRef.current = node;
+      if (typeof ref === "function") {
+        ref(node);
+      } else if (ref) {
+        ref.current = node;
+      }
+    };
+
+    // Lock body scroll while preventing layout shift
+    useScrollLock(open);
+
+    useEffect(() => {
+      if (open) {
+        const dialogNode = dialogRef.current;
+        previousActiveElement.current = document.activeElement as HTMLElement;
+
+        const getFocusableElements = () => {
+          if (!dialogNode) return [];
+          return Array.from(
+            dialogNode.querySelectorAll<HTMLElement>(
+              'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+            )
+          ).filter((el) => !el.hasAttribute("disabled") && !el.getAttribute("aria-hidden"));
+        };
+
+        const focusFirstElement = () => {
+          const focusables = getFocusableElements();
+          (focusables[0] ?? dialogNode)?.focus();
+        };
+
+        const timer = setTimeout(focusFirstElement, 0);
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+          if (e.key === "Escape") {
+            onClose();
+          }
+          if (e.key === "Tab") {
+            const focusables = getFocusableElements();
+            if (focusables.length === 0) {
+              e.preventDefault();
+              return;
+            }
+
+            const first = focusables[0];
+            const last = focusables[focusables.length - 1];
+            const activeElement = document.activeElement as HTMLElement | null;
+            if (!first || !last) {
+              e.preventDefault();
+              return;
+            }
+
+            if (e.shiftKey) {
+              if (activeElement === first || activeElement === dialogNode) {
+                e.preventDefault();
+                last.focus();
+              }
+            } else if (activeElement === last) {
+              e.preventDefault();
+              first.focus();
+            }
+          }
+        };
+
+        document.addEventListener("keydown", handleKeyDown);
+
+        return () => {
+          clearTimeout(timer);
+          document.removeEventListener("keydown", handleKeyDown);
+          previousActiveElement.current?.focus();
+        };
+      }
+    }, [open, onClose]);
+
+    if (!open) return null;
+
+    return (
+      <div
+        className="fixed inset-0 z-modal flex items-center justify-center p-6 medium:p-10"
+        role="presentation"
+      >
+        <div
+          className="absolute inset-0 bg-scrim backdrop-blur-[calc(var(--unit)/2)] transition-opacity animate-in fade-in duration-medium"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+
+        <Surface
+          ref={setRefs}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
+          aria-describedby={descId}
+          tabIndex={-1}
+          tone="surface"
+          elevation={4}
+          rounded="sm"
+          className={cn(
+            "relative outline-none w-full min-w-70 max-w-78 expanded:max-w-170 flex flex-col border border-outline-variant overflow-hidden",
+            "animate-in fade-in zoom-in-95 duration-medium ease-emphasized",
+            className
+          )}
+        >
+          <div className="px-6 py-6 border-b border-outline-variant/10 flex items-center justify-between bg-surface-container-low/50 shrink-0">
+             <div className="flex items-center gap-4 text-left">
+                {icon && <div className="text-primary flex items-center justify-center shrink-0" aria-hidden="true">{icon}</div>}
+                <div className="flex flex-col gap-1">
+                  {title && (
+                    <Text
+                      variant="titleMedium"
+                      id={titleId}
+                      className="text-on-surface leading-none"
+                    >
+                      {title}
+                    </Text>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={onClose}
+                className="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-variant transition-all relative overflow-hidden shrink-0"
+                aria-label="Close dialog"
+              >
+                  <Ripple />
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="relative z-10">
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  </svg>
+              </button>
+          </div>
+
+          <div className={cn("flex-1 overflow-y-auto max-h-[75vh]", contentClassName)}>
+               <div className="text-on-surface p-6 text-left">
+                  <Text
+                    variant="bodyMedium"
+                    id={descId}
+                    as="div"
+                    className="text-inherit wrap-break-word font-medium"
+                  >
+                    {children}
+                  </Text>
+               </div>
+          </div>
+
+            {actions && (
+              <div
+                className="flex flex-col medium:flex-row justify-end gap-3 w-full p-6 border-t border-outline-variant/10 bg-surface-container-low/30"
+              >
+                {actions}
+              </div>
+            )}
+        </Surface>
+      </div>
+    );
+  }
+);
+
+ControlledDialog.displayName = "ControlledDialog";
+
+// ─── SHADCN COMPATIBILITY LAYER ────────────────────────────────────────────────
+// These components provide shadcn-style uncontrolled Dialog API
+
+const DialogContext = React.createContext<{
+  open: boolean;
+  setOpen: (open: boolean) => void;
+} | null>(null);
+
+/**
+ * Shadcn-compatible Dialog root that manages its own state.
+ * Use with DialogTrigger and DialogContent.
+ */
+export interface ShadcnDialogProps {
+  children: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  defaultOpen?: boolean;
+}
+
+export const ShadcnDialog: React.FC<ShadcnDialogProps> = ({
+  children,
+  open: controlledOpen,
+  onOpenChange,
+  defaultOpen = false,
+}) => {
+  const [internalOpen, setInternalOpen] = React.useState(defaultOpen);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = React.useCallback(
+    (value: boolean) => {
+      if (!isControlled) {
+        setInternalOpen(value);
+      }
+      onOpenChange?.(value);
+    },
+    [isControlled, onOpenChange]
+  );
+
+  return (
+    <DialogContext.Provider value={{ open, setOpen }}>
+      {children}
+    </DialogContext.Provider>
+  );
+};
+
+export const DialogTrigger: React.FC<{
+  children: React.ReactNode;
+  asChild?: boolean;
+  className?: string;
+}> = ({ children, asChild, className }) => {
+  const context = React.useContext(DialogContext);
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    context?.setOpen(true);
+  };
+
+  if (asChild && React.isValidElement(children)) {
+    return React.cloneElement(children as React.ReactElement<{ onClick?: (e: React.MouseEvent) => void }>, {
+      onClick: (e: React.MouseEvent) => {
+        handleClick(e);
+        // Call original onClick if present
+        const originalOnClick = (children as React.ReactElement<{ onClick?: (e: React.MouseEvent) => void }>).props.onClick;
+        if (originalOnClick) originalOnClick(e);
+      },
+    });
+  }
+
+  return (
+    <button type="button" onClick={handleClick} className={className}>
+      {children}
+    </button>
+  );
+};
+
+export interface DialogContentProps extends React.HTMLAttributes<HTMLDivElement> {
+  children: React.ReactNode;
+}
+
+export const DialogContent: React.FC<DialogContentProps> = ({
+  children,
+  className,
+  ...props
+}) => {
+  const context = React.useContext(DialogContext);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const previousActiveElement = useRef<HTMLElement | null>(null);
+  const titleId = useId();
+  const descId = useId();
+
+  // Lock body scroll while preventing layout shift
+  useScrollLock(context?.open ?? false);
+
+  useEffect(() => {
+    if (context?.open) {
+      const dialogNode = dialogRef.current;
+      previousActiveElement.current = document.activeElement as HTMLElement;
+
+      const getFocusableElements = () => {
+        if (!dialogNode) return [];
+        return Array.from(
+          dialogNode.querySelectorAll<HTMLElement>(
+            'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+          )
+        ).filter((el) => !el.hasAttribute("disabled") && !el.getAttribute("aria-hidden"));
+      };
+
+      const focusFirstElement = () => {
+        const focusables = getFocusableElements();
+        (focusables[0] ?? dialogNode)?.focus();
+      };
+
+      const timer = setTimeout(focusFirstElement, 0);
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Escape") {
+          context?.setOpen(false);
+        }
+        if (e.key === "Tab") {
+          const focusables = getFocusableElements();
+          if (focusables.length === 0) {
+            e.preventDefault();
+            return;
+          }
+
+          const first = focusables[0];
+          const last = focusables[focusables.length - 1];
+          const activeElement = document.activeElement as HTMLElement | null;
+          if (!first || !last) {
+            e.preventDefault();
+            return;
+          }
+
+          if (e.shiftKey) {
+            if (activeElement === first || activeElement === dialogNode) {
+              e.preventDefault();
+              last.focus();
+            }
+          } else if (activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+      };
+
+      document.addEventListener("keydown", handleKeyDown);
+
+      return () => {
+        clearTimeout(timer);
+        document.removeEventListener("keydown", handleKeyDown);
+        previousActiveElement.current?.focus();
+      };
+    }
+  }, [context?.open, context?.setOpen]);
+
+  if (!context?.open) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-modal flex items-center justify-center p-6 medium:p-10"
+      role="presentation"
+    >
+      <div
+        className="absolute inset-0 bg-scrim backdrop-blur-[calc(var(--unit)/2)] transition-opacity animate-in fade-in duration-medium"
+        onClick={() => context?.setOpen(false)}
+        aria-hidden="true"
+      />
+
+      <Surface
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={descId}
+        tabIndex={-1}
+        tone="surface"
+        elevation={4}
+        rounded="sm"
+        className={cn(
+          "relative outline-none w-full min-w-70 max-w-78 expanded:max-w-170 flex flex-col border border-outline-variant overflow-hidden",
+          "animate-in fade-in zoom-in-95 duration-medium ease-emphasized",
+          className
+        )}
+        {...props}
+      >
+        {children}
+      </Surface>
+    </div>
+  );
+};
+
+export const DialogHeader: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
+  children,
+  className,
+  ...props
+}) => (
+  <div className={cn("flex flex-col gap-2 p-6", className)} {...props}>
+    {children}
+  </div>
+);
+
+export const DialogFooter: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
+  children,
+  className,
+  ...props
+}) => (
+  <div
+    className={cn("flex flex-col-reverse medium:flex-row medium:justify-end medium:gap-3 p-6 pt-0", className)}
+    {...props}
+  >
+    {children}
+  </div>
+);
+
+export const DialogTitle: React.FC<React.HTMLAttributes<HTMLHeadingElement>> = ({
+  children,
+  className,
+  id,
+}) => (
+  <Text
+    variant="titleMedium"
+    as="h2"
+    className={cn("text-on-surface leading-none", className)}
+    id={id}
+  >
+    {children}
+  </Text>
+);
+
+export const DialogDescription: React.FC<React.HTMLAttributes<HTMLParagraphElement>> = ({
+  children,
+  className,
+  id,
+}) => (
+  <Text
+    variant="bodyMedium"
+    as="p"
+    className={cn("text-on-surface-variant", className)}
+    id={id}
+  >
+    {children}
+  </Text>
+);
+
+// Export ShadcnDialog as Dialog for shadcn compatibility
+// The ControlledDialog is still available for controlled usage
+export { ShadcnDialog as Dialog };

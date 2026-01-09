@@ -1,11 +1,7 @@
 "use client";
 import { useMemo } from "react";
-import {
-  DataTable,
-  RowDetailSection,
-  KeyValueRow,
-  type Column,
-} from "@/src/components/datatable";
+import { DataTable, type Column } from "@unisane/data-table";
+import { RowDetailSection, KeyValueRow } from "@/src/components/shared";
 import { hooks } from "@/src/sdk/hooks";
 import type { AuditListItem } from "@/src/sdk/types";
 import { PageHeader } from "@/src/context/usePageHeader";
@@ -231,12 +227,10 @@ export default function AuditClient() {
           data={dataset}
           columns={columns}
           title="Recent Activity"
-          isLoading={isLoading}
-          onRefresh={() => query.refetch?.()}
+          loading={isLoading}
           tableId="tenant-audit-ga"
-          variant="log"
-          onRowClick={openItem}
-          activeRowId={activeItemId}
+          callbacks={{ onRowClick: openItem }}
+          {...(activeItemId ? { activeRowId: activeItemId } : {})}
         />
       )}
     </>

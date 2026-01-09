@@ -7,8 +7,8 @@ import { useSession } from "@/src/hooks/useSession";
 import { toast } from "sonner";
 import { normalizeError } from "@/src/sdk/errors";
 import { hooks } from "@/src/sdk/hooks";
-import { DataTable } from "@/src/components/datatable/DataTable";
-import type { Column } from "@/src/components/datatable/types";
+import { DataTable } from "@unisane/data-table";
+import type { Column } from "@unisane/data-table";
 import {
   UserPlus,
   ShieldCheck,
@@ -222,7 +222,7 @@ export function TeamClient() {
       {
         key: "actions",
         header: "",
-        align: "right",
+        align: "end",
         width: 120,
         render: (row) => {
           const memberIsAdmin = isAdmin(row);
@@ -320,8 +320,7 @@ export function TeamClient() {
           data={items}
           columns={columns}
           title="Members"
-          isLoading={isLoading}
-          onRefresh={() => void membershipsQuery.refetch()}
+          loading={isLoading}
           tableId="tenant-team"
         />
       )}

@@ -126,8 +126,7 @@ export function HeaderCell<T>({
         isSortable && "cursor-pointer select-none hover:bg-surface-container-low",
         // Draggable cursor when reorderable
         dragProps?.draggable && "cursor-grab active:cursor-grabbing",
-        // Pinned columns: sticky positioning with higher z-index to stay above non-pinned
-        // Only enable sticky on tablet+ (≥768px container width) - mobile scrolls everything together
+        // Pinned columns: sticky positioning with higher z-index to stay above non-pinned (only on tablet+)
         // Non-pinned columns get z-0 to ensure they stack below pinned columns (z-20)
         // Pinned columns use isolate to create proper stacking context
         pinPosition ? "@md:sticky z-20 isolate" : "z-0",

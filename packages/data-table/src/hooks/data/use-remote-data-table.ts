@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useRef } from "react";
 import type { FilterState, SortDirection, CursorPagination } from "../../types";
 
 // ─── TYPES ─────────────────────────────────────────────────────────────────
@@ -110,7 +110,7 @@ export interface UseRemoteDataTableReturn<T> {
 
   // Pagination
   cursorPagination: CursorPagination;
-  totalItems?: number;
+  totalCount?: number;
 }
 
 // ─── HOOK ───────────────────────────────────────────────────────────────────
@@ -176,38 +176,76 @@ export function useRemoteDataTable<T extends { id: string }>({
 }: UseRemoteDataTableOptions<T>): UseRemoteDataTableReturn<T> {
   const [refreshing, setRefreshing] = useState(false);
 
+  // ─── TRACK LAST VALID DATA ────────────────────────────────────────────────
+  // Store the last valid data to prevent falling back to initialData during loading.
+  // This ensures that when query key changes (e.g., search), we don't show stale SSR data.
+  const lastValidDataRef = useRef<T[] | null>(null);
+  const lastValidCursorsRef = useRef<{ next?: string; prev?: string } | null>(null);
+
   // ─── EXTRACT DATA ──────────────────────────────────────────────────────────
+  // Priority order:
+  // 1. Current query.data (if available)
+  // 2. Last valid data from previous queries (if we've loaded data before)
+  // 3. initialData (only for first SSR render before any query completes)
 
   const data = useMemo<T[]>(() => {
     const queryData = query.data;
-    const fallbackData = initialData;
 
-    // Handle array response
-    if (Array.isArray(queryData)) return queryData;
-    if (Array.isArray(fallbackData)) return fallbackData;
+    // If query has data, use it and store as last valid
+    if (queryData !== undefined && queryData !== null) {
+      const extracted = Array.isArray(queryData)
+        ? queryData
+        : (queryData.items ?? []) as T[];
+      // Store for future reference (outside useMemo to avoid stale closure)
+      lastValidDataRef.current = extracted;
+      return extracted;
+    }
 
-    // Handle paginated response { items, nextCursor, prevCursor }
-    return (queryData?.items ?? fallbackData?.items ?? []) as T[];
+    // If we have previously loaded data, use it (prevents fallback to SSR data during loading)
+    if (lastValidDataRef.current !== null) {
+      return lastValidDataRef.current;
+    }
+
+    // First render only: use initialData for SSR hydration
+    if (initialData !== undefined) {
+      const extracted = Array.isArray(initialData)
+        ? initialData
+        : (initialData.items ?? []) as T[];
+      return extracted;
+    }
+
+    return [];
   }, [query.data, initialData]);
 
   // ─── EXTRACT CURSORS ───────────────────────────────────────────────────────
 
   const cursors = useMemo<{ next?: string; prev?: string }>(() => {
     const queryData = query.data;
-    const fallbackData = initialData;
 
-    if (Array.isArray(queryData) || Array.isArray(fallbackData)) {
-      return {};
+    // If query has data, use its cursors
+    if (queryData !== undefined && queryData !== null && !Array.isArray(queryData)) {
+      const extracted = {
+        ...(queryData.nextCursor ? { next: queryData.nextCursor } : {}),
+        ...(queryData.prevCursor ? { prev: queryData.prevCursor } : {}),
+      };
+      lastValidCursorsRef.current = extracted;
+      return extracted;
     }
 
-    const result: { next?: string; prev?: string } = {};
-    const nextCursor = queryData?.nextCursor ?? fallbackData?.nextCursor;
-    const prevCursor = queryData?.prevCursor ?? fallbackData?.prevCursor;
+    // If we have previously loaded cursors, use them
+    if (lastValidCursorsRef.current !== null) {
+      return lastValidCursorsRef.current;
+    }
 
-    if (nextCursor) result.next = nextCursor;
-    if (prevCursor) result.prev = prevCursor;
+    // Fallback to initialData cursors for SSR
+    if (initialData !== undefined && !Array.isArray(initialData)) {
+      return {
+        ...(initialData.nextCursor ? { next: initialData.nextCursor } : {}),
+        ...(initialData.prevCursor ? { prev: initialData.prevCursor } : {}),
+      };
+    }
 
-    return result;
+    return {};
   }, [query.data, initialData]);
 
   // ─── LOADING STATES ────────────────────────────────────────────────────────
@@ -264,7 +302,7 @@ export function useRemoteDataTable<T extends { id: string }>({
     // Pagination
     cursorPagination,
     ...(statsQuery?.data?.total !== undefined
-      ? { totalItems: statsQuery.data.total }
+      ? { totalCount: statsQuery.data.total }
       : {}),
   };
 }

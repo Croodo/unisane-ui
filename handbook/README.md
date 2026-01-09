@@ -9,16 +9,21 @@ Complete documentation for the Unisane platform and UI design system.
 ```
 handbook/
 ├── architecture/           # Platform architecture (SaasKit, modules, etc.)
-│   ├── README.md           # Overview
+│   ├── README.md           # Architecture index
 │   ├── ARCHITECTURE.md     # Full specification (authoritative)
-│   └── QUICK-REFERENCE.md  # Cheat sheet
+│   ├── implementation-status.md  # What's built vs planned
+│   └── ...                 # 15+ detailed docs
+│
+├── roadmaps/               # Development roadmaps
+│   ├── README.md           # Roadmaps index
+│   ├── MASTER-ROADMAP.md   # Overall vision & phases
+│   ├── centralization-plan.md  # Architecture consolidation
+│   └── server-table-state.md   # DataTable patterns
 │
 ├── design-system/          # UI component library
 │   ├── README.md           # Design system overview
 │   ├── 01-getting-started.md
-│   ├── 02-utilities.md
-│   ├── ... (16 component docs)
-│   └── 16-pagination-rating.md
+│   └── ... (16 component docs)
 │
 └── guides/                 # How-to guides
     └── quick-start.md      # UI library quick start
@@ -28,14 +33,25 @@ handbook/
 
 ## Quick Navigation
 
-### Platform Architecture
+### Roadmaps (What to Build)
+
+Planning work or understanding priorities?
+
+| Document | Description |
+|----------|-------------|
+| [Master Roadmap](./roadmaps/MASTER-ROADMAP.md) | Overall vision, phases, priorities |
+| [Centralization Plan](./roadmaps/centralization-plan.md) | Architecture consolidation tasks |
+| [Server Table State](./roadmaps/server-table-state.md) | DataTable implementation plan |
+
+### Platform Architecture (How Things Work)
 
 Building SaasKit or working with business modules?
 
 | Document | Description |
 |----------|-------------|
-| [Architecture Overview](./architecture/README.md) | Platform architecture summary |
+| [Architecture Overview](./architecture/README.md) | Platform architecture index |
 | [Full Specification](./architecture/ARCHITECTURE.md) | Complete architecture (authoritative) |
+| [Implementation Status](./architecture/implementation-status.md) | What's built vs planned |
 | [Quick Reference](./architecture/QUICK-REFERENCE.md) | Patterns cheat sheet |
 
 ### Design System (UI)
@@ -107,11 +123,26 @@ await events.emit('billing.subscription.created', { ... });
 
 | Section | Status | Last Updated |
 |---------|--------|--------------|
-| Architecture | Authoritative | 2025-01-06 |
+| Roadmaps | Active | 2026-01-09 |
+| Architecture | Authoritative | 2026-01-09 |
 | Design System | Complete | 2025-12-27 |
 | Guides | Active | 2025-12-27 |
 
 ---
 
+## Where to Start
+
+| I want to... | Read this |
+|--------------|-----------|
+| Understand overall direction | [Master Roadmap](./roadmaps/MASTER-ROADMAP.md) |
+| Check what's built vs planned | [Implementation Status](./architecture/implementation-status.md) |
+| Understand the architecture | [ARCHITECTURE.md](./architecture/ARCHITECTURE.md) |
+| Work on architecture improvements | [Centralization Plan](./roadmaps/centralization-plan.md) |
+| Work on DataTable pages | [Server Table State](./roadmaps/server-table-state.md) |
+| Use UI components | [Design System](./design-system/README.md) |
+
+---
+
 **Maintainer:** Unisane Team
-**Version:** 2.0
+**Version:** 2.1
+**Last Updated:** 2026-01-09

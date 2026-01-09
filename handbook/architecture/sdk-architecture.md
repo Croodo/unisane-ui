@@ -6,6 +6,38 @@ This guide covers the SDK architecture, multi-platform client generation, OpenAP
 
 ---
 
+## Implementation Status
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| Browser client | **Implemented** | `@unisane/devtools sdk:gen` |
+| Server client | **Implemented** | `@unisane/devtools sdk:gen` |
+| TypeScript types | **Implemented** | `@unisane/devtools sdk:gen` |
+| React Query hooks | **Implemented** | `@unisane/devtools sdk:gen` |
+| Admin list params hooks | **Implemented** | `@unisane/devtools sdk:gen --admin-hooks` |
+| Grid registries | **Implemented** | `@unisane/devtools sdk:gen --admin-hooks` |
+| Vue composables | **Implemented** | `@unisane/devtools sdk:gen --vue` |
+| Zod schemas | **Implemented** | `@unisane/devtools sdk:gen --zod` |
+| OpenAPI generation | **Not Implemented** | Planned in devtools |
+| Cache invalidation | **Implemented** | Via react-query keys |
+
+### Codegen Command
+
+All SDK generation is handled by `@unisane/devtools`:
+
+```bash
+# Generate all SDK targets (including admin hooks)
+pnpm devtools sdk:gen
+
+# Generate specific targets
+pnpm devtools sdk:gen --hooks           # React Query hooks only
+pnpm devtools sdk:gen --admin-hooks     # Admin list params hooks only
+pnpm devtools sdk:gen --types           # TypeScript types only
+pnpm devtools sdk:gen --dry-run         # Preview without writing
+```
+
+---
+
 ## Key Principle: 100% Auto-Generated
 
 **The SDK directory is entirely auto-generated. No hand-written files allowed.**

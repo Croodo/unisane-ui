@@ -2,10 +2,10 @@
 
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { Button } from '@/src/components/ui/button';
-import { Label } from '@/src/components/ui/label';
-import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '@/src/components/ui/input-group';
-import { Alert, AlertDescription } from '@/src/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '@/components/ui/input-group';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import Link from 'next/link';
 import { CheckCircle2, LogIn, Eye, EyeOff, ArrowLeft, Lock } from 'lucide-react';
 

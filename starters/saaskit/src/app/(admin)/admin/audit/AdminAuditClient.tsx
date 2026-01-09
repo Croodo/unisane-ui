@@ -10,12 +10,8 @@ import {
   ArrowRight,
   Globe,
 } from "lucide-react";
-import {
-  DataTable,
-  RowDetailSection,
-  KeyValueRow,
-  type Column,
-} from "@/src/components/datatable";
+import { DataTable, type Column } from "@unisane/data-table";
+import { RowDetailSection, KeyValueRow } from "@/src/components/shared";
 import { Badge } from "@/src/components/ui/badge";
 import { hooks } from "@/src/sdk/hooks/generated/hooks";
 import { type AuditAdminListItem } from "@/src/sdk/types";
@@ -232,13 +228,11 @@ export function AdminAuditClient() {
       data={items}
       columns={columns}
       title="Audit Logs"
-      isLoading={isLoading}
-      onRefresh={() => refetch()}
+      loading={isLoading}
       tableId="admin-audit"
-      variant="log"
-      searchable
-      onRowClick={openItem}
-      activeRowId={activeItemId}
+      features={{ search: true }}
+      callbacks={{ onRowClick: (row) => openItem(row) }}
+      {...(activeItemId ? { activeRowId: activeItemId } : {})}
     />
   );
 }

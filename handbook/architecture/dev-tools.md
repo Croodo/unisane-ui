@@ -1,9 +1,97 @@
 # Development Tools Configuration
 
-> **Status:** AUTHORITATIVE
-> **Last Updated:** 2025-01-06
+> **Status:** Current
+> **Last Updated:** 2026-01-09
 
 Complete specification for all development tools in the Unisane monorepo.
+
+---
+
+## CLI Ecosystem Architecture
+
+The Unisane ecosystem has **two distinct CLI packages** that serve different purposes:
+
+| Package | Binary | Purpose | Audience |
+|---------|--------|---------|----------|
+| `@unisane/cli` | `unisane` | UI component management | App developers |
+| `@unisane/devtools` | `unisane-devtools` | Code generation & ops | Framework developers |
+
+### Why Two Separate CLIs?
+
+| Factor | @unisane/cli | @unisane/devtools |
+|--------|--------------|-------------------|
+| **Primary User** | App developers consuming UI | Framework maintainers |
+| **Publishing** | npm public | Internal/workspace only |
+| **Dependencies** | Minimal (fs, prompts) | Heavy (ts-morph, mongodb) |
+| **Execution Context** | Any project | Only inside starters |
+| **Update Frequency** | Stable, versioned | Iterates with contracts |
+
+### @unisane/cli (`unisane`)
+```bash
+# Used by any developer installing Unisane components
+npx @unisane/cli init              # Initialize new project
+npx @unisane/cli add button card   # Add UI components
+npx @unisane/cli diff              # Check for component updates
+npx @unisane/cli doctor            # Verify installation
+```
+
+### @unisane/devtools (`unisane-devtools`)
+```bash
+# Used only inside starter projects (saaskit, etc.)
+pnpm devtools routes:gen           # Generate API routes
+pnpm devtools sdk:gen              # Generate SDK
+pnpm devtools db:query tenants     # Query database
+pnpm devtools billing:seed-stripe  # Setup Stripe
+```
+
+### Dependency Contrast
+
+```
+@unisane/cli dependencies:
+├── commander        (CLI)
+├── chalk           (colors)
+├── ora             (spinners)
+├── prompts         (interactive)
+└── fs-extra        (files)
+Total: ~500KB
+
+@unisane/devtools dependencies:
+├── commander        (CLI)
+├── chalk           (colors)
+├── ora             (spinners)
+├── ts-morph        (AST parsing - 15MB!)
+├── mongodb         (database)
+├── stripe          (billing)
+├── chokidar        (watch)
+├── express         (openapi:serve)
+├── swagger-ui-express
+└── @unisane/kernel (peer)
+Total: ~20MB+
+```
+
+Combining them would force `ts-morph` and `mongodb` on users who just want UI components.
+
+---
+
+## Implementation Status
+
+> **Note:** This document describes the **target architecture**. Some tools are planned but not implemented.
+
+| Tool | Status | Notes |
+|------|--------|-------|
+| @unisane/eslint-config | **Implemented** | packages/eslint-config |
+| @unisane/typescript-config | **Implemented** | packages/typescript-config |
+| @unisane/tailwind-config | **Implemented** | packages/tailwind-config |
+| @unisane/prettier-config | **Not Implemented** | Planned |
+| @unisane/vitest-config | **Not Implemented** | Planned |
+| @unisane/tsup-config | **Not Implemented** | Planned |
+| @unisane/devtools | **Implemented** | packages/devtools (CLI) |
+| tools/cli/ | **Not Implemented** | User-facing CLI, planned |
+| tools/release/ | **Not Implemented** | Build scripts, planned |
+| .husky/ | **Not Implemented** | Git hooks, planned |
+| .changeset/ | **Not Implemented** | Version management, planned |
+
+See [implementation-status.md](./implementation-status.md) for full status tracking.
 
 ---
 

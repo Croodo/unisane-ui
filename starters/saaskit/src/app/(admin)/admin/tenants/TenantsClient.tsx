@@ -1,8 +1,8 @@
 "use client";
 import { useMemo } from "react";
 import Link from "next/link";
-import { DataTable, useRemoteDataTable } from "@/src/components/datatable";
-import type { Column, BulkAction } from "@/src/components/datatable/types";
+import { DataTable, useRemoteDataTable } from "@unisane/data-table";
+import type { Column, BulkAction } from "@unisane/data-table";
 import type {
   TenantsAdminListResponse as TenantsAdminList,
   TenantsAdminListItem,
@@ -63,7 +63,7 @@ export default function TenantsClient({
       refetch?: () => Promise<unknown>;
     },
     statsQuery: statsQuery as { data?: { total?: number }; isLoading: boolean },
-    initialData: initial,
+    initialData: initial as typeof initial & { nextCursor?: string; prevCursor?: string },
   });
 
   // Filter options from data
@@ -148,7 +148,7 @@ export default function TenantsClient({
         header: "Members",
         width: 110,
         sortable: true,
-        align: "right",
+        align: "end",
         filterable: true,
         summary: "sum",
         filterRenderer: ({ value, onChange }) => {
@@ -207,7 +207,7 @@ export default function TenantsClient({
         header: "Admins",
         width: 100,
         sortable: true,
-        align: "right",
+        align: "end",
         render: (row) => row.adminsCount ?? 0,
       },
       {
@@ -215,7 +215,7 @@ export default function TenantsClient({
         header: "API Keys",
         width: 110,
         sortable: true,
-        align: "right",
+        align: "end",
         render: (row) => row.apiKeysCount ?? 0,
       },
       {
@@ -223,7 +223,7 @@ export default function TenantsClient({
         header: "Overrides",
         width: 110,
         sortable: true,
-        align: "right",
+        align: "end",
         render: (row) => row.flagOverridesCount ?? 0,
       },
       {
@@ -231,7 +231,7 @@ export default function TenantsClient({
         header: "Open Invoices",
         width: 120,
         sortable: true,
-        align: "right",
+        align: "end",
         render: (row) => row.invoicesOpenCount ?? 0,
       },
       {
@@ -239,7 +239,7 @@ export default function TenantsClient({
         header: "Qty",
         width: 80,
         sortable: true,
-        align: "right",
+        align: "end",
         render: (row) =>
           typeof row.subscription?.quantity === "number"
             ? row.subscription.quantity
@@ -268,7 +268,7 @@ export default function TenantsClient({
         header: "Credits",
         width: 110,
         sortable: true,
-        align: "right",
+        align: "end",
         render: (row) => row.creditsAvailable?.toLocaleString() ?? "—",
         summary: (data) => {
           const total = data.reduce(
@@ -287,7 +287,7 @@ export default function TenantsClient({
         header: "Failed Hooks",
         width: 120,
         sortable: true,
-        align: "right",
+        align: "end",
         render: (row) => (
           <CountBadge count={row.webhooksFailed24h ?? 0} warnIfPositive />
         ),
@@ -399,8 +399,9 @@ export default function TenantsClient({
     () => [
       {
         label: "Export view",
-        onClick: () =>
-          window.open("/api/rest/v1/admin/tenants/export", "_blank"),
+        onClick: () => {
+          window.open("/api/rest/v1/admin/tenants/export", "_blank");
+        },
         icon: <span className="text-google-blue text-xs font-medium">CSV</span>,
       },
     ],
@@ -443,7 +444,7 @@ export default function TenantsClient({
           columns={columns}
           title="Tenants"
           tableId="admin-tenants-ga"
-          searchable
+          features={{ search: true }}
           bulkActions={bulkActions}
         />
       </div>

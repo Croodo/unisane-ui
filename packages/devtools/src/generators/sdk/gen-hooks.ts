@@ -236,11 +236,22 @@ function isGetMethod(method: string): boolean {
 }
 
 function getClientPath(groupName: string, routeName: string, opMeta?: string): string {
+  // Check if metaOp provides admin path info (e.g., "admin.users.stats")
   const metaParts = (opMeta ?? '').split('.');
   const isMetaAdmin = metaParts[0] === 'admin' && metaParts.length >= 3;
-  return isMetaAdmin
-    ? `["admin"]["${metaParts[1]}"]["${metaParts.slice(2).join('.')}"]`
-    : `["${groupName}"]["${routeName}"]`;
+  if (isMetaAdmin) {
+    return `["admin"]["${metaParts[1]}"]["${metaParts.slice(2).join('.')}"]`;
+  }
+
+  // Check if route name indicates admin route (e.g., "adminStats" -> admin.{group}.stats)
+  if (routeName.toLowerCase().startsWith('admin') && routeName.length > 5) {
+    // Extract operation name after "admin" prefix (adminStats -> stats, adminList -> list)
+    const opName = routeName.slice(5); // Remove "admin" prefix
+    const normalizedOpName = opName.charAt(0).toLowerCase() + opName.slice(1);
+    return `["admin"]["${groupName}"]["${normalizedOpName}"]`;
+  }
+
+  return `["${groupName}"]["${routeName}"]`;
 }
 
 /**
@@ -526,8 +537,11 @@ function buildOperationEntry(group: RouteGroup, route: AppRouteEntry, originalNa
   const Group = pascalCase(group.name);
   const FullOp = pascalCase(originalName ?? route.name);
   const hookName = `use${Group}${FullOp}`;
+  // For list operations, use the Query variant to preserve nextCursor/prevCursor for pagination
+  const isList = isListOperation(originalName ?? route.name);
+  const suffix = isList ? 'Query' : '';
   if (isGetMethod(route.method)) {
-    return `${route.name}: (args?: unknown, options?: unknown) => ${group.name}Hooks.${hookName}(args, undefined, options as any)`;
+    return `${route.name}: (args?: unknown, options?: unknown) => ${group.name}Hooks.${hookName}${suffix}(args, undefined, options as any)`;
   } else {
     return `${route.name}: (options?: unknown) => ${group.name}Hooks.${hookName}(options as any)`;
   }

@@ -5,7 +5,6 @@ import {
   DataTableProvider,
   DataTableInner,
   DataTableToolbar,
-  DataTablePagination,
   DataTableLayout,
   StickyZone,
   useInlineEditingWithFeedback,
@@ -402,8 +401,6 @@ function UsersTable({
           selectedIds={selectedIds}
         />
       )}
-
-      <DataTablePagination totalItems={data.length} />
     </DataTableLayout>
   );
 }
@@ -733,8 +730,6 @@ function ProductsTable({
           selectedIds={selectedIds}
         />
       )}
-
-      <DataTablePagination totalItems={data.length} />
     </DataTableLayout>
   );
 }
@@ -1062,8 +1057,6 @@ function InventoryTable({
           selectedIds={selectedIds}
         />
       )}
-
-      <DataTablePagination totalItems={data.length} />
     </DataTableLayout>
   );
 }
@@ -1447,8 +1440,6 @@ function FinancialTable({
           selectedIds={selectedIds}
         />
       )}
-
-      <DataTablePagination totalItems={data.length} />
     </DataTableLayout>
   );
 }

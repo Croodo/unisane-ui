@@ -196,6 +196,17 @@ function hasHeader(h: Record<string, string>, name: string): boolean {
   return Object.keys(h).some((k) => k.toLowerCase() === lower);
 }
 
+/** Base64url encode for filter serialization */
+function base64UrlEncode(input: string): string {
+  try {
+    if (typeof Buffer !== 'undefined') {
+      return Buffer.from(input, 'utf8').toString('base64url');
+    }
+    const ascii = btoa(encodeURIComponent(input).replace(/%([0-9A-F]{2})/g, (_, p) => String.fromCharCode(parseInt(p, 16))));
+    return ascii.replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/, '');
+  } catch { return ''; }
+}
+
 function buildUrl(pathTpl: string, params?: Record<string, unknown>, query?: Record<string, unknown>): string {
   const base = (process.env.NEXT_PUBLIC_API_BASE_URL ?? '').trim();
   let p = pathTpl;
@@ -206,7 +217,19 @@ function buildUrl(pathTpl: string, params?: Record<string, unknown>, query?: Rec
   const origin = (typeof window !== 'undefined' && window.location?.origin) ? window.location.origin : 'http://localhost';
   const url = new URL(urlStr, origin);
   if (query && typeof query === 'object') {
-    for (const [k, v] of Object.entries(query)) if (typeof v !== 'undefined' && v !== null) url.searchParams.set(k, String(v));
+    for (const [k, v] of Object.entries(query)) {
+      if (typeof v === 'undefined' || v === null) continue;
+      let val: string;
+      if (k === 'filters' && typeof v === 'object') {
+        // Filters use base64url-encoded JSON for URL safety
+        val = base64UrlEncode(JSON.stringify(v));
+      } else if (typeof v === 'object') {
+        val = JSON.stringify(v);
+      } else {
+        val = String(v);
+      }
+      if (val) url.searchParams.set(k, val);
+    }
   }
   return url.toString();
 }

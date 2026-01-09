@@ -3,8 +3,8 @@
 import { useMemo } from "react";
 import { hooks } from "@/src/sdk/hooks";
 import type { BillingListInvoicesItem } from "@/src/sdk/types";
-import { DataTable } from "@/src/components/datatable/DataTable";
-import type { Column } from "@/src/components/datatable/types";
+import { DataTable } from "@unisane/data-table";
+import type { Column } from "@unisane/data-table";
 import { formatCurrency } from "@/src/shared/currency";
 import { StatusBadge } from "@/src/components/ui/status-badge";
 
@@ -53,8 +53,7 @@ export function InvoicesTab({ tenantId }: InvoicesTabProps) {
       data={items}
       columns={columns}
       title="Invoices"
-      isLoading={list.isLoading && !list.data}
-      onRefresh={() => void list.refetch()}
+      loading={list.isLoading && !list.data}
       tableId="tenant-invoices"
     />
   );

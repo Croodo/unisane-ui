@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/src/components/ui/card";
-import { cn } from "@/lib/utils";
+import { cn } from "@/src/lib/utils";
 import { Check, CreditCard, PlusCircle } from "lucide-react";
 
 export type TopupSectionProps = {

@@ -1,8 +1,28 @@
 # Unisane Platform Architecture
 
 > **Status:** AUTHORITATIVE
-> **Last Updated:** 2025-01-06
-> **Version:** 2.0
+> **Last Updated:** 2026-01-09
+> **Version:** 2.1
+
+---
+
+## Implementation Status
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| Monorepo structure | Implemented | 30 packages in `@unisane/*` namespace |
+| Kernel layer | Implemented | `@unisane/kernel` |
+| Gateway layer | Implemented | `@unisane/gateway` |
+| Business modules | Implemented | 18 modules + 3 PRO |
+| Platform layer | Implemented | Hexagonal architecture in starters |
+| SDK generation | Implemented | `@unisane/devtools` |
+| UI library | Implemented | `@unisane/ui` - Material 3 components |
+| DataTable | Implemented | `@unisane/data-table` - Advanced data grid |
+| UI CLI | Implemented | `@unisane/cli` - shadcn-style `add`/`init`/`diff` |
+| Distribution build | **Not Implemented** | Design spec only - see [build-distribution.md](./build-distribution.md) |
+| OSS/PRO stripping | **Not Implemented** | Planned for after feature completion |
+
+> **Full status tracking:** See [implementation-status.md](./implementation-status.md)
 
 ---
 
@@ -12,10 +32,14 @@
 |----------|-------------|
 | [QUICK-REFERENCE.md](./QUICK-REFERENCE.md) | Cheat sheet for daily use |
 | [kernel.md](./kernel.md) | Detailed kernel layer specification |
+| [platform-layer.md](./platform-layer.md) | Hexagonal architecture in starters |
+| [sdk-architecture.md](./sdk-architecture.md) | SDK generation and patterns |
 | [testing.md](./testing.md) | Complete testing strategy |
 | [migration.md](./migration.md) | Step-by-step migration guide |
 | [advanced-features.md](./advanced-features.md) | Phone auth, impersonation, media, AI, analytics |
 | [developer-experience.md](./developer-experience.md) | CLI, generators, seeding, DX tooling |
+| [build-distribution.md](./build-distribution.md) | Starter distribution, OSS/PRO |
+| [implementation-status.md](./implementation-status.md) | What's built vs planned |
 | [ROADMAP.md](./ROADMAP.md) | Migration execution plan with checkpoints |
 | [dev-tools.md](./dev-tools.md) | ESLint, Prettier, Vitest, CI/CD configs |
 
@@ -127,69 +151,140 @@ Every feature must have:
 
 ## Monorepo Structure
 
-### Final Directory Layout
+### Multi-Platform Architecture
+
+The monorepo is designed to support **multiple platforms** (SaaS, CRM, E-commerce, AI Apps, etc.) with shared foundational packages. This structure enables:
+
+- **Reusable modules** across different products
+- **Platform-specific modules** organized separately
+- **Clear dependency boundaries** (each layer depends only on layers below)
+- **Easy navigation** for developers working on specific platforms
+
+### Directory Layout
 
 ```
 unisane/
 │
 ├── apps/
-│   ├── web/                    # Docs & component showcase
-│   └── landing/                # Marketing website
+│   ├── web/                         # Docs & component showcase
+│   └── landing/                     # Marketing website
 │
 ├── packages/
 │   │
-│   ├── # ═══════ FOUNDATION ═══════
-│   ├── kernel/                 # @unisane/kernel (Layer 0)
-│   ├── gateway/                # @unisane/gateway (Layer 0.5)
+│   ├── # ═══════════════════════════════════════════════════════════
+│   ├── # FOUNDATION - Core infrastructure used by ALL platforms
+│   ├── # ═══════════════════════════════════════════════════════════
+│   ├── foundation/
+│   │   ├── kernel/                  # @unisane/kernel (Layer 0)
+│   │   │                            # ctx, db, cache, events, logging
+│   │   ├── gateway/                 # @unisane/gateway (Layer 0.5)
+│   │   │                            # HTTP layer, handlers, middleware
+│   │   └── contracts/               # @unisane/contracts
+│   │                                # Base Zod schemas shared by all
 │   │
-│   ├── # ═══════ BUSINESS MODULES ═══════
-│   ├── identity/               # Layer 1
-│   ├── settings/               # Layer 1
-│   ├── storage/                # Layer 1
-│   ├── tenants/                # Layer 2
-│   ├── auth/                   # Layer 2
-│   ├── billing/                # Layer 3
-│   ├── flags/                  # Layer 3
-│   ├── audit/                  # Layer 3
-│   ├── credits/                # Layer 4
-│   ├── usage/                  # Layer 4
-│   ├── notify/                 # Layer 4
-│   ├── webhooks/               # Layer 4
-│   ├── media/                  # Layer 5
-│   ├── pdf/                    # Layer 5
-│   ├── ai/                     # Layer 5
+│   ├── # ═══════════════════════════════════════════════════════════
+│   ├── # MODULES - Shared business modules reusable across platforms
+│   ├── # ═══════════════════════════════════════════════════════════
+│   ├── modules/
+│   │   │
+│   │   ├── # --- Layer 1: Core identity & settings ---
+│   │   ├── identity/                # @unisane/identity
+│   │   ├── settings/                # @unisane/settings
+│   │   ├── storage/                 # @unisane/storage
+│   │   │
+│   │   ├── # --- Layer 2: Multi-tenancy & auth ---
+│   │   ├── tenants/                 # @unisane/tenants
+│   │   ├── auth/                    # @unisane/auth
+│   │   │
+│   │   ├── # --- Layer 3: Business capabilities ---
+│   │   ├── billing/                 # @unisane/billing
+│   │   ├── flags/                   # @unisane/flags
+│   │   ├── audit/                   # @unisane/audit
+│   │   │
+│   │   ├── # --- Layer 4: Extended features ---
+│   │   ├── credits/                 # @unisane/credits
+│   │   ├── usage/                   # @unisane/usage
+│   │   ├── notify/                  # @unisane/notify
+│   │   ├── webhooks/                # @unisane/webhooks
+│   │   │
+│   │   ├── # --- Layer 5: Content & AI ---
+│   │   ├── media/                   # @unisane/media
+│   │   ├── pdf/                     # @unisane/pdf
+│   │   └── ai/                      # @unisane/ai
 │   │
-│   ├── # ═══════ PRO MODULES ═══════
-│   ├── analytics/              # PRO
-│   ├── sso/                    # PRO
-│   ├── import-export/          # PRO
+│   ├── # ═══════════════════════════════════════════════════════════
+│   ├── # PRO - Premium modules (not in OSS distribution)
+│   ├── # ═══════════════════════════════════════════════════════════
+│   ├── pro/
+│   │   ├── analytics/               # @unisane/analytics
+│   │   ├── sso/                     # @unisane/sso
+│   │   └── import-export/           # @unisane/import-export
 │   │
-│   ├── # ═══════ UI PACKAGES ═══════
-│   ├── ui/                     # @unisane/ui
-│   ├── data-table/             # @unisane/data-table
-│   ├── tokens/                 # @unisane/tokens
+│   ├── # ═══════════════════════════════════════════════════════════
+│   ├── # UI - Shared design system (works across all platforms)
+│   ├── # ═══════════════════════════════════════════════════════════
+│   ├── ui/
+│   │   ├── core/                    # @unisane/ui (Material 3 components)
+│   │   ├── data-table/              # @unisane/data-table (Advanced grid)
+│   │   ├── tokens/                  # @unisane/tokens (Design tokens)
+│   │   └── cli/                     # @unisane/cli (shadcn-style CLI)
 │   │
-│   ├── # ═══════ SHARED ═══════
-│   ├── contracts/              # @unisane/contracts (shared schemas)
-│   ├── test-utils/             # @unisane/test-utils
+│   ├── # ═══════════════════════════════════════════════════════════
+│   ├── # TOOLING - Development tools & configs
+│   ├── # ═══════════════════════════════════════════════════════════
+│   ├── tooling/
+│   │   ├── devtools/                # @unisane/devtools
+│   │   ├── test-utils/              # @unisane/test-utils
+│   │   ├── eslint-config/           # @unisane/eslint-config
+│   │   ├── typescript-config/       # @unisane/typescript-config
+│   │   └── tailwind-config/         # @unisane/tailwind-config
 │   │
-│   └── # ═══════ TOOLING ═══════
-│       ├── cli/                # unisane CLI
-│       ├── eslint-config/
-│       ├── typescript-config/
-│       └── tailwind-config/
+│   ├── # ═══════════════════════════════════════════════════════════
+│   ├── # PLATFORM-SPECIFIC MODULES (Future)
+│   ├── # ═══════════════════════════════════════════════════════════
+│   │
+│   ├── crm/                         # CRM-specific modules (future)
+│   │   ├── contacts/                # Contact management
+│   │   ├── deals/                   # Deal/opportunity tracking
+│   │   ├── pipeline/                # Sales pipeline
+│   │   └── activities/              # Activity tracking
+│   │
+│   ├── ecommerce/                   # E-commerce modules (future)
+│   │   ├── products/                # Product catalog
+│   │   ├── cart/                    # Shopping cart
+│   │   ├── orders/                  # Order management
+│   │   ├── inventory/               # Inventory tracking
+│   │   └── shipping/                # Shipping integrations
+│   │
+│   ├── helpdesk/                    # Helpdesk modules (future)
+│   │   ├── tickets/                 # Ticket management
+│   │   ├── knowledge-base/          # Help articles
+│   │   └── chat/                    # Live chat
+│   │
+│   └── ai-platform/                 # AI Apps modules (future)
+│       ├── agents/                  # AI agent framework
+│       ├── prompts/                 # Prompt management
+│       ├── embeddings/              # Vector embeddings
+│       └── rag/                     # RAG implementation
 │
 ├── starters/
-│   └── saaskit/                # SaaS starter template
-│       ├── src/
-│       │   ├── app/            # Next.js App Router
-│       │   ├── platform/       # Providers, jobs, outbox
-│       │   ├── routes/         # API route handlers
-│       │   └── bootstrap.ts    # Wire everything together
-│       └── package.json
+│   │
+│   ├── saaskit/                     # SaaS starter template
+│   │   ├── src/
+│   │   │   ├── app/                 # Next.js App Router
+│   │   │   ├── platform/            # Hexagonal architecture layer
+│   │   │   ├── routes/              # API route handlers
+│   │   │   └── bootstrap.ts         # Wire everything together
+│   │   └── package.json
+│   │
+│   ├── crm-kit/                     # CRM starter (future)
+│   ├── ecommerce-kit/               # E-commerce starter (future)
+│   └── ai-kit/                      # AI apps starter (future)
 │
-├── tools/
-│   └── release/                # Build & distribution tools
+├── handbook/
+│   ├── architecture/                # This documentation
+│   ├── roadmaps/                    # Development roadmaps
+│   └── design-system/               # UI component docs
 │
 ├── pnpm-workspace.yaml
 ├── turbo.json
@@ -197,14 +292,77 @@ unisane/
 └── vitest.workspace.ts
 ```
 
+> **Note:** `tools/release/` for distribution build is **planned but not implemented**.
+> See [build-distribution.md](./build-distribution.md) for design spec and [implementation-status.md](./implementation-status.md) for status.
+
+### Layer Dependency Rules
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                         STARTERS                              │
+│  saaskit │ crm-kit │ ecommerce-kit │ ai-kit                  │
+│  (can use ANY packages below)                                 │
+└────────────────────────────┬─────────────────────────────────┘
+                             │ uses
+┌────────────────────────────┼─────────────────────────────────┐
+│                   PLATFORM-SPECIFIC MODULES                   │
+│  crm/* │ ecommerce/* │ helpdesk/* │ ai-platform/*            │
+│  (can use foundation, modules, pro, ui)                       │
+└────────────────────────────┬─────────────────────────────────┘
+                             │ uses
+┌────────────────────────────┼─────────────────────────────────┐
+│                    SHARED MODULES + PRO                       │
+│  modules/* │ pro/*                                            │
+│  (can use foundation and ui only)                             │
+└────────────────────────────┬─────────────────────────────────┘
+                             │ uses
+┌────────────────────────────┼─────────────────────────────────┐
+│                 FOUNDATION + UI + TOOLING                     │
+│  foundation/* │ ui/* │ tooling/*                              │
+│  (foundation has no deps, ui uses tokens, tooling is isolated)│
+└──────────────────────────────────────────────────────────────┘
+```
+
+**Rules:**
+1. **Foundation** packages have minimal external dependencies
+2. **Modules** can import from foundation and other modules (same or lower layer)
+3. **Platform-specific** packages can import from modules and foundation
+4. **UI** packages are independent of business logic
+5. **Starters** wire everything together
+
 ### Workspace Configuration
 
 ```yaml
 # pnpm-workspace.yaml
 packages:
+  # Apps
   - "apps/*"
-  - "packages/*"
+
+  # Core infrastructure
+  - "packages/foundation/*"
+
+  # Shared business modules
+  - "packages/modules/*"
+
+  # Premium modules
+  - "packages/pro/*"
+
+  # UI packages
+  - "packages/ui/*"
+
+  # Development tooling
+  - "packages/tooling/*"
+
+  # Platform-specific modules (future)
+  - "packages/crm/*"
+  - "packages/ecommerce/*"
+  - "packages/helpdesk/*"
+  - "packages/ai-platform/*"
+
+  # Starter templates
   - "starters/*"
+
+  # Build tools (planned)
   - "tools/*"
 ```
 
@@ -1218,68 +1376,42 @@ import { someNodeApi } from 'node:fs';               // Node.js API
 
 ### Purpose
 
-Starter-specific infrastructure that stays in user's codebase (not extracted to packages).
+Starter-specific infrastructure implementing hexagonal architecture (ports & adapters pattern).
+Stays in user's codebase and is NOT extracted to packages.
 
-### Structure in Starter
+> **Full Details:** See [platform-layer.md](./platform-layer.md) for comprehensive documentation.
+
+### Structure in Starter (Current State)
 
 ```
 starters/saaskit/src/platform/
-├── providers/                      # External service adapters
-│   ├── billing/
-│   │   ├── types.ts               # BillingProvider interface
-│   │   ├── stripe.ts              # Stripe implementation
-│   │   ├── razorpay.ts            # Razorpay implementation
-│   │   └── index.ts               # Provider factory
-│   │
-│   ├── email/
-│   │   ├── types.ts
-│   │   ├── resend.ts
-│   │   ├── ses.ts
-│   │   └── index.ts
-│   │
-│   ├── storage/
-│   │   ├── types.ts
-│   │   ├── s3.ts
-│   │   ├── r2.ts
-│   │   └── index.ts
-│   │
-│   ├── oauth/
-│   │   ├── types.ts
-│   │   ├── google.ts
-│   │   ├── github.ts
-│   │   └── index.ts
-│   │
-│   └── ai/
-│       ├── types.ts
-│       ├── openai.ts
-│       ├── anthropic.ts
-│       └── index.ts
-│
-├── jobs/                           # Background job processing
-│   ├── client.ts                  # Inngest client setup
-│   ├── functions/                 # Job definitions
-│   │   ├── billing.jobs.ts
-│   │   ├── email.jobs.ts
-│   │   ├── usage.jobs.ts
-│   │   ├── webhook.jobs.ts
-│   │   └── index.ts
-│   └── cron/                      # Scheduled jobs
-│       ├── daily.ts
-│       ├── hourly.ts
-│       └── index.ts
-│
-├── outbox/                         # Guaranteed event delivery
-│   ├── processor.ts               # Outbox processor
-│   ├── repository.ts              # Outbox storage
-│   └── types.ts
-│
-├── config/                         # Environment configuration
-│   ├── env.ts                     # Zod-validated env vars
-│   ├── features.ts                # Feature flags config
-│   └── index.ts
-│
-└── index.ts                        # Platform initialization
+├── auth/                          # Auth session management
+├── billing/                       # Billing provider adapters (Stripe, etc.)
+├── config/                        # Environment & feature configuration
+├── email/                         # Email provider adapters
+├── env.ts                         # Zod-validated environment vars
+├── init.ts                        # Platform initialization
+├── inngest/                       # Background job client
+├── jobs/                          # Background job definitions
+├── metering/                      # Usage metering (OpenMeter, etc.)
+├── oauth/                         # OAuth provider adapters
+├── outbox/                        # Guaranteed event delivery
+├── telemetry/                     # Observability setup
+└── webhooks/                      # Webhook processing
 ```
+
+### Module Types
+
+The platform layer uses four module types:
+
+| Type | Purpose | Example |
+|------|---------|---------|
+| **Extensions** | Thin wrappers adding saaskit-specific config | `email/` wrapping `@unisane/notify` |
+| **Adapters** | Combining multiple packages | `billing/` combining billing + tenants |
+| **Integrations** | Provider-specific implementations | Stripe adapter, OpenMeter integration |
+| **Core** | saaskit-only domain logic | Custom business rules |
+
+> This is **intentional hexagonal architecture**, not code duplication.
 
 ### Provider Pattern (Detailed)
 
@@ -2361,6 +2493,9 @@ describe('billing contracts', () => {
 
 ## Distribution
 
+> **Implementation Status:** The build pipeline described below is a **design spec** - not yet implemented.
+> See [build-distribution.md](./build-distribution.md) for full details and [implementation-status.md](./implementation-status.md) for current status.
+
 ### UI Integration (IMPROVED - No Symlinks)
 
 ```
@@ -2428,10 +2563,12 @@ describe('billing contracts', () => {
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Build Pipeline
+### Build Pipeline (Design Spec)
+
+> **Status:** NOT IMPLEMENTED - This is the planned design.
 
 ```typescript
-// tools/release/src/build-starter.ts
+// tools/release/src/build-starter.ts (PLANNED - NOT IMPLEMENTED)
 
 import { copySync, readFileSync, writeFileSync, rmSync } from 'fs-extra';
 import { glob } from 'glob';

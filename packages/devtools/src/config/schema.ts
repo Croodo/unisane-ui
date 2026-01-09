@@ -6,8 +6,9 @@
  * - vue: Vue Query composables
  * - zod: Zod schema re-exports
  * - types: TypeScript types
+ * - admin-hooks: Admin list params hooks and grid registries
  */
-export type SdkTarget = 'browser' | 'server' | 'hooks' | 'vue' | 'zod' | 'types';
+export type SdkTarget = 'browser' | 'server' | 'hooks' | 'vue' | 'zod' | 'types' | 'admin-hooks';
 
 /**
  * Next.js runtime options

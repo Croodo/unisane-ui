@@ -13,11 +13,15 @@ import { CustomScrollbar } from "./custom-scrollbar";
 import { StatusAnnouncer } from "./status-announcer";
 import {
   DataTableLayout,
+  StickyZone,
   SyncedScrollContainer,
   StickyHeaderScrollContainer,
   HeaderTable,
   BodyTable,
 } from "./layout";
+import { DataTableToolbar } from "./toolbar";
+import { DataTablePagination } from "./pagination";
+import type { CursorPagination } from "../types";
 import { useProcessedData } from "../hooks/data/use-processed-data";
 import { useGroupedData } from "../hooks/data/use-grouped-data";
 import { useVirtualizedRows } from "../hooks/features/use-virtualized-rows";
@@ -41,9 +45,25 @@ import { getTotalPages, clampPage } from "../utils/pagination";
 import { DENSITY_CONFIG, type Density } from "../constants/index";
 import { useI18n } from "../i18n";
 
+// ─── TOOLBAR PROPS ─────────────────────────────────────────────────────────
+
+export interface ToolbarProps {
+  title?: string;
+  searchable: boolean;
+  bulkActions: BulkAction[];
+  density: Density;
+  onDensityChange?: (density: Density) => void;
+  showColumnToggle: boolean;
+  showDensityToggle: boolean;
+  refreshing?: boolean;
+  onRefresh?: () => void | Promise<void>;
+}
+
 // ─── INNER PROPS ───────────────────────────────────────────────────────────
 
 export interface DataTableInnerProps<T extends { id: string }> {
+  /** Toolbar configuration - when provided, toolbar renders inside StickyZone */
+  toolbarProps?: ToolbarProps;
   data: T[];
   isLoading?: boolean;
   bulkActions?: BulkAction[];
@@ -85,11 +105,14 @@ export interface DataTableInnerProps<T extends { id: string }> {
   reorderableRows?: boolean;
   /** Row reordering: callback when row order changes */
   onRowReorder?: (fromIndex: number, toIndex: number, newOrder: string[]) => void;
+  /** Cursor pagination controls for remote data */
+  cursorPagination?: CursorPagination;
 }
 
 // ─── INNER COMPONENT ───────────────────────────────────────────────────────
 
 export function DataTableInner<T extends { id: string }>({
+  toolbarProps,
   data,
   isLoading = false,
   bulkActions = [],
@@ -119,6 +142,7 @@ export function DataTableInner<T extends { id: string }>({
   onCellKeyDown,
   reorderableRows = false,
   onRowReorder,
+  cursorPagination,
 }: DataTableInnerProps<T>) {
   // Context hooks
   const { selectedRows, expandedRows, selectRow, deselectRow, selectAll, deselectAll, toggleSelect, toggleExpand } =
@@ -137,6 +161,9 @@ export function DataTableInner<T extends { id: string }>({
     reorderColumn,
     reorderable,
     observeContainer,
+    pinnedLeftColumns,
+    pinnedRightColumns,
+    resetColumnPins,
   } = useColumns<T>();
   const { config, errorHub } = useTableUI();
   const { groupBy, groupByArray, setGroupBy, isGrouped, isMultiLevel, toggleGroupExpand, isGroupExpanded, addGroupBy } = useGrouping();
@@ -502,28 +529,49 @@ export function DataTableInner<T extends { id: string }>({
           announcerRegionId={announcerRegionId}
         />
 
-      {/* Sticky header - uses overflow:hidden + transform to avoid breaking sticky */}
-      {/* Shadow is applied dynamically by StickyHeaderScrollContainer when header becomes stuck */}
-      {/* Top offset = stickyOffset (from config) + data-table-header-offset (toolbar height) */}
-      <StickyHeaderScrollContainer
-        className="sticky z-20 bg-surface"
-        style={{ top: `calc(${config.stickyOffset} + var(--data-table-header-offset, 0px))` }}
-      >
-        <HeaderTable
-          tableWidth={totalTableWidth}
-          style={isColumnVirtualized ? getScrollableContainerStyle() : undefined}
-        >
-          <TableColgroup
-            columns={effectiveColumns}
-            columnMeta={columnMeta}
-            selectable={effectiveSelectable}
-            enableExpansion={enableExpansion}
-            getEffectivePinPosition={getEffectivePinPosition}
-            reorderableRows={reorderableRows && !isGrouped}
+      {/* Sticky zone containing toolbar + header - all stick together at top */}
+      <StickyZone>
+        {/* Toolbar - rendered inside StickyZone so it sticks with header */}
+        {toolbarProps && (
+          <DataTableToolbar
+            title={toolbarProps.title}
+            searchable={toolbarProps.searchable}
+            selectedCount={selectedRows.size}
+            selectedIds={Array.from(selectedRows)}
+            bulkActions={toolbarProps.bulkActions}
+            onClearSelection={deselectAll}
+            density={toolbarProps.density}
+            onDensityChange={toolbarProps.onDensityChange}
+            showColumnToggle={toolbarProps.showColumnToggle}
+            showDensityToggle={toolbarProps.showDensityToggle}
+            refreshing={toolbarProps.refreshing}
+            onRefresh={toolbarProps.onRefresh}
+            totalItems={totalItems ?? processedData.length}
+            frozenLeftCount={pinnedLeftColumns.length}
+            frozenRightCount={pinnedRightColumns.length}
+            onUnfreezeAll={resetColumnPins}
           />
-          <DataTableHeader {...headerProps} />
-        </HeaderTable>
-      </StickyHeaderScrollContainer>
+        )}
+
+        {/* Sticky header - synced horizontal scroll with body */}
+        {/* Shadow is applied dynamically by StickyHeaderScrollContainer when header becomes stuck */}
+        <StickyHeaderScrollContainer className="bg-surface">
+          <HeaderTable
+            tableWidth={totalTableWidth}
+            style={isColumnVirtualized ? getScrollableContainerStyle() : undefined}
+          >
+            <TableColgroup
+              columns={effectiveColumns}
+              columnMeta={columnMeta}
+              selectable={effectiveSelectable}
+              enableExpansion={enableExpansion}
+              getEffectivePinPosition={getEffectivePinPosition}
+              reorderableRows={reorderableRows && !isGrouped}
+            />
+            <DataTableHeader {...headerProps} />
+          </HeaderTable>
+        </StickyHeaderScrollContainer>
+      </StickyZone>
 
       {/* Scrollable body zone - synced horizontal scroll with header */}
       <SyncedScrollContainer scrollId="body" ref={tableContainerRef}>
@@ -662,6 +710,24 @@ export function DataTableInner<T extends { id: string }>({
           dependencies={[effectiveColumns, columnMeta, paginatedData.length]}
           dataTableRef={dataTableRootRef}
         />
+
+        {/* Pagination controls - only render when pagination is enabled */}
+        {config.paginationMode !== "none" && (
+          <DataTablePagination
+            totalItems={totalItems}
+            currentCount={paginatedData.length}
+            mode={config.paginationMode}
+            cursor={cursorPagination ? {
+              nextCursor: cursorPagination.nextCursor,
+              prevCursor: cursorPagination.prevCursor,
+              onNext: cursorPagination.onNext,
+              onPrev: cursorPagination.onPrev,
+              pageIndex: cursorPagination.pageIndex,
+              limit: cursorPagination.limit,
+              onLimitChange: cursorPagination.onLimitChange,
+            } : undefined}
+          />
+        )}
       </div>
     </DataTableLayout>
   );

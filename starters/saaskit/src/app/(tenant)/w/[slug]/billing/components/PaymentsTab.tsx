@@ -3,8 +3,8 @@
 import { useMemo, useState, useCallback } from "react";
 import { hooks } from "@/src/sdk/hooks";
 import type { BillingListPaymentsItem } from "@/src/sdk/types";
-import { DataTable } from "@/src/components/datatable/DataTable";
-import type { Column } from "@/src/components/datatable/types";
+import { DataTable } from "@unisane/data-table";
+import type { Column } from "@unisane/data-table";
 import { normalizeError } from "@/src/sdk/errors";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -81,7 +81,7 @@ export function PaymentsTab({ tenantId }: PaymentsTabProps) {
       {
         key: "actions",
         header: "Actions",
-        align: "right",
+        align: "end",
         render: (row) => (
           <Button
             size="sm"
@@ -108,8 +108,7 @@ export function PaymentsTab({ tenantId }: PaymentsTabProps) {
         data={items}
         columns={columns}
         title="Payments"
-        isLoading={list.isLoading && !list.data}
-        onRefresh={() => void list.refetch()}
+        loading={list.isLoading && !list.data}
         tableId="tenant-payments"
       />
 

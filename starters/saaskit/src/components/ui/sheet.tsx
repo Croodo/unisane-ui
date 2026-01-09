@@ -1,141 +1,168 @@
-"use client"
+import React, { useEffect, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { Ripple } from './ripple';
+import { cn } from "@/src/lib/utils";
+import { useScrollLock } from "@/src/hooks/use-scroll-lock";
 
-import * as React from "react"
-import * as SheetPrimitive from "@radix-ui/react-dialog"
-import { cva } from 'class-variance-authority';
-import type { VariantProps } from 'class-variance-authority';
-import { X } from "lucide-react"
+export type SheetSize = 'sm' | 'md' | 'lg' | 'xl' | 'full';
 
-import { cn } from "@/lib/utils"
+interface SheetProps {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  children: React.ReactNode;
+  icon?: React.ReactNode;
+  footerLeft?: React.ReactNode;
+  footerRight?: React.ReactNode;
+  className?: string;
+  size?: SheetSize;
+}
 
-const Sheet = SheetPrimitive.Root
-
-const SheetTrigger = SheetPrimitive.Trigger
-
-const SheetClose = SheetPrimitive.Close
-
-const SheetPortal = SheetPrimitive.Portal
-
-const SheetOverlay = React.forwardRef<
-  React.ElementRef<typeof SheetPrimitive.Overlay>,
-  React.ComponentPropsWithoutRef<typeof SheetPrimitive.Overlay>
->(({ className, ...props }, ref) => (
-  <SheetPrimitive.Overlay
-    className={cn(
-      "fixed inset-0 z-50 bg-black/80  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
-      className
-    )}
-    {...props}
-    ref={ref}
-  />
-))
-SheetOverlay.displayName = SheetPrimitive.Overlay.displayName
-
-const sheetVariants = cva(
-  "fixed z-50 gap-4 bg-background p-6 shadow-lg transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:duration-500",
-  {
-    variants: {
-      side: {
-        top: "inset-x-0 top-0 border-b data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top",
-        bottom:
-          "inset-x-0 bottom-0 border-t data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
-        left: "inset-y-0 left-0 h-full w-3/4 border-r data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left sm:max-w-sm",
-        right:
-          "inset-y-0 right-0 h-full w-3/4  border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-sm",
-      },
-    },
-    defaultVariants: {
-      side: "right",
-    },
-  }
-)
-
-interface SheetContentProps
-  extends React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>,
-    VariantProps<typeof sheetVariants> {}
-
-const SheetContent = React.forwardRef<
-  React.ElementRef<typeof SheetPrimitive.Content>,
-  SheetContentProps
->(({ side = "right", className, children, ...props }, ref) => (
-  <SheetPortal>
-    <SheetOverlay />
-    <SheetPrimitive.Content
-      ref={ref}
-      className={cn(sheetVariants({ side }), className)}
-      {...props}
-    >
-      {children}
-      <SheetPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
-        <X className="h-4 w-4" />
-        <span className="sr-only">Close</span>
-      </SheetPrimitive.Close>
-    </SheetPrimitive.Content>
-  </SheetPortal>
-))
-SheetContent.displayName = SheetPrimitive.Content.displayName
-
-const SheetHeader = ({
+export function Sheet({
+  open,
+  onClose,
+  title,
+  children,
+  icon,
+  footerLeft,
+  footerRight,
   className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) => (
-  <div
-    className={cn(
-      "flex flex-col space-y-2 text-center sm:text-left",
-      className
-    )}
-    {...props}
-  />
-)
-SheetHeader.displayName = "SheetHeader"
+  size = 'md'
+}: SheetProps) {
+  const [shouldRender, setShouldRender] = useState(open);
+  const [isVisible, setIsVisible] = useState(false);
+  const timerRef = useRef<number | null>(null);
 
-const SheetFooter = ({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) => (
-  <div
-    className={cn(
-      "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2",
-      className
-    )}
-    {...props}
-  />
-)
-SheetFooter.displayName = "SheetFooter"
+  const OPEN_DURATION = 600;
+  const CLOSE_DURATION = 250;
 
-const SheetTitle = React.forwardRef<
-  React.ElementRef<typeof SheetPrimitive.Title>,
-  React.ComponentPropsWithoutRef<typeof SheetPrimitive.Title>
->(({ className, ...props }, ref) => (
-  <SheetPrimitive.Title
-    ref={ref}
-    className={cn("text-lg font-semibold text-foreground", className)}
-    {...props}
-  />
-))
-SheetTitle.displayName = SheetPrimitive.Title.displayName
+  // Lock body scroll while preventing layout shift
+  useScrollLock(open);
 
-const SheetDescription = React.forwardRef<
-  React.ElementRef<typeof SheetPrimitive.Description>,
-  React.ComponentPropsWithoutRef<typeof SheetPrimitive.Description>
->(({ className, ...props }, ref) => (
-  <SheetPrimitive.Description
-    ref={ref}
-    className={cn("text-sm text-muted-foreground", className)}
-    {...props}
-  />
-))
-SheetDescription.displayName = SheetPrimitive.Description.displayName
+  useEffect(() => {
+    if (open) {
+      if (timerRef.current) window.clearTimeout(timerRef.current);
+      setShouldRender(true);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setIsVisible(true);
+        });
+      });
+    } else {
+      setIsVisible(false);
+      timerRef.current = window.setTimeout(() => {
+        setShouldRender(false);
+      }, CLOSE_DURATION);
+    }
+    return () => {
+      if (timerRef.current) window.clearTimeout(timerRef.current);
+    };
+  }, [open]);
 
-export {
-  Sheet,
-  SheetPortal,
-  SheetOverlay,
-  SheetTrigger,
-  SheetClose,
-  SheetContent,
-  SheetHeader,
-  SheetFooter,
-  SheetTitle,
-  SheetDescription,
+  // Handle Escape key
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && open) {
+        event.preventDefault();
+        onClose();
+      }
+    };
+
+    if (open) {
+      document.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open, onClose]);
+
+  if (!shouldRender) return null;
+  if (typeof document === "undefined") return null;
+
+  const sizeClasses = {
+    sm: "max-w-100",
+    md: "max-w-150",
+    lg: "max-w-210",
+    xl: "max-w-280",
+    full: "max-w-[calc(100vw-var(--spacing-14))]"
+  };
+
+  return createPortal(
+    <div className="fixed inset-0 z-modal flex justify-end overflow-hidden" role="presentation">
+      <div 
+        className={cn(
+          "absolute inset-0 bg-scrim backdrop-blur-[calc(var(--unit)/2)] transition-opacity",
+          isVisible ? "opacity-100" : "opacity-0"
+        )}
+        style={{ 
+          transitionDuration: `${isVisible ? OPEN_DURATION : CLOSE_DURATION}ms`,
+          transitionTimingFunction: isVisible ? 'cubic-bezier(0.05, 0.7, 0.1, 1.0)' : 'cubic-bezier(0.3, 0, 1, 1)'
+        }}
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      
+      <div 
+        className={cn(
+          "relative w-full h-full bg-surface shadow-5 flex flex-col border-l border-outline-variant transition-all transform-gpu",
+          sizeClasses[size],
+          isVisible ? "translate-x-0 opacity-100 scale-100" : "translate-x-full opacity-0 scale-[0.98]",
+          className
+        )}
+        style={{ 
+          transitionDuration: `${isVisible ? OPEN_DURATION : CLOSE_DURATION}ms`,
+          transitionTimingFunction: isVisible ? 'cubic-bezier(0.05, 0.7, 0.1, 1.0)' : 'cubic-bezier(0.3, 0, 1, 1)'
+        }}
+        role="dialog"
+        aria-modal="true"
+      >
+        <header className="px-6 py-6 border-b border-outline-variant flex items-center justify-between bg-surface shrink-0 z-20">
+          <div className="flex items-center gap-3">
+            {icon && (
+               <div className="w-10 h-10 rounded-sm bg-inverse-surface text-inverse-on-surface flex items-center justify-center shrink-0 transition-all duration-short">
+                  {icon}
+               </div>
+            )}
+            <div className="flex flex-col">
+              <h2 className="text-title-medium text-on-surface leading-none">
+                {title}
+              </h2>
+              <div className="text-on-surface-variant font-medium text-label-small mt-1 flex items-center gap-1.5">
+                <span className="w-1 h-1 rounded-full bg-primary animate-pulse" />
+                Active Instance
+              </div>
+            </div>
+          </div>
+          <button 
+            onClick={onClose} 
+            className="w-10 h-10 rounded-sm flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all relative overflow-hidden"
+            aria-label="Close sheet"
+          >
+            <Ripple />
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </header>
+
+        <div className="flex-1 overflow-y-auto no-scrollbar relative z-10 bg-surface">
+          {children}
+        </div>
+
+        {(footerLeft || footerRight) && (
+          <footer className="px-6 py-6 border-t border-outline-variant bg-surface-container-low shrink-0 z-20">
+            <div className="flex flex-col medium:flex-row items-center justify-between gap-4">
+               <div className="flex-1 min-w-0 w-full medium:w-auto">
+                  {footerLeft}
+               </div>
+               <div className="flex items-center gap-2 shrink-0 w-full medium:w-auto justify-end">
+                  {footerRight}
+               </div>
+            </div>
+          </footer>
+        )}
+      </div>
+    </div>,
+    document.body
+  );
 }

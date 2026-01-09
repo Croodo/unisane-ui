@@ -190,10 +190,8 @@ function DataTableHeaderInner<T extends { id: string }>({
           <th
             className={cn(
               "bg-surface border-b border-outline-variant/50",
-              // Sticky positioning to stay at left edge when drag handle scrolls out
-              // z-30 to stay above pinned data columns (z-20), isolate creates stacking context
-              // Only apply on tablet+ (@md) - mobile scrolls everything together
-              "@md:sticky @md:left-0 @md:z-30 @md:isolate",
+              // Sticky positioning with z-index for proper stacking (only on tablet+)
+              "@md:sticky left-0 z-30 isolate",
               // Only show border-r if there are no more sticky columns after this
               showColumnBorders &&
                 !enableExpansion &&
@@ -223,10 +221,8 @@ function DataTableHeaderInner<T extends { id: string }>({
           <th
             className={cn(
               "bg-surface border-b border-outline-variant/50",
-              // Sticky positioning to stay at left edge when drag handle scrolls out
-              // z-30 to stay above pinned data columns (z-20), isolate creates stacking context
-              // Only apply on tablet+ (@md) - mobile scrolls everything together
-              "@md:sticky @md:left-0 @md:z-30 @md:isolate",
+              // Sticky positioning with z-index for proper stacking (only on tablet+)
+              "@md:sticky left-0 z-30 isolate",
               // Only show border-r if there are no more sticky columns after this
               showColumnBorders &&
                 !enableExpansion &&
@@ -256,10 +252,8 @@ function DataTableHeaderInner<T extends { id: string }>({
           <th
             className={cn(
               "bg-surface border-b border-outline-variant/50",
-              // Sticky positioning to stay at left edge (after checkbox if present)
-              // z-30 to stay above pinned data columns (z-20), isolate creates stacking context
-              // Only apply on tablet+ (@md) - mobile scrolls everything together
-              "@md:sticky @md:z-30 @md:isolate",
+              // Sticky positioning with z-index for proper stacking (only on tablet+)
+              "@md:sticky z-30 isolate",
               // Only show border-r if there are no pinned-left data columns after this
               showColumnBorders &&
                 !hasPinnedLeftData &&

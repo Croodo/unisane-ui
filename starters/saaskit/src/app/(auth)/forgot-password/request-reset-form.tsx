@@ -3,10 +3,10 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Button } from '@/src/components/ui/button';
-import { Label } from '@/src/components/ui/label';
-import { InputGroup, InputGroupAddon, InputGroupInput } from '@/src/components/ui/input-group';
-import { Alert, AlertDescription } from '@/src/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import Link from 'next/link';
 import { ArrowLeft, CheckCircle2, Mail } from 'lucide-react';
 

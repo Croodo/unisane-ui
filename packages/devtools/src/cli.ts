@@ -49,6 +49,7 @@ program
   .option('--vue', 'Generate Vue composables only')
   .option('--zod', 'Generate Zod schemas only')
   .option('--types', 'Generate TypeScript types only')
+  .option('--admin-hooks', 'Generate admin list params hooks and grid registries')
   .option('--dry-run', 'Preview changes without writing files')
   .action(async (options) => {
     log.banner();
@@ -60,6 +61,7 @@ program
       vue: options.vue,
       zod: options.zod,
       types: options.types,
+      adminHooks: options.adminHooks,
       dryRun: options.dryRun,
     });
     if (code !== 0) {

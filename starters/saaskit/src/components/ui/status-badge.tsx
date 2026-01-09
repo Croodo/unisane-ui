@@ -1,10 +1,10 @@
+"use client";
+
 import * as React from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/src/lib/utils";
 import {
   getStatusConfig,
   getStatusStyles,
-  getHttpStatusStyle,
-  HTTP_STATUS_STYLES,
   type StatusCategory,
 } from "@/src/shared/constants/status";
 import {
@@ -97,103 +97,52 @@ export interface DirectionBadgeProps {
 
 /**
  * DirectionBadge - For webhook/event directions
- *
- * @example
- * <DirectionBadge direction="inbound" />
- * <DirectionBadge direction="outbound" />
  */
 export function DirectionBadge({ direction, className }: DirectionBadgeProps) {
-  const isInbound = direction.toLowerCase() === "inbound";
+  const isOutbound =
+    direction === "outbound" || direction === "out" || direction === "egress";
+
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium",
-        isInbound
-          ? "text-blue-700 border-blue-300 bg-blue-50"
-          : "text-purple-700 border-purple-300 bg-purple-50",
+        "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium capitalize",
+        isOutbound
+          ? "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300"
+          : "border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-800 dark:bg-purple-950 dark:text-purple-300",
         className
       )}
     >
-      {isInbound ? (
-        <ArrowDownLeft className="h-3 w-3" />
-      ) : (
+      {isOutbound ? (
         <ArrowUpRight className="h-3 w-3" />
+      ) : (
+        <ArrowDownLeft className="h-3 w-3" />
       )}
       {direction}
     </span>
   );
 }
 
-export interface HttpStatusBadgeProps {
-  /** HTTP status code */
-  code: number | null | undefined;
-  /** Additional className */
-  className?: string;
-}
-
-/**
- * HttpStatusBadge - For HTTP status codes
- *
- * @example
- * <HttpStatusBadge code={200} />
- * <HttpStatusBadge code={404} />
- * <HttpStatusBadge code={500} />
- */
-export function HttpStatusBadge({ code, className }: HttpStatusBadgeProps) {
-  if (typeof code !== "number") {
-    return <span className="text-muted-foreground">—</span>;
-  }
-
-  const style = getHttpStatusStyle(code) ?? HTTP_STATUS_STYLES.default;
-
-  return (
-    <span
-      className={cn(
-        "px-2 py-0.5 rounded text-xs font-mono font-medium border",
-        style?.badge,
-        className
-      )}
-    >
-      {code}
-    </span>
-  );
-}
-
-/**
- * Plan styles for pricing tiers
- */
-const PLAN_STYLES: Record<string, string> = {
-  enterprise: "text-purple-700 bg-purple-100 border-purple-200",
-  business: "text-purple-700 bg-purple-100 border-purple-200",
-  pro: "text-blue-700 bg-blue-100 border-blue-200",
-  starter: "text-green-700 bg-green-100 border-green-200",
-  free: "text-gray-700 bg-gray-100 border-gray-200",
-};
-
 export interface PlanBadgeProps {
-  /** Plan name (e.g., "free", "pro", "enterprise") */
   plan: string;
-  /** Additional className */
   className?: string;
 }
 
 /**
- * PlanBadge - For subscription/pricing plans
- *
- * @example
- * <PlanBadge plan="free" />
- * <PlanBadge plan="pro" />
- * <PlanBadge plan="enterprise" />
+ * PlanBadge - For subscription plans
  */
 export function PlanBadge({ plan, className }: PlanBadgeProps) {
-  const key = plan.toLowerCase();
-  const style = PLAN_STYLES[key] ?? PLAN_STYLES.free;
+  const planStyles: Record<string, string> = {
+    free: "border-outline-variant bg-surface-container text-on-surface-variant",
+    pro: "border-primary/30 bg-primary-container text-on-primary-container",
+    enterprise:
+      "border-tertiary/30 bg-tertiary-container text-on-tertiary-container",
+  };
 
   return (
     <span
       className={cn(
         "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium capitalize",
-        style,
+        planStyles[plan.toLowerCase()] ?? planStyles.free,
         className
       )}
     >
@@ -203,36 +152,69 @@ export function PlanBadge({ plan, className }: PlanBadgeProps) {
 }
 
 export interface CountBadgeProps {
-  /** Count value */
   count: number;
-  /** Show warning styling when count > 0 */
-  warnIfPositive?: boolean;
-  /** Additional className */
   className?: string;
+  warnIfPositive?: boolean;
 }
 
 /**
- * CountBadge - For displaying counts with optional warning styling
- *
- * @example
- * <CountBadge count={5} />
- * <CountBadge count={3} warnIfPositive />
+ * CountBadge - For numeric counts with optional warning state
  */
 export function CountBadge({
   count,
-  warnIfPositive = false,
   className,
+  warnIfPositive = false,
 }: CountBadgeProps) {
-  const showWarning = warnIfPositive && count > 0;
+  const isWarning = warnIfPositive && count > 0;
 
   return (
     <span
       className={cn(
-        showWarning ? "text-red-600 font-bold" : "text-muted-foreground",
+        "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium tabular-nums",
+        isWarning
+          ? "bg-error-container text-on-error-container"
+          : "bg-surface-container text-on-surface-variant",
         className
       )}
     >
       {count}
+    </span>
+  );
+}
+
+export interface HttpStatusBadgeProps {
+  code: number | string | null | undefined;
+  className?: string;
+}
+
+/**
+ * HttpStatusBadge - For HTTP status codes
+ */
+export function HttpStatusBadge({ code, className }: HttpStatusBadgeProps) {
+  const statusCode = code ? Number(code) : 0;
+
+  let statusStyle = "bg-surface-container text-on-surface-variant border-outline-variant";
+  let statusText = String(code ?? "N/A");
+
+  if (statusCode >= 200 && statusCode < 300) {
+    statusStyle = "bg-primary-container text-on-primary-container border-primary/30";
+  } else if (statusCode >= 300 && statusCode < 400) {
+    statusStyle = "bg-secondary-container text-on-secondary-container border-secondary/30";
+  } else if (statusCode >= 400 && statusCode < 500) {
+    statusStyle = "bg-tertiary-container text-on-tertiary-container border-tertiary/30";
+  } else if (statusCode >= 500) {
+    statusStyle = "bg-error-container text-on-error-container border-error/30";
+  }
+
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium tabular-nums",
+        statusStyle,
+        className
+      )}
+    >
+      {statusText}
     </span>
   );
 }

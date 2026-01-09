@@ -1,31 +1,147 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import * as CheckboxPrimitive from "@radix-ui/react-checkbox"
-import { Check, Minus } from "lucide-react"
+import { type InputHTMLAttributes, useId, forwardRef, useEffect, useRef } from "react";
+import { Ripple } from "./ripple";
+import { cn } from "@/src/lib/utils";
 
-import { cn } from "@/lib/utils"
+interface CheckboxProps
+  extends Omit<InputHTMLAttributes<HTMLInputElement>, "type"> {
+  label?: string;
+  disabled?: boolean;
+  indeterminate?: boolean;
+  error?: boolean;
+  className?: string;
+}
 
-const Checkbox = React.forwardRef<
-  React.ElementRef<typeof CheckboxPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>
->(({ className, ...props }, ref) => (
-  <CheckboxPrimitive.Root
-    ref={ref}
-    className={cn(
-      "group/checkbox inline-grid place-content-center peer h-4 w-4 shrink-0 rounded border-2 border-input transition-colors ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=indeterminate]:bg-primary data-[state=checked]:border-transparent data-[state=indeterminate]:border-transparent data-[state=checked]:text-primary-foreground data-[state=indeterminate]:text-primary-foreground",
-      className
-    )}
-    {...props}
-  >
-    <CheckboxPrimitive.Indicator className={cn("grid place-content-center text-current")}
-    >
-      {/* Show minus for indeterminate, check for checked */}
-      <Minus className="hidden h-3.5 w-3.5 group-data-[state=indeterminate]/checkbox:block" />
-      <Check className="hidden h-3.5 w-3.5 group-data-[state=checked]/checkbox:block" />
-    </CheckboxPrimitive.Indicator>
-  </CheckboxPrimitive.Root>
-))
-Checkbox.displayName = CheckboxPrimitive.Root.displayName
+export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
+  (
+    {
+      label,
+      disabled = false,
+      indeterminate = false,
+      error = false,
+      className = "",
+      id: providedId,
+      ...props
+    },
+    ref
+  ) => {
+    const generatedId = useId();
+    const id = providedId || generatedId;
+    const inputRef = useRef<HTMLInputElement | null>(null);
 
-export { Checkbox }
+    useEffect(() => {
+      if (inputRef.current) {
+        inputRef.current.indeterminate = Boolean(indeterminate);
+      }
+    }, [indeterminate]);
+
+    const setInputRef = (node: HTMLInputElement | null) => {
+      inputRef.current = node;
+      if (typeof ref === "function") {
+        ref(node);
+      } else if (ref) {
+        ref.current = node;
+      }
+    };
+
+    return (
+      <label
+        htmlFor={id}
+        className={cn(
+          "inline-flex items-center cursor-pointer select-none gap-3 group relative",
+          disabled && "opacity-38 cursor-not-allowed pointer-events-none",
+          className
+        )}
+      >
+        {/* Touch target container - scales with density (w-10 = 10 units = 40px at standard) */}
+        <div className="relative flex items-center justify-center w-10 h-10">
+          {/* Hover state layer */}
+          <div
+            className={cn(
+              "absolute inset-0 rounded-xs overflow-hidden transition-colors z-0",
+              "group-hover:bg-on-surface/8",
+              error && "group-hover:bg-error/8"
+            )}
+          >
+            <Ripple
+              center
+              disabled={disabled}
+              className={cn(error ? "text-error" : "text-primary")}
+            />
+          </div>
+
+          {/* Hidden input */}
+          <input
+            ref={setInputRef}
+            type="checkbox"
+            id={id}
+            disabled={disabled}
+            className="sr-only peer"
+            {...props}
+          />
+
+          {/* Checkbox box - sibling of input, receives peer-checked */}
+          <div
+            className={cn(
+              "relative z-10 size-icon-sm rounded-xs border-2 flex items-center justify-center overflow-hidden bg-surface",
+              "transition-all duration-snappy ease-emphasized pointer-events-none",
+              !error && "border-outline group-hover:border-on-surface",
+              error && "border-error",
+              !error && "peer-checked:bg-primary peer-checked:border-primary",
+              error && "peer-checked:bg-error peer-checked:border-error",
+              !error && "peer-indeterminate:bg-primary peer-indeterminate:border-primary",
+              error && "peer-indeterminate:bg-error peer-indeterminate:border-error",
+              "peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2"
+            )}
+          />
+
+          {/* Check icon - sibling of input, receives peer-checked */}
+          <svg
+            className={cn(
+              "absolute z-20 size-icon-sm p-0.5 transition-all duration-snappy ease-emphasized pointer-events-none",
+              error ? "text-on-error" : "text-on-primary",
+              "opacity-0 scale-50",
+              !indeterminate && "peer-checked:opacity-100 peer-checked:scale-100"
+            )}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+
+          {/* Indeterminate icon - controlled by prop, not peer */}
+          <svg
+            className={cn(
+              "absolute z-20 size-icon-sm p-0.5 transition-all duration-snappy ease-emphasized pointer-events-none",
+              error ? "text-on-error" : "text-on-primary",
+              indeterminate ? "opacity-100 scale-100 rotate-0" : "opacity-0 scale-50 rotate-90"
+            )}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </div>
+
+        {label && (
+          <span className="text-body-medium font-medium text-on-surface leading-none">
+            {label}
+          </span>
+        )}
+      </label>
+    );
+  }
+);
+
+Checkbox.displayName = "Checkbox";

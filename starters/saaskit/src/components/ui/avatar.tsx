@@ -1,50 +1,159 @@
-"use client"
+import React from "react";
+import { cva, type VariantProps } from "class-variance-authority";
+import { cn } from "@/src/lib/utils";
+import { Surface } from "@/src/primitives/surface";
+import { Text } from "@/src/primitives/text";
 
-import * as React from "react"
-import * as AvatarPrimitive from "@radix-ui/react-avatar"
+const avatarVariants = cva(
+  "relative inline-flex items-center justify-center overflow-hidden rounded-full",
+  {
+    variants: {
+      size: {
+        sm: "w-8 h-8 text-label-small",
+        md: "w-10 h-10 text-body-small",
+        lg: "w-12 h-12 text-body-medium",
+        xl: "w-14 h-14 text-body-large",
+      },
+      variant: {
+        circular: "rounded-full",
+        rounded: "rounded-sm",
+        square: "rounded-none",
+      },
+    },
+    defaultVariants: {
+      size: "md",
+      variant: "circular",
+    },
+  }
+);
 
-import { cn } from "@/lib/utils"
+// ─── PROPS-BASED AVATAR (UNISANE UI ORIGINAL) ─────────────────────────────────
 
-const Avatar = React.forwardRef<
-  React.ElementRef<typeof AvatarPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Root>
->(({ className, ...props }, ref) => (
-  <AvatarPrimitive.Root
-    ref={ref}
-    className={cn(
-      "relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full",
-      className
-    )}
+export type PropsAvatarProps = VariantProps<typeof avatarVariants> & {
+  src?: string;
+  alt?: string;
+  fallback?: string;
+  className?: string;
+};
+
+export const PropsAvatar: React.FC<PropsAvatarProps> = ({
+  src,
+  alt,
+  fallback,
+  size,
+  variant,
+  className,
+}) => {
+  const fallbackChar = fallback?.charAt(0).toUpperCase() || "?";
+  const fallbackLabel = fallback || alt || "Avatar";
+
+  return (
+    <Surface
+      tone="surfaceVariant"
+      className={cn(avatarVariants({ size, variant, className }))}
+      role="img"
+      aria-label={src ? alt : fallbackLabel}
+    >
+      {src ? (
+        <img
+          src={src}
+          alt={alt || "Avatar"}
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        <Text variant="labelLarge" className="text-inherit" aria-hidden="true">
+          {fallbackChar}
+        </Text>
+      )}
+    </Surface>
+  );
+};
+
+// ─── SHADCN-COMPATIBLE AVATAR (CHILDREN-BASED) ─────────────────────────────────
+
+export type ShadcnAvatarProps = VariantProps<typeof avatarVariants> & {
+  children: React.ReactNode;
+  className?: string;
+};
+
+export const ShadcnAvatar: React.FC<ShadcnAvatarProps> = ({
+  children,
+  size,
+  variant,
+  className,
+}) => {
+  return (
+    <Surface
+      tone="surfaceVariant"
+      className={cn(avatarVariants({ size, variant, className }))}
+      role="img"
+    >
+      {children}
+    </Surface>
+  );
+};
+
+// ─── SMART AVATAR THAT DETECTS API PATTERN ─────────────────────────────────
+
+export type AvatarProps = PropsAvatarProps | ShadcnAvatarProps;
+
+function isShadcnProps(props: AvatarProps): props is ShadcnAvatarProps {
+  return "children" in props && props.children !== undefined;
+}
+
+export const Avatar: React.FC<AvatarProps> = (props) => {
+  if (isShadcnProps(props)) {
+    return <ShadcnAvatar {...props} />;
+  }
+  return <PropsAvatar {...props} />;
+};
+
+export const AvatarGroup: React.FC<{
+  children: React.ReactNode;
+  max?: number;
+  className?: string;
+}> = ({ children, max = 5, className }) => {
+  const childrenArray = React.Children.toArray(children);
+  const visibleChildren = childrenArray.slice(0, max);
+  const remainingCount = childrenArray.length - max;
+
+  return (
+    <div className={cn("flex -space-x-2", className)} role="group" aria-label="Avatar group">
+      {visibleChildren}
+      {remainingCount > 0 && (
+        <Surface
+          tone="surfaceVariant"
+          className="w-10 h-10 rounded-full flex items-center justify-center border-2 border-surface"
+          role="img"
+          aria-label={`${remainingCount} more`}
+        >
+          <Text variant="labelSmall" className="text-on-surface-variant" aria-hidden="true">
+            +{remainingCount}
+          </Text>
+        </Surface>
+      )}
+    </div>
+  );
+};
+
+// Compatibility exports for shadcn-style Avatar API
+export const AvatarImage: React.FC<
+  React.ImgHTMLAttributes<HTMLImageElement> & { className?: string }
+> = ({ className, ...props }) => (
+  <img
+    className={cn("w-full h-full object-cover", className)}
     {...props}
   />
-))
-Avatar.displayName = AvatarPrimitive.Root.displayName
+);
 
-const AvatarImage = React.forwardRef<
-  React.ElementRef<typeof AvatarPrimitive.Image>,
-  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Image>
->(({ className, ...props }, ref) => (
-  <AvatarPrimitive.Image
-    ref={ref}
-    className={cn("aspect-square h-full w-full", className)}
-    {...props}
-  />
-))
-AvatarImage.displayName = AvatarPrimitive.Image.displayName
-
-const AvatarFallback = React.forwardRef<
-  React.ElementRef<typeof AvatarPrimitive.Fallback>,
-  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Fallback>
->(({ className, ...props }, ref) => (
-  <AvatarPrimitive.Fallback
-    ref={ref}
-    className={cn(
-      "flex h-full w-full items-center justify-center rounded-full bg-muted",
-      className
-    )}
-    {...props}
-  />
-))
-AvatarFallback.displayName = AvatarPrimitive.Fallback.displayName
-
-export { Avatar, AvatarImage, AvatarFallback }
+export const AvatarFallback: React.FC<
+  React.HTMLAttributes<HTMLSpanElement> & { className?: string }
+> = ({ children, className }) => (
+  <Text
+    variant="labelLarge"
+    className={cn("text-inherit", className)}
+    aria-hidden="true"
+  >
+    {children}
+  </Text>
+);

@@ -1,7 +1,7 @@
 "use client";
 import { useMemo } from "react";
-import { DataTable } from "@/src/components/datatable/DataTable";
-import type { Column } from "@/src/components/datatable/types";
+import { DataTable } from "@unisane/data-table";
+import type { Column } from "@unisane/data-table";
 import { hooks } from "@/src/sdk/hooks";
 import type { WebhooksListEventsItem } from "@/src/sdk/types";
 import { PageHeader } from "@/src/context/usePageHeader";
@@ -130,8 +130,7 @@ export default function WebhooksClient() {
           data={dataset}
           columns={columns}
           title="Webhook events"
-          isLoading={isLoading}
-          onRefresh={() => query.refetch?.()}
+          loading={isLoading}
           tableId="tenant-webhooks-events"
         />
       )}

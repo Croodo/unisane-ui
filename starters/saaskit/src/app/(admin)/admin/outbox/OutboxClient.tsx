@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
-import { DataTable } from "@/src/components/datatable/DataTable";
-import type { Column } from "@/src/components/datatable/types";
+import { DataTable } from "@unisane/data-table";
+import type { Column } from "@unisane/data-table";
 import { hooks } from "@/src/sdk/hooks";
 import type { OutboxAdminDeadListItem, OutboxAdminDeadListResponse } from "@/src/sdk/types";
 import { useQueryClient } from "@tanstack/react-query";
@@ -17,7 +17,7 @@ export default function OutboxClient({ initial }: { initial: OutboxAdminDeadList
         key: "attempts",
         header: "Attempts",
         render: (r) => r.attempts,
-        align: "right",
+        align: "end",
         width: 100,
       },
       {
@@ -42,7 +42,7 @@ export default function OutboxClient({ initial }: { initial: OutboxAdminDeadList
             <PurgeOne id={r.id} />
           </div>
         ),
-        align: "right",
+        align: "end",
         width: 120,
       },
     ],
@@ -69,10 +69,8 @@ export default function OutboxClient({ initial }: { initial: OutboxAdminDeadList
         data={dataset}
         columns={columns}
         title="Outbox — Dead"
-        isLoading={query.isLoading && !query.data}
-        onRefresh={() => query.refetch?.()}
+        loading={query.isLoading && !query.data}
         tableId="admin-outbox-dead"
-        variant="log"
       />
       <PageActions rows={dataset} />
       {/* Selection actions could be added by wiring selection state if needed */}

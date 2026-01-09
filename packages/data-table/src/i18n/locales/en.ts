@@ -21,6 +21,7 @@ export const enStrings: DataTableStrings = {
   // ─── Pagination ───
   pageOfTotal: "Page {page} of {totalPages}",
   rangeOfTotal: "{start}-{end} of {total}",
+  of: "of",
   perPage: "{count} per page",
   noItems: "No items",
   itemCount: "{count} items",
@@ -28,6 +29,7 @@ export const enStrings: DataTableStrings = {
   cursorPagination: "{count} items (page {page})",
   previous: "Previous",
   next: "Next",
+  rowsPerPage: "Rows per page:",
 
   // ─── Selection ───
   selectedCount: "{count} selected",

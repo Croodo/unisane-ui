@@ -4,6 +4,16 @@ Complete architecture documentation for the Unisane platform.
 
 ---
 
+## Roadmaps (What to Build)
+
+| Document | Description | When to Use |
+|----------|-------------|-------------|
+| [MASTER-ROADMAP.md](../roadmaps/MASTER-ROADMAP.md) | Overall vision & phases | Understanding priorities |
+| [centralization-plan.md](../roadmaps/centralization-plan.md) | Architecture consolidation | Fixing fragmentation |
+| [server-table-state.md](../roadmaps/server-table-state.md) | DataTable implementation | Working on tables |
+
+---
+
 ## Documents
 
 ### Core Documentation
@@ -11,6 +21,7 @@ Complete architecture documentation for the Unisane platform.
 | Document | Description | When to Use |
 |----------|-------------|-------------|
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | Complete platform specification | Full understanding, decisions |
+| [implementation-status.md](./implementation-status.md) | What's built vs planned | Quick status check |
 | [QUICK-REFERENCE.md](./QUICK-REFERENCE.md) | Patterns cheat sheet | Daily reference |
 | [kernel.md](./kernel.md) | Kernel layer deep-dive | Implementing kernel |
 | [testing.md](./testing.md) | Testing strategy | Writing tests |
@@ -22,6 +33,7 @@ Complete architecture documentation for the Unisane platform.
 | [module-development.md](./module-development.md) | Creating new modules | Building new features |
 | [contracts-guide.md](./contracts-guide.md) | ts-rest, defineOpMeta, SDK | API contracts & codegen |
 | [sdk-architecture.md](./sdk-architecture.md) | Multi-platform SDK, hooks, OpenAPI | SDK development & integration |
+| [platform-layer.md](./platform-layer.md) | Hexagonal architecture in saaskit | Understanding platform adapters |
 | [providers.md](./providers.md) | AI, storage, email, payments | Integrating services |
 | [advanced-features.md](./advanced-features.md) | Auth, media, AI, analytics | Advanced implementations |
 | [developer-experience.md](./developer-experience.md) | CLI, generators, seeding | Fast platform building |
@@ -33,15 +45,9 @@ Complete architecture documentation for the Unisane platform.
 | [deployment.md](./deployment.md) | Docker, Vercel, CI/CD | Deploying to production |
 | [build-distribution.md](./build-distribution.md) | Build process, OSS/PRO | Building starters |
 | [troubleshooting.md](./troubleshooting.md) | Common issues & solutions | Debugging problems |
-| [dev-tools.md](./dev-tools.md) | ESLint, Vitest, CI/CD | Setting up tooling |
+| [dev-tools.md](./dev-tools.md) | ESLint, Vitest, CI/CD, CLI ecosystem | Setting up tooling |
 
-### Migration
-
-| Document | Description | When to Use |
-|----------|-------------|-------------|
-| [ROADMAP.md](./ROADMAP.md) | Migration execution plan | Phase-by-phase execution |
-| [migration.md](./migration.md) | Step-by-step migration | Executing migration |
-| [MIGRATION-STEPS.md](./MIGRATION-STEPS.md) | Detailed migration steps | Technical migration guide |
+> **Note:** Legacy migration docs have been moved to [../archive/](../archive/) folder.
 
 ---
 
@@ -140,12 +146,6 @@ throw new NotFoundError('Subscription', id);
 2. [build-distribution.md](./build-distribution.md) - Build process
 3. [troubleshooting.md](./troubleshooting.md) - Common issues
 
-### Running the migration?
-
-1. [ROADMAP.md](./ROADMAP.md) - Execution plan with checkpoints
-2. [ARCHITECTURE.md](./ARCHITECTURE.md) - Full context
-3. [migration.md](./migration.md) - Technical step-by-step guide
-
 ### Building a new platform?
 
 1. [developer-experience.md](./developer-experience.md) - CLI and generators
@@ -163,6 +163,7 @@ architecture/
 ├── # Core
 ├── ARCHITECTURE.md            # Main spec (~1600 lines)
 ├── QUICK-REFERENCE.md         # Cheat sheet (~200 lines)
+├── implementation-status.md   # What's built vs planned
 ├── kernel.md                  # Kernel deep-dive (~1000 lines)
 ├── testing.md                 # Testing strategy (~500 lines)
 │
@@ -170,20 +171,16 @@ architecture/
 ├── module-development.md      # Module creation (~600 lines)
 ├── contracts-guide.md         # ts-rest & SDK (~800 lines)
 ├── sdk-architecture.md        # SDK, hooks, OpenAPI (~1200 lines)
+├── platform-layer.md          # Hexagonal architecture
 ├── providers.md               # Service providers (~1000 lines)
 ├── advanced-features.md       # Advanced features (~2600 lines)
 ├── developer-experience.md    # DX & tooling (~800 lines)
 │
-├── # Operations
-├── deployment.md              # Deployment guide (~700 lines)
-├── build-distribution.md      # Build & OSS/PRO (~800 lines)
-├── troubleshooting.md         # Debug guide (~600 lines)
-├── dev-tools.md               # Tool configs & CI/CD (~900 lines)
-│
-└── # Migration
-    ├── ROADMAP.md             # Execution plan (~2600 lines)
-    ├── migration.md           # Technical guide (~800 lines)
-    └── MIGRATION-STEPS.md     # Detailed steps (~500 lines)
+└── # Operations
+    ├── deployment.md          # Deployment guide (~700 lines)
+    ├── build-distribution.md  # Build & OSS/PRO (~800 lines)
+    ├── troubleshooting.md     # Debug guide (~600 lines)
+    └── dev-tools.md           # Tool configs, CI/CD, CLI ecosystem
 ```
 
 ---
@@ -192,17 +189,19 @@ architecture/
 
 | Document | Status | Last Updated |
 |----------|--------|--------------|
-| ARCHITECTURE.md | Authoritative | 2025-01-06 |
-| sdk-architecture.md | **New** | 2026-01-06 |
-| contracts-guide.md | **New** | 2025-01-06 |
-| deployment.md | **New** | 2025-01-06 |
-| providers.md | **New** | 2025-01-06 |
-| build-distribution.md | **New** | 2025-01-06 |
-| module-development.md | **New** | 2025-01-06 |
-| troubleshooting.md | **New** | 2025-01-06 |
-| All others | Active | 2025-01-06 |
+| ARCHITECTURE.md | Authoritative | 2026-01-09 |
+| implementation-status.md | Current | 2026-01-09 |
+| sdk-architecture.md | Current | 2026-01-09 |
+| build-distribution.md | Current | 2026-01-09 |
+| platform-layer.md | Current | 2026-01-09 |
+| dev-tools.md | Current | 2026-01-09 |
+| contracts-guide.md | Active | 2025-01-06 |
+| deployment.md | Active | 2025-01-06 |
+| providers.md | Active | 2025-01-06 |
+| module-development.md | Active | 2025-01-06 |
+| troubleshooting.md | Active | 2025-01-06 |
 
 ---
 
-**Last Updated:** 2026-01-06
+**Last Updated:** 2026-01-09
 **Status:** Authoritative

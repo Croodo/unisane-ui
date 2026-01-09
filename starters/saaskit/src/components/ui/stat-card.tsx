@@ -28,22 +28,24 @@ export function StatCard({
   return (
     <Card className={cn("p-4", className)}>
       <div className="flex items-center gap-2 mb-1">
-        {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
-        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+        {Icon && <Icon className="h-4 w-4 text-on-surface-variant" />}
+        <span className="text-label-small text-on-surface-variant uppercase tracking-wide">
           {label}
         </span>
       </div>
-      <div className="text-2xl font-semibold">{value}</div>
+      <div className="text-headline-medium font-semibold">{value}</div>
       {description && (
-        <p className="text-xs text-muted-foreground mt-1">{description}</p>
+        <p className="text-body-small text-on-surface-variant mt-1">
+          {description}
+        </p>
       )}
       {trend && (
         <div
           className={cn(
-            "text-xs mt-1 flex items-center gap-1",
-            trend.direction === "up" && "text-green-600",
-            trend.direction === "down" && "text-red-600",
-            trend.direction === "neutral" && "text-muted-foreground"
+            "text-label-small mt-1 flex items-center gap-1",
+            trend.direction === "up" && "text-success",
+            trend.direction === "down" && "text-error",
+            trend.direction === "neutral" && "text-on-surface-variant"
           )}
         >
           {trend.direction === "up" && "↑"}

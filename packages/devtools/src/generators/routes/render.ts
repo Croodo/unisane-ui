@@ -141,12 +141,17 @@ export async function renderRouteHandler(args: {
   const listKind = cfg.listKind;
   const filtersSchema = cfg.filtersSchema;
   const isAdminList = listKind === 'admin';
+  // Support filter parsing for non-list endpoints (e.g., stats) that have filtersSchema
+  const needsFilterParsing = !!filtersSchema && !isAdminList;
 
   if (isAdminList) {
     imports.add(opts.queryDslPath, 'parseListParams');
     if (filtersSchema) {
       imports.add(toModuleImport(filtersSchema.importPath, opts.usePackages), filtersSchema.name);
     }
+  } else if (needsFilterParsing) {
+    // For non-list endpoints with filters (e.g., stats), add filter schema import
+    imports.add(toModuleImport(filtersSchema.importPath, opts.usePackages), filtersSchema.name);
   }
 
   // Query handling
@@ -187,6 +192,27 @@ export async function renderRouteHandler(args: {
       `const filtersTyped = ${filtersSchema ? `${filtersSchema.name}.parse(filters ?? {})` : 'filters'};`,
       `const queryInput = { limit, ...(cursor ? { cursor } : {}), ...(sort ? { sort } : {}), ...(filtersTyped ? { filters: filtersTyped } : {}) };`,
       `const __query = ${hasQuery ? `${queryAlias}.parse(queryInput)` : 'queryInput'};`
+    );
+  } else if (needsFilterParsing && hasQuery) {
+    // Non-list endpoint with filters (e.g., stats) - parse filters from query param
+    beforeCall.push(
+      `const url = new URL(req.url);`,
+      `const filtersRaw = url.searchParams.get('filters');`,
+      `let filters: unknown;`,
+      `if (filtersRaw) {`,
+      `  try {`,
+      `    filters = JSON.parse(filtersRaw);`,
+      `  } catch {`,
+      `    try {`,
+      `      const decoded = Buffer.from(filtersRaw, 'base64url').toString('utf8');`,
+      `      filters = JSON.parse(decoded);`,
+      `    } catch {`,
+      `      throw new Error('filters must be valid JSON or base64url JSON');`,
+      `    }`,
+      `  }`,
+      `}`,
+      `const filtersTyped = ${filtersSchema!.name}.parse(filters ?? {});`,
+      `const __query = { filters: filtersTyped };`
     );
   } else if (hasQuery) {
     imports.add(opts.queryPath, 'parseQuery as parseQueryZ');

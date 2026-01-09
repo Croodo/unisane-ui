@@ -111,6 +111,7 @@ export const usersContract = c.router({
           importPath: "./users.contract",
           name: "ZAdminStatsQuery",
         },
+        filtersSchema: { importPath: "./users.contract", name: "ZAdminUserFilters" },
         invoke: "object",
         callArgs: [
           { name: "filters", from: "query", key: "filters", optional: true },

@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import { DataTable } from "@/src/components/datatable/DataTable";
-import type { Column } from "@/src/components/datatable/types";
+import { DataTable } from "@unisane/data-table";
+import type { Column } from "@unisane/data-table";
 import { hooks } from "@/src/sdk/hooks";
 import type { CreditsLedgerItem } from "@/src/sdk/types";
 import {
@@ -120,7 +120,7 @@ export function CreditsTab({ tenantId }: CreditsTabProps) {
         key: "amount",
         header: "Amount",
         render: (row) => row.amount.toLocaleString(),
-        align: "right",
+        align: "end",
         width: 120,
       },
       { key: "reason", header: "Reason", render: (row) => row.reason },
@@ -158,8 +158,7 @@ export function CreditsTab({ tenantId }: CreditsTabProps) {
         data={ledgerData}
         columns={cols}
         title="Credits ledger"
-        isLoading={ledgerQuery.isLoading && !ledgerQuery.data}
-        onRefresh={() => ledgerQuery.refetch?.()}
+        loading={ledgerQuery.isLoading && !ledgerQuery.data}
         tableId="tenant-credits-ledger"
       />
     </div>

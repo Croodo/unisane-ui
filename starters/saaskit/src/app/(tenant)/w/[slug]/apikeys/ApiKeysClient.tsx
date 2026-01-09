@@ -10,8 +10,8 @@ import { useSession } from "@/src/hooks/useSession";
 import { hooks } from "@/src/sdk/hooks";
 import type { ApikeysListItem, ApikeysCreateResponse } from "@/src/sdk/types";
 import { useApiError } from "@/src/hooks/useApiError";
-import { DataTable } from "@/src/components/datatable/DataTable";
-import type { Column } from "@/src/components/datatable/types";
+import { DataTable } from "@unisane/data-table";
+import type { Column } from "@unisane/data-table";
 import { PageHeader } from "@/src/context/usePageHeader";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/src/components/ui/alert";
@@ -199,7 +199,7 @@ export function ApiKeysClient() {
       {
         key: "actions",
         header: "",
-        align: "right",
+        align: "end",
         width: 80,
         render: (row) => (
           <DropdownMenu>
@@ -272,8 +272,7 @@ export function ApiKeysClient() {
             data={dataset}
             columns={columns}
             title="API Keys"
-            isLoading={isLoading}
-            onRefresh={() => query.refetch?.()}
+            loading={isLoading}
             tableId="tenant-apikeys"
           />
         )}

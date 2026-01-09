@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useMemo, useCallback } from "react";
+import React, { useMemo, useCallback, useState } from "react";
 import type { ReactNode, CSSProperties } from "react";
 import type { Column, ColumnGroup } from "../types/column";
 import type { BulkAction } from "../types/features";
+import type { CursorPagination, FilterState, MultiSortState } from "../types/core";
 import type { RowActivationEvent } from "../types/props";
-import type { Density } from "../constants/index";
 import type {
   FeaturesConfig,
   VirtualizationConfig,
@@ -19,10 +19,8 @@ import type {
 import { getPresetConfig } from "../types/config";
 import { DataTableProvider } from "../context/provider";
 import { DataTableInner } from "./data-table-inner";
-import { DataTableToolbar } from "./toolbar";
 import { FeedbackProvider } from "../feedback";
 import { useInlineEditing } from "../hooks/features/use-inline-editing";
-import { useSelection } from "../context";
 
 // ─── DATA TABLE PROPS ─────────────────────────────────────────────────────────
 
@@ -177,6 +175,69 @@ export interface DataTableProps<T extends { id: string }> {
   /** Callback to refresh data */
   onRefresh?: () => void | Promise<void>;
 
+  /** Cursor pagination controls for remote data (from useRemoteDataTable) */
+  cursorPagination?: CursorPagination;
+
+  /**
+   * Pagination mode override (used by useRemoteDataTable).
+   * Overrides pagination.mode when specified.
+   */
+  paginationMode?: "offset" | "cursor" | "none";
+
+  // ─── Remote Data Props (from useRemoteDataTable) ───
+  /**
+   * Controlled search value (shorthand for controlled.searchValue).
+   * Used by useRemoteDataTable for server-side search.
+   */
+  searchValue?: string;
+
+  /**
+   * Search change handler (shorthand for callbacks.onSearchChange).
+   * Used by useRemoteDataTable for server-side search.
+   */
+  onSearchChange?: (value: string) => void;
+
+  /**
+   * Controlled filters (shorthand for controlled.filters).
+   * Used by useRemoteDataTable for server-side filtering.
+   */
+  filters?: Record<string, unknown>;
+
+  /**
+   * Filter change handler (shorthand for callbacks.onFilterChange).
+   * Used by useRemoteDataTable for server-side filtering.
+   */
+  onFilterChange?: (filters: Record<string, unknown>) => void;
+
+  /**
+   * Sort key (shorthand for controlled.sortState.key).
+   * Used by useRemoteDataTable for server-side sorting.
+   */
+  sortKey?: string | null;
+
+  /**
+   * Sort direction (shorthand for controlled.sortState.direction).
+   * Used by useRemoteDataTable for server-side sorting.
+   */
+  sortDirection?: "asc" | "desc";
+
+  /**
+   * Sort change handler (shorthand for callbacks.onSortChange).
+   * Used by useRemoteDataTable for server-side sorting.
+   */
+  onSortChange?: (key: string | null, direction: "asc" | "desc") => void;
+
+  /**
+   * Disable local data processing (sorting, filtering, searching).
+   * Set to true when using server-side processing.
+   */
+  disableLocalProcessing?: boolean;
+
+  /**
+   * Data mode - 'local' for client-side, 'remote' for server-side processing.
+   */
+  mode?: "local" | "remote";
+
   // ─── Identification ───
   /** Unique ID for localStorage persistence */
   tableId?: string;
@@ -246,54 +307,6 @@ function EditingWrapper<T extends { id: string }>({
   });
 
   return <>{children(editing?.enabled ? inlineEditing : undefined)}</>;
-}
-
-// ─── INTERNAL TOOLBAR WRAPPER ─────────────────────────────────────────────────
-
-interface IntegratedToolbarProps {
-  title?: string;
-  searchable: boolean;
-  bulkActions: BulkAction[];
-  density: Density;
-  onDensityChange?: (density: Density) => void;
-  showColumnToggle: boolean;
-  showDensityToggle: boolean;
-  refreshing?: boolean;
-  onRefresh?: () => void | Promise<void>;
-}
-
-function IntegratedToolbar({
-  title,
-  searchable,
-  bulkActions,
-  density,
-  onDensityChange,
-  showColumnToggle,
-  showDensityToggle,
-  refreshing,
-  onRefresh,
-}: IntegratedToolbarProps) {
-  const { selectedRows, selectedCount, deselectAll } = useSelection();
-
-  // Convert Set to array for toolbar
-  const selectedIdsArray = useMemo(() => Array.from(selectedRows), [selectedRows]);
-
-  return (
-    <DataTableToolbar
-      title={title}
-      searchable={searchable}
-      selectedCount={selectedCount}
-      selectedIds={selectedIdsArray}
-      bulkActions={bulkActions}
-      onClearSelection={deselectAll}
-      density={density}
-      onDensityChange={onDensityChange}
-      showColumnToggle={showColumnToggle}
-      showDensityToggle={showDensityToggle}
-      refreshing={refreshing}
-      onRefresh={onRefresh}
-    />
-  );
 }
 
 // ─── DATA TABLE COMPONENT ─────────────────────────────────────────────────────
@@ -369,6 +382,19 @@ export function DataTable<T extends { id: string }>({
   refreshing = false,
   totalCount,
   onRefresh,
+  cursorPagination,
+  paginationMode: paginationModeOverride,
+
+  // Remote data props (from useRemoteDataTable)
+  searchValue: searchValueProp,
+  onSearchChange: onSearchChangeProp,
+  filters: filtersProp,
+  onFilterChange: onFilterChangeProp,
+  sortKey: sortKeyProp,
+  sortDirection: sortDirectionProp,
+  onSortChange: onSortChangeProp,
+  mode,
+  disableLocalProcessing = false,
 
   // Identification
   tableId,
@@ -431,16 +457,47 @@ export function DataTable<T extends { id: string }>({
     onRefresh
   );
 
+  // Internal density state - allows user to change density via toolbar
+  const initialDensity = styling.density ?? "standard";
+  const [internalDensity, setInternalDensity] = useState(initialDensity);
+
   // Effective density (will be used for both toolbar and table)
-  const effectiveDensity = styling.density ?? "standard";
+  const effectiveDensity = internalDensity;
+
+  // Effective pagination mode - top-level override takes precedence over pagination.mode
+  const effectivePaginationMode = paginationModeOverride ?? paginationConfig.mode ?? "offset";
+
+  // Effective mode - use explicit mode prop or derive from pagination
+  const effectiveMode = mode ?? (effectivePaginationMode === "cursor" ? "remote" : "local");
+
+  // Merge top-level props with controlled/callbacks (top-level takes precedence for useRemoteDataTable compatibility)
+  const effectiveSearchValue = searchValueProp ?? controlled?.searchValue;
+  const effectiveOnSearchChange = onSearchChangeProp ?? callbacks?.onSearchChange;
+  const effectiveFilters = (filtersProp ?? controlled?.filters) as FilterState | undefined;
+  const effectiveOnFilterChange = onFilterChangeProp
+    ? (filters: FilterState) => onFilterChangeProp(filters)
+    : callbacks?.onFilterChange;
+
+  // Convert single sort (from useRemoteDataTable) to MultiSortState array
+  const effectiveSortState = sortKeyProp !== undefined && sortKeyProp !== null
+    ? [{ key: sortKeyProp, direction: sortDirectionProp ?? "asc" as const }]
+    : controlled?.sortState;
+
+  // Wrap single-sort callback to work with MultiSortState
+  const effectiveOnSortChange = onSortChangeProp
+    ? (sortState: MultiSortState) => {
+        const first = sortState[0];
+        onSortChangeProp(first?.key ?? null, first?.direction ?? "asc");
+      }
+    : callbacks?.onSortChange;
 
   // Build the table content
   const content = (
     <DataTableProvider
       tableId={tableId}
       columns={columns}
-      mode={paginationConfig.mode === "cursor" ? "remote" : "local"}
-      paginationMode={paginationConfig.mode ?? "offset"}
+      mode={effectiveMode}
+      paginationMode={effectivePaginationMode}
       variant={styling.variant ?? "list"}
       rowSelectionEnabled={effectiveRowSelectionEnabled}
       showColumnDividers={effectiveShowColumnDividers}
@@ -450,35 +507,33 @@ export function DataTable<T extends { id: string }>({
       resizable={features.columnResize ?? true}
       pinnable={features.columnPinning ?? true}
       initialPageSize={paginationConfig.pageSize ?? 25}
-      // Controlled props
-      sortState={controlled?.sortState}
-      onSortChange={callbacks?.onSortChange}
-      controlledFilters={controlled?.filters}
-      onFilterChange={callbacks?.onFilterChange}
-      searchValue={controlled?.searchValue}
-      onSearchChange={callbacks?.onSearchChange}
+      // Controlled props - merged with top-level props
+      sortState={effectiveSortState}
+      onSortChange={effectiveOnSortChange}
+      controlledFilters={effectiveFilters}
+      onFilterChange={effectiveOnFilterChange}
+      searchValue={effectiveSearchValue}
+      onSearchChange={effectiveOnSearchChange}
       columnPinState={controlled?.columnPinState}
       onColumnPinChange={callbacks?.onColumnPinChange}
       selectedIds={controlled?.selectedIds}
       onSelectionChange={callbacks?.onSelectionChange}
     >
-      {/* Integrated toolbar - shown when search, selection+bulkActions, title, or refresh is enabled */}
-      {showToolbar && (
-        <IntegratedToolbar
-          title={title}
-          searchable={features.search ?? false}
-          bulkActions={bulkActions}
-          density={effectiveDensity}
-          showColumnToggle={false}
-          showDensityToggle={false}
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-        />
-      )}
-
       <EditingWrapper data={data} editing={editing}>
         {(inlineEditing) => (
           <DataTableInner
+            // Pass toolbar props to DataTableInner so it can render inside StickyZone
+            toolbarProps={showToolbar ? {
+              title,
+              searchable: features.search ?? false,
+              bulkActions,
+              density: effectiveDensity,
+              onDensityChange: setInternalDensity,
+              showColumnToggle: true,
+              showDensityToggle: true,
+              refreshing,
+              onRefresh,
+            } : undefined}
             data={data}
             isLoading={loading}
             bulkActions={bulkActions}
@@ -501,6 +556,8 @@ export function DataTable<T extends { id: string }>({
             reorderableRows={features.rowReorder ?? false}
             onRowReorder={callbacks?.onRowReorder}
             inlineEditing={inlineEditing}
+            cursorPagination={cursorPagination}
+            disableLocalProcessing={disableLocalProcessing}
           />
         )}
       </EditingWrapper>

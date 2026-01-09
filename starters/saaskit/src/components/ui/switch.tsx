@@ -1,29 +1,113 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import * as SwitchPrimitives from "@radix-ui/react-switch"
+import { type InputHTMLAttributes, useId, forwardRef } from "react";
+import { cn } from "@/src/lib/utils";
+import { Icon } from "@/src/primitives/icon";
 
-import { cn } from "@/lib/utils"
+interface SwitchProps
+  extends Omit<InputHTMLAttributes<HTMLInputElement>, "type"> {
+  label?: string;
+  disabled?: boolean;
+  icons?: boolean;
+  className?: string;
+  /** shadcn compatibility: callback when checked state changes */
+  onCheckedChange?: (checked: boolean) => void;
+}
 
-const Switch = React.forwardRef<
-  React.ElementRef<typeof SwitchPrimitives.Root>,
-  React.ComponentPropsWithoutRef<typeof SwitchPrimitives.Root>
->(({ className, ...props }, ref) => (
-  <SwitchPrimitives.Root
-    className={cn(
-      "peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=unchecked]:bg-input",
-      className
-    )}
-    {...props}
-    ref={ref}
-  >
-    <SwitchPrimitives.Thumb
-      className={cn(
-        "pointer-events-none block h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0"
-      )}
-    />
-  </SwitchPrimitives.Root>
-))
-Switch.displayName = SwitchPrimitives.Root.displayName
+export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
+  (
+    {
+      label,
+      disabled = false,
+      icons = false,
+      className = "",
+      id: providedId,
+      onCheckedChange,
+      onChange,
+      ...props
+    },
+    ref
+  ) => {
+    const generatedId = useId();
+    const id = providedId || generatedId;
 
-export { Switch }
+    return (
+      <label
+        htmlFor={id}
+        className={cn(
+          "inline-flex items-center gap-3 cursor-pointer select-none group relative min-h-8",
+          disabled && "opacity-38 cursor-not-allowed pointer-events-none",
+          className
+        )}
+      >
+        {/* Track container - uses calc with --unit for density scaling */}
+        {/* Base: 52x32px at standard density (13 units x 8 units) */}
+        <div
+          className="relative shrink-0 group/switch h-[calc(var(--unit)*8)] w-[calc(var(--unit)*13)]"
+        >
+          <input
+            ref={ref}
+            type="checkbox"
+            id={id}
+            role="switch"
+            className="peer sr-only"
+            disabled={disabled}
+            onChange={(e) => {
+              onChange?.(e);
+              onCheckedChange?.(e.target.checked);
+            }}
+            {...props}
+          />
+
+          {/* Track background */}
+          <div
+            className={cn(
+              "absolute inset-0 rounded-full transition-colors duration-medium ease-standard border-2",
+              "border-outline bg-surface-container-highest",
+              "peer-checked:bg-primary peer-checked:border-primary",
+              "peer-focus-visible:ring-2 peer-focus-visible:ring-primary/30"
+            )}
+          />
+
+          {/* Thumb - uses size-icon for density scaling */}
+          <div
+            className={cn(
+              "absolute top-1/2 -translate-y-1/2 rounded-full transition-all duration-emphasized ease-emphasized flex items-center justify-center z-10",
+              // Background colors
+              "bg-outline group-hover:bg-on-surface-variant peer-checked:bg-on-primary",
+              // Size: with icons always size-icon-md (24px), without icons size-icon-xs (16px) → size-icon-md (24px)
+              icons
+                ? "size-icon-md left-[var(--unit)] peer-checked:left-[calc(var(--unit)*13-var(--icon-md)-var(--unit))]"
+                : "size-icon-xs left-[calc(var(--unit)*2)] peer-checked:size-icon-md peer-checked:left-[calc(var(--unit)*13-var(--icon-md)-var(--unit))]"
+            )}
+          />
+
+          {/* Icons (rendered separately to use peer selectors) */}
+          {icons && (
+            <>
+              {/* Close icon - shown when unchecked */}
+              <Icon
+                symbol="close"
+                size="xs"
+                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 left-[calc(var(--unit)+var(--icon-md)/2)] text-surface-container-highest z-20 transition-opacity duration-snappy ease-standard opacity-100 peer-checked:opacity-0"
+              />
+              {/* Check icon - shown when checked */}
+              <Icon
+                symbol="check"
+                size="xs"
+                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 left-[calc(var(--unit)*13-var(--icon-md)/2-var(--unit))] text-primary z-20 transition-opacity duration-snappy ease-standard opacity-0 peer-checked:opacity-100"
+              />
+            </>
+          )}
+        </div>
+        {label && (
+          <span className="text-body-medium font-medium text-on-surface leading-none">
+            {label}
+          </span>
+        )}
+      </label>
+    );
+  }
+);
+
+Switch.displayName = "Switch";

@@ -21,6 +21,7 @@ export const hiStrings: DataTableStrings = {
   // ─── Pagination ───
   pageOfTotal: "पृष्ठ {page} / {totalPages}",
   rangeOfTotal: "{start}-{end} में से {total}",
+  of: "में से",
   perPage: "{count} प्रति पृष्ठ",
   noItems: "कोई आइटम नहीं",
   itemCount: "{count} आइटम",
@@ -28,6 +29,7 @@ export const hiStrings: DataTableStrings = {
   cursorPagination: "{count} आइटम (पृष्ठ {page})",
   previous: "पिछला",
   next: "अगला",
+  rowsPerPage: "प्रति पृष्ठ पंक्तियाँ:",
 
   // ─── Selection ───
   selectedCount: "{count} चयनित",

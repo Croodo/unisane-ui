@@ -14,6 +14,7 @@ import { genServer } from '../../generators/sdk/gen-server.js';
 import { genHooks } from '../../generators/sdk/gen-hooks.js';
 import { genVue } from '../../generators/sdk/gen-vue.js';
 import { genZod } from '../../generators/sdk/gen-zod.js';
+import { genAdminHooks } from '../../generators/sdk/gen-admin-hooks.js';
 import type { SdkTarget } from '../../generators/sdk/types.js';
 
 export interface SdkGenOptions {
@@ -27,6 +28,8 @@ export interface SdkGenOptions {
   zod?: boolean;
   /** Generate TypeScript types only */
   types?: boolean;
+  /** Generate admin hooks and registries */
+  adminHooks?: boolean;
   /** Preview changes without writing files */
   dryRun?: boolean;
   /** Working directory */
@@ -43,12 +46,13 @@ export async function sdkGen(options: SdkGenOptions = {}): Promise<number> {
     vue = false,
     zod = false,
     types = false,
+    adminHooks = false,
     dryRun = false,
     cwd = process.cwd(),
   } = options;
 
   // Determine which targets to generate
-  const hasSpecificTarget = clients || hooks || vue || zod || types;
+  const hasSpecificTarget = clients || hooks || vue || zod || types || adminHooks;
   const targets: SdkTarget[] = hasSpecificTarget
     ? [
         ...(clients ? ['browser', 'server'] as SdkTarget[] : []),
@@ -56,8 +60,9 @@ export async function sdkGen(options: SdkGenOptions = {}): Promise<number> {
         ...(vue ? ['vue'] as SdkTarget[] : []),
         ...(zod ? ['zod'] as SdkTarget[] : []),
         ...(types ? ['types'] as SdkTarget[] : []),
+        ...(adminHooks ? ['admin-hooks'] as SdkTarget[] : []),
       ]
-    : ['browser', 'server', 'types', 'hooks']; // Default targets
+    : ['browser', 'server', 'types', 'hooks', 'admin-hooks']; // Default targets (includes admin-hooks)
 
   const spinner = log.spinner('Loading configuration...');
   spinner.start();
@@ -223,6 +228,37 @@ export async function sdkGen(options: SdkGenOptions = {}): Promise<number> {
         generated.push('schemas.ts');
       } catch (e) {
         errors.push(`zod: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    }
+
+    // Generate admin hooks and grid registries
+    if (targets.includes('admin-hooks' as SdkTarget)) {
+      spinner.text = 'Generating admin hooks...';
+      try {
+        // Try to load adminListConfigs from @unisane/gateway
+        // This uses dynamic import since gateway is only available in projects that use it
+        let adminListConfigs: unknown[] = [];
+        try {
+          // Dynamic import to avoid compile-time dependency on @unisane/gateway
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const gatewayModule = await (Function('return import("@unisane/gateway")')() as Promise<any>);
+          adminListConfigs = gatewayModule.adminListConfigs || [];
+        } catch {
+          // Gateway may not be available - this is expected in standalone devtools usage
+          log.warn('Could not load @unisane/gateway - skipping admin hooks');
+          log.info('Admin hooks require @unisane/gateway to be installed');
+        }
+
+        if (adminListConfigs.length > 0) {
+          await genAdminHooks({
+            output: paths.sdkOutput,
+            adminListConfigs: adminListConfigs as Parameters<typeof genAdminHooks>[0]['adminListConfigs'],
+            dryRun,
+          });
+          generated.push('admin-hooks/');
+        }
+      } catch (e) {
+        errors.push(`admin-hooks: ${e instanceof Error ? e.message : String(e)}`);
       }
     }
 

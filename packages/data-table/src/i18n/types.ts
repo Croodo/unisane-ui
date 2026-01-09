@@ -32,6 +32,8 @@ export interface DataTableStrings {
   pageOfTotal: string;
   /** Range display format. Placeholders: {start}, {end}, {total} */
   rangeOfTotal: string;
+  /** Preposition "of" for range displays (e.g., "1-25 of 100") */
+  of: string;
   /** Per page suffix. Placeholder: {count} */
   perPage: string;
   /** Empty pagination state */
@@ -46,6 +48,8 @@ export interface DataTableStrings {
   previous: string;
   /** Next page button */
   next: string;
+  /** Rows per page label */
+  rowsPerPage: string;
 
   // ─── Selection ───
   /** Selected count. Placeholder: {count} */

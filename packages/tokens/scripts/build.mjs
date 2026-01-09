@@ -284,7 +284,7 @@ function generateUniTokens() {
 /* Theme defaults layer - can be overridden by unlayered app CSS */
 @layer unisane-defaults {
   :root {
-    --hue: 210;
+    --hue: 240;
     --chroma: 0.16;
   }
 }

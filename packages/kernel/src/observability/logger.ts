@@ -4,15 +4,20 @@
  * High-performance structured JSON logger that automatically includes
  * context fields (requestId, tenantId, userId) from the current request context.
  *
- * Uses pino for production performance. Use pino-pretty for development:
+ * Uses pino for production performance. pino-pretty is enabled by default
+ * in development for human-readable output. To disable:
  * ```bash
- * pnpm add -D pino-pretty
- * LOG_PRETTY=true pnpm dev
+ * LOG_PRETTY=false pnpm dev
  * ```
  */
 
+import { createRequire } from 'module';
 import pino from 'pino';
+import type { DestinationStream, Logger as PinoLogger } from 'pino';
 import { ctx } from '../context';
+
+// Create require for ESM compatibility (pino-pretty needs require())
+const esmRequire = createRequire(import.meta.url);
 
 /**
  * Log levels supported by pino.
@@ -45,79 +50,106 @@ function getLogLevel(): LogLevel {
 }
 
 /**
- * Check if pretty printing is enabled (for development).
+ * Check if pretty printing is enabled.
+ * Enabled by default in non-production unless explicitly disabled.
  */
 function isPrettyEnabled(): boolean {
-  return process.env.LOG_PRETTY === 'true' || process.env.LOG_PRETTY === '1';
+  // Explicitly disabled
+  if (process.env.LOG_PRETTY === 'false' || process.env.LOG_PRETTY === '0') {
+    return false;
+  }
+  // Explicitly enabled
+  if (process.env.LOG_PRETTY === 'true' || process.env.LOG_PRETTY === '1') {
+    return true;
+  }
+  // Default: enabled in non-production (and not in test)
+  return process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test';
 }
 
-/**
- * Create the base pino logger instance.
- */
-function createBaseLogger(): pino.Logger {
-  const options: pino.LoggerOptions = {
-    level: getLogLevel(),
-    // Use ISO timestamps for consistency
-    timestamp: () => `,"timestamp":"${new Date().toISOString()}"`,
-    // Serialize errors properly
-    serializers: {
-      err: pino.stdSerializers.err,
-      error: pino.stdSerializers.err,
-    },
-    // Base fields
-    base: {
-      service: process.env.SERVICE_NAME || 'unisane',
-    },
-  };
+// Lazy initialization to avoid calling at import time (which can fail under bundlers)
+let _pinoLogger: PinoLogger | undefined;
 
-  // In development with LOG_PRETTY, use pino-pretty transport
-  if (isPrettyEnabled() && process.env.NODE_ENV !== 'production') {
-    return pino({
-      ...options,
-      transport: {
-        target: 'pino-pretty',
-        options: {
-          colorize: true,
-          translateTime: 'SYS:standard',
-          ignore: 'pid,hostname,service',
-        },
-      },
-    });
+/**
+ * Get or create the pino logger instance.
+ * Uses lazy initialization to avoid worker thread issues with Next.js bundling.
+ */
+function getPinoLoggerInstance(): PinoLogger {
+  if (_pinoLogger) return _pinoLogger;
+
+  const level = getLogLevel();
+
+  // Pretty printing in non-prod if pino-pretty is available.
+  // Use an inline destination stream to avoid worker threads (which can fail under bundlers).
+  let destination: DestinationStream | undefined;
+  if (isPrettyEnabled()) {
+    try {
+      const pretty = esmRequire('pino-pretty') as (options?: Record<string, unknown>) => DestinationStream;
+      destination = pretty({
+        colorize: true,
+        translateTime: 'HH:MM:ss.l',
+        singleLine: false,
+        ignore: 'pid,hostname',
+        levelFirst: true,
+      });
+    } catch {
+      // pino-pretty not installed or unavailable — continue with JSON logs
+    }
   }
 
-  return pino(options);
+  _pinoLogger = pino(
+    {
+      level,
+      // Serialize errors properly
+      serializers: {
+        err: pino.stdSerializers.err,
+        error: pino.stdSerializers.err,
+      },
+      // Keep logs clean (no pid/hostname in serverless)
+      base: null,
+    },
+    destination
+  );
+
+  return _pinoLogger;
 }
 
 /**
- * The base pino instance.
+ * Add context fields to log data.
  */
-const baseLogger = createBaseLogger();
+function withContext(data?: Record<string, unknown>): Record<string, unknown> {
+  const context = ctx.tryGet();
+  return {
+    ...(context?.requestId && { requestId: context.requestId }),
+    ...(context?.tenantId && { tenantId: context.tenantId }),
+    ...(context?.userId && { userId: context.userId }),
+    ...data,
+  };
+}
 
 /**
  * Create a context-aware logger that wraps pino.
  */
-function createContextAwareLogger(pinoLogger: pino.Logger): Logger {
-  /**
-   * Add context fields to log data.
-   */
-  function withContext(data?: Record<string, unknown>): Record<string, unknown> {
-    const context = ctx.tryGet();
-    return {
-      ...(context?.requestId && { requestId: context.requestId }),
-      ...(context?.tenantId && { tenantId: context.tenantId }),
-      ...(context?.userId && { userId: context.userId }),
-      ...data,
-    };
-  }
-
+function createContextAwareLogger(getPino: () => PinoLogger): Logger {
   return {
-    trace: (msg, data) => pinoLogger.trace(withContext(data), msg),
-    debug: (msg, data) => pinoLogger.debug(withContext(data), msg),
-    info: (msg, data) => pinoLogger.info(withContext(data), msg),
-    warn: (msg, data) => pinoLogger.warn(withContext(data), msg),
-    error: (msg, data) => pinoLogger.error(withContext(data), msg),
-    fatal: (msg, data) => pinoLogger.fatal(withContext(data), msg),
-    child: (bindings) => createContextAwareLogger(pinoLogger.child(bindings)),
+    trace: (msg, data) => getPino().trace(withContext(data), msg),
+    debug: (msg, data) => getPino().debug(withContext(data), msg),
+    info: (msg, data) => getPino().info(withContext(data), msg),
+    warn: (msg, data) => getPino().warn(withContext(data), msg),
+    error: (msg, data) => getPino().error(withContext(data), msg),
+    fatal: (msg, data) => getPino().fatal(withContext(data), msg),
+    child: (bindings) => {
+      // Create a child logger that inherits the bindings
+      const childPino = getPino().child(bindings);
+      return {
+        trace: (msg, data) => childPino.trace(withContext(data), msg),
+        debug: (msg, data) => childPino.debug(withContext(data), msg),
+        info: (msg, data) => childPino.info(withContext(data), msg),
+        warn: (msg, data) => childPino.warn(withContext(data), msg),
+        error: (msg, data) => childPino.error(withContext(data), msg),
+        fatal: (msg, data) => childPino.fatal(withContext(data), msg),
+        child: (more) => createContextAwareLogger(() => childPino).child(more),
+      };
+    },
   };
 }
 
@@ -125,6 +157,7 @@ function createContextAwareLogger(pinoLogger: pino.Logger): Logger {
  * The main logger instance.
  *
  * Automatically includes requestId, tenantId, and userId from context.
+ * Uses lazy initialization to avoid worker thread issues with Next.js.
  *
  * @example
  * ```typescript
@@ -141,12 +174,12 @@ function createContextAwareLogger(pinoLogger: pino.Logger): Logger {
  * billingLogger.info('Subscription created'); // Includes module: 'billing'
  * ```
  *
- * For pretty output in development:
+ * Pretty output is enabled by default in development. To disable:
  * ```bash
- * LOG_PRETTY=true pnpm dev
+ * LOG_PRETTY=false pnpm dev
  * ```
  */
-export const logger: Logger = createContextAwareLogger(baseLogger);
+export const logger: Logger = createContextAwareLogger(getPinoLoggerInstance);
 
 /**
  * Create a module-specific logger.
@@ -165,6 +198,6 @@ export function createModuleLogger(module: string): Logger {
  * Get the underlying pino logger for advanced use cases.
  * Use sparingly - prefer the context-aware logger.
  */
-export function getPinoLogger(): pino.Logger {
-  return baseLogger;
+export function getPinoLogger(): PinoLogger {
+  return getPinoLoggerInstance();
 }

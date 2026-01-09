@@ -1,160 +1,516 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import * as SelectPrimitive from "@radix-ui/react-select"
-import { Check, ChevronDown, ChevronUp } from "lucide-react"
+import React, { useState, useRef, useEffect, useId, useCallback } from "react";
+import { createPortal } from "react-dom";
+import { cn } from "@/src/lib/utils";
+import { Icon } from "@/src/primitives/icon";
 
-import { cn } from "@/lib/utils"
+interface SelectOption {
+  value: string;
+  label: string;
+  disabled?: boolean;
+}
 
-const Select = SelectPrimitive.Root
+interface SelectPropsWithOptions {
+  label?: string;
+  options: SelectOption[];
+  value?: string;
+  onChange?: (value: string) => void;
+  variant?: "filled" | "outlined";
+  error?: boolean;
+  disabled?: boolean;
+  className?: string;
+  labelClassName?: string;
+  placeholder?: string;
+  /** Use portal to render dropdown outside DOM hierarchy (escapes overflow:hidden) */
+  portal?: boolean;
+}
 
-const SelectGroup = SelectPrimitive.Group
+/** shadcn-compatible Select props */
+interface ShadcnSelectProps {
+  children: React.ReactNode;
+  value?: string;
+  onValueChange?: (value: string) => void;
+  defaultValue?: string;
+  disabled?: boolean;
+}
 
-const SelectValue = SelectPrimitive.Value
+type SelectProps = SelectPropsWithOptions | ShadcnSelectProps;
 
-const SelectTrigger = React.forwardRef<
-  React.ElementRef<typeof SelectPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>
->(({ className, children, ...props }, ref) => (
-  <SelectPrimitive.Trigger
-    ref={ref}
-    className={cn(
-      "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background data-[placeholder]:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
-      className
-    )}
-    {...props}
-  >
-    {children}
-    <SelectPrimitive.Icon asChild>
-      <ChevronDown className="h-4 w-4 opacity-50" />
-    </SelectPrimitive.Icon>
-  </SelectPrimitive.Trigger>
-))
-SelectTrigger.displayName = SelectPrimitive.Trigger.displayName
+// ─── SHADCN-COMPATIBLE SELECT WITH CONTEXT ────────────────────────────────────
 
-const SelectScrollUpButton = React.forwardRef<
-  React.ElementRef<typeof SelectPrimitive.ScrollUpButton>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.ScrollUpButton>
->(({ className, ...props }, ref) => (
-  <SelectPrimitive.ScrollUpButton
-    ref={ref}
-    className={cn(
-      "flex cursor-default items-center justify-center py-1",
-      className
-    )}
-    {...props}
-  >
-    <ChevronUp className="h-4 w-4" />
-  </SelectPrimitive.ScrollUpButton>
-))
-SelectScrollUpButton.displayName = SelectPrimitive.ScrollUpButton.displayName
+const SelectContext = React.createContext<{
+  value?: string | undefined;
+  onValueChange?: ((value: string) => void) | undefined;
+  open: boolean;
+  setOpen: (open: boolean) => void;
+  disabled?: boolean | undefined;
+} | null>(null);
 
-const SelectScrollDownButton = React.forwardRef<
-  React.ElementRef<typeof SelectPrimitive.ScrollDownButton>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.ScrollDownButton>
->(({ className, ...props }, ref) => (
-  <SelectPrimitive.ScrollDownButton
-    ref={ref}
-    className={cn(
-      "flex cursor-default items-center justify-center py-1",
-      className
-    )}
-    {...props}
-  >
-    <ChevronDown className="h-4 w-4" />
-  </SelectPrimitive.ScrollDownButton>
-))
-SelectScrollDownButton.displayName =
-  SelectPrimitive.ScrollDownButton.displayName
-
-const SelectContent = React.forwardRef<
-  React.ElementRef<typeof SelectPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content>
->(({ className, children, position = "popper", ...props }, ref) => (
-  <SelectPrimitive.Portal>
-    <SelectPrimitive.Content
-      ref={ref}
+export const SelectTrigger: React.FC<
+  React.ButtonHTMLAttributes<HTMLButtonElement> & { className?: string }
+> = ({ children, className, ...props }) => {
+  const ctx = React.useContext(SelectContext);
+  return (
+    <button
+      type="button"
       className={cn(
-        "relative z-50 max-h-[--radix-select-content-available-height] min-w-[8rem] overflow-y-auto overflow-x-hidden rounded-md border bg-popover text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-[--radix-select-content-transform-origin]",
-        position === "popper" &&
-          "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
+        "flex items-center justify-between w-full h-10 px-3 rounded-sm border border-outline-variant bg-surface text-on-surface text-body-medium",
+        ctx?.disabled && "opacity-38 cursor-not-allowed",
         className
       )}
-      position={position}
+      onClick={() => ctx?.setOpen(!ctx.open)}
+      disabled={ctx?.disabled}
       {...props}
     >
-      <SelectScrollUpButton />
-      <SelectPrimitive.Viewport
-        className={cn(
-          "p-1",
-          position === "popper" &&
-            "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]"
-        )}
-      >
+      {children}
+      <Icon
+        symbol="keyboard_arrow_down"
+        size="sm"
+        className={cn("transition-transform", ctx?.open && "rotate-180")}
+      />
+    </button>
+  );
+};
+
+export const SelectContent: React.FC<
+  React.HTMLAttributes<HTMLDivElement> & { className?: string }
+> = ({ children, className, ...props }) => {
+  const ctx = React.useContext(SelectContext);
+  if (!ctx?.open) return null;
+  return (
+    <div
+      className={cn(
+        "absolute top-full left-0 right-0 mt-1 bg-surface border border-outline-variant rounded-sm shadow-2 py-1 max-h-70 overflow-y-auto z-100 animate-in fade-in zoom-in-95 duration-snappy",
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+};
+
+export const SelectItem: React.FC<
+  React.HTMLAttributes<HTMLDivElement> & { value: string; className?: string }
+> = ({ children, value, className, ...props }) => {
+  const ctx = React.useContext(SelectContext);
+  const isSelected = ctx?.value === value;
+  return (
+    <div
+      className={cn(
+        "px-4 h-12 flex items-center text-body-large font-medium cursor-pointer transition-colors",
+        isSelected ? "bg-primary/8 text-primary" : "text-on-surface hover:bg-surface-container-high",
+        className
+      )}
+      role="option"
+      aria-selected={isSelected}
+      onClick={() => {
+        ctx?.onValueChange?.(value);
+        ctx?.setOpen(false);
+      }}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+};
+
+export const SelectValue: React.FC<{ placeholder?: string }> = ({
+  placeholder = "Select an option",
+}) => {
+  const ctx = React.useContext(SelectContext);
+  return <span className={ctx?.value ? "text-on-surface" : "text-on-surface-variant"}>{ctx?.value || placeholder}</span>;
+};
+
+/** shadcn-compatible Select wrapper */
+export const ShadcnSelect: React.FC<ShadcnSelectProps> = ({
+  children,
+  value: controlledValue,
+  onValueChange,
+  defaultValue,
+  disabled,
+}) => {
+  const [internalValue, setInternalValue] = React.useState(defaultValue);
+  const [open, setOpen] = React.useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const value = controlledValue ?? internalValue;
+
+  const handleValueChange = useCallback(
+    (newValue: string) => {
+      if (controlledValue === undefined) {
+        setInternalValue(newValue);
+      }
+      onValueChange?.(newValue);
+    },
+    [controlledValue, onValueChange]
+  );
+
+  // Close on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <SelectContext.Provider value={{ value, onValueChange: handleValueChange, open, setOpen, disabled }}>
+      <div ref={containerRef} className="relative">
         {children}
-      </SelectPrimitive.Viewport>
-      <SelectScrollDownButton />
-    </SelectPrimitive.Content>
-  </SelectPrimitive.Portal>
-))
-SelectContent.displayName = SelectPrimitive.Content.displayName
+      </div>
+    </SelectContext.Provider>
+  );
+};
 
-const SelectLabel = React.forwardRef<
-  React.ElementRef<typeof SelectPrimitive.Label>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Label>
->(({ className, ...props }, ref) => (
-  <SelectPrimitive.Label
-    ref={ref}
-    className={cn("py-1.5 pl-8 pr-2 text-sm font-semibold", className)}
-    {...props}
-  />
-))
-SelectLabel.displayName = SelectPrimitive.Label.displayName
+// Options-based Select (original Unisane UI API)
+export const OptionsSelect: React.FC<SelectPropsWithOptions> = ({
+  label,
+  options,
+  value,
+  onChange,
+  variant = "outlined",
+  error,
+  disabled,
+  className,
+  labelClassName,
+  placeholder = "Select an option",
+  portal = false,
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+  const listboxId = useId();
+  const labelId = useId();
+  const triggerId = useId();
 
-const SelectItem = React.forwardRef<
-  React.ElementRef<typeof SelectPrimitive.Item>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item>
->(({ className, children, ...props }, ref) => (
-  <SelectPrimitive.Item
-    ref={ref}
-    className={cn(
-      "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-      className
-    )}
-    {...props}
-  >
-    <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
-      <SelectPrimitive.ItemIndicator>
-        <Check className="h-4 w-4" />
-      </SelectPrimitive.ItemIndicator>
-    </span>
+  const selectedIndex = options.findIndex((option) => option.value === value);
+  const selectedLabel = options[selectedIndex]?.label;
+  const displayLabel = selectedLabel || (!label ? placeholder : "");
 
-    <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
-  </SelectPrimitive.Item>
-))
-SelectItem.displayName = SelectPrimitive.Item.displayName
+  // Calculate dropdown position for portal mode
+  const updateDropdownPosition = useCallback(() => {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    setDropdownPosition({
+      top: rect.bottom + 4, // 4px gap
+      left: rect.left,
+      width: rect.width,
+    });
+  }, []);
 
-const SelectSeparator = React.forwardRef<
-  React.ElementRef<typeof SelectPrimitive.Separator>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Separator>
->(({ className, ...props }, ref) => (
-  <SelectPrimitive.Separator
-    ref={ref}
-    className={cn("-mx-1 my-1 h-px bg-muted", className)}
-    {...props}
-  />
-))
-SelectSeparator.displayName = SelectPrimitive.Separator.displayName
+  useEffect(() => {
+    if (portal && isOpen) {
+      updateDropdownPosition();
+      window.addEventListener("scroll", updateDropdownPosition, true);
+      window.addEventListener("resize", updateDropdownPosition);
+      return () => {
+        window.removeEventListener("scroll", updateDropdownPosition, true);
+        window.removeEventListener("resize", updateDropdownPosition);
+      };
+    }
+  }, [portal, isOpen, updateDropdownPosition]);
 
-export {
-  Select,
-  SelectGroup,
-  SelectValue,
-  SelectTrigger,
-  SelectContent,
-  SelectLabel,
-  SelectItem,
-  SelectSeparator,
-  SelectScrollUpButton,
-  SelectScrollDownButton,
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      const isOutsideContainer = containerRef.current && !containerRef.current.contains(target);
+      const isOutsideDropdown = dropdownRef.current && !dropdownRef.current.contains(target);
+
+      if (portal) {
+        // In portal mode, check both container and dropdown
+        if (isOutsideContainer && isOutsideDropdown) {
+          setIsOpen(false);
+        }
+      } else {
+        // In non-portal mode, just check container
+        if (isOutsideContainer) {
+          setIsOpen(false);
+        }
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [portal]);
+
+  const getNextEnabledIndex = (startIndex: number, direction: 1 | -1) => {
+    if (!options.length) return -1;
+    let index = startIndex;
+    for (let i = 0; i < options.length; i += 1) {
+      index = (index + direction + options.length) % options.length;
+      if (!options[index]?.disabled) return index;
+    }
+    return -1;
+  };
+
+  useEffect(() => {
+    if (!isOpen) {
+      setHighlightedIndex(-1);
+      return;
+    }
+
+    const initialIndex =
+      selectedIndex !== -1 && !options[selectedIndex]?.disabled
+        ? selectedIndex
+        : getNextEnabledIndex(-1, 1);
+    setHighlightedIndex(initialIndex);
+  }, [isOpen, options, selectedIndex]);
+
+  const handleSelect = (val: string, isDisabled?: boolean) => {
+    if (isDisabled) return;
+    onChange?.(val);
+    setIsOpen(false);
+  };
+
+  const handleTriggerKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (disabled) return;
+
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      if (!isOpen) setIsOpen(true);
+      const direction = event.key === "ArrowDown" ? 1 : -1;
+      const baseIndex =
+        highlightedIndex !== -1
+          ? highlightedIndex
+          : selectedIndex !== -1
+            ? selectedIndex
+            : direction === 1
+              ? -1
+              : 0;
+      setHighlightedIndex(getNextEnabledIndex(baseIndex, direction));
+      return;
+    }
+
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      if (!isOpen) {
+        setIsOpen(true);
+        return;
+      }
+      const option = options[highlightedIndex];
+      if (option && !option.disabled) {
+        handleSelect(option.value, option.disabled);
+      }
+      return;
+    }
+
+    if (event.key === "Escape" && isOpen) {
+      event.preventDefault();
+      setIsOpen(false);
+    }
+  };
+
+  const isFloating = Boolean(value) || isOpen;
+  const activeDescendantId =
+    highlightedIndex >= 0 ? `${listboxId}-option-${highlightedIndex}` : undefined;
+
+  return (
+    <div
+      ref={containerRef}
+      className={cn("relative inline-flex flex-col w-full min-w-40", className)}
+    >
+      <button
+        ref={triggerRef}
+        id={triggerId}
+        type="button"
+        onClick={() => !disabled && setIsOpen((prev) => !prev)}
+        onKeyDown={handleTriggerKeyDown}
+        className={cn(
+          "relative flex items-center w-full transition-colors cursor-pointer select-none group h-14",
+          variant === "outlined"
+            ? "rounded-sm border border-outline-variant bg-surface"
+            : "rounded-t-sm border-b border-outline bg-surface-container-low",
+          !disabled &&
+            !isOpen &&
+            (variant === "outlined"
+              ? "hover:border-outline"
+              : "hover:bg-surface-container hover:border-outline"),
+          isOpen &&
+            (variant === "outlined"
+              ? "border-primary! border-2"
+              : "bg-surface"),
+          error && "border-error",
+          disabled && "opacity-38 cursor-not-allowed"
+        )}
+        disabled={disabled}
+        role="combobox"
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        aria-controls={listboxId}
+        aria-activedescendant={isOpen ? activeDescendantId : undefined}
+        aria-labelledby={label ? labelId : undefined}
+        aria-label={!label ? placeholder : undefined}
+      >
+        {variant === "filled" && (
+          <div
+            className={cn(
+              "absolute bottom-[calc(var(--unit)*-0.25)] left-0 right-0 h-0.5 scale-x-0 transition-transform duration-snappy ease-out origin-center",
+              error ? "bg-error scale-x-100" : "bg-primary",
+              isOpen && "scale-x-100"
+            )}
+          />
+        )}
+
+        <div className="relative w-full h-full flex items-center px-4">
+            <span
+              className={cn(
+              "text-on-surface text-body-large font-medium w-full truncate",
+              variant === "filled" && "pt-5 pb-1"
+            )}
+            >
+              {displayLabel}
+            </span>
+
+          {label && (
+            <label
+              htmlFor={triggerId}
+              id={labelId}
+              className={cn(
+                "absolute pointer-events-none truncate max-w-[calc(100%-calc(var(--unit)*12))] transition-all duration-snappy ease-emphasized origin-left left-4",
+                !isFloating &&
+                  "text-body-medium -translate-y-1/2 top-1/2 text-on-surface-variant",
+                isFloating && [
+                  "text-label-small font-medium",
+                  variant === "outlined" && [
+                    "top-0 -translate-y-1/2 bg-surface px-1 -ml-1",
+                    labelClassName ? labelClassName : "bg-surface",
+                  ],
+                  variant === "filled" && "top-2 translate-y-0",
+                  error ? "text-error" : "text-primary",
+                ],
+                !value && isOpen && "text-primary"
+              )}
+            >
+              {label}
+            </label>
+          )}
+
+          <div className="absolute right-3 text-on-surface-variant">
+            <Icon
+              symbol="keyboard_arrow_down"
+              size="sm"
+              className={cn(
+                "transition-transform duration-snappy",
+                isOpen && "rotate-180"
+              )}
+            />
+          </div>
+        </div>
+      </button>
+
+      {isOpen && !disabled && !portal && (
+        <div
+          ref={dropdownRef}
+          id={listboxId}
+          role="listbox"
+          aria-labelledby={label ? labelId : undefined}
+          className="absolute top-[calc(100%+var(--unit))] left-0 w-full bg-surface border border-outline-variant rounded-sm shadow-2 py-1 max-h-70 overflow-y-auto z-100 animate-in fade-in zoom-in-95 duration-snappy"
+        >
+          {options.length > 0 ? (
+            options.map((option, index) => {
+              const isDisabled = Boolean(option.disabled);
+              const isHighlighted = index === highlightedIndex;
+              return (
+                <div
+                  key={option.value}
+                  id={`${listboxId}-option-${index}`}
+                  onClick={() => handleSelect(option.value, isDisabled)}
+                  onMouseEnter={() => setHighlightedIndex(index)}
+                  className={cn(
+                    "px-4 h-12 flex items-center text-body-large font-medium cursor-pointer transition-colors",
+                    isHighlighted && !isDisabled && "bg-surface-container-high",
+                    value === option.value
+                      ? "bg-primary/8 text-primary"
+                      : "text-on-surface hover:bg-surface-container-high",
+                    isDisabled && "opacity-38 cursor-not-allowed"
+                  )}
+                  role="option"
+                  aria-selected={value === option.value}
+                  aria-disabled={isDisabled}
+                >
+                  {option.label}
+                </div>
+              );
+            })
+          ) : (
+            <div className="px-4 py-3 text-label-medium text-on-surface-variant font-medium">
+              No Options Available
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Portal mode dropdown */}
+      {isOpen && !disabled && portal && typeof document !== "undefined" &&
+        createPortal(
+          <div
+            ref={dropdownRef}
+            id={listboxId}
+            role="listbox"
+            aria-labelledby={label ? labelId : undefined}
+            className="fixed bg-surface border border-outline-variant rounded-sm shadow-2 py-1 max-h-70 overflow-y-auto z-9999 animate-in fade-in zoom-in-95 duration-snappy"
+            style={{
+              top: dropdownPosition.top,
+              left: dropdownPosition.left,
+              width: dropdownPosition.width,
+            }}
+          >
+            {options.length > 0 ? (
+              options.map((option, index) => {
+                const isDisabled = Boolean(option.disabled);
+                const isHighlighted = index === highlightedIndex;
+                return (
+                  <div
+                    key={option.value}
+                    id={`${listboxId}-option-${index}`}
+                    onClick={() => handleSelect(option.value, isDisabled)}
+                    onMouseEnter={() => setHighlightedIndex(index)}
+                    className={cn(
+                      "px-4 h-12 flex items-center text-body-large font-medium cursor-pointer transition-colors",
+                      isHighlighted && !isDisabled && "bg-surface-container-high",
+                      value === option.value
+                        ? "bg-primary/8 text-primary"
+                        : "text-on-surface hover:bg-surface-container-high",
+                      isDisabled && "opacity-38 cursor-not-allowed"
+                    )}
+                    role="option"
+                    aria-selected={value === option.value}
+                    aria-disabled={isDisabled}
+                  >
+                    {option.label}
+                  </div>
+                );
+              })
+            ) : (
+              <div className="px-4 py-3 text-label-medium text-on-surface-variant font-medium">
+                No Options Available
+              </div>
+            )}
+          </div>,
+          document.body
+        )}
+    </div>
+  );
+};
+
+// Smart Select that detects the API pattern
+// If children are passed, use ShadcnSelect (context-based)
+// If options are passed, use OptionsSelect (options-based)
+function isShadcnProps(props: SelectProps): props is ShadcnSelectProps {
+  return "children" in props && props.children !== undefined;
 }
+
+export const Select: React.FC<SelectProps> = (props) => {
+  if (isShadcnProps(props)) {
+    return <ShadcnSelect {...props} />;
+  }
+  return <OptionsSelect {...props} />;
+};

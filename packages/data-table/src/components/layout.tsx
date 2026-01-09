@@ -123,7 +123,7 @@ export const DataTableLayout = forwardRef<HTMLDivElement, DataTableLayoutProps>(
         `}} />
         <div
           ref={ref}
-          className={cn("relative bg-surface border-t border-outline-variant/50", className)}
+          className={cn("relative bg-surface border-t border-outline-variant/50 @container", className)}
           {...props}
         >
           {children}

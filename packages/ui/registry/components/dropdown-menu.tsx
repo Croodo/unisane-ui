@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useId } from "react";
+import React, { useState, useRef, useEffect, useId, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { cn, Slot } from "@/lib/utils";
 import {
@@ -234,6 +234,7 @@ export const DropdownMenuSub: React.FC<DropdownMenuSubProps> = ({ children }) =>
   const [isOpen, setIsOpen] = useState(false);
   const subMenuId = useId();
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
 
   const openSubmenu = () => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -259,12 +260,13 @@ export const DropdownMenuSub: React.FC<DropdownMenuSubProps> = ({ children }) =>
         openSubmenu,
         closeSubmenu,
         subMenuId,
+        subTriggerRef: triggerRef,
       });
     }
     return child;
   });
 
-  return <div className="relative">{childrenWithProps}</div>;
+  return <div ref={triggerRef} className="relative">{childrenWithProps}</div>;
 };
 
 export interface DropdownMenuSubTriggerProps {
@@ -325,6 +327,8 @@ export interface DropdownMenuSubContentProps {
   closeSubmenu?: () => void;
   subMenuId?: string;
   className?: string;
+  /** Reference to the submenu trigger element for position calculation */
+  subTriggerRef?: React.RefObject<HTMLElement>;
 }
 
 export const DropdownMenuSubContent: React.FC<DropdownMenuSubContentProps> = ({
@@ -334,7 +338,26 @@ export const DropdownMenuSubContent: React.FC<DropdownMenuSubContentProps> = ({
   closeSubmenu,
   subMenuId,
   className,
+  subTriggerRef,
 }) => {
+  // Calculate direction based on trigger position before rendering
+  // This avoids issues with overflow:hidden clipping the measurement
+  const openDirection = useMemo(() => {
+    if (!isSubOpen || !subTriggerRef?.current) return "right";
+
+    const triggerRect = subTriggerRef.current.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const estimatedSubmenuWidth = 200; // Approximate submenu width
+
+    // Check if there's enough space on the right
+    const spaceOnRight = viewportWidth - triggerRect.right;
+
+    if (spaceOnRight < estimatedSubmenuWidth) {
+      return "left";
+    }
+    return "right";
+  }, [isSubOpen, subTriggerRef]);
+
   if (!isSubOpen) return null;
 
   return (
@@ -343,8 +366,11 @@ export const DropdownMenuSubContent: React.FC<DropdownMenuSubContentProps> = ({
       role="menu"
       aria-orientation="vertical"
       className={cn(
-        "absolute left-full top-0 z-popover ml-1",
-        "animate-in fade-in-0 slide-in-from-left-1 duration-snappy ease-emphasized"
+        "absolute top-0 z-popover",
+        openDirection === "right"
+          ? "left-full ml-1 animate-in fade-in-0 slide-in-from-left-1"
+          : "right-full mr-1 animate-in fade-in-0 slide-in-from-right-1",
+        "duration-snappy ease-emphasized"
       )}
       onMouseEnter={openSubmenu}
       onMouseLeave={closeSubmenu}
