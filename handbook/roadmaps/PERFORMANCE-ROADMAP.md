@@ -601,7 +601,7 @@ retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
 
 ### Month 2 (In Progress)
 - [x] P3.3 Consolidate credits queries ($facet aggregation)
-- [ ] P3.4 Add prefetch hooks
+- [x] P3.4 Add prefetch hooks (usePrefetch, usePrefetchPagination)
 - [ ] P3.5 Fix wildcard exports
 
 ### Month 3+
