@@ -6,18 +6,45 @@ import type {
   CreditsBreakdown,
   CreditsBucket,
 } from "../domain/types";
-import { getTenantId, logger } from "@unisane/kernel";
+import { getTenantId, logger, KV, cacheGet, cacheSet, cacheDelete } from "@unisane/kernel";
+
+/** Cache TTL for balance: 60 seconds */
+const BALANCE_CACHE_TTL_MS = 60_000;
+
+function balanceCacheKey(tenantId: string): string {
+  return `${KV.CREDITS}balance:${tenantId}`;
+}
 
 export async function balance() {
   const tenantId = getTenantId();
-  const { available } = await totalsAvailable(tenantId, new Date());
-  // Align with contract shape: { amount, effectiveAt? }
-  try {
-    logger.info("credits.balance computed", { tenantId, available });
-  } catch {
-    // logging best-effort
+  const cacheKey = balanceCacheKey(tenantId);
+
+  // Check cache first
+  const cached = await cacheGet<{ amount: number }>(cacheKey);
+  if (cached !== null) {
+    logger.debug("credits.balance cache hit", { tenantId, amount: cached.amount });
+    return cached;
   }
-  return { amount: available };
+
+  // Compute from ledger
+  const { available } = await totalsAvailable(tenantId, new Date());
+  const result = { amount: available };
+
+  // Cache the result
+  await cacheSet(cacheKey, result, BALANCE_CACHE_TTL_MS);
+
+  logger.info("credits.balance computed", { tenantId, available });
+  return result;
+}
+
+/**
+ * Invalidate the cached balance for a tenant.
+ * Call this after grant/burn operations.
+ */
+export async function invalidateBalanceCache(tenantId: string): Promise<void> {
+  const cacheKey = balanceCacheKey(tenantId);
+  await cacheDelete(cacheKey);
+  logger.debug("credits.balance cache invalidated", { tenantId });
 }
 
 export async function breakdown(): Promise<CreditsBreakdown> {

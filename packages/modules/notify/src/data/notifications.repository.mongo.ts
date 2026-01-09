@@ -128,27 +128,33 @@ export const InappRepoMongo: InappRepoPort = {
       : null;
   },
   async upsertSeenUntil(tenantId, userId, cutoffId) {
-    const cursor = notifCol()
+    // Fetch all notification IDs in a single query
+    const notifIds = await notifCol()
       .find({
         tenantId,
         userId,
         _id: { $lte: cutoffId },
         ...softDeleteFilter(),
       } as Document)
-      .project({ _id: 1 });
-    for await (const n of cursor as unknown as AsyncIterable<{ _id: string }>) {
-      await recCol().updateOne(
-        {
-          tenantId,
-          userId,
-          notificationId: String((n as unknown as { _id: unknown })._id),
-        } as Document,
-        {
-          $setOnInsert: { seenAt: new Date(), createdAt: new Date() },
-        } as Document,
-        { upsert: true }
-      );
-    }
+      .project({ _id: 1 })
+      .toArray()
+      .then((docs) => docs.map((d) => String(d._id)));
+
+    if (notifIds.length === 0) return;
+
+    // Bulk upsert all receipts in a single operation
+    const now = new Date();
+    const bulkOps = notifIds.map((notificationId) => ({
+      updateOne: {
+        filter: { tenantId, userId, notificationId },
+        update: {
+          $setOnInsert: { seenAt: now, createdAt: now },
+        },
+        upsert: true,
+      },
+    }));
+
+    await recCol().bulkWrite(bulkOps, { ordered: false });
   },
   async createInapp(args) {
     const now = new Date();

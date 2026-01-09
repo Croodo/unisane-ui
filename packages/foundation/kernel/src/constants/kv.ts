@@ -12,4 +12,5 @@ export const KV = {
   WEBHOOK_IDEM: 'whidem:', // inbound webhook idempotency keys: whidem:{provider}:{eventId}
   ENTITLEMENTS: 'entitlements:v1:', // cached entitlements per tenant
   ANALYTICS: 'analytics:v1:', // analytics dashboard cache
+  CREDITS: 'credits:v1:', // cached credits balance per tenant
 } as const;

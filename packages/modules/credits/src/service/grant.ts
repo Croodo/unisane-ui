@@ -2,6 +2,7 @@ import { getTenantId, redis, events } from '@unisane/kernel';
 import { creditsKeys } from '../domain/keys';
 import { CREDITS_EVENTS } from '../domain/constants';
 import { findByIdem, insertGrant } from '../data/credits.repository';
+import { invalidateBalanceCache } from './balance';
 
 export type GrantCreditsArgs = {
   amount: number;
@@ -24,6 +25,9 @@ export async function grant(args: GrantCreditsArgs) {
       idemKey: args.idem,
       ...(args.expiresAt !== undefined ? { expiresAt: args.expiresAt } : {}),
     });
+    // Invalidate cached balance
+    await invalidateBalanceCache(tenantId);
+
     await events.emit(CREDITS_EVENTS.GRANTED, {
       tenantId,
       amount: args.amount,

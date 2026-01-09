@@ -6,6 +6,7 @@ import {
   totalsAvailable,
   insertBurn,
 } from "../data/credits.repository";
+import { invalidateBalanceCache } from "./balance";
 
 export type ConsumeCreditsArgs = {
   amount: number;
@@ -31,6 +32,9 @@ export async function consume(args: ConsumeCreditsArgs) {
       feature: args.feature ?? "usage",
       idemKey,
     });
+    // Invalidate cached balance
+    await invalidateBalanceCache(tenantId);
+
     await events.emit(CREDITS_EVENTS.CONSUMED, {
       tenantId,
       amount: args.amount,

@@ -400,6 +400,7 @@ function generateRouteTypeOverloads(g: RouteGroup, r: AppRouteEntry, isAdmin: bo
 
 /**
  * Generate the browserApi factory function with nested admin namespace
+ * Uses memoization to avoid recreating the API client on every call
  */
 function generateBrowserApiFactory(groups: RouteGroup[]): string {
   const { regularGroups, adminGroups } = separateRoutes(groups);
@@ -426,11 +427,18 @@ function generateBrowserApiFactory(groups: RouteGroup[]): string {
 
   const adminInit = adminGroups.length > 0 ? `\n  out['admin'] = {};` : '';
 
-  return `export async function browserApi(): Promise<BrowserApi> {
+  return `// Memoized SDK instance - avoids recreating the API client on every call
+let _cachedBrowserApi: BrowserApi | null = null;
+
+export async function browserApi(): Promise<BrowserApi> {
+  // Return cached instance if available
+  if (_cachedBrowserApi) return _cachedBrowserApi;
+
   const out: Record<string, unknown> = {};${adminInit}
 ${regularImpls}
 ${adminImpls}
-  return out as unknown as BrowserApi;
+  _cachedBrowserApi = out as unknown as BrowserApi;
+  return _cachedBrowserApi;
 }`;
 }
 
