@@ -12,7 +12,7 @@ export default async function AdminOutboxPage({
     query: { limit: 50, ...(cursor ? { cursor } : {}) },
   });
   return (
-    <section className="py-6">
+    <section>
       <OutboxClient initial={seed as any} />
     </section>
   );

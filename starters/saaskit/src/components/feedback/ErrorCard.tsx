@@ -3,7 +3,7 @@
 import { forwardRef } from "react";
 import { cn } from "@unisane/ui/lib/utils";
 import { Surface } from "@unisane/ui/primitives/surface";
-import { Text } from "@unisane/ui/primitives/text";
+import { Typography } from "@unisane/ui/components/typography";
 import { Button } from "@unisane/ui/components/button";
 import { Icon } from "@unisane/ui/primitives/icon";
 
@@ -43,26 +43,25 @@ const ErrorCard = forwardRef<HTMLDivElement, ErrorCardProps>(
             <Icon symbol="error" className="text-error" size="sm" />
           </div>
           <div className="flex-1 flex flex-col gap-2">
-            <Text variant="titleMedium" color="error" weight="semibold">
+            <Typography variant="titleMedium" className="text-error font-semibold">
               {title}
-            </Text>
+            </Typography>
             {message && (
-              <Text variant="bodyMedium" color="onSurfaceVariant">
+              <Typography variant="bodyMedium" className="text-on-surface-variant">
                 {message}
-              </Text>
+              </Typography>
             )}
             {requestId && (
-              <Text variant="labelSmall" color="onSurfaceVariant" className="font-mono">
+              <Typography variant="labelSmall" className="text-on-surface-variant font-mono">
                 Ref: {requestId}
-              </Text>
+              </Typography>
             )}
             {onRetry && (
               <Button
                 variant="outlined"
-                size="sm"
                 onClick={onRetry}
                 className="mt-2 self-start"
-                icon={<Icon symbol="refresh" size="sm" />}
+                icon={<Icon symbol="refresh" />}
               >
                 Try again
               </Button>

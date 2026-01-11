@@ -76,8 +76,7 @@ const forbiddenPatterns = [
 
 // Allowed exceptions (files that can contain raw values)
 const allowedExceptions = [
-  "uni-tokens.css",
-  "uni-theme.css",
+  "unisane.css", // Generated tokens - single source of truth
   "ref.json",
   "build.mjs",
   "sync-registry.mjs",

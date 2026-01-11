@@ -1,6 +1,7 @@
 import { hooks } from "@/src/sdk/hooks";
 import { Card } from "@unisane/ui/components/card";
 import { Icon } from "@unisane/ui/primitives/icon";
+import { cn } from "@unisane/ui/lib/utils";
 
 interface CreditsSummaryProps {
   billingMode: string;
@@ -14,42 +15,79 @@ export function CreditsSummary({ billingMode, tenantId }: CreditsSummaryProps) {
   const amount = (data?.amount as number | undefined) ?? 0;
   const formatted = amount.toLocaleString();
 
-  const modeCopy =
-    billingMode === "topup_only"
-      ? "Add more credits whenever you need them. You only pay when you top up."
-      : "Your plan includes credits each period. You can add extra credits if you need more.";
+  // Determine credit status for visual feedback
+  const isLow = amount > 0 && amount < 100;
+  const isEmpty = amount === 0;
 
   return (
-    <Card className="h-full">
-      <Card.Header className="space-y-1.5">
-        <Card.Title className="flex items-center gap-2 text-lg">
-          <Icon symbol="monetization_on" size="sm" className="text-primary" />
-          <span>Credits</span>
-        </Card.Title>
-        <Card.Description>{modeCopy}</Card.Description>
+    <Card className="h-full flex flex-col">
+      <Card.Header>
+        <Card.Title>Credit Balance</Card.Title>
+        <Card.Description>
+          Your available credits for platform features
+        </Card.Description>
       </Card.Header>
-      <Card.Content>
+
+      <Card.Content className="flex-1 flex flex-col justify-center">
         {isLoading ? (
-          <p className="text-sm text-on-surface-variant">Loading credits…</p>
+          <div className="flex items-center gap-2 text-on-surface-variant">
+            <Icon symbol="progress_activity" size="sm" className="animate-spin" />
+            <span className="text-body-medium">Loading credits…</span>
+          </div>
         ) : isError ? (
-          <p className="text-sm text-on-surface-variant">
-            We couldn&apos;t load your credits right now. Please refresh the
-            page or try again later.
-          </p>
-        ) : (
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-semibold tabular-nums">
-              {formatted}
+          <div className="flex items-center gap-3 text-on-surface-variant">
+            <Icon symbol="error" size="md" className="text-error" />
+            <span className="text-body-medium">
+              Could not load credits. Please try again later.
             </span>
-            <span className="text-sm text-on-surface-variant">credits available</span>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div className="flex items-center gap-4">
+              <div
+                className={cn(
+                  "flex size-14 items-center justify-center rounded-full",
+                  isEmpty
+                    ? "bg-error-container"
+                    : isLow
+                      ? "bg-warning-container"
+                      : "bg-primary-container"
+                )}
+              >
+                <Icon
+                  symbol="monetization_on"
+                  size="lg"
+                  className={cn(
+                    isEmpty
+                      ? "text-on-error-container"
+                      : isLow
+                        ? "text-on-warning-container"
+                        : "text-on-primary-container"
+                  )}
+                />
+              </div>
+              <div>
+                <div className="text-display-small font-semibold tabular-nums">
+                  {formatted}
+                </div>
+                <p className="text-body-medium text-on-surface-variant">
+                  credits available
+                </p>
+              </div>
+            </div>
+            {isEmpty && (
+              <p className="text-body-small text-error">
+                Your credit balance is empty. Top up to continue using features.
+              </p>
+            )}
+            {isLow && !isEmpty && (
+              <p className="text-body-small text-warning">
+                Running low on credits. Consider topping up soon.
+              </p>
+            )}
           </div>
         )}
       </Card.Content>
-      <Card.Footer className="pt-2">
-        <p className="text-xs text-on-surface-variant">
-          Need more credits? Use the top-up options below.
-        </p>
-      </Card.Footer>
     </Card>
   );
 }

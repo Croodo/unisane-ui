@@ -13,6 +13,7 @@ import { Label } from "@unisane/ui/primitives/label";
 import { toast } from "@unisane/ui/components/toast";
 import { formatCurrency } from "@/src/shared/currency";
 import { StatusBadge } from "@/src/components/ui/status-badge";
+import { Typography } from "@unisane/ui/components/typography";
 
 interface PaymentsTabProps {
   tenantId?: string | undefined;
@@ -54,32 +55,56 @@ export function PaymentsTab({ tenantId }: PaymentsTabProps) {
 
   const columns = useMemo<Column<BillingListPaymentsItem>[]>(
     () => [
-      { key: "id", header: "Payment", render: (row) => row.id },
+      {
+        key: "id",
+        header: "Payment",
+        width: 200,
+        render: (row) => (
+          <span className="font-mono text-sm">{row.id}</span>
+        ),
+      },
       {
         key: "amount",
         header: "Amount",
+        width: 140,
+        align: "end",
         render: (row) =>
-          typeof row.amount === "number" ? formatCurrency(row.amount) : "—",
+          typeof row.amount === "number" ? (
+            <span className="font-medium tabular-nums">
+              {formatCurrency(row.amount)}
+            </span>
+          ) : (
+            "—"
+          ),
       },
       {
         key: "status",
         header: "Status",
+        width: 120,
         render: (row) => <StatusBadge status={row.status} />,
       },
       {
         key: "createdAt",
-        header: "Created",
+        header: "Date",
+        width: 140,
         render: (row) =>
-          row.createdAt ? new Date(row.createdAt).toLocaleString() : "—",
+          row.createdAt
+            ? new Date(row.createdAt).toLocaleDateString(undefined, {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })
+            : "—",
       },
       {
         key: "actions",
-        header: "Actions",
+        header: "",
+        width: 100,
         align: "end",
         render: (row) => (
           <Button
             size="sm"
-            variant="outlined"
+            variant="text"
             disabled={
               !tenantId || refund.isPending || row.status !== "succeeded"
             }
@@ -97,11 +122,16 @@ export function PaymentsTab({ tenantId }: PaymentsTabProps) {
   );
 
   return (
-    <>
+    <section className="space-y-6">
+      <div>
+        <Typography variant="titleLarge">Payments</Typography>
+        <Typography variant="bodyMedium" className="text-on-surface-variant mt-1">
+          View all payments and request refunds if needed
+        </Typography>
+      </div>
       <DataTable<BillingListPaymentsItem>
         data={items}
         columns={columns}
-        title="Payments"
         loading={list.isLoading && !list.data}
         tableId="tenant-payments"
       />
@@ -141,7 +171,7 @@ export function PaymentsTab({ tenantId }: PaymentsTabProps) {
         }
       >
         <div className="space-y-3">
-          <div className="text-sm text-muted-foreground">
+          <div className="text-sm text-on-surface-variant">
             Payment ID: {refundPaymentId}
           </div>
           <div className="space-y-2">
@@ -158,6 +188,6 @@ export function PaymentsTab({ tenantId }: PaymentsTabProps) {
           </div>
         </div>
       </Dialog>
-    </>
+    </section>
   );
 }

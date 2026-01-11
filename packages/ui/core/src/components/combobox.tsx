@@ -3,7 +3,6 @@
 import React, { useState, useRef, useEffect, useCallback, useId, forwardRef } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@ui/lib/utils";
-import { Surface } from "@ui/primitives/surface";
 import { Text } from "@ui/primitives/text";
 import { Icon } from "@ui/primitives/icon";
 import { Ripple } from "./ripple";
@@ -209,11 +208,11 @@ export const Combobox = forwardRef<HTMLDivElement, ComboboxProps>(
           </Text>
         )}
 
-        <Surface
-          tone="surfaceContainerHighest"
+        <div
           className={cn(
-            "relative w-full rounded-sm border border-outline h-14 transition-all",
-            isOpen && "border-primary ring-2 ring-primary/20",
+            "relative w-full rounded-sm border border-outline-variant bg-surface h-10 transition-all",
+            isOpen && "border-primary! ring-1 ring-primary/20",
+            !isOpen && "hover:border-outline",
             disabled && "opacity-38 cursor-not-allowed",
             !searchable && "cursor-pointer"
           )}
@@ -288,13 +287,11 @@ export const Combobox = forwardRef<HTMLDivElement, ComboboxProps>(
               }}
             />
           </div>
-        </Surface>
+        </div>
 
         {isOpen && !disabled && (
-          <Surface
-            tone="surfaceContainerLow"
-            elevation={2}
-            className="absolute top-[calc(100%+var(--unit))] left-0 right-0 rounded-lg border border-outline-variant/50 z-50 max-h-60 overflow-y-auto"
+          <div
+            className="absolute top-[calc(100%+var(--unit))] left-0 right-0 rounded-sm bg-surface border border-outline-variant shadow-2 z-50 max-h-60 overflow-y-auto"
             role="listbox"
             id={listboxId}
             aria-label={label || "Options"}
@@ -343,7 +340,7 @@ export const Combobox = forwardRef<HTMLDivElement, ComboboxProps>(
                 </div>
               )}
             </div>
-          </Surface>
+          </div>
         )}
       </div>
     );

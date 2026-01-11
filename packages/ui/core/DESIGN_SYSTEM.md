@@ -5,16 +5,40 @@ A Material 3 Expressive design system focused on emotion-driven UX, flexible sha
 ## Token Architecture
 
 ```
-ref.json → build.mjs → uni-tokens.css → uni-theme.css → Tailwind v4 @theme
+@unisane/tokens (single source of truth)
+├── src/theme-config.json  → Base config (hue, chroma, etc.)
+├── scripts/build.mjs      → Generates CSS tokens
+└── dist/unisane.css       → Merged output (tokens + @theme mapping)
+
+@unisane/ui core
+├── src/styles.css         → Component styles (animations, utilities, focus rings)
+└── components/*           → React components
+```
+
+**Import in your app:**
+```css
+@import "tailwindcss";
+@import "@unisane/tokens/unisane.css";
 ```
 
 ### Token Namespaces
 
 | Prefix | Description | Example |
 |--------|-------------|---------|
-| `--uni-ref-*` | Reference palette values | `--uni-ref-primary-40` |
-| `--uni-sys-*` | System semantic tokens | `--uni-sys-color-primary` |
+| `--ref-*` | Reference palette values (OKLCH tones) | `--ref-primary-40` |
+| `--tone-*` | Tone mapping layer (light/dark mode) | `--tone-primary` |
+| `--color-*` | Semantic color tokens | `--color-primary` |
 | Tailwind classes | Final utility classes | `bg-primary`, `shadow-1` |
+
+### Theming Axes
+
+| Axis | Attribute | Controls | Values |
+|------|-----------|----------|--------|
+| Color Theme | `data-color-theme` | Primary hue | blue, purple, green, red, etc. |
+| Scheme | `data-scheme` | Saturation (chroma) | tonal, neutral, monochrome |
+| Contrast | `data-contrast` | Tone darkness | standard, medium, high |
+| Density | `data-density` | Spacing scale | dense, compact, comfortable |
+| Radius | `data-radius` | Corner softness | sharp, standard, soft |
 
 ---
 
@@ -113,9 +137,11 @@ Default components (buttons, alerts, switches) stay flat and rely on state layer
 
 Use `data-radius` to switch corner softness without changing components:
 
-- `data-radius="sharp"` → `--uni-sys-radius-scale: 0.75`
-- `data-radius="standard"` → `--uni-sys-radius-scale: 1.0`
-- `data-radius="soft"` → `--uni-sys-radius-scale: 1.15`
+- `data-radius="none"` → `--scale-radius-theme: 0`
+- `data-radius="minimal"` → `--scale-radius-theme: 0.25`
+- `data-radius="sharp"` → `--scale-radius-theme: 0.5`
+- `data-radius="standard"` → `--scale-radius-theme: 1.0` (default)
+- `data-radius="soft"` → `--scale-radius-theme: 1.25`
 
 ---
 

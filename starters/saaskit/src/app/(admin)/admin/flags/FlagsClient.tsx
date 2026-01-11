@@ -6,7 +6,7 @@ import { hooks } from "@/src/sdk/hooks";
 import { Button } from "@unisane/ui/components/button";
 import { toast } from "@unisane/ui/components/toast";
 import { useSession } from "@/src/context/SessionContext";
-import { PageHeader } from "@/src/context/usePageHeader";
+import { PageLayout } from "@/src/context/usePageLayout";
 import type { AppEnv } from "@/src/shared/constants/env";
 import { Dialog } from "@unisane/ui/components/dialog";
 import { ConfirmDialog } from "@unisane/ui/components/confirm-dialog";
@@ -14,8 +14,9 @@ import { Badge } from "@unisane/ui/components/badge";
 import { isPlatformOnlyFlag } from "@/src/shared/constants/feature-flags";
 import { Icon } from "@unisane/ui/primitives/icon";
 import { Switch } from "@unisane/ui/components/switch";
-import { Input } from "@unisane/ui/primitives/input";
-import { Text } from "@unisane/ui/primitives/text";
+import { TextField } from "@unisane/ui/components/text-field";
+import { Typography } from "@unisane/ui/components/typography";
+import { EmptyState } from "@/src/components/feedback/EmptyState";
 
 interface Props {
   env: AppEnv;
@@ -104,79 +105,80 @@ function FlagRow({
   }, [k, env, patch, nextValue, rules, version]);
 
   return (
-    <div className="flex items-center justify-between px-4 py-3 hover:bg-surface-container-low transition-colors">
-      <div className="space-y-1 pr-4">
-        <div className="flex items-center gap-2">
-          <Text variant="bodyMedium" weight="medium">{flag.label}</Text>
+    <div className="flex items-center gap-4 px-4 py-4 hover:bg-surface-container-low/50 transition-colors">
+      <div className="flex-1 min-w-0 space-y-1">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Typography variant="titleMedium">{flag.label}</Typography>
           {flag.platformOnly && (
             <Badge variant="outlined" className="text-[10px] px-1.5 py-0 h-5">
               Platform
             </Badge>
           )}
         </div>
-        <Text variant="labelSmall" className="font-mono break-all text-on-surface-variant">
-          {k}
-        </Text>
-        <Text variant="labelSmall" color="onSurfaceVariant">{flag.description}</Text>
-      </div>
-      <div className="flex items-center gap-3">
-        {flag.platformOnly && (
-          <span className="hidden md:inline-flex items-center gap-1 text-[11px] text-tertiary">
-            <Icon symbol="shield" size="sm" />
-            Protected
-          </span>
-        )}
-
-        <Button variant="text" size="sm" onClick={() => setDetailsOpen(true)}>
-          Details
-        </Button>
-
-        <Dialog
-          open={detailsOpen}
-          onClose={() => setDetailsOpen(false)}
-          title={flag.label}
+        <Typography variant="bodySmall" className="text-on-surface-variant">
+          {flag.description}
+        </Typography>
+        <Typography
+          variant="labelSmall"
+          className="font-mono text-on-surface-variant/60 pt-1"
         >
-          <div className="space-y-3">
-            <Text variant="bodySmall" color="onSurfaceVariant">
-              {flag.description}
-            </Text>
-            <Text variant="labelSmall" className="font-mono break-all">{k}</Text>
-            <Text variant="labelSmall" color="onSurfaceVariant">
-              Env: <span className="font-mono">{env}</span> · Default:{" "}
-              <span className={enabled ? "text-primary" : "text-error"}>
-                {String(enabled)}
-              </span>{" "}
-              · Version: v{version}
-            </Text>
-            <Text variant="labelMedium" weight="semibold">Rules</Text>
-            <pre className="max-h-48 overflow-auto rounded-lg border border-outline-variant bg-surface-container p-2 text-label-small">
-              {rules && rules.length ? JSON.stringify(rules, null, 2) : "[]"}
-            </pre>
-            <Text variant="labelSmall" color="onSurfaceVariant">
-              Per-tenant overrides can be managed from each tenant&apos;s{" "}
-              <span className="font-medium">Flags</span> tab. User-level
-              overrides are available via the flags userOverride API.
-            </Text>
-          </div>
-        </Dialog>
-
+          {k}
+        </Typography>
+      </div>
+      <div className="flex items-center gap-2 shrink-0">
+        <button
+          type="button"
+          onClick={() => setDetailsOpen(true)}
+          className="p-2 rounded-full hover:bg-surface-container-high transition-colors text-on-surface-variant"
+        >
+          <Icon symbol="info" size="sm" />
+        </button>
         <Switch
           checked={!!enabled}
           disabled={toggling || !canPublish}
           onChange={handleToggle}
         />
-
-        <ConfirmDialog
-          open={confirmOpen}
-          onOpenChange={setConfirmOpen}
-          title="Change platform-critical flag?"
-          description={`${flag.label} (${k}) is marked as platform-critical. Changing it may affect the entire deployment.`}
-          variant="warning"
-          onConfirm={handleConfirm}
-          confirmLabel="Confirm"
-          cancelLabel="Cancel"
-        />
       </div>
+
+      <Dialog
+        open={detailsOpen}
+        onClose={() => setDetailsOpen(false)}
+        title={flag.label}
+      >
+        <div className="space-y-3">
+          <Typography variant="bodyMedium" className="text-on-surface-variant">
+            {flag.description}
+          </Typography>
+          <Typography variant="labelSmall" className="font-mono break-all">{k}</Typography>
+          <Typography variant="labelSmall" className="text-on-surface-variant">
+            Env: <span className="font-mono">{env}</span> · Default:{" "}
+            <span className={enabled ? "text-primary" : "text-error"}>
+              {String(enabled)}
+            </span>{" "}
+            · Version: v{version}
+          </Typography>
+          <Typography variant="labelMedium" className="font-semibold">Rules</Typography>
+          <pre className="max-h-48 overflow-auto rounded-lg border border-outline-variant bg-surface-container p-2 text-label-small">
+            {rules && rules.length ? JSON.stringify(rules, null, 2) : "[]"}
+          </pre>
+          <Typography variant="labelSmall" className="text-on-surface-variant">
+            Per-tenant overrides can be managed from each tenant&apos;s{" "}
+            <span className="font-medium">Flags</span> tab. User-level
+            overrides are available via the flags userOverride API.
+          </Typography>
+        </div>
+      </Dialog>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Change platform-critical flag?"
+        description={`${flag.label} (${k}) is marked as platform-critical. Changing it may affect the entire deployment.`}
+        variant="warning"
+        onConfirm={handleConfirm}
+        confirmLabel="Confirm"
+        cancelLabel="Cancel"
+      />
     </div>
   );
 }
@@ -251,51 +253,64 @@ export function FlagsClient({ env }: Props) {
 
   return (
     <>
-      <PageHeader title="Feature Flags" subtitle={`Environment: ${env}`} />
-      <section className="py-6 space-y-4 max-w-3xl mx-auto">
-        <div>
-          <Text as="h2" variant="titleMedium">Feature Flags</Text>
-          <Text variant="bodySmall" color="onSurfaceVariant">
-            Environment: {env}. Platform flags are restricted to super admins.
-          </Text>
-        </div>
-        <div className="flex items-center gap-0 rounded-lg border border-outline-variant bg-surface px-4 py-1.5">
-          <div className="relative flex-1 min-w-[220px]">
-            <Icon symbol="search" size="sm" className="absolute left-1.5 top-1/2 -translate-y-1/2 text-on-surface-variant" />
-            <Input
+      <PageLayout subtitle="Manage feature flags and their default states per environment" />
+      <section className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+          <div className="flex-1 max-w-md">
+            <TextField
+              label="Search"
+              variant="outlined"
               placeholder="Search flags by key or name…"
               value={search}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
-              className="h-8 w-full border-none bg-transparent pl-7 pr-2 text-body-small placeholder:text-on-surface-variant focus:outline-none focus:ring-0"
+              onChange={(e) => setSearch(e.target.value)}
+              leadingIcon={<Icon symbol="search" />}
+              trailingIcon={
+                search ? (
+                  <button
+                    type="button"
+                    onClick={() => setSearch("")}
+                    className="hover:text-on-surface transition-colors"
+                  >
+                    <Icon symbol="close" size="sm" />
+                  </button>
+                ) : undefined
+              }
             />
           </div>
-          <div className="mx-3 h-5 w-px bg-outline-variant" />
-          <button
-            type="button"
-            onClick={() => setPlatformOnlyFilter((v) => !v)}
-            className={`flex items-center gap-2 text-label-small font-medium transition-colors ${
-              platformOnlyFilter ? "text-primary" : "text-on-surface-variant hover:text-on-surface"
-            }`}
-          >
-            <Icon symbol="shield" size="sm" />
-            <span>Platform critical only</span>
-          </button>
+          <div className="flex items-center gap-3">
+            <Button
+              variant={platformOnlyFilter ? "filled" : "outlined"}
+              onClick={() => setPlatformOnlyFilter((v) => !v)}
+              icon={<Icon symbol="shield" />}
+            >
+              Platform critical only
+            </Button>
+            <Badge variant="filled" className="px-3 py-1">
+              {env.toUpperCase()}
+            </Badge>
+          </div>
         </div>
+
         {filteredCategories.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-outline-variant py-10 text-center text-body-small text-on-surface-variant">
-            No flags match the current filters.
+          <div className="flex items-center justify-center min-h-[50vh]">
+            <EmptyState
+              icon="flag"
+              title="No flags found"
+              description={search ? `No flags match "${search}". Try a different search term.` : "No flags match the current filters."}
+              size="sm"
+            />
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-12">
             {filteredCategories.map((g) => (
-              <section key={g.id} className="space-y-2">
-                <div className="flex items-center gap-2 text-label-small font-semibold tracking-wide uppercase text-on-surface-variant">
-                  <span>{g.id}</span>
-                  <span className="text-[11px] text-on-surface-variant">
-                    ({g.flags.length})
-                  </span>
+              <section key={g.id}>
+                <div className="mb-6">
+                  <Typography variant="titleLarge">{g.id}</Typography>
+                  <Typography variant="bodySmall" className="text-on-surface-variant mt-1">
+                    {g.flags.length} {g.flags.length === 1 ? "flag" : "flags"}
+                  </Typography>
                 </div>
-                <div className="overflow-hidden rounded-lg border border-outline-variant bg-surface divide-y divide-outline-variant">
+                <div className="divide-y divide-outline-variant rounded-lg border border-outline-variant overflow-hidden">
                   {g.flags.map((f) => (
                     <FlagRow
                       key={f.key}

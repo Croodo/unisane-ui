@@ -109,7 +109,10 @@ const getNavData = (base: string): NavCategory[] => [
 // Helper: Get active category ID from pathname
 // ─────────────────────────────────────────────────────────────────────────────
 
-function getActiveCategoryId(pathname: string | null, navData: NavCategory[]): string | null {
+function getActiveCategoryId(
+  pathname: string | null,
+  navData: NavCategory[]
+): string | null {
   if (!pathname) return null;
 
   for (const category of navData) {
@@ -187,7 +190,10 @@ function WorkspaceShellContent({
   }, [effectiveItem, activeId, navData]);
 
   return (
-    <div className="flex w-full min-h-screen bg-surface isolate overflow-x-hidden">
+    <div className="flex w-full h-screen bg-surface isolate overflow-hidden">
+      {/* Navigation Progress Bar */}
+      <NavigationProgress />
+
       {/* Top App Bar (Mobile + Tablet) */}
       <TopAppBar
         className="fixed top-0 left-0 right-0 z-50 flex expanded:hidden"
@@ -209,7 +215,7 @@ function WorkspaceShellContent({
       />
 
       {/* Navigation Rail (Desktop only - 840px+) */}
-      <SidebarRail>
+      <SidebarRail className="bg-surface-container-low">
         {/* Menu Toggle */}
         <div className="flex flex-col items-center pt-3 pb-2 w-full">
           <IconButton
@@ -248,14 +254,15 @@ function WorkspaceShellContent({
       </SidebarRail>
 
       {/* Navigation Drawer */}
-      <SidebarDrawer>
+      <SidebarDrawer className="bg-surface-container-low">
         {mobileOpen ? (
           // Mobile/Tablet: Show all categories with collapsible accordion
           <SidebarContent className="pt-20 pb-24">
             <SidebarGroupLabel>{tenantName ?? slug}</SidebarGroupLabel>
             <SidebarMenu>
               {navData.map((category) => {
-                const visibleItems = category.items?.filter((item) => can(item.perm)) ?? [];
+                const visibleItems =
+                  category.items?.filter((item) => can(item.perm)) ?? [];
                 if (visibleItems.length === 0 && !category.href) return null;
 
                 const isActiveCategory = activeId === category.id;
@@ -303,9 +310,14 @@ function WorkspaceShellContent({
               })}
             </SidebarMenu>
           </SidebarContent>
-        ) : currentEffectiveItem && currentEffectiveItem.items && currentEffectiveItem.items.length > 0 ? (
+        ) : currentEffectiveItem &&
+          currentEffectiveItem.items &&
+          currentEffectiveItem.items.length > 0 ? (
           // Desktop (hover or expanded): Show active category's sub-items
-          <SidebarContent className="pt-4 pb-4 animate-content-enter" key={currentEffectiveItem.id}>
+          <SidebarContent
+            className="pt-4 pb-4 animate-content-enter"
+            key={currentEffectiveItem.id}
+          >
             <SidebarGroupLabel>{currentEffectiveItem.label}</SidebarGroupLabel>
             <SidebarMenu>
               {currentEffectiveItem.items
@@ -334,10 +346,13 @@ function WorkspaceShellContent({
       </SidebarDrawer>
 
       {/* Main Content */}
-      <SidebarInset>
+      <SidebarInset className="expanded:border-l expanded:border-outline-variant/50">
+        {/* Page Header (reads from usePageLayout store) */}
+        <PageHeader className="px-4 medium:px-6 expanded:px-8" />
+
         {/* Content Container */}
         <div className="px-4 py-4 medium:px-6 expanded:px-8 expanded:py-6 flex-1">
-          {children}
+          <div className="expanded:container expanded:mx-auto">{children}</div>
         </div>
       </SidebarInset>
 
@@ -352,6 +367,8 @@ function WorkspaceShellContent({
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { SidebarProvider } from "@unisane/ui/components/sidebar";
+import { PageHeader } from "@/src/components/layout/PageHeader";
+import { NavigationProgress } from "@/src/context/useNavigationProgress";
 
 interface WorkspaceShellProps {
   children: React.ReactNode;
@@ -360,7 +377,12 @@ interface WorkspaceShellProps {
   perms: string[];
 }
 
-export function WorkspaceShell({ children, slug, tenantName, perms }: WorkspaceShellProps) {
+export function WorkspaceShell({
+  children,
+  slug,
+  tenantName,
+  perms,
+}: WorkspaceShellProps) {
   const pathname = usePathname();
   const base = `/w/${slug}`;
   const navData = useMemo(() => getNavData(base), [base]);
@@ -376,11 +398,7 @@ export function WorkspaceShell({ children, slug, tenantName, perms }: WorkspaceS
       drawerWidth={220}
       mobileDrawerWidth={280}
     >
-      <WorkspaceShellContent
-        slug={slug}
-        tenantName={tenantName}
-        perms={perms}
-      >
+      <WorkspaceShellContent slug={slug} tenantName={tenantName} perms={perms}>
         {children}
       </WorkspaceShellContent>
     </SidebarProvider>

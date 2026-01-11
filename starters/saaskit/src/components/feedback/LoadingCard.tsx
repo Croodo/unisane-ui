@@ -3,6 +3,7 @@
 import { forwardRef } from "react";
 import { cn } from "@unisane/ui/lib/utils";
 import { Skeleton } from "@unisane/ui/components/skeleton";
+import { Card } from "@unisane/ui/components/card";
 
 export type LoadingCardProps = React.HTMLAttributes<HTMLDivElement> & {
   lines?: number;
@@ -12,9 +13,10 @@ export type LoadingCardProps = React.HTMLAttributes<HTMLDivElement> & {
 const LoadingCard = forwardRef<HTMLDivElement, LoadingCardProps>(
   ({ className, lines = 3, showHeader = true, ...props }, ref) => {
     return (
-      <div
+      <Card
         ref={ref}
-        className={cn("rounded-lg border bg-card shadow-sm p-6", className)}
+        variant="low"
+        className={cn("p-6", className)}
         {...props}
       >
         {showHeader && (
@@ -32,7 +34,7 @@ const LoadingCard = forwardRef<HTMLDivElement, LoadingCardProps>(
             />
           ))}
         </div>
-      </div>
+      </Card>
     );
   }
 );

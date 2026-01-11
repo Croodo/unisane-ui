@@ -13,6 +13,9 @@ export type {
   ColumnMetaMap,
   Density,
 
+  // Loading types
+  LoadingVariant,
+
   // Filter types
   FilterValue,
   FilterState,

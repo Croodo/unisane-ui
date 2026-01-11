@@ -26,7 +26,7 @@ const themeConfig = {
   scheme: "tonal",
   contrast: "standard",
   elevation: "subtle",
-  colorTheme: "blue",
+  colorTheme: "purple",
   theme: "system",
 } satisfies Required<ThemeConfig> & { theme: Theme };
 

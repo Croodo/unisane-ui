@@ -169,6 +169,21 @@ export interface DataTableProps<T extends { id: string }> {
   /** Refreshing state (spinner while data exists) */
   refreshing?: boolean;
 
+  /**
+   * Loading display variant.
+   * - "skeleton": Animated skeleton rows matching table structure (default)
+   * - "spinner": Centered spinner with loading text
+   * - "linear-progress": Subtle progress bar
+   * @default "skeleton"
+   */
+  loadingVariant?: "skeleton" | "spinner" | "linear-progress";
+
+  /**
+   * Number of skeleton rows to display during loading.
+   * @default 5
+   */
+  skeletonRowCount?: number;
+
   /** Total count for pagination (remote mode) */
   totalCount?: number;
 
@@ -380,6 +395,8 @@ export function DataTable<T extends { id: string }>({
   // Loading
   loading = false,
   refreshing = false,
+  loadingVariant = "skeleton",
+  skeletonRowCount,
   totalCount,
   onRefresh,
   cursorPagination,
@@ -536,6 +553,8 @@ export function DataTable<T extends { id: string }>({
             } : undefined}
             data={data}
             isLoading={loading}
+            loadingVariant={loadingVariant}
+            skeletonRowCount={skeletonRowCount ?? paginationConfig.pageSize ?? 5}
             bulkActions={bulkActions}
             renderExpandedRow={enableExpansion ? renderExpandedRow : undefined}
             getRowCanExpand={getRowCanExpand}

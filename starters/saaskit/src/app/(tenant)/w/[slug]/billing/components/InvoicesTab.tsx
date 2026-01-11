@@ -7,6 +7,7 @@ import { DataTable } from "@unisane/data-table";
 import type { Column } from "@unisane/data-table";
 import { formatCurrency } from "@/src/shared/currency";
 import { StatusBadge } from "@/src/components/ui/status-badge";
+import { Typography } from "@unisane/ui/components/typography";
 
 interface InvoicesTabProps {
   tenantId?: string | undefined;
@@ -21,15 +22,27 @@ export function InvoicesTab({ tenantId }: InvoicesTabProps) {
 
   const columns = useMemo<Column<BillingListInvoicesItem>[]>(
     () => [
-      { key: "id", header: "Invoice", width: 160, render: (row) => row.id },
+      {
+        key: "id",
+        header: "Invoice",
+        width: 200,
+        render: (row) => (
+          <span className="font-mono text-sm">{row.id}</span>
+        ),
+      },
       {
         key: "amountDue",
         header: "Amount",
         width: 140,
+        align: "end",
         render: (row) =>
-          typeof row.amountDue === "number"
-            ? formatCurrency(row.amountDue)
-            : "—",
+          typeof row.amountDue === "number" ? (
+            <span className="font-medium tabular-nums">
+              {formatCurrency(row.amountDue)}
+            </span>
+          ) : (
+            "—"
+          ),
       },
       {
         key: "status",
@@ -40,21 +53,34 @@ export function InvoicesTab({ tenantId }: InvoicesTabProps) {
       {
         key: "createdAt",
         header: "Issued",
-        width: 180,
+        width: 140,
         render: (row) =>
-          row.createdAt ? new Date(row.createdAt).toLocaleString() : "—",
+          row.createdAt
+            ? new Date(row.createdAt).toLocaleDateString(undefined, {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })
+            : "—",
       },
     ],
     []
   );
 
   return (
-    <DataTable<BillingListInvoicesItem>
-      data={items}
-      columns={columns}
-      title="Invoices"
-      loading={list.isLoading && !list.data}
-      tableId="tenant-invoices"
-    />
+    <section className="space-y-6">
+      <div>
+        <Typography variant="titleLarge">Invoices</Typography>
+        <Typography variant="bodyMedium" className="text-on-surface-variant mt-1">
+          View and download invoices for your subscription and purchases
+        </Typography>
+      </div>
+      <DataTable<BillingListInvoicesItem>
+        data={items}
+        columns={columns}
+        loading={list.isLoading && !list.data}
+        tableId="tenant-invoices"
+      />
+    </section>
   );
 }

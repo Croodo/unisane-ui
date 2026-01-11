@@ -259,6 +259,16 @@ export interface EditingConfig<T> {
   feedback?: boolean;
 }
 
+// ─── LOADING VARIANT ──────────────────────────────────────────────────────────
+
+/**
+ * Loading display variant.
+ * - "skeleton": Animated skeleton rows matching table structure (default)
+ * - "spinner": Centered spinner with loading text
+ * - "linear-progress": Subtle progress bar (best for refresh/background loading)
+ */
+export type LoadingVariant = "skeleton" | "spinner" | "linear-progress";
+
 // ─── STYLING CONFIG ───────────────────────────────────────────────────────────
 
 /**

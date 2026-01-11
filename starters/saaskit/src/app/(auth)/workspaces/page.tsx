@@ -1,6 +1,9 @@
-import { redirect } from "next/navigation";
 import { createApi } from "@/src/sdk/server";
 import { requireUser } from "@/src/app/_server/requireAuth";
+import { Card } from "@unisane/ui/components/card";
+import { Typography } from "@unisane/ui/components/typography";
+import { Icon } from "@unisane/ui/primitives/icon";
+import Link from "next/link";
 
 type MembershipItem = {
   tenantId: string;
@@ -11,43 +14,47 @@ type MembershipItem = {
 
 export default async function WorkspacesPage() {
   const api = await createApi();
-  const { me } = await requireUser("/workspaces", api);
+  await requireUser("/workspaces", api);
   const page = await api.me.memberships({ query: { limit: 50 } });
   const items = (page.items ?? []) as MembershipItem[];
   return (
     <main className="mx-auto max-w-2xl p-6">
-      <h1 className="mb-2 text-xl font-semibold">Your workspaces</h1>
-      <p className="mb-4 text-sm text-muted-foreground">
+      <Typography variant="headlineSmall" className="mb-2">Your workspaces</Typography>
+      <Typography variant="bodyMedium" className="mb-6 text-on-surface-variant">
         Pick a workspace to continue.
-      </p>
+      </Typography>
       {items.length === 0 ? (
-        <div className="text-sm text-muted-foreground">
-          You don’t belong to any workspaces yet.{" "}
-          <a className="underline" href="/welcome">
-            Create one
-          </a>
-          .
-        </div>
+        <Card variant="outlined" className="p-6 text-center">
+          <Typography variant="bodyMedium" className="text-on-surface-variant">
+            You don't belong to any workspaces yet.{" "}
+            <Link className="text-primary underline" href="/welcome">
+              Create one
+            </Link>
+            .
+          </Typography>
+        </Card>
       ) : (
         <ul className="grid gap-3">
           {items.map((it) => (
             <li key={`${it.tenantId}`}>
-              <a
-                className="flex w-full items-center justify-between rounded border px-4 py-3 text-left hover:bg-muted"
+              <Link
+                className="block"
                 href={
                   it.tenantSlug ? `/w/${it.tenantSlug}` : `/w/${it.tenantId}`
                 }
               >
-                <div>
-                  <div className="font-medium">
-                    {it.tenantName ?? it.tenantSlug ?? it.tenantId}
+                <Card variant="outlined" className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-surface-container-low transition-colors">
+                  <div>
+                    <Typography variant="titleMedium">
+                      {it.tenantName ?? it.tenantSlug ?? it.tenantId}
+                    </Typography>
+                    <Typography variant="labelSmall" className="text-on-surface-variant">
+                      Roles: {it.roles.join(", ") || "member"}
+                    </Typography>
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    Roles: {it.roles.join(", ") || "member"}
-                  </div>
-                </div>
-                <span className="text-xs text-muted-foreground">Open</span>
-              </a>
+                  <Icon symbol="arrow_forward" className="text-on-surface-variant" />
+                </Card>
+              </Link>
             </li>
           ))}
         </ul>

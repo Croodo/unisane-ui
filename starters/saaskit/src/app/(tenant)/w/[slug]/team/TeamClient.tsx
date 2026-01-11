@@ -11,7 +11,7 @@ import { DataTable } from "@unisane/data-table";
 import type { Column } from "@unisane/data-table";
 import { Icon } from "@unisane/ui/primitives/icon";
 import { EmptyState } from "@/src/components/feedback";
-import { PageHeader } from "@/src/context/usePageHeader";
+import { PageLayout } from "@/src/context/usePageLayout";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -285,21 +285,20 @@ export function TeamClient() {
 
   return (
     <>
-      <PageHeader
-        title="Team"
-        subtitle="Manage workspace members and their roles."
-      />
+      <PageLayout subtitle="Manage workspace members and their roles." />
 
       {items.length === 0 && !isLoading ? (
-        <EmptyState
-          icon="group"
-          title="No team members yet"
-          description="You're the only member of this workspace. Invite functionality coming soon."
-          action={{
-            label: "Invite Members",
-            disabled: true,
-          }}
-        />
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <EmptyState
+            icon="group"
+            title="No team members yet"
+            description="You're the only member of this workspace. Invite functionality coming soon."
+            action={{
+              label: "Invite Members",
+              disabled: true,
+            }}
+          />
+        </div>
       ) : (
         <DataTable<MembershipsListItem>
           data={items}

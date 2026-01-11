@@ -20,39 +20,41 @@ export default async function AdminTenantDetailPage({
   const api = await createApi();
   const env = getEnv().APP_ENV;
 
-  let tenant;
-  let activity: AuditListItem[] | null = null;
-  let webhooks: WebhooksListEventsItem[] | null = null;
-
   try {
-    tenant = await api.admin.tenants.readOrNull({ params: { id } });
+    // Fetch tenant first to get ID, then fetch tab data in parallel
+    const tenant = await api.admin.tenants.readOrNull({ params: { id } });
     if (tenant === null) return notFound();
 
-    // Fetch tab data best-effort
-    if (activeTab === "activity") {
-      const res = await api.audit.list(tenant.id, { limit: 20 });
-      activity = res.items ?? [];
-    }
-    if (activeTab === "webhooks") {
-      const res = await api.webhooks.listEvents(tenant.id, {
-        limit: 10,
-        direction: "out",
-        status: "failed",
-      });
-      webhooks = res.items ?? [];
-    }
+    // Fetch tab data in parallel (best-effort)
+    const [activityRes, webhooksRes] = await Promise.all([
+      activeTab === "activity"
+        ? api.audit.list(tenant.id, { limit: 20 }).catch(() => ({ items: [] }))
+        : Promise.resolve(null),
+      activeTab === "webhooks"
+        ? api.webhooks
+            .listEvents(tenant.id, {
+              limit: 10,
+              direction: "out",
+              status: "failed",
+            })
+            .catch(() => ({ items: [] }))
+        : Promise.resolve(null),
+    ]);
+
+    const activity: AuditListItem[] | null = activityRes?.items ?? null;
+    const webhooks: WebhooksListEventsItem[] | null = webhooksRes?.items ?? null;
+
+    return (
+      <TenantDetailClient
+        tenant={tenant}
+        activity={activity}
+        webhooks={webhooks}
+        env={env}
+      />
+    );
   } catch (e) {
     const status = (e as Error & { status?: number }).status;
     if (status === 403) return notFound();
     throw e;
   }
-
-  return (
-    <TenantDetailClient
-      tenant={tenant}
-      activity={activity}
-      webhooks={webhooks}
-      env={env}
-    />
-  );
 }

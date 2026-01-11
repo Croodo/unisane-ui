@@ -1,11 +1,17 @@
+"use client";
+
 import React from "react";
+import dynamic from "next/dynamic";
 import { cva } from "class-variance-authority";
 import type { VariantProps } from "class-variance-authority";
 import { cn } from "@unisane/ui/lib/utils";
 import { Card } from "@unisane/ui/components/card";
 import { Icon } from "@unisane/ui/primitives/icon";
-import { Text } from "@unisane/ui/primitives/text";
-import { Area, AreaChart, ResponsiveContainer } from "recharts";
+import { Typography } from "@unisane/ui/components/typography";
+import { Skeleton } from "@unisane/ui/components/skeleton";
+
+// Lazy load recharts to avoid SSR issues
+const Sparkline = dynamic(() => import("./Sparkline"), { ssr: false });
 
 export interface StatItem {
   label: string;
@@ -56,6 +62,72 @@ interface StatsCardsProps extends VariantProps<typeof statsCardsVariants> {
   variant?: VariantProps<typeof cardVariants>["variant"];
 }
 
+// Single stat card with inline loading state (MUI pattern)
+function StatCard({
+  item,
+  loading,
+  variant,
+  className,
+}: {
+  item?: StatItem | undefined;
+  loading?: boolean | undefined;
+  variant?: VariantProps<typeof cardVariants>["variant"] | undefined;
+  className?: string | undefined;
+}) {
+  return (
+    <Card variant="low" className={cn(cardVariants({ variant }), className)}>
+      <div className="flex flex-col z-10 relative">
+        <div className="flex items-center justify-between mb-2">
+          {loading ? (
+            <Skeleton variant="text" className="h-4 w-20 rounded" />
+          ) : (
+            <Typography variant="labelMedium" className="text-on-surface-variant">
+              {item?.label}
+            </Typography>
+          )}
+          {loading ? (
+            <Skeleton variant="circular" className="size-5" />
+          ) : item?.icon ? (
+            <Icon symbol={item.icon} className="text-on-surface-variant" />
+          ) : null}
+        </div>
+        <div className="flex items-end gap-2">
+          {loading ? (
+            <Skeleton variant="text" className="h-8 w-16 rounded" />
+          ) : (
+            <Typography variant="headlineMedium" className="font-semibold">
+              {typeof item?.value === "number"
+                ? item.value.toLocaleString()
+                : item?.value}
+            </Typography>
+          )}
+          {!loading && item?.trend && (
+            <Typography
+              variant="labelSmall"
+              className={cn(
+                "mb-1 font-medium",
+                item.trend.direction === "up" && "text-primary",
+                item.trend.direction === "down" && "text-error",
+                item.trend.direction === "neutral" && "text-on-surface-variant"
+              )}
+            >
+              {item.trend.direction === "up" ? "+" : ""}
+              {item.trend.value}%
+            </Typography>
+          )}
+        </div>
+      </div>
+
+      {/* Sparkline Background */}
+      {!loading && item?.history && item.history.length > 0 && (
+        <div className="absolute bottom-0 left-0 right-0 h-16 opacity-20 pointer-events-none">
+          <Sparkline data={item.history} />
+        </div>
+      )}
+    </Card>
+  );
+}
+
 export const StatsCards = ({
   items,
   isLoading,
@@ -64,11 +136,13 @@ export const StatsCards = ({
   cardClassName,
   variant,
 }: StatsCardsProps) => {
+  const count = columns || 4;
+
   if (isLoading) {
     return (
       <div className={cn(statsCardsVariants({ columns }), className)}>
-        {[...Array(columns || 4)].map((_, i) => (
-          <Card key={i} className="h-32 animate-pulse bg-surface-container" />
+        {[...Array(count)].map((_, i) => (
+          <StatCard key={i} loading variant={variant} className={cardClassName} />
         ))}
       </div>
     );
@@ -77,60 +151,12 @@ export const StatsCards = ({
   return (
     <div className={cn(statsCardsVariants({ columns }), className)}>
       {items.map((item) => (
-        <Card
+        <StatCard
           key={item.label}
-          className={cn(cardVariants({ variant }), cardClassName)}
-        >
-          <div className="flex flex-col z-10 relative">
-            <div className="flex items-center justify-between mb-2">
-              <Text variant="labelMedium" color="onSurfaceVariant">
-                {item.label}
-              </Text>
-              {item.icon && (
-                <Icon symbol={item.icon} size="sm" className="text-on-surface-variant" />
-              )}
-            </div>
-            <div className="flex items-end gap-2">
-              <Text variant="headlineMedium" weight="semibold">
-                {typeof item.value === "number"
-                  ? item.value.toLocaleString()
-                  : item.value}
-              </Text>
-              {item.trend && (
-                <Text
-                  variant="labelSmall"
-                  weight="medium"
-                  className={cn(
-                    "mb-1",
-                    item.trend.direction === "up" && "text-primary",
-                    item.trend.direction === "down" && "text-error",
-                    item.trend.direction === "neutral" && "text-on-surface-variant"
-                  )}
-                >
-                  {item.trend.direction === "up" ? "+" : ""}
-                  {item.trend.value}%
-                </Text>
-              )}
-            </div>
-          </div>
-
-          {/* Sparkline Background */}
-          {item.history && item.history.length > 0 && (
-            <div className="absolute bottom-0 left-0 right-0 h-16 opacity-20 pointer-events-none">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={item.history}>
-                  <Area
-                    type="monotone"
-                    dataKey="value"
-                    stroke="currentColor"
-                    fill="currentColor"
-                    strokeWidth={2}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </Card>
+          item={item}
+          variant={variant}
+          className={cardClassName}
+        />
       ))}
     </div>
   );

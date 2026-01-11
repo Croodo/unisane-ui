@@ -674,7 +674,7 @@ export interface SidebarInsetProps extends React.HTMLAttributes<HTMLElement> {
 
 export const SidebarInset = forwardRef<HTMLElement, SidebarInsetProps>(
   ({ children, className, style, ...props }, ref) => {
-    const { railWidth, drawerWidth, expanded } = useSidebar();
+    const { railWidth, drawerWidth, expanded, usesOverlayDrawer } = useSidebar();
 
     // Calculate desktop margin:
     // - When drawer is expanded (pinned), include drawer width
@@ -692,18 +692,17 @@ export const SidebarInset = forwardRef<HTMLElement, SidebarInsetProps>(
           "transition-[margin] duration-emphasized ease-emphasized",
           // Responsive: top margin for mobile/tablet (TopAppBar), none for desktop
           "mt-16 expanded:mt-0",
-          // Responsive: no left margin on mobile/tablet, applied via style on desktop
-          "ml-0",
-          // Height and overflow for proper scrolling
-          "h-screen overflow-y-auto overflow-x-hidden",
+          // Height and overflow for proper scrolling (enables sticky headers)
+          // Mobile: account for TopAppBar (64px = 4rem), Desktop: full screen
+          "h-[calc(100vh-4rem)] expanded:h-screen overflow-y-auto overflow-x-hidden",
           className
         )}
         style={{
-          // Only apply margin-left on desktop (840px+) via CSS media query
-          // We use a CSS variable so the media query can reference it
-          "--sidebar-margin": `${desktopMargin}px`,
+          // Apply margin-left only on desktop (when not using overlay drawer)
+          // On mobile/tablet, margin is 0 (content uses full width)
+          marginLeft: usesOverlayDrawer ? 0 : desktopMargin,
           ...style,
-        } as React.CSSProperties}
+        }}
         {...props}
       >
         {children}

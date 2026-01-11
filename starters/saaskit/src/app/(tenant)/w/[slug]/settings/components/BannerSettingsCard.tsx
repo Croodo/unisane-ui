@@ -1,14 +1,14 @@
 "use client";
 
 import { useMemo } from "react";
-import { Label } from "@unisane/ui/primitives/label";
 import { Button } from "@unisane/ui/components/button";
-import { Textarea } from "@unisane/ui/primitives/textarea";
+import { TextField } from "@unisane/ui/components/text-field";
+import { Typography } from "@unisane/ui/components/typography";
+import { Card } from "@unisane/ui/components/card";
 import { toast } from "@unisane/ui/components/toast";
 import { hooks } from "@/src/sdk/hooks";
 import type { SettingsGetResponse as SettingsGet } from "@/src/sdk/types";
 import { normalizeError } from "@/src/sdk/errors";
-import { FormCard } from "@/src/components/forms";
 import { useFormCard } from "@/src/hooks/useFormCard";
 import { Select } from "@unisane/ui/components/select";
 
@@ -103,48 +103,63 @@ export function BannerSettingsCard({ tenantId }: BannerSettingsCardProps) {
   };
 
   return (
-    <FormCard
-      title="Workspace banner"
-      description="Optional announcement shown at the top of your workspace."
-      icon="campaign"
-      hideFooter
-    >
-      <div className="grid gap-4 md:grid-cols-[2fr,1fr]">
-        <div className="space-y-2">
-          <Label htmlFor="banner-message">Message</Label>
-          <Textarea
-            id="banner-message"
-            rows={3}
+    <Card variant="outlined">
+      <Card.Header>
+        <Card.Title>Workspace Banner</Card.Title>
+        <Card.Description>
+          Optional announcement shown at the top of your workspace
+        </Card.Description>
+      </Card.Header>
+      <Card.Content className="p-0 divide-y divide-outline-variant/50">
+        {/* Message */}
+        <div className="grid gap-3 px-5 py-5 sm:grid-cols-[200px_minmax(0,1fr)] sm:items-start">
+          <div className="space-y-1">
+            <Typography variant="titleSmall">Message</Typography>
+            <Typography variant="bodySmall" className="text-on-surface-variant">
+              Banner text content
+            </Typography>
+          </div>
+          <TextField
+            label="Message"
+            multiline
+            rows={2}
             value={form.value.message}
             onChange={(e) => form.setValue("message", e.target.value)}
             placeholder="Welcome to your workspace!"
           />
         </div>
-        <div className="space-y-2">
-          <Label>Variant</Label>
+
+        {/* Variant */}
+        <div className="grid gap-3 px-5 py-5 sm:grid-cols-[200px_minmax(0,1fr)] sm:items-start">
+          <div className="space-y-1">
+            <Typography variant="titleSmall">Style</Typography>
+            <Typography variant="bodySmall" className="text-on-surface-variant">
+              Banner appearance
+            </Typography>
+          </div>
           <Select
+            label="Variant"
             value={form.value.variant}
             onChange={(v: string) =>
               form.setValue("variant", v as "success" | "warning" | "info")
             }
             options={[
+              { value: "info", label: "Info" },
               { value: "success", label: "Success" },
               { value: "warning", label: "Warning" },
-              { value: "info", label: "Info" },
             ]}
           />
         </div>
-      </div>
+      </Card.Content>
 
-      <div className="flex items-center justify-between gap-2 pt-2">
-        <div className="text-xs text-on-surface-variant">
+      <div className="flex items-center justify-between px-5 py-4 border-t border-outline-variant/50">
+        <Typography variant="labelSmall" className="text-on-surface-variant">
           Version: {form.version ?? "—"}
-        </div>
+        </Typography>
         <div className="flex gap-2">
           <Button
             type="button"
             variant="outlined"
-            size="sm"
             disabled={!tenantId || isSaving}
             onClick={handleClear}
           >
@@ -152,7 +167,6 @@ export function BannerSettingsCard({ tenantId }: BannerSettingsCardProps) {
           </Button>
           <Button
             type="button"
-            size="sm"
             disabled={!tenantId || isSaving}
             onClick={handleSave}
           >
@@ -160,6 +174,6 @@ export function BannerSettingsCard({ tenantId }: BannerSettingsCardProps) {
           </Button>
         </div>
       </div>
-    </FormCard>
+    </Card>
   );
 }

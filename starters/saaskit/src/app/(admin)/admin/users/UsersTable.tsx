@@ -4,14 +4,10 @@ import Link from "next/link";
 import type { AdminUsersListItem } from "@/src/sdk/types";
 import { DataTable } from "@unisane/data-table";
 import type { Column, BulkAction } from "@unisane/data-table";
-import { PageHeader } from "@/src/context/usePageHeader";
-import {
-  StatsCards,
-  type StatItem,
-} from "@/src/components/dashboard/StatsCards";
+import { PageLayout } from "@/src/context/usePageLayout";
 import { useServerTable } from "@/src/hooks/useServerTable";
 
-interface UsersClientProps {
+interface UsersTableProps {
   data: AdminUsersListItem[];
   nextCursor?: string | undefined;
   prevCursor?: string | undefined;
@@ -28,7 +24,7 @@ interface UsersClientProps {
   currentPage: number;
 }
 
-export default function UsersClient({
+export default function UsersTable({
   data,
   nextCursor,
   prevCursor,
@@ -37,7 +33,7 @@ export default function UsersClient({
   currentSearch,
   currentLimit,
   currentPage,
-}: UsersClientProps) {
+}: UsersTableProps) {
   // ─── TABLE STATE (URL-based) ──────────────────────────────────────────────
   const { dataTableProps } = useServerTable({
     currentSort,
@@ -60,7 +56,7 @@ export default function UsersClient({
         render: (row) => (
           <div className="flex flex-col">
             <span className="font-medium break-all">{row.email}</span>
-            <span className="text-xs text-on-surface-variant">{row.id}</span>
+            <span className="text-label-small text-on-surface-variant">{row.id}</span>
           </div>
         ),
       },
@@ -85,7 +81,7 @@ export default function UsersClient({
         width: 140,
         pinned: "right",
         render: (row) => (
-          <div className="flex gap-3 justify-end text-sm">
+          <div className="flex gap-3 justify-end text-body-medium">
             <Link
               className="text-primary hover:underline"
               href={`/admin/users/${row.id}`}
@@ -112,47 +108,31 @@ export default function UsersClient({
     []
   );
 
-  // ─── STATS DISPLAY ─────────────────────────────────────────────────────────
-  const statsItems: StatItem[] = useMemo(() => {
-    const total = stats?.total ?? 0;
-    const superAdmins = stats?.facets?.globalRole?.["super-admin"] ?? 0;
-    const standardUsers = stats?.facets?.globalRole?.["user"] ?? 0;
-
-    return [
-      { label: "Total Users", value: total, icon: "group" },
-      { label: "Super Admins", value: superAdmins, icon: "shield" },
-      { label: "Standard Users", value: standardUsers, icon: "verified_user" },
-    ];
-  }, [stats]);
-
   return (
     <>
-      <PageHeader title="Users" subtitle="Latest users across the platform" />
-      <div className="mt-4">
-        <StatsCards items={statsItems} columns={3} />
-        <DataTable<AdminUsersListItem>
-          data={data}
-          columns={columns}
-          title="Users"
-          tableId="admin-users-ga"
-          features={{ search: true }}
-          styling={{ columnDividers: true }}
-          bulkActions={bulkActions}
-          // Server-side table state from URL
-          mode={dataTableProps.mode}
-          paginationMode={dataTableProps.paginationMode}
-          disableLocalProcessing={dataTableProps.disableLocalProcessing}
-          searchValue={dataTableProps.searchValue}
-          onSearchChange={dataTableProps.onSearchChange}
-          sortKey={dataTableProps.sortKey}
-          sortDirection={dataTableProps.sortDirection}
-          onSortChange={dataTableProps.onSortChange}
-          cursorPagination={dataTableProps.cursorPagination}
-          refreshing={dataTableProps.refreshing}
-          // Stats API now returns filtered count when filtering is applied
-          {...(stats?.total !== undefined ? { totalCount: stats.total } : {})}
-        />
-      </div>
+      <PageLayout subtitle="Latest users across the platform" />
+      <DataTable<AdminUsersListItem>
+        data={data}
+        columns={columns}
+        title="Users"
+        tableId="admin-users-ga"
+        features={{ search: true }}
+        styling={{ columnDividers: true }}
+        bulkActions={bulkActions}
+        // Server-side table state from URL
+        mode={dataTableProps.mode}
+        paginationMode={dataTableProps.paginationMode}
+        disableLocalProcessing={dataTableProps.disableLocalProcessing}
+        searchValue={dataTableProps.searchValue}
+        onSearchChange={dataTableProps.onSearchChange}
+        sortKey={dataTableProps.sortKey}
+        sortDirection={dataTableProps.sortDirection}
+        onSortChange={dataTableProps.onSortChange}
+        cursorPagination={dataTableProps.cursorPagination}
+        refreshing={dataTableProps.refreshing}
+        // Stats API now returns filtered count when filtering is applied
+        {...(stats?.total !== undefined ? { totalCount: stats.total } : {})}
+      />
     </>
   );
 }

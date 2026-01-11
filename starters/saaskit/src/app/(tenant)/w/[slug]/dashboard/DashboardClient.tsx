@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useSession } from "@/src/hooks/useSession";
 import { hooks } from "@/src/sdk/hooks";
-import { PageHeader } from "@/src/context/usePageHeader";
+import { PageLayout } from "@/src/context/usePageLayout";
 import { Card } from "@unisane/ui/components/card";
 import { Button } from "@unisane/ui/components/button";
 import { Icon } from "@unisane/ui/primitives/icon";
@@ -150,10 +150,7 @@ export function DashboardClient({ slug }: DashboardClientProps) {
 
   return (
     <>
-      <PageHeader
-        title="Home"
-        subtitle="Welcome to your workspace dashboard."
-      />
+      <PageLayout subtitle="Welcome to your workspace dashboard." />
 
       <div className="space-y-8">
         {/* Stats Grid */}

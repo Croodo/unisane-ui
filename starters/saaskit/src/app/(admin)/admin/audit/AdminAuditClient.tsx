@@ -6,6 +6,7 @@ import { RowDetailSection, KeyValueRow } from "@/src/components/shared";
 import { Badge } from "@unisane/ui/components/badge";
 import { hooks } from "@/src/sdk/hooks/generated/hooks";
 import { type AuditAdminListItem } from "@/src/sdk/types";
+import { PageLayout } from "@/src/context/usePageLayout";
 import {
   useDetailPanelNavigation,
   type DetailPanelContent,
@@ -217,15 +218,18 @@ export function AdminAuditClient() {
   );
 
   return (
-    <DataTable<AuditAdminListItem>
-      data={items}
-      columns={columns}
-      title="Audit Logs"
-      loading={isLoading}
-      tableId="admin-audit"
-      features={{ search: true }}
-      callbacks={{ onRowClick: (row) => openItem(row) }}
-      {...(activeItemId ? { activeRowId: activeItemId } : {})}
-    />
+    <>
+      <PageLayout subtitle="Platform-wide audit logs and activity." />
+      <DataTable<AuditAdminListItem>
+        data={items}
+        columns={columns}
+        title="Audit Logs"
+        loading={isLoading}
+        tableId="admin-audit"
+        features={{ search: true }}
+        callbacks={{ onRowClick: (row) => openItem(row) }}
+        {...(activeItemId ? { activeRowId: activeItemId } : {})}
+      />
+    </>
   );
 }

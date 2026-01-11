@@ -1,6 +1,6 @@
 "use client";
 
-import { PageHeader } from "@/src/context/usePageHeader";
+import { PageLayout } from "@/src/context/usePageLayout";
 import { MyProfileCard } from "../settings/MyProfileCard";
 
 /**
@@ -14,10 +14,7 @@ import { MyProfileCard } from "../settings/MyProfileCard";
 export function AccountClient() {
   return (
     <>
-      <PageHeader
-        title="Account"
-        subtitle="Manage your personal profile and preferences."
-      />
+      <PageLayout subtitle="Manage your personal profile and preferences." />
       <div className="space-y-6">
         <MyProfileCard />
       </div>

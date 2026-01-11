@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { hooks } from "@/src/sdk/hooks";
-import { PageHeader } from "@/src/context/usePageHeader";
+import { PageLayout } from "@/src/context/usePageLayout";
 import {
   StatsCards,
   type StatItem,
@@ -77,10 +77,7 @@ export default function OverviewClient() {
 
   return (
     <>
-      <PageHeader
-        title="Analytics"
-        subtitle="Platform-wide performance metrics"
-      />
+      <PageLayout subtitle="Platform-wide performance metrics" />
       <div className="mt-4">
         <StatsCards items={statsItems} isLoading={analyticsQuery.isLoading} />
       </div>

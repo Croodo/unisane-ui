@@ -1,67 +1,138 @@
+import { Suspense } from "react";
+import { notFound, redirect } from "next/navigation";
 import { createApi } from "@/src/sdk/server";
-import { notFound } from "next/navigation";
-import { redirect } from "next/navigation";
-import TenantsClient from "./TenantsClient";
-import type { TenantsAdminListResponse as TenantsAdminList } from "@/src/sdk/types";
-import { deriveAdminTenantListQuery } from "@/src/sdk/registries/admin.tenants.grid";
+import {
+  StatsCards,
+  type StatItem,
+} from "@/src/components/dashboard/StatsCards";
+import TenantsTable from "./TenantsTable";
+import { TenantsTableLoading } from "./TenantsTableLoading";
 
-export default async function AdminTenantsPage({
+const DEFAULT_SORT = "-createdAt";
+const DEFAULT_LIMIT = 50;
+
+interface SearchParams {
+  cursor?: string;
+  sort?: string;
+  q?: string;
+  limit?: string;
+  page?: string;
+}
+
+// Stats section - streams independently
+async function TenantsStats({ searchParams }: { searchParams: SearchParams }) {
+  const api = await createApi();
+  const currentSearch = searchParams.q || "";
+  const statsFilters = currentSearch
+    ? { filters: { q: currentSearch } }
+    : undefined;
+
+  const stats = await api.admin.tenants.stats(statsFilters).catch(() => undefined);
+
+  const statsItems: StatItem[] = [
+    { label: "Total Tenants", value: stats?.total ?? 0, icon: "apartment" },
+    { label: "Free Plan", value: stats?.facets?.planId?.free ?? 0, icon: "group" },
+    { label: "Pro Plan", value: stats?.facets?.planId?.pro ?? 0, icon: "check_circle" },
+    {
+      label: "Enterprise",
+      value: stats?.facets?.planId?.enterprise ?? 0,
+      icon: "check_circle",
+    },
+  ];
+
+  return <StatsCards items={statsItems} columns={4} />;
+}
+
+// Table section - streams independently
+async function TenantsTableSection({
   searchParams,
 }: {
-  searchParams: Promise<{ cursor?: string; sort?: string; q?: string; filters?: string }>;
+  searchParams: SearchParams;
 }) {
-  const { cursor, sort, q, filters } = await searchParams;
-  const { query, uiFilters } = deriveAdminTenantListQuery({
-    cursor: cursor ?? null,
-    sort: sort ?? null,
-    q: q ?? null,
-    filters: filters ?? null,
-    limit: 50,
-    defaults: { sort: "-createdAt", limit: 50 },
-  });
+  const currentSort = searchParams.sort || DEFAULT_SORT;
+  const currentLimit = Math.min(
+    Math.max(Number(searchParams.limit) || DEFAULT_LIMIT, 1),
+    100
+  );
+  const currentSearch = searchParams.q || "";
+  const currentPage = Math.max(1, Number(searchParams.page) || 1);
+
+  const query = {
+    sort: currentSort,
+    limit: currentLimit,
+    ...(searchParams.cursor && { cursor: searchParams.cursor }),
+    ...(currentSearch && { filters: { q: currentSearch } }),
+  };
+
   const api = await createApi();
-  let initial: TenantsAdminList;
+
   try {
-    const res = await api.admin.tenants.list({ query });
-    initial = res as unknown as TenantsAdminList;
+    // Fetch both data and stats for table (stats needed for totalCount)
+    const statsFilters = currentSearch
+      ? { filters: { q: currentSearch } }
+      : undefined;
+    const [data, stats] = await Promise.all([
+      api.admin.tenants.list({ query }),
+      api.admin.tenants.stats(statsFilters).catch(() => undefined),
+    ]);
+
+    return (
+      <TenantsTable
+        data={data.items}
+        nextCursor={data.nextCursor}
+        prevCursor={data.prevCursor}
+        stats={stats}
+        currentSort={currentSort}
+        currentSearch={currentSearch}
+        currentLimit={currentLimit}
+        currentPage={currentPage}
+      />
+    );
   } catch (e) {
-    const status = (e as Error & { status?: number }).status;
-    const requestId = (e as Error & { requestId?: string }).requestId;
-    if (status === 401) {
-      return redirect(`/login?next=${encodeURIComponent("/admin")}`);
+    const err = e as Error & { status?: number; requestId?: string };
+
+    if (err.status === 401) {
+      return redirect(`/login?next=${encodeURIComponent("/admin/tenants")}`);
     }
-    if (status === 403) notFound();
-    if (status === 500) {
+    if (err.status === 403) {
+      return notFound();
+    }
+    if (err.status === 500) {
       return (
-        <section className="py-6 space-y-3">
-          <h2 className="text-lg font-semibold">Tenants</h2>
-          <div className="rounded border bg-muted/30 p-4 text-sm">
-            <div className="font-medium">Cannot load admin tenants.</div>
-            <div className="mt-1 text-muted-foreground">
-              The server returned a 500 error. In local/dev, this is commonly
-              due to the database not being reachable. Ensure your MongoDB is
-              running and that MONGODB_URI is set correctly, or point to a local
-              instance.
-            </div>
-            {requestId ? (
-              <div className="mt-2 text-muted-foreground">
-                Reference ID: <span className="font-mono">{requestId}</span>
-              </div>
-            ) : null}
+        <div className="rounded-sm border border-outline-variant bg-surface-container-low p-4 text-body-medium">
+          <div className="font-medium">Cannot load admin tenants.</div>
+          <div className="mt-1 text-on-surface-variant">
+            Server error. Ensure MongoDB is running and MONGODB_URI is set.
           </div>
-        </section>
+          {err.requestId && (
+            <div className="mt-2 text-on-surface-variant">
+              Reference: <span className="font-mono">{err.requestId}</span>
+            </div>
+          )}
+        </div>
       );
     }
     throw e;
   }
+}
+
+export default async function AdminTenantsPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const params = await searchParams;
+
   return (
-    <section className="py-6">
-      <TenantsClient
-        initial={initial}
-        initialFilters={uiFilters}
-        limit={query.limit}
-        sort={query.sort as string}
-      />
+    <section className="">
+      <div className="mt-4">
+        <Suspense fallback={<StatsCards items={[]} columns={4} isLoading />}>
+          <TenantsStats searchParams={params} />
+        </Suspense>
+        <Suspense fallback={<TenantsTableLoading />}>
+          <TenantsTableSection searchParams={params} />
+        </Suspense>
+      </div>
     </section>
   );
 }

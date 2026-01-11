@@ -1,61 +1,95 @@
+import { Suspense } from "react";
 import { notFound, redirect } from "next/navigation";
 import { createApi } from "@/src/sdk/server";
-import UsersClient from "./UsersClient";
+import {
+  StatsCards,
+  type StatItem,
+} from "@/src/components/dashboard/StatsCards";
+import UsersTable from "./UsersTable";
+import { UsersTableLoading } from "./UsersTableLoading";
 
 const DEFAULT_SORT = "-updatedAt";
 const DEFAULT_LIMIT = 25;
 
-export default async function AdminUsersPage({
+interface SearchParams {
+  cursor?: string;
+  sort?: string;
+  q?: string;
+  limit?: string;
+  page?: string;
+}
+
+// Stats section - streams independently
+async function UsersStats({ searchParams }: { searchParams: SearchParams }) {
+  const api = await createApi();
+  const currentSearch = searchParams.q || "";
+  const statsFilters = currentSearch
+    ? { filters: { q: currentSearch } }
+    : undefined;
+
+  const stats = await api.admin.users.stats(statsFilters).catch(() => undefined);
+
+  const statsItems: StatItem[] = [
+    { label: "Total Users", value: stats?.total ?? 0, icon: "group" },
+    {
+      label: "Super Admins",
+      value: stats?.facets?.globalRole?.["super-admin"] ?? 0,
+      icon: "shield",
+    },
+    {
+      label: "Standard Users",
+      value: stats?.facets?.globalRole?.["user"] ?? 0,
+      icon: "verified_user",
+    },
+  ];
+
+  return <StatsCards items={statsItems} columns={3} />;
+}
+
+// Table section - streams independently
+async function UsersTableSection({
   searchParams,
 }: {
-  searchParams: Promise<{
-    cursor?: string;
-    sort?: string;
-    q?: string;
-    limit?: string;
-    page?: string;
-  }>;
+  searchParams: SearchParams;
 }) {
-  const params = await searchParams;
-
-  // Build query from URL params
-  const currentSort = params.sort || DEFAULT_SORT;
-  const currentLimit = Math.min(Math.max(Number(params.limit) || DEFAULT_LIMIT, 1), 100);
-  const currentSearch = params.q || "";
-  // Page is tracked in URL for display purposes (cursor is source of truth for data)
-  const currentPage = Math.max(1, Number(params.page) || 1);
+  const currentSort = searchParams.sort || DEFAULT_SORT;
+  const currentLimit = Math.min(
+    Math.max(Number(searchParams.limit) || DEFAULT_LIMIT, 1),
+    100
+  );
+  const currentSearch = searchParams.q || "";
+  const currentPage = Math.max(1, Number(searchParams.page) || 1);
 
   const query = {
     sort: currentSort,
     limit: currentLimit,
-    ...(params.cursor && { cursor: params.cursor }),
+    ...(searchParams.cursor && { cursor: searchParams.cursor }),
     ...(currentSearch && { filters: { q: currentSearch } }),
   };
 
   const api = await createApi();
 
   try {
-    // Fetch data and stats in parallel
-    // Stats API now supports filters for accurate filtered count
-    const statsFilters = currentSearch ? { filters: { q: currentSearch } } : undefined;
+    // Fetch both data and stats for table (stats needed for totalCount)
+    const statsFilters = currentSearch
+      ? { filters: { q: currentSearch } }
+      : undefined;
     const [data, stats] = await Promise.all([
       api.admin.users.list({ query }),
       api.admin.users.stats(statsFilters).catch(() => undefined),
     ]);
 
     return (
-      <section className="py-6">
-        <UsersClient
-          data={data.items}
-          nextCursor={data.nextCursor}
-          prevCursor={data.prevCursor}
-          stats={stats}
-          currentSort={currentSort}
-          currentSearch={currentSearch}
-          currentLimit={currentLimit}
-          currentPage={currentPage}
-        />
-      </section>
+      <UsersTable
+        data={data.items}
+        nextCursor={data.nextCursor}
+        prevCursor={data.prevCursor}
+        stats={stats}
+        currentSort={currentSort}
+        currentSearch={currentSearch}
+        currentLimit={currentLimit}
+        currentPage={currentPage}
+      />
     );
   } catch (e) {
     const err = e as Error & { status?: number; requestId?: string };
@@ -68,22 +102,40 @@ export default async function AdminUsersPage({
     }
     if (err.status === 500) {
       return (
-        <section className="py-6 space-y-3">
-          <h2 className="text-lg font-semibold">Users</h2>
-          <div className="rounded border bg-muted/30 p-4 text-sm">
-            <div className="font-medium">Cannot load admin users.</div>
-            <div className="mt-1 text-muted-foreground">
-              Server error. Ensure MongoDB is running and MONGODB_URI is set.
-            </div>
-            {err.requestId && (
-              <div className="mt-2 text-muted-foreground">
-                Reference: <span className="font-mono">{err.requestId}</span>
-              </div>
-            )}
+        <div className="rounded-sm border border-outline-variant bg-surface-container-low p-4 text-body-medium">
+          <div className="font-medium">Cannot load admin users.</div>
+          <div className="mt-1 text-on-surface-variant">
+            Server error. Ensure MongoDB is running and MONGODB_URI is set.
           </div>
-        </section>
+          {err.requestId && (
+            <div className="mt-2 text-on-surface-variant">
+              Reference: <span className="font-mono">{err.requestId}</span>
+            </div>
+          )}
+        </div>
       );
     }
     throw e;
   }
+}
+
+export default async function AdminUsersPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const params = await searchParams;
+
+  return (
+    <section className="">
+      <div className="mt-4">
+        <Suspense fallback={<StatsCards items={[]} columns={3} isLoading />}>
+          <UsersStats searchParams={params} />
+        </Suspense>
+        <Suspense fallback={<UsersTableLoading />}>
+          <UsersTableSection searchParams={params} />
+        </Suspense>
+      </div>
+    </section>
+  );
 }

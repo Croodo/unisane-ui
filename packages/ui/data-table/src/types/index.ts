@@ -146,6 +146,8 @@ export type {
   StylingConfig,
   CallbacksConfig,
   ControlledStateConfig,
+  // Loading
+  LoadingVariant,
   // Presets
   DataTablePreset,
   // Column helpers

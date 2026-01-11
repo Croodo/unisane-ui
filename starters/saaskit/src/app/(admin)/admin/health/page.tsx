@@ -6,7 +6,7 @@ export default async function AdminHealthPage() {
     fetch('/api/health', { cache: 'no-store' }).then(r => r.json()).catch(() => null),
   ]);
   return (
-    <section className="py-6 space-y-3">
+    <section className="space-y-3">
       <h2 className="text-lg font-semibold">Health</h2>
       <div className="grid gap-4 md:grid-cols-2">
         <div className="rounded border p-4 text-sm">

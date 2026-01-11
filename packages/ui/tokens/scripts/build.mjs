@@ -688,59 +688,95 @@ function generateUniTokens() {
 }
 
 /* ============================================================
-   COLOR SCHEMES - Color strategy presets
+   COLOR THEMES - Hue presets
+   Usage: <html data-color-theme="purple">
+
+   Color themes set the primary hue and chroma.
+   Can be combined with any scheme.
+
+   Available themes:
+   - blue (default)  - Hue 240, professional blue
+   - purple          - Hue 285, creative purple
+   - pink            - Hue 340, playful pink
+   - red             - Hue 25, bold red/coral
+   - orange          - Hue 55, warm orange
+   - yellow          - Hue 85, bright yellow
+   - green           - Hue 145, natural green
+   - cyan            - Hue 195, cool cyan
+   - black           - Zero saturation, monochrome
+   ============================================================ */
+
+:root[data-color-theme="blue"] {
+  --hue: 240;
+  --chroma: 0.13;
+}
+
+:root[data-color-theme="purple"] {
+  --hue: 285;
+  --chroma: 0.14;
+}
+
+:root[data-color-theme="pink"] {
+  --hue: 340;
+  --chroma: 0.15;
+}
+
+:root[data-color-theme="red"] {
+  --hue: 25;
+  --chroma: 0.16;
+}
+
+:root[data-color-theme="orange"] {
+  --hue: 55;
+  --chroma: 0.16;
+}
+
+:root[data-color-theme="yellow"] {
+  --hue: 85;
+  --chroma: 0.14;
+}
+
+:root[data-color-theme="green"] {
+  --hue: 145;
+  --chroma: 0.14;
+}
+
+:root[data-color-theme="cyan"] {
+  --hue: 195;
+  --chroma: 0.12;
+}
+
+/* Black theme - zero saturation (same as monochrome but as a color theme)
+   Only sets chroma to 0, tone mapping controlled by contrast level */
+:root[data-color-theme="black"] {
+  --chroma: 0;
+  --chroma-neutral: 0;
+}
+
+/* ============================================================
+   COLOR SCHEMES - Saturation control
    Usage: <html data-scheme="monochrome">
 
-   Schemes control the COLOR STRATEGY (tonal, monochrome, neutral).
-   They affect chroma and tone mapping.
+   Schemes control SATURATION (chroma) only.
+   Tone darkness is controlled separately by data-contrast.
 
    Available schemes:
    - tonal (default) - Full M3 tonal palette with vibrant colors
-   - monochrome      - Pure grayscale, black/white buttons
    - neutral         - Low chroma, subtle color hints (professional)
+   - monochrome      - Zero saturation, pure grayscale
    ============================================================ */
-
-/* Monochrome scheme - pure grayscale with black primary buttons */
-[data-scheme="monochrome"] {
-  --chroma: 0;
-  --chroma-neutral: 0;
-
-  /* Remap to darker tones for true black buttons */
-  --tone-primary: var(--ref-primary-20);
-  --tone-on-primary: var(--ref-primary-95);
-  --tone-primary-container: var(--ref-primary-90);
-  --tone-on-primary-container: var(--ref-primary-10);
-
-  --tone-secondary: var(--ref-secondary-30);
-  --tone-on-secondary: var(--ref-secondary-95);
-  --tone-secondary-container: var(--ref-secondary-90);
-  --tone-on-secondary-container: var(--ref-secondary-10);
-
-  --tone-tertiary: var(--ref-tertiary-30);
-  --tone-on-tertiary: var(--ref-tertiary-95);
-}
-
-/* Monochrome dark mode */
-.dark[data-scheme="monochrome"],
-[data-scheme="monochrome"].dark {
-  --tone-primary: var(--ref-primary-90);
-  --tone-on-primary: var(--ref-primary-10);
-  --tone-primary-container: var(--ref-primary-20);
-  --tone-on-primary-container: var(--ref-primary-90);
-
-  --tone-secondary: var(--ref-secondary-80);
-  --tone-on-secondary: var(--ref-secondary-10);
-  --tone-secondary-container: var(--ref-secondary-20);
-  --tone-on-secondary-container: var(--ref-secondary-90);
-
-  --tone-tertiary: var(--ref-tertiary-80);
-  --tone-on-tertiary: var(--ref-tertiary-10);
-}
 
 /* Neutral scheme - low saturation, subtle color hints */
 [data-scheme="neutral"] {
   --chroma: 0.04;
   --chroma-neutral: 0.01;
+}
+
+/* Monochrome scheme - pure grayscale
+   Only sets chroma to 0, tone mapping unchanged (controlled by contrast) */
+[data-scheme="monochrome"] {
+  --chroma: 0;
+  --chroma-neutral: 0;
 }
 
 /* ============================================================
@@ -784,16 +820,16 @@ function generateUniTokens() {
   --tone-outline: var(--ref-neutral-variant-70);
 }
 
-/* High contrast - maximum accessibility, WCAG AAA (darkest primary: tone 20) */
+/* High contrast - boosted accessibility, WCAG AAA (darker primary: tone 20) */
 [data-contrast="high"] {
   --tone-primary: var(--ref-primary-20);
   --tone-on-primary: var(--ref-primary-100);
-  --tone-primary-container: var(--ref-primary-99);
+  --tone-primary-container: var(--ref-primary-95);
   --tone-on-primary-container: var(--ref-primary-0);
 
   --tone-secondary: var(--ref-secondary-20);
   --tone-on-secondary: var(--ref-secondary-100);
-  --tone-secondary-container: var(--ref-secondary-99);
+  --tone-secondary-container: var(--ref-secondary-95);
   --tone-on-secondary-container: var(--ref-secondary-0);
 
   --tone-tertiary: var(--ref-tertiary-20);
@@ -1208,151 +1244,30 @@ function generateTailwindTheme() {
   return css;
 }
 
-/**
- * Generate base styles (animations, focus rings, utilities)
- */
-function generateBaseStyles() {
-  return `
-/* ============================================================
-   BASE STYLES - Animations, Focus Rings, Utilities
-   ============================================================ */
-
-/* Ripple animation */
-@keyframes ripple {
-  from {
-    opacity: 0.35;
-    transform: scale(0);
-  }
-  to {
-    opacity: 0;
-    transform: scale(2);
-  }
-}
-
-/* Stagger animation for list items */
-@keyframes stagger-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@layer base {
-  /* Global box-sizing */
-  *,
-  *::before,
-  *::after {
-    box-sizing: border-box;
-  }
-
-  /* Remove default focus outline */
-  *:focus {
-    outline: none;
-  }
-
-  /* Apply custom focus ring only for keyboard navigation */
-  *:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
-  }
-
-  /* Ensure focus is visible on interactive elements */
-  button:focus-visible,
-  a:focus-visible,
-  input:focus-visible,
-  select:focus-visible,
-  textarea:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
-  }
-
-  /* Base document styles */
-  html,
-  body {
-    height: 100%;
-    margin: 0;
-    padding: 0;
-  }
-
-  body {
-    background-color: var(--color-background);
-    color: var(--color-on-background);
-    font-family: var(--font-sans);
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-}
-
-@layer utilities {
-  /* Scrollbar utilities */
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-
-  .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-
-  /* Ripple container */
-  .ripple-container {
-    position: relative;
-    overflow: hidden;
-  }
-
-  /* Animation utilities */
-  .animate-in {
-    animation-fill-mode: both;
-  }
-
-  .animate-out {
-    animation-fill-mode: both;
-    animation-direction: reverse;
-  }
-
-  .animate-stagger {
-    animation: stagger-in 300ms ease-out;
-  }
-}
-`;
-}
+/* NOTE: Base styles (animations, focus rings, utilities) are defined in
+   @unisane/ui core/src/styles.css - NOT here in tokens.
+   This keeps separation of concerns:
+   - tokens: design tokens (colors, typography, spacing, etc.)
+   - core: component styles and utilities
+*/
 
 // Build
 function build() {
   console.log(`Building Unisane tokens for "${config.name}" theme...`);
   console.log(`  Primary: hue=${config.primary.hue}°, chroma=${config.primary.chroma}`);
 
-  // Generate all parts
+  // Generate tokens and theme (base styles are in @unisane/ui core/src/styles.css)
   const tokensCss = generateUniTokens();
   const tailwindTheme = generateTailwindTheme();
-  const baseStyles = generateBaseStyles();
 
-  // Merge into single file: unisane.css
-  const mergedCss = tokensCss + tailwindTheme + baseStyles;
+  // Single merged file: unisane.css (tokens + theme only, no base styles)
+  const mergedCss = tokensCss + tailwindTheme;
   writeFileSync(join(distDir, "unisane.css"), mergedCss);
-  console.log("✓ Generated unisane.css (merged: tokens + theme + base)");
+  console.log("✓ Generated unisane.css (tokens + @theme mapping)");
 
-  // Add deprecation notice to individual files
-  const deprecationNotice = `/*
- * DEPRECATED: This file will be removed in a future version.
- * Please use the merged file instead:
- *   @import "@unisane/tokens/unisane.css";
- */
-
-`;
-
-  // Output individual files with deprecation notice (for backwards compatibility)
-  writeFileSync(join(distDir, "uni-tokens.css"), deprecationNotice + tokensCss);
-  writeFileSync(join(distDir, "uni-theme.css"), deprecationNotice + tailwindTheme);
-  writeFileSync(join(distDir, "uni-base.css"), deprecationNotice + baseStyles);
-  console.log("✓ Generated individual files with deprecation notice");
-
-  console.log("\nDone! Use the single merged import:");
+  console.log("\nDone! Import in your app:");
   console.log('  @import "@unisane/tokens/unisane.css";');
+  console.log("\nNote: Base styles (animations, focus rings, utilities) are in @unisane/ui core/src/styles.css");
 }
 
 build();

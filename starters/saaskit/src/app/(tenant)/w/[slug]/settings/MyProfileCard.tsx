@@ -1,24 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Input } from "@unisane/ui/primitives/input";
-import { Label } from "@unisane/ui/primitives/label";
 import { Button } from "@unisane/ui/components/button";
 import { Select } from "@unisane/ui/components/select";
 import { toast } from "@unisane/ui/components/toast";
+import { TextField } from "@unisane/ui/components/text-field";
+import { Typography } from "@unisane/ui/components/typography";
+import { Card } from "@unisane/ui/components/card";
+import { Combobox } from "@unisane/ui/components/combobox";
 import { SUPPORTED_LOCALES } from "@/src/shared/constants/i18n";
 import { normalizePhoneE164, normalizeUsername } from "@/src/shared/normalize";
 import { normalizeError } from "@/src/sdk/errors";
 import { hooks } from "@/src/sdk/hooks";
-import { Popover } from "@unisane/ui/components/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@unisane/ui/components/command";
 import { Icon } from "@unisane/ui/primitives/icon";
 
 function useDebouncedValue<T>(value: T, delayMs = 300): T {
@@ -78,13 +71,22 @@ export function MyProfileCard() {
   const emailVerified = server?.emailVerified ?? null;
   const phoneVerified = server?.phoneVerified ?? null;
 
+  // Only check availability if username changed from server value
+  const serverUsername = server?.username ?? "";
+  const usernameChanged = uname !== serverUsername && uname.length >= 2;
+
   const uQ = hooks.users.usernameAvailable(
     { value: uname },
-    { enabled: uname.length >= 2 }
+    { enabled: usernameChanged }
   );
+
+  // Only check phone availability if it changed from server value
+  const serverPhone = server?.phone ?? "";
+  const phoneChanged = phoneNorm !== serverPhone && !!phoneNorm;
+
   const pQ = hooks.users.phoneAvailable(
     { value: phoneNorm },
-    { enabled: !!phoneNorm }
+    { enabled: phoneChanged }
   );
 
   const mePatch = hooks.me.profile.patch({
@@ -147,294 +149,311 @@ export function MyProfileCard() {
   const saveDisabled = mePatch.isPending;
 
   return (
-    <div className="flex justify-center">
-      <div className="w-full max-w-2xl space-y-6">
-        <div>
-          <h3 className="text-lg font-semibold">Profile</h3>
+    <Card variant="outlined" className="overflow-visible">
+      <Card.Header>
+        <Card.Title>Profile</Card.Title>
+        <Card.Description>
+          Manage your personal information and preferences
+        </Card.Description>
+      </Card.Header>
+      <Card.Content className="p-0 divide-y divide-outline-variant/50 overflow-visible">
+        {/* Email */}
+        <div className="grid gap-3 px-5 py-5 sm:grid-cols-[200px_minmax(0,1fr)] sm:items-start">
+          <div className="space-y-1">
+            <Typography variant="titleSmall">Email</Typography>
+            <Typography variant="bodySmall" className="text-on-surface-variant">
+              Your primary email address
+            </Typography>
+          </div>
+          <div className="space-y-2">
+            <TextField label="Email" value={emailVal} disabled />
+            {emailVal && (
+              <div className="flex items-center gap-1.5">
+                {emailVerified === true ? (
+                  <>
+                    <Icon
+                      symbol="verified"
+                      size="sm"
+                      className="text-primary"
+                    />
+                    <Typography variant="labelSmall" className="text-primary">
+                      Verified
+                    </Typography>
+                  </>
+                ) : emailVerified === false ? (
+                  <>
+                    <Icon symbol="warning" size="sm" className="text-warning" />
+                    <Typography variant="labelSmall" className="text-warning">
+                      Not verified
+                    </Typography>
+                  </>
+                ) : null}
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="overflow-hidden rounded-lg border bg-background">
-          <div className="grid gap-2 border-b px-4 py-3 sm:grid-cols-[200px_minmax(0,1fr)] sm:items-center">
-            <Label className="text-sm font-medium text-on-surface-variant">
-              Email
-            </Label>
-            <div className="sm:flex sm:justify-end">
-              <div className="space-y-1 w-full max-w-xs">
-                <Input value={emailVal} disabled className="bg-surface-container/40" />
-                {emailVal ? (
-                  <div className="text-xs text-on-surface-variant">
-                    {emailVerified === true
-                      ? "Email verified"
-                      : emailVerified === false
-                        ? "Email not verified"
-                        : null}
+        {/* Display Name */}
+        <div className="grid gap-3 px-5 py-5 sm:grid-cols-[200px_minmax(0,1fr)] sm:items-start">
+          <div className="space-y-1">
+            <Typography variant="titleSmall">Display name</Typography>
+            <Typography variant="bodySmall" className="text-on-surface-variant">
+              How others see you in the app
+            </Typography>
+          </div>
+          <TextField
+            label="Display name"
+            value={displayNameVal}
+            onChange={(e) =>
+              setPf((p) => ({ ...p, displayName: e.target.value }))
+            }
+          />
+        </div>
+
+        {/* Username */}
+        <div className="grid gap-3 px-5 py-5 sm:grid-cols-[200px_minmax(0,1fr)] sm:items-start">
+          <div className="space-y-1">
+            <Typography variant="titleSmall">Username</Typography>
+            <Typography variant="bodySmall" className="text-on-surface-variant">
+              Nickname or short name used in the app
+            </Typography>
+          </div>
+          <div className="space-y-2">
+            <TextField
+              label="Username"
+              value={usernameVal}
+              onChange={(e) =>
+                setPf((p) => ({ ...p, username: e.target.value }))
+              }
+            />
+            {uname.length >= 2 && (
+              <div className="flex items-center gap-1.5">
+                {uQ.isFetching ? (
+                  <>
+                    <Icon
+                      symbol="progress_activity"
+                      size="sm"
+                      className="animate-spin text-on-surface-variant"
+                    />
+                    <Typography
+                      variant="labelSmall"
+                      className="text-on-surface-variant"
+                    >
+                      Checking…
+                    </Typography>
+                  </>
+                ) : uQ.data?.available === false ? (
+                  <>
+                    <Icon symbol="error" size="sm" className="text-error" />
+                    <Typography variant="labelSmall" className="text-error">
+                      Not available
+                    </Typography>
+                  </>
+                ) : uQ.data?.available === true ? (
+                  <>
+                    <Icon
+                      symbol="check_circle"
+                      size="sm"
+                      className="text-primary"
+                    />
+                    <Typography variant="labelSmall" className="text-primary">
+                      Available
+                    </Typography>
+                  </>
+                ) : null}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* First Name */}
+        <div className="grid gap-3 px-5 py-5 sm:grid-cols-[200px_minmax(0,1fr)] sm:items-start">
+          <div className="space-y-1">
+            <Typography variant="titleSmall">First name</Typography>
+          </div>
+          <TextField
+            label="First name"
+            value={firstNameVal}
+            onChange={(e) =>
+              setPf((p) => ({ ...p, firstName: e.target.value }))
+            }
+          />
+        </div>
+
+        {/* Last Name */}
+        <div className="grid gap-3 px-5 py-5 sm:grid-cols-[200px_minmax(0,1fr)] sm:items-start">
+          <div className="space-y-1">
+            <Typography variant="titleSmall">Last name</Typography>
+          </div>
+          <TextField
+            label="Last name"
+            value={lastNameVal}
+            onChange={(e) => setPf((p) => ({ ...p, lastName: e.target.value }))}
+          />
+        </div>
+
+        {/* Phone */}
+        <div className="grid gap-3 px-5 py-5 sm:grid-cols-[200px_minmax(0,1fr)] sm:items-start">
+          <div className="space-y-1">
+            <Typography variant="titleSmall">Phone</Typography>
+            <Typography variant="bodySmall" className="text-on-surface-variant">
+              E.164 format (e.g., +1234567890)
+            </Typography>
+          </div>
+          <div className="space-y-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+              <div className="flex-1">
+                <TextField
+                  label="Phone number"
+                  value={phoneVal}
+                  onChange={(e) =>
+                    setPf((p) => ({ ...p, phone: e.target.value }))
+                  }
+                />
+              </div>
+              <Button
+                variant="outlined"
+                onClick={sendPhoneCode}
+                className="shrink-0"
+              >
+                Send code
+              </Button>
+            </div>
+            {phoneVal && (
+              <div className="flex items-center gap-3 flex-wrap">
+                {pQ.isFetching ? (
+                  <Typography
+                    variant="labelSmall"
+                    className="text-on-surface-variant"
+                  >
+                    Checking…
+                  </Typography>
+                ) : pQ.data?.available === false ? (
+                  <div className="flex items-center gap-1.5">
+                    <Icon symbol="error" size="sm" className="text-error" />
+                    <Typography variant="labelSmall" className="text-error">
+                      Already in use
+                    </Typography>
+                  </div>
+                ) : pQ.data?.available === true ? (
+                  <div className="flex items-center gap-1.5">
+                    <Icon
+                      symbol="check_circle"
+                      size="sm"
+                      className="text-primary"
+                    />
+                    <Typography variant="labelSmall" className="text-primary">
+                      Available
+                    </Typography>
+                  </div>
+                ) : null}
+                {phoneVerified === true ? (
+                  <div className="flex items-center gap-1.5">
+                    <Icon
+                      symbol="verified"
+                      size="sm"
+                      className="text-primary"
+                    />
+                    <Typography variant="labelSmall" className="text-primary">
+                      Verified
+                    </Typography>
+                  </div>
+                ) : phoneVerified === false ? (
+                  <div className="flex items-center gap-1.5">
+                    <Icon symbol="warning" size="sm" className="text-warning" />
+                    <Typography variant="labelSmall" className="text-warning">
+                      Not verified
+                    </Typography>
                   </div>
                 ) : null}
               </div>
-            </div>
-          </div>
-
-          <div className="grid gap-2 border-b px-4 py-3 sm:grid-cols-[200px_minmax(0,1fr)] sm:items-center">
-            <Label
-              className="text-sm font-medium text-on-surface-variant"
-              htmlFor="displayName"
-            >
-              Display name
-            </Label>
-            <div className="sm:flex sm:justify-end">
-              <div className="w-full max-w-xs">
-                <Input
-                  id="displayName"
-                  value={displayNameVal}
-                  onChange={(e) =>
-                    setPf((p) => ({ ...p, displayName: e.target.value }))
-                  }
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="grid gap-2 border-b px-4 py-3 sm:grid-cols-[200px_minmax(0,1fr)] sm:items-center">
-            <div className="space-y-1">
-              <Label
-                className="text-sm font-medium text-on-surface-variant"
-                htmlFor="username"
-              >
-                Username
-              </Label>
-              <p className="text-xs text-on-surface-variant">
-                Nickname or short name used in the app.
-              </p>
-            </div>
-            <div className="sm:flex sm:justify-end">
-              <div className="space-y-1 w-full max-w-xs">
-                <Input
-                  id="username"
-                  value={usernameVal}
-                  onChange={(e) =>
-                    setPf((p) => ({ ...p, username: e.target.value }))
-                  }
-                />
-                {uname.length >= 2 && (
-                  <div className="flex items-center gap-1.5 text-xs">
-                    {uQ.isFetching ? (
-                      <>
-                        <Icon symbol="progress_activity" size="xs" className="animate-spin text-on-surface-variant" />
-                        <span className="text-on-surface-variant">Checking…</span>
-                      </>
-                    ) : uQ.data?.available === false ? (
-                      <>
-                        <Icon symbol="error" size="xs" className="text-error" />
-                        <span className="text-error">Not available</span>
-                      </>
-                    ) : uQ.data?.available === true ? (
-                      <>
-                        <Icon symbol="check_circle" size="xs" className="text-primary" />
-                        <span className="text-primary">
-                          Available
-                        </span>
-                      </>
-                    ) : null}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="grid gap-2 border-b px-4 py-3 sm:grid-cols-[200px_minmax(0,1fr)] sm:items-center">
-            <Label
-              className="text-sm font-medium text-on-surface-variant"
-              htmlFor="firstName"
-            >
-              First name
-            </Label>
-            <div className="sm:flex sm:justify-end">
-              <div className="w-full max-w-xs">
-                <Input
-                  id="firstName"
-                  value={firstNameVal}
-                  onChange={(e) =>
-                    setPf((p) => ({ ...p, firstName: e.target.value }))
-                  }
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="grid gap-2 border-b px-4 py-3 sm:grid-cols-[200px_minmax(0,1fr)] sm:items-center">
-            <Label
-              className="text-sm font-medium text-on-surface-variant"
-              htmlFor="lastName"
-            >
-              Last name
-            </Label>
-            <div className="sm:flex sm:justify-end">
-              <div className="w-full max-w-xs">
-                <Input
-                  id="lastName"
-                  value={lastNameVal}
-                  onChange={(e) =>
-                    setPf((p) => ({ ...p, lastName: e.target.value }))
-                  }
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="grid gap-2 border-b px-4 py-3 sm:grid-cols-[200px_minmax(0,1fr)] sm:items-start">
-            <Label
-              className="text-sm font-medium text-on-surface-variant"
-              htmlFor="phone"
-            >
-              Phone (+E.164)
-            </Label>
-            <div className="sm:flex sm:justify-end">
-              <div className="space-y-2 w-full max-w-xs">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                  <Input
-                    id="phone"
-                    value={phoneVal}
-                    onChange={(e) =>
-                      setPf((p) => ({ ...p, phone: e.target.value }))
-                    }
-                    className="sm:max-w-xs"
+            )}
+            {phoneVal && (
+              <div className="flex items-center gap-3">
+                <div className="w-40">
+                  <TextField
+                    label="Verification code"
+                    placeholder="Enter code"
+                    onKeyDown={async (e) => {
+                      if (e.key !== "Enter") return;
+                      const el = e.currentTarget as HTMLInputElement;
+                      const code = (el.value || "").trim();
+                      if (!code) return;
+                      try {
+                        const phone = phoneVal
+                          ? normalizePhoneE164(phoneVal)
+                          : "";
+                        await phoneVerify.mutateAsync({
+                          body: { phone, code },
+                        });
+                        el.value = "";
+                      } catch {}
+                    }}
                   />
-                  <Button
-                    type="button"
-                    variant="outlined"
-                    size="sm"
-                    onClick={sendPhoneCode}
-                  >
-                    Send code
-                  </Button>
                 </div>
-                {phoneVal && (
-                  <div className="space-y-0.5 text-xs text-on-surface-variant">
-                    <div>
-                      {pQ.isFetching
-                        ? "Checking…"
-                        : pQ.data?.available === false
-                          ? "Already in use"
-                          : pQ.data?.available === true
-                            ? "Available"
-                            : null}
-                    </div>
-                    <div>
-                      {phoneVerified === true
-                        ? "Phone verified"
-                        : phoneVerified === false
-                          ? "Phone not verified"
-                          : null}
-                    </div>
-                  </div>
-                )}
-                {phoneVal && (
-                  <div className="flex items-center gap-2">
-                    <Input
-                      placeholder="Enter code"
-                      className="max-w-40"
-                      onKeyDown={async (e) => {
-                        if (e.key !== "Enter") return;
-                        const el = e.currentTarget as HTMLInputElement;
-                        const code = (el.value || "").trim();
-                        if (!code) return;
-                        try {
-                          const phone = phoneVal
-                            ? normalizePhoneE164(phoneVal)
-                            : "";
-                          await phoneVerify.mutateAsync({
-                            body: { phone, code },
-                          });
-                          el.value = "";
-                        } catch {}
-                      }}
-                    />
-                    <span className="text-xs text-on-surface-variant">
-                      Press Enter to verify
-                    </span>
-                  </div>
-                )}
+                <Typography
+                  variant="labelSmall"
+                  className="text-on-surface-variant"
+                >
+                  Press Enter to verify
+                </Typography>
               </div>
-            </div>
-          </div>
-
-          <div className="grid gap-2 border-b px-4 py-3 sm:grid-cols-[200px_minmax(0,1fr)] sm:items-center">
-            <Label className="text-sm font-medium text-on-surface-variant">
-              Locale
-            </Label>
-            <div className="sm:flex sm:justify-end">
-              <div className="w-full max-w-xs">
-                <Select
-                  value={localeVal}
-                  onChange={(val: string) => setPf((p) => ({ ...p, locale: val }))}
-                  options={SUPPORTED_LOCALES.map((l: string) => ({
-                    value: l,
-                    label: l,
-                  }))}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="grid gap-2 px-4 py-3 sm:grid-cols-[200px_minmax(0,1fr)] sm:items-center">
-            <Label className="text-sm font-medium text-on-surface-variant">
-              Timezone
-            </Label>
-            <div className="sm:flex sm:justify-end">
-              <div className="w-full max-w-xs">
-                <Popover
-                  trigger={
-                    <Button
-                      variant="outlined"
-                      className="w-full justify-between"
-                    >
-                      <span className="truncate text-left">
-                        {timezoneVal || "Select timezone"}
-                      </span>
-                      <span className="ml-2 text-xs text-on-surface-variant">
-                        Change
-                      </span>
-                    </Button>
-                  }
-                  content={
-                    <Command>
-                      <CommandInput placeholder="Search timezones…" />
-                      <CommandList>
-                        <CommandEmpty>No timezone found.</CommandEmpty>
-                        <CommandGroup>
-                          {(typeof Intl !== "undefined" &&
-                          (Intl as { supportedValuesOf?: (key: string) => string[] }).supportedValuesOf
-                            ? (Intl as { supportedValuesOf: (key: string) => string[] }).supportedValuesOf("timeZone")
-                            : [timezoneVal]
-                          ).map((tz: string) => (
-                            <CommandItem
-                              key={tz}
-                              value={tz}
-                              onSelect={(val: string) =>
-                                setPf((p) => ({ ...p, timezone: val }))
-                              }
-                            >
-                              {tz}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  }
-                  align="start"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex justify-end border-t bg-surface-container/40 px-4 py-3">
-            <Button type="button" disabled={saveDisabled} onClick={saveProfile}>
-              Save changes
-            </Button>
+            )}
           </div>
         </div>
+
+        {/* Locale */}
+        <div className="grid gap-3 px-5 py-5 sm:grid-cols-[200px_minmax(0,1fr)] sm:items-start">
+          <div className="space-y-1">
+            <Typography variant="titleSmall">Locale</Typography>
+            <Typography variant="bodySmall" className="text-on-surface-variant">
+              Your preferred language
+            </Typography>
+          </div>
+          <Select
+            label="Locale"
+            value={localeVal}
+            onChange={(val: string) => setPf((p) => ({ ...p, locale: val }))}
+            options={SUPPORTED_LOCALES.map((l: string) => ({
+              value: l,
+              label: l,
+            }))}
+          />
+        </div>
+
+        {/* Timezone */}
+        <div className="grid gap-3 px-5 py-5 sm:grid-cols-[200px_minmax(0,1fr)] sm:items-start">
+          <div className="space-y-1">
+            <Typography variant="titleSmall">Timezone</Typography>
+            <Typography variant="bodySmall" className="text-on-surface-variant">
+              Used for date and time display
+            </Typography>
+          </div>
+          <Combobox
+            value={timezoneVal}
+            onChange={(val) => setPf((p) => ({ ...p, timezone: val }))}
+            placeholder="Search timezones…"
+            options={(typeof Intl !== "undefined" &&
+            (Intl as { supportedValuesOf?: (key: string) => string[] })
+              .supportedValuesOf
+              ? (
+                  Intl as { supportedValuesOf: (key: string) => string[] }
+                ).supportedValuesOf("timeZone")
+              : [timezoneVal]
+            ).map((tz: string) => ({
+              value: tz,
+              label: tz,
+            }))}
+          />
+        </div>
+      </Card.Content>
+
+      <div className="flex justify-end px-5 py-4 border-t border-outline-variant/50">
+        <Button disabled={saveDisabled} onClick={saveProfile}>
+          Save changes
+        </Button>
       </div>
-    </div>
+    </Card>
   );
 }
 

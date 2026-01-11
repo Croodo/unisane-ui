@@ -3,15 +3,15 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@ui/lib/utils";
 
 const skeletonVariants = cva(
-  "relative overflow-hidden bg-surface-container-highest animate-pulse",
+  "relative overflow-hidden bg-surface-container-low animate-pulse",
   {
     variants: {
       variant: {
         text: "rounded-sm",
-      circular: "rounded-full",
-      rectangular: "rounded-sm",
-      rounded: "rounded-sm",
-    },
+        circular: "rounded-full",
+        rectangular: "rounded-sm",
+        rounded: "rounded-md",
+      },
     },
     defaultVariants: {
       variant: "rectangular",
@@ -24,6 +24,8 @@ export type SkeletonProps = VariantProps<typeof skeletonVariants> & {
   height?: number | string;
   className?: string;
   style?: React.CSSProperties;
+  /** When children provided, skeleton inherits their dimensions (MUI pattern) */
+  children?: React.ReactNode;
 };
 
 export const Skeleton: React.FC<SkeletonProps> = ({
@@ -32,7 +34,21 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   height,
   className,
   style,
+  children,
 }) => {
+  // If children provided, render them invisibly to get dimensions
+  if (children) {
+    return (
+      <span
+        className={cn(skeletonVariants({ variant, className }))}
+        style={style}
+        aria-hidden="true"
+      >
+        <span className="invisible">{children}</span>
+      </span>
+    );
+  }
+
   const skeletonStyle: React.CSSProperties = {
     width,
     height,
@@ -40,7 +56,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   };
 
   return (
-    <div
+    <span
       className={cn(skeletonVariants({ variant, className }))}
       style={skeletonStyle}
       aria-hidden="true"

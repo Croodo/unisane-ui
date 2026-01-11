@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Button } from "@unisane/ui/components/button";
-import { Textarea } from "@unisane/ui/primitives/textarea";
-import { Label } from "@unisane/ui/primitives/label";
+import { TextField } from "@unisane/ui/components/text-field";
 import { Select } from "@unisane/ui/components/select";
+import { Switch } from "@unisane/ui/components/switch";
 import { Icon } from "@unisane/ui/primitives/icon";
+import { Typography } from "@unisane/ui/components/typography";
 
 interface MaintenanceBannerValue {
   enabled: boolean;
@@ -18,9 +18,7 @@ interface MaintenanceBannerCardProps {
   settingKey: string;
   value: unknown;
   onChange: (value: unknown) => void;
-  onSave: () => Promise<void>;
   loading?: boolean;
-  saving?: boolean;
 }
 
 export function MaintenanceBannerCard({
@@ -28,9 +26,7 @@ export function MaintenanceBannerCard({
   settingKey,
   value,
   onChange,
-  onSave,
   loading,
-  saving,
 }: MaintenanceBannerCardProps) {
   const bannerValue = (value as MaintenanceBannerValue) || {
     enabled: false,
@@ -43,8 +39,6 @@ export function MaintenanceBannerCard({
   const [variant, setVariant] = useState<"info" | "warning" | "danger">(
     bannerValue.variant
   );
-  const [hasChanges, setHasChanges] = useState(false);
-  const [validationError, setValidationError] = useState<string | null>(null);
   const isFirstSyncRef = useRef(true);
 
   // Sync with external value changes on initial load only
@@ -61,9 +55,7 @@ export function MaintenanceBannerCard({
     // Batch update - only runs once on initial load
     // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: sync initial form state from prop
     setEnabled(newValue.enabled);
-
     setMessage(newValue.message);
-
     setVariant(newValue.variant);
 
     isFirstSyncRef.current = false;
@@ -74,66 +66,67 @@ export function MaintenanceBannerCard({
     newValue: unknown
   ) => {
     const updated = { enabled, message, variant, [field]: newValue };
-    setHasChanges(true);
 
     if (field === "enabled") setEnabled(newValue as boolean);
     if (field === "message") setMessage(newValue as string);
     if (field === "variant")
       setVariant(newValue as "info" | "warning" | "danger");
 
-    // Basic validation - server-side schema validation will catch any issues
-    setValidationError(null);
-
     onChange(updated);
   };
 
   if (loading) {
     return (
-      <div className="rounded-lg border bg-card p-4">
-        <div className="flex items-center gap-2 text-sm text-on-surface-variant">
+      <div className="grid gap-4 py-6 sm:grid-cols-[200px_minmax(0,1fr)] xl:grid-cols-[280px_minmax(0,1fr)] sm:items-start">
+        <div className="space-y-1">
+          <Typography variant="titleMedium">Maintenance Banner</Typography>
+          <Typography variant="bodySmall" className="text-on-surface-variant">
+            Display a global banner during maintenance
+          </Typography>
+        </div>
+        <div className="flex items-center gap-2 text-on-surface-variant">
           <Icon symbol="progress_activity" size="sm" className="animate-spin" />
-          Loading...
+          <Typography variant="bodySmall">Loading...</Typography>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="rounded-lg border bg-card p-4 space-y-3">
-      <div>
-        <h3 className="text-sm font-medium">Maintenance Banner</h3>
-        <p className="text-xs text-on-surface-variant mt-1">
-          Display a global banner across all workspaces during maintenance
-          windows
-        </p>
+    <div className="grid gap-4 py-6 sm:grid-cols-[200px_minmax(0,1fr)] xl:grid-cols-[280px_minmax(0,1fr)] sm:items-start">
+      <div className="space-y-1">
+        <Typography variant="titleMedium">
+          Maintenance Banner
+        </Typography>
+        <Typography variant="bodySmall" className="text-on-surface-variant">
+          Display a global banner across all workspaces during maintenance windows
+        </Typography>
+        <Typography
+          variant="labelSmall"
+          className="text-on-surface-variant/60 font-mono pt-1"
+        >
+          {namespace}.{settingKey}
+        </Typography>
       </div>
 
-      <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <input
-            id="banner-enabled"
-            type="checkbox"
-            className="h-4 w-4"
-            checked={enabled}
-            onChange={(e) => handleChange("enabled", e.target.checked)}
-          />
-          <Label htmlFor="banner-enabled" className="text-sm font-normal">
-            Banner enabled
-          </Label>
-        </div>
+      <div className="space-y-4 overflow-visible sm:max-w-md">
+        <Switch
+          id="banner-enabled"
+          label="Banner enabled"
+          checked={enabled}
+          onChange={(e) => handleChange("enabled", e.target.checked)}
+        />
 
-        <div className="space-y-2">
-          <Label htmlFor="banner-message">Message</Label>
-          <Textarea
-            id="banner-message"
-            rows={3}
-            value={message}
-            onChange={(e) => handleChange("message", e.target.value)}
-            placeholder="We are performing scheduled maintenance..."
-          />
-        </div>
+        <TextField
+          label=""
+          labelClassName="sr-only"
+          multiline
+          value={message}
+          onChange={(e) => handleChange("message", e.target.value)}
+          placeholder="We are performing scheduled maintenance..."
+        />
 
-        <div className="space-y-2">
+        <div className="space-y-2 overflow-visible sm:max-w-[200px]">
           <Select
             label="Variant"
             value={variant}
@@ -144,37 +137,10 @@ export function MaintenanceBannerCard({
               { value: "danger", label: "Danger" },
             ]}
           />
-          <p className="text-xs text-on-surface-variant">
-            Controls the visual style used by the runtime banner renderer
-          </p>
+          <Typography variant="labelSmall" className="text-on-surface-variant">
+            Controls the visual style
+          </Typography>
         </div>
-
-        {validationError && (
-          <div className="flex items-center gap-1.5 text-xs text-error">
-            <Icon symbol="error" size="sm" />
-            <span>{validationError}</span>
-          </div>
-        )}
-      </div>
-
-      <div className="flex items-center justify-between pt-2">
-        <div className="text-xs text-on-surface-variant">
-          {namespace}.{settingKey}
-        </div>
-        <Button
-          size="sm"
-          onClick={onSave}
-          disabled={!hasChanges || !!validationError || saving || loading}
-        >
-          {saving ? (
-            <>
-              <Icon symbol="progress_activity" size="sm" className="mr-2 animate-spin" />
-              Saving...
-            </>
-          ) : (
-            "Save"
-          )}
-        </Button>
       </div>
     </div>
   );

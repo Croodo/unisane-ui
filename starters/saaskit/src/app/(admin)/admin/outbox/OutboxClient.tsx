@@ -7,7 +7,7 @@ import type { OutboxAdminDeadListItem, OutboxAdminDeadListResponse } from "@/src
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@unisane/ui/components/toast";
 import { RATE_LIMIT_POLICIES } from "@/src/shared/constants/rate-limits";
-import { PageHeader } from "@/src/context/usePageHeader";
+import { PageLayout } from "@/src/context/usePageLayout";
 
 export default function OutboxClient({ initial }: { initial: OutboxAdminDeadListResponse }) {
   const columns = useMemo<Column<OutboxAdminDeadListItem>[]>(
@@ -61,10 +61,7 @@ export default function OutboxClient({ initial }: { initial: OutboxAdminDeadList
 
   return (
     <>
-      <PageHeader
-        title="Outbox"
-        subtitle="Dead letters; requeue or purge failed jobs."
-      />
+      <PageLayout subtitle="Dead letters; requeue or purge failed jobs." />
       <DataTable<OutboxAdminDeadListItem>
         data={dataset}
         columns={columns}
@@ -136,7 +133,7 @@ function PurgeOne({ id }: { id: string }) {
   }
   return (
     <button
-      className="ml-3 text-xs underline text-red-600 disabled:opacity-50"
+      className="ml-3 text-xs underline text-error disabled:opacity-50"
       type="button"
       onClick={run}
       disabled={pending}
@@ -224,7 +221,7 @@ function PurgeSelected({ ids }: { ids: string[] }) {
   }
   return (
     <button
-      className="text-xs underline text-red-600 disabled:opacity-50"
+      className="text-xs underline text-error disabled:opacity-50"
       type="button"
       onClick={run}
       disabled={disabled}
@@ -353,15 +350,15 @@ function PageActions({
         {pending === "requeue" ? "Requeuing…" : `Requeue page (${ids.length})`}
       </button>
       <button
-        className="text-xs underline text-red-600 disabled:opacity-50"
+        className="text-xs underline text-error disabled:opacity-50"
         type="button"
         onClick={purgeAll}
         disabled={!has || pending !== null}
       >
         {pending === "purge" ? "Purging…" : `Purge page (${ids.length})`}
       </button>
-      <span className="mx-1 text-muted-foreground">|</span>
-      <label className="text-xs text-muted-foreground">Limit</label>
+      <span className="mx-1 text-on-surface-variant">|</span>
+      <label className="text-xs text-on-surface-variant">Limit</label>
       <select
         className="text-xs border rounded px-1 py-0.5"
         value={allLimit}
@@ -382,7 +379,7 @@ function PageActions({
         {pending === "requeue" ? "Requeuing…" : `Requeue all (bounded)`}
       </button>
       <button
-        className="text-xs underline text-red-600 disabled:opacity-50"
+        className="text-xs underline text-error disabled:opacity-50"
         type="button"
         onClick={purgeAllDead}
         disabled={pending !== null}

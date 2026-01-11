@@ -3,7 +3,7 @@
 import * as React from "react";
 import { cn } from "@unisane/ui/lib/utils";
 import { Icon } from "@unisane/ui/primitives/icon";
-import { Text } from "@unisane/ui/primitives/text";
+import { Typography } from "@unisane/ui/components/typography";
 import {
   getStatusConfig,
   getStatusStyles,
@@ -62,7 +62,7 @@ export function StatusBadge({
     return (
       <div className={cn("flex items-center gap-1.5", className)}>
         <div className={cn("w-2 h-2 rounded-full", styles.dot)} />
-        <Text as="span" variant="bodySmall" className="capitalize">{displayLabel}</Text>
+        <Typography variant="bodySmall" className="capitalize">{displayLabel}</Typography>
       </div>
     );
   }
@@ -100,8 +100,8 @@ export function DirectionBadge({ direction, className }: DirectionBadgeProps) {
       className={cn(
         "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium capitalize",
         isOutbound
-          ? "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300"
-          : "border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-800 dark:bg-purple-950 dark:text-purple-300",
+          ? "border-primary/30 bg-primary-container text-on-primary-container"
+          : "border-secondary/30 bg-secondary-container text-on-secondary-container",
         className
       )}
     >

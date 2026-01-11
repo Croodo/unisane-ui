@@ -182,7 +182,7 @@ export const Select: React.FC<SelectProps> = ({
         onClick={() => !disabled && setIsOpen((prev) => !prev)}
         onKeyDown={handleTriggerKeyDown}
         className={cn(
-          "relative flex items-center w-full transition-colors cursor-pointer select-none group h-14",
+          "relative flex items-center w-full transition-colors cursor-pointer select-none group h-10",
           variant === "outlined"
             ? "rounded-sm border border-outline-variant bg-surface"
             : "rounded-t-sm border-b border-outline bg-surface-container-low",
@@ -221,7 +221,7 @@ export const Select: React.FC<SelectProps> = ({
             <span
               className={cn(
               "text-on-surface text-body-large font-medium w-full truncate",
-              variant === "filled" && "pt-5 pb-1"
+              variant === "filled" && "pt-4 pb-0.5"
             )}
             >
               {displayLabel}
@@ -241,7 +241,7 @@ export const Select: React.FC<SelectProps> = ({
                     "top-0 -translate-y-1/2 bg-surface px-1 -ml-1",
                     labelClassName ? labelClassName : "bg-surface",
                   ],
-                  variant === "filled" && "top-2 translate-y-0",
+                  variant === "filled" && "top-1 translate-y-0",
                   error ? "text-error" : "text-primary",
                 ],
                 !value && isOpen && "text-primary"

@@ -113,7 +113,7 @@ export const TextField = React.forwardRef<
         <div
           className={cn(
             textFieldContainerVariants({ variant, error, disabled }),
-            multiline ? "items-start py-0" : "items-center h-14"
+            multiline ? "items-start py-0" : "items-center h-10"
           )}
         >
           {leadingIcon && (
@@ -144,8 +144,8 @@ export const TextField = React.forwardRef<
                 onBlur={handleBlur}
                 onChange={handleChange}
                 className={cn(
-                  "w-full h-full bg-transparent px-4 outline-none border-none focus:ring-0 text-on-surface text-body-large caret-primary placeholder-transparent resize-none py-5 min-h-30",
-                  variant === "filled" ? "pt-7 pb-3" : ""
+                  "w-full h-full bg-transparent px-4 outline-none border-none focus:ring-0 text-on-surface text-body-large caret-primary placeholder-transparent resize-none py-4 min-h-24",
+                  variant === "filled" ? "pt-6 pb-2" : ""
                 )}
                 placeholder=" "
                 {...(props as React.TextareaHTMLAttributes<HTMLTextAreaElement>)}
@@ -161,7 +161,7 @@ export const TextField = React.forwardRef<
                 onChange={handleChange}
                 className={cn(
                   "w-full h-full bg-transparent px-4 outline-none border-none focus:ring-0 text-on-surface text-body-large caret-primary placeholder-transparent",
-                  variant === "filled" ? "pt-7 pb-1" : ""
+                  variant === "filled" ? "pt-5 pb-0.5" : ""
                 )}
                 placeholder=" "
                 {...(props as React.InputHTMLAttributes<HTMLInputElement>)}
@@ -173,7 +173,7 @@ export const TextField = React.forwardRef<
                 "absolute pointer-events-none truncate max-w-[calc(100%-calc(var(--unit)*4))] transition-all duration-medium ease-emphasized origin-left left-4",
                 !isFloating && [
                   "text-body-large text-on-surface-variant",
-                  multiline ? "top-5" : "top-1/2 -translate-y-1/2",
+                  multiline ? "top-4" : "top-1/2 -translate-y-1/2",
                 ],
                 isFloating && [
                   "text-label-small font-medium",
@@ -182,14 +182,13 @@ export const TextField = React.forwardRef<
                     labelBg || "bg-surface",
                     labelClassName,
                   ],
-                  variant === "filled" && "top-2 translate-y-0",
+                  variant === "filled" && "top-1 translate-y-0",
                   error
                     ? "text-error"
                     : isFocused
                     ? "text-primary"
                     : "text-on-surface-variant",
-                ],
-                leadingIcon && !isFloating && "left-1"
+                ]
               )}
             >
               {label}

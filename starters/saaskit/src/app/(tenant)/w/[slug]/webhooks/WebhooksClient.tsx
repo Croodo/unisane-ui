@@ -4,7 +4,7 @@ import { DataTable } from "@unisane/data-table";
 import type { Column } from "@unisane/data-table";
 import { hooks } from "@/src/sdk/hooks";
 import type { WebhooksListEventsItem } from "@/src/sdk/types";
-import { PageHeader } from "@/src/context/usePageHeader";
+import { PageLayout } from "@/src/context/usePageLayout";
 import { useSession } from "@/src/hooks/useSession";
 import { Card } from "@unisane/ui/components/card";
 import {
@@ -109,10 +109,7 @@ export default function WebhooksClient() {
 
   return (
     <>
-      <PageHeader
-        title="Webhooks"
-        subtitle="Inbound and outbound events for this workspace."
-      />
+      <PageLayout subtitle="Inbound and outbound events for this workspace." />
 
       {dataset.length === 0 && !isLoading ? (
         <Card>

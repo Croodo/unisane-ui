@@ -3,7 +3,7 @@
 import { forwardRef } from "react";
 import { cn } from "@unisane/ui/lib/utils";
 import { Surface } from "@unisane/ui/primitives/surface";
-import { Text } from "@unisane/ui/primitives/text";
+import { Typography } from "@unisane/ui/components/typography";
 import { Button } from "@unisane/ui/components/button";
 import { Icon } from "@unisane/ui/primitives/icon";
 
@@ -94,7 +94,7 @@ const EmptyState = forwardRef<HTMLDivElement, EmptyStateProps>(
         <Surface
           tone="surfaceContainerHigh"
           rounded="full"
-          className={cn("flex items-center justify-center mb-4", s.iconContainer)}
+          className={cn("flex items-center justify-center mb-6", s.iconContainer)}
         >
           <Icon
             symbol={icon}
@@ -103,42 +103,38 @@ const EmptyState = forwardRef<HTMLDivElement, EmptyStateProps>(
           />
         </Surface>
 
-        <Text variant={s.titleVariant} weight="semibold" className="text-on-surface">
+        <Typography variant={s.titleVariant} className="font-semibold">
           {title}
-        </Text>
+        </Typography>
 
         {description && (
-          <Text
+          <Typography
             variant={s.descVariant}
-            color="onSurfaceVariant"
-            className="mt-1 max-w-sm"
+            className="text-on-surface-variant mt-1 max-w-sm"
           >
             {description}
-          </Text>
+          </Typography>
         )}
 
         {(action || link) && (
           <div className="mt-4 flex items-center gap-3">
             {action && (
               <Button
-                size="sm"
                 variant="filled"
                 onClick={action.onClick}
                 disabled={action.disabled}
-                icon={action.icon ? <Icon symbol={action.icon} size="sm" /> : undefined}
+                icon={action.icon ? <Icon symbol={action.icon} /> : undefined}
               >
                 {action.label}
               </Button>
             )}
             {link && (
-              <Text
-                as="span"
-                variant="labelMedium"
-                color="primary"
-                className="cursor-pointer hover:underline underline-offset-4"
+              <a
+                href={link.href}
+                className="text-label-medium text-primary cursor-pointer hover:underline underline-offset-4"
               >
-                <a href={link.href}>{link.label}</a>
-              </Text>
+                {link.label}
+              </a>
             )}
           </div>
         )}

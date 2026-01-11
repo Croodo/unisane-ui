@@ -105,18 +105,18 @@ export const TabsTrigger: React.FC<TabsTriggerProps> = ({
       <Ripple disabled={props.disabled} />
 
       {icon && (
-        <div
+        <span
           className={cn(
-            "transition-colors z-10 shrink-0",
+            "transition-colors z-10 shrink-0 flex items-center justify-center size-icon-sm",
             isSelected ? "text-primary" : "text-on-surface-variant"
           )}
         >
           {icon}
-        </div>
+        </span>
       )}
       <span
         className={cn(
-          "text-label-medium z-10 leading-none whitespace-nowrap font-medium transition-all",
+          "text-label-medium z-10 whitespace-nowrap font-medium transition-all inline-flex items-center gap-2 leading-none",
           isSelected ? "opacity-100" : "opacity-60"
         )}
       >

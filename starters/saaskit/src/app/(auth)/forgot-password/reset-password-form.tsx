@@ -8,7 +8,7 @@ import { Input } from '@unisane/ui/primitives/input';
 import { Alert } from '@unisane/ui/components/alert';
 import { Icon } from '@unisane/ui/primitives/icon';
 import { IconButton } from '@unisane/ui/components/icon-button';
-import { Text } from '@unisane/ui/primitives/text';
+import { Typography } from '@unisane/ui/components/typography';
 import Link from 'next/link';
 
 export function ResetPasswordForm({ token, email }: { token: string; email: string }) {
@@ -51,10 +51,10 @@ export function ResetPasswordForm({ token, email }: { token: string; email: stri
           <Icon symbol="check_circle" size="md" />
         </div>
         <div className="space-y-2">
-          <Text as="h2" variant="titleMedium">Password updated</Text>
-          <Text variant="bodySmall" color="onSurfaceVariant">
+          <Typography variant="titleMedium">Password updated</Typography>
+          <Typography variant="bodySmall" className="text-on-surface-variant">
             You can now sign in with your new password.
-          </Text>
+          </Typography>
         </div>
         <Link href="/login" className="w-full">
           <Button className="w-full gap-2">
@@ -97,9 +97,9 @@ export function ResetPasswordForm({ token, email }: { token: string; email: stri
             <Icon symbol={showPwd ? 'visibility_off' : 'visibility'} size="sm" />
           </IconButton>
         </div>
-        <Text variant="labelSmall" color="onSurfaceVariant">
+        <Typography variant="labelSmall" className="text-on-surface-variant">
           Use at least 8 characters. A mix of letters, numbers, and symbols is recommended.
-        </Text>
+        </Typography>
       </div>
 
       <div className="flex flex-col gap-2">

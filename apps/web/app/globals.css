@@ -4,8 +4,20 @@
 
 /* Source paths for Tailwind class scanning */
 @source "../**/*.{ts,tsx,mdx}";
-@source "../../../packages/ui/src/**/*.{ts,tsx}";
-@source "../../../packages/data-table/src/**/*.{ts,tsx}";
+@source "../../../packages/ui/core/src/**/*.{ts,tsx}";
+@source "../../../packages/ui/data-table/src/**/*.{ts,tsx}";
+
+/* ============================================================
+   APP-SPECIFIC STYLES
+
+   Color themes, schemes, and contrast levels are provided by
+   @unisane/tokens/unisane.css. See ThemeProvider for usage:
+
+   - data-color-theme: blue, purple, pink, red, orange, yellow, green, cyan, black
+   - data-scheme: tonal (default), neutral, monochrome
+   - data-contrast: standard (default), medium, high
+   - class="dark" for dark mode
+   ============================================================ */
 
 /* ============================================================
    BASE STYLES
@@ -18,7 +30,6 @@
     overflow-x: hidden;
     max-width: 100vw;
   }
-
 }
 
 /* ============================================================

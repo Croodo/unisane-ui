@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useId, forwardRef } from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import { Text } from "@/primitives/text";
 import { Surface } from "@/primitives/surface";
@@ -111,8 +112,9 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(
     }, [open, onClose]);
 
     if (!open) return null;
+    if (typeof document === "undefined") return null;
 
-    return (
+    return createPortal(
       <div
         className="fixed inset-0 z-modal flex items-center justify-center p-6 medium:p-10"
         role="presentation"
@@ -187,7 +189,8 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(
               </div>
             )}
         </Surface>
-      </div>
+      </div>,
+      document.body
     );
   }
 );

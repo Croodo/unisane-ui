@@ -8,7 +8,7 @@ import { Label } from '@unisane/ui/primitives/label';
 import { Input } from '@unisane/ui/primitives/input';
 import { Alert } from '@unisane/ui/components/alert';
 import { Icon } from '@unisane/ui/primitives/icon';
-import { Text } from '@unisane/ui/primitives/text';
+import { Typography } from '@unisane/ui/components/typography';
 import Link from 'next/link';
 
 export function ForgotPasswordForm() {
@@ -49,11 +49,11 @@ export function ForgotPasswordForm() {
           <Icon symbol="check_circle" size="md" />
         </div>
         <div className="space-y-2">
-          <Text as="h2" variant="titleMedium">Check your email</Text>
-          <Text variant="bodySmall" color="onSurfaceVariant">
+          <Typography variant="titleMedium">Check your email</Typography>
+          <Typography variant="bodySmall" className="text-on-surface-variant">
             If an account exists for that email, we sent a password reset link.
             Be sure to check your spam folder.
-          </Text>
+          </Typography>
         </div>
         <div className="flex w-full flex-col gap-3">
           <Link href={loginHref} className="w-full">
@@ -95,9 +95,9 @@ export function ForgotPasswordForm() {
             className="pl-10"
           />
         </div>
-        <Text variant="labelSmall" color="onSurfaceVariant">
+        <Typography variant="labelSmall" className="text-on-surface-variant">
           We'll email you a link to reset your password.
-        </Text>
+        </Typography>
       </div>
 
       {error && (

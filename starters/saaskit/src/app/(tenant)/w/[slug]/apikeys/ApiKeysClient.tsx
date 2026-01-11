@@ -12,7 +12,7 @@ import type { ApikeysListItem, ApikeysCreateResponse } from "@/src/sdk/types";
 import { useApiError } from "@/src/hooks/useApiError";
 import { DataTable } from "@unisane/data-table";
 import type { Column } from "@unisane/data-table";
-import { PageHeader } from "@/src/context/usePageHeader";
+import { PageLayout } from "@/src/context/usePageLayout";
 import { Card } from "@unisane/ui/components/card";
 import { Alert } from "@unisane/ui/components/alert";
 import { Dialog } from "@unisane/ui/components/dialog";
@@ -212,8 +212,7 @@ export function ApiKeysClient() {
 
   return (
     <>
-      <PageHeader
-        title="API Keys"
+      <PageLayout
         subtitle="Create and manage API keys for programmatic access to your workspace."
         actions={
           <Button

@@ -33,18 +33,18 @@ export default async function LoginPage({
     .filter((p): p is (typeof known)[number] => (known as readonly string[]).includes(p))
     .map((p) => ({ id: p, label: p.charAt(0).toUpperCase() + p.slice(1) }));
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-muted/30 p-4 md:p-8">
-      <div className="flex w-full max-w-5xl flex-col overflow-hidden rounded-[28px] border bg-card shadow-none md:flex-row md:shadow-xl md:shadow-black/[0.02]">
-        <div className="flex flex-1 flex-col justify-center bg-muted/10 p-8 md:p-16">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-surface-container-low p-4 md:p-8">
+      <div className="flex w-full max-w-5xl flex-col overflow-hidden rounded-[28px] border border-outline-variant bg-surface shadow-none md:flex-row md:shadow-xl md:shadow-black/2">
+        <div className="flex flex-1 flex-col justify-center bg-surface-container-low p-8 md:p-16">
           <div className="max-w-sm">
             <div className="mb-8">
               {/* Placeholder for Logo if needed, or just text */}
-              <div className="h-8 w-8 rounded-full bg-primary/20" />
+              <div className="h-8 w-8 rounded-full bg-primary-container" />
             </div>
-            <h1 className="text-4xl font-normal tracking-tight text-foreground md:text-5xl">
+            <h1 className="text-4xl font-normal tracking-tight text-on-surface md:text-5xl">
               Sign in
             </h1>
-            <p className="mt-4 text-lg text-muted-foreground">
+            <p className="mt-4 text-lg text-on-surface-variant">
               Use your SaaS Kit Account
             </p>
           </div>
@@ -55,7 +55,7 @@ export default async function LoginPage({
           </div>
         </div>
       </div>
-      <div className="mt-8 flex w-full max-w-5xl justify-end gap-6 text-xs text-muted-foreground">
+      <div className="mt-8 flex w-full max-w-5xl justify-end gap-6 text-label-small text-on-surface-variant">
         <a href="/terms" className="hover:text-primary">
           Terms of Service
         </a>

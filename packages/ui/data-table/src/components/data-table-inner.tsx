@@ -66,6 +66,10 @@ export interface DataTableInnerProps<T extends { id: string }> {
   toolbarProps?: ToolbarProps;
   data: T[];
   isLoading?: boolean;
+  /** Loading display variant */
+  loadingVariant?: "skeleton" | "spinner" | "linear-progress";
+  /** Number of skeleton rows to show */
+  skeletonRowCount?: number;
   bulkActions?: BulkAction[];
   renderExpandedRow?: (row: T) => ReactNode;
   getRowCanExpand?: (row: T) => boolean;
@@ -115,6 +119,8 @@ export function DataTableInner<T extends { id: string }>({
   toolbarProps,
   data,
   isLoading = false,
+  loadingVariant = "skeleton",
+  skeletonRowCount = 5,
   bulkActions = [],
   renderExpandedRow,
   getRowCanExpand,
@@ -651,6 +657,8 @@ export function DataTableInner<T extends { id: string }>({
               selectedRows={selectedRows}
               expandedRows={expandedRows}
               isLoading={isLoading}
+              loadingVariant={loadingVariant}
+              skeletonRowCount={skeletonRowCount}
               selectable={effectiveSelectable}
               showColumnBorders={effectiveColumnBorders}
               zebra={effectiveZebra}

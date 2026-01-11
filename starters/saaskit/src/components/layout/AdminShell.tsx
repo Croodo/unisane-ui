@@ -20,7 +20,8 @@ import {
 import { TopAppBar } from "@unisane/ui/components/top-app-bar";
 import { IconButton } from "@unisane/ui/components/icon-button";
 import { RailUserMenu } from "@/src/components/layout/RailUserMenu";
-import { AdminBanner } from "@/src/components/admin";
+import { PageHeader } from "@/src/components/layout/PageHeader";
+import { NavigationProgress } from "@/src/context/useNavigationProgress";
 import { useSession } from "@/src/hooks/useSession";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -188,14 +189,15 @@ function AdminShellContent({ children }: AdminShellContentProps) {
   }, [effectiveItem, activeId]);
 
   return (
-    <div className="flex w-full min-h-screen bg-surface isolate overflow-x-hidden">
+    <div className="flex w-full h-screen bg-surface isolate overflow-hidden">
+      {/* Navigation Progress Bar */}
+      <NavigationProgress />
+
       {/* Top App Bar (Mobile + Tablet) */}
       <TopAppBar
         className="fixed top-0 left-0 right-0 z-50 flex expanded:hidden"
         title={
-          <span className="text-on-surface font-semibold">
-            Admin Console
-          </span>
+          <span className="text-on-surface font-semibold">Admin Console</span>
         }
         variant="small"
         navigationIcon={
@@ -210,7 +212,7 @@ function AdminShellContent({ children }: AdminShellContentProps) {
       />
 
       {/* Navigation Rail (Desktop only - 840px+) */}
-      <SidebarRail>
+      <SidebarRail className="bg-surface-container-low">
         {/* Menu Toggle */}
         <div className="flex flex-col items-center pt-3 pb-2 w-full">
           <IconButton
@@ -249,7 +251,7 @@ function AdminShellContent({ children }: AdminShellContentProps) {
       </SidebarRail>
 
       {/* Navigation Drawer */}
-      <SidebarDrawer>
+      <SidebarDrawer className="bg-surface-container-low">
         {mobileOpen ? (
           // Mobile/Tablet: Show all categories with collapsible accordion
           <SidebarContent className="pt-20 pb-24">
@@ -301,9 +303,14 @@ function AdminShellContent({ children }: AdminShellContentProps) {
               })}
             </SidebarMenu>
           </SidebarContent>
-        ) : currentEffectiveItem && currentEffectiveItem.items && currentEffectiveItem.items.length > 0 ? (
+        ) : currentEffectiveItem &&
+          currentEffectiveItem.items &&
+          currentEffectiveItem.items.length > 0 ? (
           // Desktop (hover or expanded): Show active category's sub-items
-          <SidebarContent className="pt-4 pb-4 animate-content-enter" key={currentEffectiveItem.id}>
+          <SidebarContent
+            className="pt-4 pb-4 animate-content-enter"
+            key={currentEffectiveItem.id}
+          >
             <SidebarGroupLabel>{currentEffectiveItem.label}</SidebarGroupLabel>
             <SidebarMenu>
               {currentEffectiveItem.items.map((item) => (
@@ -330,13 +337,13 @@ function AdminShellContent({ children }: AdminShellContentProps) {
       </SidebarDrawer>
 
       {/* Main Content */}
-      <SidebarInset>
-        {/* Admin Banner */}
-        <AdminBanner />
+      <SidebarInset className="expanded:border-l expanded:border-outline-variant/50">
+        {/* Page Header (reads from usePageLayout store) */}
+        <PageHeader className="px-4 medium:px-6 expanded:px-8" />
 
         {/* Content Container */}
         <div className="px-4 py-4 medium:px-6 expanded:px-8 expanded:py-6 flex-1">
-          {children}
+          <div className="expanded:container expanded:mx-auto">{children}</div>
         </div>
       </SidebarInset>
 

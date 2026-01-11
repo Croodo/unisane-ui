@@ -12,7 +12,7 @@ import {
   SidebarContent,
   SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuItem,
+  SidebarNavItem,
   SidebarCollapsibleGroup,
   SidebarBackdrop,
   SidebarInset,
@@ -148,14 +148,14 @@ function DocsShellContent({ children }: DocsShellProps) {
                     >
                       <SidebarMenu>
                         {category.items?.map((item) => (
-                          <SidebarMenuItem
+                          <SidebarNavItem
                             key={item.id}
                             id={item.id}
                             label={item.label}
                             asChild
                           >
                             <Link href={item.href || "#"} />
-                          </SidebarMenuItem>
+                          </SidebarNavItem>
                         ))}
                       </SidebarMenu>
                     </SidebarCollapsibleGroup>
@@ -163,7 +163,7 @@ function DocsShellContent({ children }: DocsShellProps) {
                 }
 
                 return (
-                  <SidebarMenuItem
+                  <SidebarNavItem
                     key={category.id}
                     id={category.id}
                     icon={category.icon}
@@ -171,7 +171,7 @@ function DocsShellContent({ children }: DocsShellProps) {
                     asChild
                   >
                     <Link href={category.href || "#"} />
-                  </SidebarMenuItem>
+                  </SidebarNavItem>
                 );
               })}
             </SidebarMenu>
@@ -187,7 +187,7 @@ function DocsShellContent({ children }: DocsShellProps) {
             <SidebarGroupLabel>{effectiveItem.label}</SidebarGroupLabel>
             <SidebarMenu>
               {effectiveItem.items.map((item) => (
-                <SidebarMenuItem
+                <SidebarNavItem
                   key={item.id}
                   id={item.id}
                   icon={item.icon}
@@ -195,7 +195,7 @@ function DocsShellContent({ children }: DocsShellProps) {
                   asChild
                 >
                   <Link href={item.href || "#"} />
-                </SidebarMenuItem>
+                </SidebarNavItem>
               ))}
             </SidebarMenu>
           </SidebarContent>

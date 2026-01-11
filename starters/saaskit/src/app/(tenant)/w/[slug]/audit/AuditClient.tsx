@@ -4,7 +4,7 @@ import { DataTable, type Column } from "@unisane/data-table";
 import { RowDetailSection, KeyValueRow } from "@/src/components/shared";
 import { hooks } from "@/src/sdk/hooks";
 import type { AuditListItem } from "@/src/sdk/types";
-import { PageHeader } from "@/src/context/usePageHeader";
+import { PageLayout } from "@/src/context/usePageLayout";
 import { useSession } from "@/src/hooks/useSession";
 import { Icon } from "@unisane/ui/primitives/icon";
 import { Card } from "@unisane/ui/components/card";
@@ -203,10 +203,7 @@ export default function AuditClient() {
 
   return (
     <>
-      <PageHeader
-        title="Audit Log"
-        subtitle="Track important actions and changes in your workspace."
-      />
+      <PageLayout subtitle="Track important actions and changes in your workspace." />
 
       {dataset.length === 0 && !isLoading ? (
         <Card>

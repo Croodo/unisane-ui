@@ -4,9 +4,11 @@ import React, { memo } from "react";
 import type { ReactNode } from "react";
 import { Icon } from "@unisane/ui";
 import type { Column, PinPosition, ColumnMetaMap, InlineEditingController, RowGroup, GroupHeaderProps, CellSelectionContext, RowActivationEvent } from "../types/index";
+import type { LoadingVariant } from "../types/config";
 import type { RowDragProps } from "../hooks/ui/use-row-drag";
 import { DataTableRow } from "./row";
 import { GroupRow } from "./group-row";
+import { SkeletonLoadingState } from "./skeleton-loading-state";
 import type { Density } from "../constants/index";
 import { useI18n } from "../i18n";
 
@@ -20,6 +22,10 @@ interface DataTableBodyProps<T> {
   selectedRows: Set<string>;
   expandedRows: Set<string>;
   isLoading: boolean;
+  /** Loading display variant */
+  loadingVariant?: LoadingVariant;
+  /** Number of skeleton rows to show (defaults to 5) */
+  skeletonRowCount?: number;
   selectable: boolean;
   showColumnBorders: boolean;
   zebra: boolean;
@@ -163,6 +169,8 @@ function DataTableBodyInner<T extends { id: string }>({
   selectedRows,
   expandedRows,
   isLoading,
+  loadingVariant = "skeleton",
+  skeletonRowCount = 5,
   selectable,
   showColumnBorders,
   zebra,
@@ -200,8 +208,24 @@ function DataTableBodyInner<T extends { id: string }>({
   // Calculate colspan
   const colSpan = columns.length + (selectable ? 1 : 0) + (enableExpansion ? 1 : 0) + (reorderableRows ? 1 : 0);
 
-  // Loading state
+  // Loading state - choose variant
   if (isLoading) {
+    if (loadingVariant === "skeleton") {
+      return (
+        <SkeletonLoadingState
+          columns={columns}
+          columnMeta={columnMeta}
+          getEffectivePinPosition={getEffectivePinPosition}
+          rowCount={skeletonRowCount}
+          selectable={selectable}
+          enableExpansion={enableExpansion}
+          showColumnBorders={showColumnBorders}
+          density={density}
+          reorderableRows={reorderableRows}
+        />
+      );
+    }
+    // Default to spinner for 'spinner' or 'linear-progress' variants
     return <LoadingState colSpan={colSpan} />;
   }
 

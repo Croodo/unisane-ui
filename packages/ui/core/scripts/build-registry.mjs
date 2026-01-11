@@ -373,7 +373,7 @@ async function copyStyles() {
   const tokensDistDir = path.join(rootDir, "..", "tokens", "dist");
 
   try {
-    const files = ["unisane.css", "uni-tokens.css", "uni-theme.css"];
+    const files = ["unisane.css"];
 
     for (const file of files) {
       const srcPath = path.join(tokensDistDir, file);

@@ -21,66 +21,100 @@ export function TopupSection({
   onCreateTopup,
 }: TopupSectionProps) {
   if (!isTopupMode) return null;
+
+  const selectedOption = options.find((o) => o.id === selectedId);
+
   return (
-    <Card className="h-full">
+    <Card className="h-full flex flex-col">
       <Card.Header>
-        <Card.Title className="flex items-center gap-2 text-lg">
-          <Icon symbol="add_circle" size="sm" className="text-primary" />
-          <span>Top up credits</span>
-        </Card.Title>
+        <Card.Title>Purchase Credits</Card.Title>
         <Card.Description>
-          Pay once to add more credits to this workspace.
+          Select a credit package to top up your balance
         </Card.Description>
       </Card.Header>
-      <Card.Content className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
-        {options.map((opt) => {
-          const isSelected = opt.id === selectedId;
-          const creditsLabel = opt.credits.toLocaleString();
-          return (
-            <button
-              key={opt.id}
-              type="button"
-              className={cn(
-                "relative flex w-full cursor-pointer items-center justify-between rounded-md border px-4 py-3 text-left text-sm transition-colors",
-                isSelected
-                  ? "border-primary bg-primary/5 ring-1 ring-primary"
-                  : "hover:border-primary/60"
-              )}
-              onClick={() => onSelect(opt.id)}
-            >
-              <div className="flex items-center gap-3">
+
+      <Card.Content className="flex-1">
+        <div className="space-y-3">
+          {options.map((opt) => {
+            const isSelected = opt.id === selectedId;
+            const creditsLabel = opt.credits.toLocaleString();
+            const pricePerCredit = (opt.amount / opt.credits).toFixed(3);
+
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                className={cn(
+                  "relative flex w-full cursor-pointer items-center gap-4 rounded-lg border px-4 py-4 text-left transition-all",
+                  isSelected
+                    ? "border-primary bg-primary-container/30 ring-2 ring-primary"
+                    : "border-outline-variant hover:border-primary/60 hover:bg-surface-container-low"
+                )}
+                onClick={() => onSelect(opt.id)}
+              >
+                {/* Radio indicator */}
                 <span
                   className={cn(
-                    "flex h-4 w-4 items-center justify-center rounded-full border",
+                    "flex size-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
                     isSelected
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-on-surface-variant"
+                      ? "border-primary bg-primary"
+                      : "border-outline"
                   )}
                 >
-                  {isSelected && <Icon symbol="check" size="xs" />}
+                  {isSelected && (
+                    <span className="size-2 rounded-full bg-on-primary" />
+                  )}
                 </span>
-                <div className="flex flex-col">
-                  <span className="font-medium">
-                    {creditsLabel} credits
-                  </span>
-                  <span className="text-xs text-on-surface-variant">
-                    {opt.label} one-time
+
+                {/* Credits info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-title-medium font-semibold tabular-nums">
+                      {creditsLabel}
+                    </span>
+                    <span className="text-body-small text-on-surface-variant">
+                      credits
+                    </span>
+                  </div>
+                  <span className="text-label-small text-on-surface-variant">
+                    ${pricePerCredit} per credit
                   </span>
                 </div>
-              </div>
-              <span className="font-semibold">{opt.label}</span>
-            </button>
-          );
-        })}
+
+                {/* Price */}
+                <div className="text-right shrink-0">
+                  <span className="text-title-medium font-semibold">
+                    {opt.label}
+                  </span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </Card.Content>
-      <Card.Footer className="pt-2 justify-end">
+
+      <Card.Footer className="flex items-center justify-between gap-4">
+        <div className="text-body-small text-on-surface-variant">
+          {selectedOption && (
+            <span>
+              You&apos;ll receive{" "}
+              <span className="font-medium text-on-surface">
+                {selectedOption.credits.toLocaleString()} credits
+              </span>{" "}
+              for{" "}
+              <span className="font-medium text-on-surface">
+                {selectedOption.label}
+              </span>
+            </span>
+          )}
+        </div>
         <Button
-          className="inline-flex items-center gap-2"
+          className="gap-2 shrink-0"
           disabled={!canCreateTopup}
           onClick={onCreateTopup}
         >
-          <Icon symbol="credit_card" size="sm" />
-          Purchase credits
+          <Icon symbol="shopping_cart" size="sm" />
+          Purchase
         </Button>
       </Card.Footer>
     </Card>

@@ -8,10 +8,7 @@
   ],
   "exports": {
     ".": "./dist/unisane.css",
-    "./unisane.css": "./dist/unisane.css",
-    "./uni-tokens.css": "./dist/uni-tokens.css",
-    "./uni-theme.css": "./dist/uni-theme.css",
-    "./uni-base.css": "./dist/uni-base.css"
+    "./unisane.css": "./dist/unisane.css"
   },
   "scripts": {
     "build": "node scripts/build.mjs",

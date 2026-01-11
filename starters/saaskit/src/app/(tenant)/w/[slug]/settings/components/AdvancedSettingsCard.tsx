@@ -1,12 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Input } from "@unisane/ui/primitives/input";
-import { Textarea } from "@unisane/ui/primitives/textarea";
-import { Label } from "@unisane/ui/primitives/label";
+import { TextField } from "@unisane/ui/components/text-field";
+import { Typography } from "@unisane/ui/components/typography";
 import { Button } from "@unisane/ui/components/button";
 import { Divider } from "@unisane/ui/components/divider";
 import { toast } from "@unisane/ui/components/toast";
+import { Switch } from "@unisane/ui/components/switch";
 import { hooks } from "@/src/sdk/hooks";
 import type { SettingsGetResponse as SettingsGet } from "@/src/sdk/types";
 import { normalizeError } from "@/src/sdk/errors";
@@ -69,33 +69,29 @@ function SettingEditor({
     <div className="space-y-4">
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label htmlFor="val">Value</Label>
-          <label className="text-xs text-muted-foreground inline-flex items-center gap-2">
-            <input
-              type="checkbox"
-              className="size-4"
-              checked={jsonMode}
-              onChange={(e) => setJsonMode(e.target.checked)}
-            />
-            JSON mode
-          </label>
+          <Typography variant="labelMedium">Value</Typography>
+          <Switch
+            checked={jsonMode}
+            onChange={(e) => setJsonMode(e.target.checked)}
+            label="JSON mode"
+          />
         </div>
-        <Textarea
-          id="val"
+        <TextField
+          label="Value"
+          multiline
           rows={6}
           value={raw}
           onChange={(e) => setRaw(e.target.value)}
           placeholder={jsonMode ? '{"enabled": true}' : "plain text"}
         />
-        <div className="text-xs text-muted-foreground">
+        <Typography variant="labelSmall" className="text-on-surface-variant">
           Version: {expectedVersion ?? "—"}
-        </div>
+        </Typography>
       </div>
 
       <div className="flex gap-2">
         <Button
           type="button"
-          size="sm"
           disabled={!tenantId || !ns || !keyName || patch.isPending}
           onClick={() => {
             try {
@@ -118,7 +114,6 @@ function SettingEditor({
         <Button
           type="button"
           variant="outlined"
-          size="sm"
           disabled={!tenantId || !ns || !keyName || patch.isPending}
           onClick={() => {
             const ok = window.confirm("Unset this key? This cannot be undone.");
@@ -161,37 +156,30 @@ export function AdvancedSettingsCard({ tenantId }: AdvancedSettingsCardProps) {
   );
 
   return (
-    <Card>
+    <Card variant="outlined">
       <Card.Header>
-        <Card.Title className="text-base">Advanced settings</Card.Title>
+        <Card.Title>Advanced settings</Card.Title>
         <Card.Description>
           Read and patch arbitrary namespaced settings for this workspace.
         </Card.Description>
       </Card.Header>
       <Card.Content className="space-y-4">
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-          <div className="space-y-2">
-            <Label htmlFor="ns">Namespace</Label>
-            <Input
-              id="ns"
-              value={ns}
-              onChange={(e) => setNs(e.target.value)}
-              placeholder="e.g. app"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="key">Key</Label>
-            <Input
-              id="key"
-              value={key}
-              onChange={(e) => setKey(e.target.value)}
-              placeholder="e.g. banner"
-            />
-          </div>
+          <TextField
+            label="Namespace"
+            value={ns}
+            onChange={(e) => setNs(e.target.value)}
+            placeholder="e.g. app"
+          />
+          <TextField
+            label="Key"
+            value={key}
+            onChange={(e) => setKey(e.target.value)}
+            placeholder="e.g. banner"
+          />
           <div className="flex items-end">
             <Button
               type="button"
-              size="sm"
               disabled={!queryEnabled || q.isFetching}
               onClick={() => q.refetch()}
             >

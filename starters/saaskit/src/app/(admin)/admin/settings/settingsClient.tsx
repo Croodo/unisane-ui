@@ -2,15 +2,12 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { Select } from "@unisane/ui/components/select";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@unisane/ui/components/tabs";
 import { Button } from "@unisane/ui/components/button";
 import { toast } from "@unisane/ui/components/toast";
 import { Icon } from "@unisane/ui/primitives/icon";
+import { Typography } from "@unisane/ui/components/typography";
+import { PageLayout } from "@/src/context/usePageLayout";
+import { EmptyState } from "@/src/components/feedback/EmptyState";
 import { hooks } from "@/src/sdk/hooks/generated/hooks";
 import { SettingCard } from "./components/SettingCard";
 import { SettingsSearch } from "./components/SettingsSearch";
@@ -21,111 +18,82 @@ import type { SettingCategory, SettingConfig } from "./types";
 interface PendingChange {
   config: SettingConfig;
   value: unknown;
-  version?: number;
+  version: number | undefined;
 }
+
+const CATEGORIES: SettingCategory[] = ["runtime", "billing", "auth", "webhooks"];
 
 export default function AdminSettingsClient() {
   const [env, setEnv] = useState<string>("dev");
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<SettingCategory>("runtime");
   const [pendingChanges, setPendingChanges] = useState<
     Map<string, PendingChange>
   >(new Map());
-  const [isBulkSaving, setIsBulkSaving] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Mutations
   const { mutateAsync: patchSetting } = hooks.settings.admin.patch();
 
-  // Get settings to display based on search or active tab
-  const displaySettings = searchQuery
-    ? searchSettings(searchQuery)
-    : getSettingsByCategory(activeTab);
+  // Get settings to display based on search
+  const displaySettings = searchQuery ? searchSettings(searchQuery) : [];
 
-  const handleSaveSetting = useCallback(
-    async (config: SettingConfig, value: unknown, version?: number) => {
-      try {
-        await patchSetting({
-          body: {
-            namespace: config.namespace,
-            key: config.key,
-            env,
-            value,
-            expectedVersion: version,
-          },
-        });
-        toast.success(`${config.label} updated for ${env}`);
-
-        // Remove from pending changes after successful save
-        setPendingChanges((prev) => {
-          const next = new Map(prev);
-          next.delete(`${config.namespace}.${config.key}`);
-          return next;
-        });
-      } catch (e) {
-        const msg = (e as Error)?.message ?? `Failed to update ${config.label}`;
-        toast.error(msg);
-        throw e;
-      }
+  const handleChange = useCallback(
+    (config: SettingConfig, value: unknown, version?: number) => {
+      setPendingChanges((prev) => {
+        const next = new Map(prev);
+        next.set(`${config.namespace}.${config.key}`, { config, value, version });
+        return next;
+      });
     },
-    [env, patchSetting]
+    []
   );
 
-  const handleBulkSave = async () => {
+  const handleDiscard = useCallback(() => {
+    setPendingChanges(new Map());
+  }, []);
+
+  const handleSave = async () => {
     if (pendingChanges.size === 0) return;
 
-    setIsBulkSaving(true);
+    setIsSaving(true);
     const changes = Array.from(pendingChanges.values());
     let successCount = 0;
     let failCount = 0;
 
     for (const change of changes) {
       try {
-        await handleSaveSetting(change.config, change.value, change.version);
+        await patchSetting({
+          body: {
+            namespace: change.config.namespace,
+            key: change.config.key,
+            env,
+            value: change.value,
+            expectedVersion: change.version,
+          },
+        });
         successCount++;
-      } catch {
+      } catch (e) {
+        const msg = (e as Error)?.message ?? `Failed to update ${change.config.label}`;
+        toast.error(msg);
         failCount++;
       }
     }
 
-    setIsBulkSaving(false);
+    setIsSaving(false);
 
     if (failCount === 0) {
-      toast.success(`All ${successCount} settings saved successfully`);
+      toast.success(`Settings saved for ${env}`);
+      setPendingChanges(new Map());
     } else {
       toast.warning(`Saved ${successCount} settings, ${failCount} failed`);
     }
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-semibold">Platform Settings</h2>
-          <p className="text-sm text-on-surface-variant">
-            Manage environment-specific platform configuration
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {pendingChanges.size > 0 && (
-            <Button
-              onClick={handleBulkSave}
-              disabled={isBulkSaving}
-              variant="filled"
-            >
-              {isBulkSaving ? (
-                <>
-                  <Icon symbol="progress_activity" size="sm" className="mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Icon symbol="save" size="sm" className="mr-2" />
-                  Save All Changes ({pendingChanges.size})
-                </>
-              )}
-            </Button>
-          )}
+    <>
+      <PageLayout
+        subtitle="Manage environment-specific platform configuration"
+        actions={
           <div className="w-[180px]">
             <Select
               value={env}
@@ -138,106 +106,142 @@ export default function AdminSettingsClient() {
               ]}
             />
           </div>
+        }
+      />
+
+      <div className="space-y-8">
+        {/* Search */}
+        <SettingsSearch onSearch={setSearchQuery} />
+
+        {/* Settings Content */}
+        {searchQuery ? (
+          // Search Results
+          <div>
+            {displaySettings.length === 0 ? (
+              <div className="flex items-center justify-center min-h-[40vh]">
+                <EmptyState
+                  icon="search_off"
+                  title="No settings found"
+                  description={`No settings match "${searchQuery}". Try a different search term.`}
+                  size="sm"
+                />
+              </div>
+            ) : (
+              <section>
+                <div className="mb-8">
+                  <Typography variant="titleLarge">Search Results</Typography>
+                  <Typography variant="bodyMedium" className="text-on-surface-variant mt-1">
+                    {displaySettings.length} setting{displaySettings.length !== 1 ? "s" : ""} matching &quot;{searchQuery}&quot;
+                  </Typography>
+                </div>
+                <div className="divide-y divide-outline-variant">
+                  {displaySettings.map((config) => (
+                    <SettingItem
+                      key={`${config.namespace}.${config.key}`}
+                      config={config}
+                      env={env}
+                      onChange={handleChange}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
+        ) : (
+          // All Settings by Category
+          <div className="space-y-12">
+            {CATEGORIES.map((category) => (
+              <SettingsSection
+                key={category}
+                category={category}
+                env={env}
+                onChange={handleChange}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Save Button */}
+        <div className="flex items-center justify-end gap-3 pt-6 mt-6 border-t border-outline-variant">
+          {pendingChanges.size > 0 && (
+            <>
+              <Typography variant="bodySmall" className="text-on-surface-variant mr-auto">
+                {pendingChanges.size} unsaved change{pendingChanges.size !== 1 ? "s" : ""}
+              </Typography>
+              <Button
+                type="button"
+                variant="text"
+                onClick={handleDiscard}
+                disabled={isSaving}
+              >
+                Discard
+              </Button>
+            </>
+          )}
+          <Button
+            disabled={isSaving || pendingChanges.size === 0}
+            onClick={handleSave}
+          >
+            {isSaving ? "Saving..." : "Save changes"}
+          </Button>
         </div>
       </div>
-
-      {/* Search */}
-      <SettingsSearch onSearch={setSearchQuery} />
-
-      {/* Tabs */}
-      {!searchQuery ? (
-        <Tabs
-          value={activeTab}
-          onValueChange={(v) => setActiveTab(v as SettingCategory)}
-        >
-          <TabsList>
-            <TabsTrigger value="runtime">Runtime</TabsTrigger>
-            <TabsTrigger value="billing">Billing</TabsTrigger>
-            <TabsTrigger value="auth">Auth</TabsTrigger>
-            <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="runtime" className="space-y-4 mt-6">
-            <SettingsGrid
-              category="runtime"
-              env={env}
-              onSave={handleSaveSetting}
-            />
-          </TabsContent>
-
-          <TabsContent value="billing" className="space-y-4 mt-6">
-            <SettingsGrid
-              category="billing"
-              env={env}
-              onSave={handleSaveSetting}
-            />
-          </TabsContent>
-
-          <TabsContent value="auth" className="space-y-4 mt-6">
-            <SettingsGrid
-              category="auth"
-              env={env}
-              onSave={handleSaveSetting}
-            />
-          </TabsContent>
-
-          <TabsContent value="webhooks" className="space-y-4 mt-6">
-            <SettingsGrid
-              category="webhooks"
-              env={env}
-              onSave={handleSaveSetting}
-            />
-          </TabsContent>
-        </Tabs>
-      ) : (
-        <div className="space-y-4 mt-6">
-          {displaySettings.length === 0 ? (
-            <div className="text-center py-12 text-on-surface-variant">
-              No settings found matching {searchQuery}
-            </div>
-          ) : (
-            displaySettings.map((config) => (
-              <SettingItem
-                key={`${config.namespace}.${config.key}`}
-                config={config}
-                env={env}
-                onSave={handleSaveSetting}
-              />
-            ))
-          )}
-        </div>
-      )}
-    </div>
+    </>
   );
 }
 
-// Grid component for a category
-function SettingsGrid({
+// Section component for a category - displays settings in row layout
+function SettingsSection({
   category,
   env,
-  onSave,
+  onChange,
 }: {
   category: SettingCategory;
   env: string;
-  onSave: (
-    config: SettingConfig,
-    value: unknown,
-    version?: number
-  ) => Promise<void>;
+  onChange: (config: SettingConfig, value: unknown, version?: number) => void;
 }) {
   const settings = getSettingsByCategory(category);
 
+  const categoryInfo: Record<SettingCategory, { title: string; description: string }> = {
+    runtime: {
+      title: "Runtime Settings",
+      description: "Configure application behavior and feature toggles",
+    },
+    billing: {
+      title: "Billing Settings",
+      description: "Payment processing and subscription configuration",
+    },
+    auth: {
+      title: "Authentication Settings",
+      description: "Security and access control configuration",
+    },
+    webhooks: {
+      title: "Webhook Settings",
+      description: "Configure outbound event notifications",
+    },
+  };
+
+  const info = categoryInfo[category];
+
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      {settings.map((config) => (
-        <SettingItem
-          key={`${config.namespace}.${config.key}`}
-          config={config}
-          env={env}
-          onSave={onSave}
-        />
-      ))}
-    </div>
+    <section>
+      <div className="mb-8">
+        <Typography variant="titleLarge">{info.title}</Typography>
+        <Typography variant="bodyMedium" className="text-on-surface-variant mt-1">
+          {info.description}
+        </Typography>
+      </div>
+      <div className="divide-y divide-outline-variant">
+        {settings.map((config) => (
+          <SettingItem
+            key={`${config.namespace}.${config.key}`}
+            config={config}
+            env={env}
+            onChange={onChange}
+          />
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -245,47 +249,19 @@ function SettingsGrid({
 function SettingItem({
   config,
   env,
-  onSave,
+  onChange,
 }: {
   config: SettingConfig;
   env: string;
-  onSave: (
-    config: SettingConfig,
-    value: unknown,
-    version?: number
-  ) => Promise<void>;
+  onChange: (config: SettingConfig, value: unknown, version?: number) => void;
 }) {
   const [localValue, setLocalValue] = useState<unknown>(config.defaultValue);
-  const [saving, setSaving] = useState(false);
 
   // The hook already unwraps the response and returns the data directly
   const {
     data: settingData,
     isLoading,
-    error,
   } = hooks.settings.admin.get({ env, ns: config.namespace, key: config.key });
-
-  useEffect(() => {
-    console.log(`[SettingItem:${config.key}] Hook State:`, {
-      isLoading,
-      hasData: !!settingData,
-      settingData,
-      error,
-      env,
-      namespace: config.namespace,
-      localValue,
-      defaultValue: config.defaultValue,
-    });
-  }, [
-    isLoading,
-    settingData,
-    error,
-    env,
-    config.key,
-    config.namespace,
-    localValue,
-    config.defaultValue,
-  ]);
 
   // Update local value when data changes or when loading completes
   useEffect(() => {
@@ -300,13 +276,9 @@ function SettingItem({
     }
   }, [settingData, isLoading, config.defaultValue]);
 
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      await onSave(config, localValue, settingData?.version);
-    } finally {
-      setSaving(false);
-    }
+  const handleChange = (value: unknown) => {
+    setLocalValue(value);
+    onChange(config, value, settingData?.version);
   };
 
   // Show loading only on initial load, not when data is null
@@ -322,10 +294,8 @@ function SettingItem({
         namespace={config.namespace}
         settingKey={config.key}
         value={localValue}
-        onChange={setLocalValue}
-        onSave={handleSave}
+        onChange={handleChange}
         loading={showLoading}
-        saving={saving}
       />
     );
   }
@@ -334,10 +304,8 @@ function SettingItem({
     <SettingCard
       config={config}
       value={localValue}
-      onChange={setLocalValue}
-      onSave={handleSave}
+      onChange={handleChange}
       loading={showLoading}
-      saving={saving}
     />
   );
 }

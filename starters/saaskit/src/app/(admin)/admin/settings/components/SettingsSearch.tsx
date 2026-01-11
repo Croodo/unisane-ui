@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Input } from "@unisane/ui/primitives/input";
+import { TextField } from "@unisane/ui/components/text-field";
 import { Icon } from "@unisane/ui/primitives/icon";
 
 interface SettingsSearchProps {
@@ -9,7 +9,10 @@ interface SettingsSearchProps {
   placeholder?: string;
 }
 
-export function SettingsSearch({ onSearch, placeholder = "Search settings..." }: SettingsSearchProps) {
+export function SettingsSearch({
+  onSearch,
+  placeholder = "Search settings...",
+}: SettingsSearchProps) {
   const [query, setQuery] = useState("");
 
   useEffect(() => {
@@ -21,15 +24,25 @@ export function SettingsSearch({ onSearch, placeholder = "Search settings..." }:
   }, [query, onSearch]);
 
   return (
-    <div className="relative">
-      <Icon symbol="search" size="sm" className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" />
-      <Input
-        type="text"
-        placeholder={placeholder}
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        className="pl-10"
-      />
-    </div>
+    <TextField
+      label="Search"
+      variant="outlined"
+      placeholder={placeholder}
+      value={query}
+      onChange={(e) => setQuery(e.target.value)}
+      leadingIcon={<Icon symbol="search" />}
+      trailingIcon={
+        query ? (
+          <button
+            type="button"
+            onClick={() => setQuery("")}
+            className="hover:text-on-surface transition-colors"
+          >
+            <Icon symbol="close" size="sm" />
+          </button>
+        ) : undefined
+      }
+      className="max-w-md"
+    />
   );
 }

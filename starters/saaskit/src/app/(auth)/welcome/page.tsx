@@ -2,13 +2,15 @@
 
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
-// Use the browser auto SDK for creating a tenant
-
 import { RequireAuth } from '@/src/components/auth/RequireAuth';
+import { Button } from '@unisane/ui/components/button';
+import { TextField } from '@unisane/ui/components/text-field';
+import { Typography } from '@unisane/ui/components/typography';
+import { Card } from '@unisane/ui/components/card';
+import { Alert } from '@unisane/ui/components/alert';
 
 export default function WelcomePage() {
   const router = useRouter();
-  // Using SDK client for simple create
   const [name, setName] = useState('My Workspace');
   const [slug, setSlug] = useState('');
   const [isSubmitting, setSubmitting] = useState(false);
@@ -36,23 +38,37 @@ export default function WelcomePage() {
   return (
     <RequireAuth>
       <main className="mx-auto max-w-lg p-6">
-        <h1 className="mb-2 text-xl font-semibold">Create your workspace</h1>
-        <p className="mb-4 text-sm text-muted-foreground">You don’t have a workspace yet. Create one to get started.</p>
-        <form onSubmit={onSubmit} className="flex flex-col gap-3">
-          <label className="text-sm">
-            <div className="mb-1">Name</div>
-            <input className="w-full rounded border px-3 py-2" value={name} onChange={(e) => setName(e.target.value)} required minLength={2} maxLength={80} />
-          </label>
-          <label className="text-sm">
-            <div className="mb-1">Slug (optional)</div>
-            <input className="w-full rounded border px-3 py-2" value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="e.g. acme" />
-            <div className="mt-1 text-xs text-muted-foreground">Lowercase letters, numbers, and dashes only. We’ll make it unique if taken.</div>
-          </label>
-          {error ? <div className="text-sm text-red-600">{error}</div> : null}
-          <button type="submit" disabled={isSubmitting} className="mt-1 rounded bg-primary px-4 py-2 text-white disabled:opacity-50">
-            {isSubmitting ? 'Creating…' : 'Create workspace'}
-          </button>
-        </form>
+        <Card variant="outlined" className="p-6">
+          <Typography variant="headlineSmall" className="mb-2">Create your workspace</Typography>
+          <Typography variant="bodyMedium" className="mb-6 text-on-surface-variant">
+            You don't have a workspace yet. Create one to get started.
+          </Typography>
+          <form onSubmit={onSubmit} className="flex flex-col gap-4">
+            <TextField
+              label="Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              minLength={2}
+              maxLength={80}
+            />
+            <TextField
+              label="Slug (optional)"
+              value={slug}
+              onChange={(e) => setSlug(e.target.value)}
+              placeholder="e.g. acme"
+              helperText="Lowercase letters, numbers, and dashes only. We'll make it unique if taken."
+            />
+            {error && (
+              <Alert variant="error" title="Error">
+                {error}
+              </Alert>
+            )}
+            <Button type="submit" disabled={isSubmitting} className="w-full">
+              {isSubmitting ? 'Creating…' : 'Create workspace'}
+            </Button>
+          </form>
+        </Card>
       </main>
     </RequireAuth>
   );

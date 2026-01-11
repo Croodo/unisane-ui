@@ -393,7 +393,6 @@
       ],
       "dependencies": [],
       "registryDependencies": [
-        "surface",
         "text",
         "icon",
         "ripple"

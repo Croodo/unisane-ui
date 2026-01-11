@@ -11,24 +11,24 @@ export default async function AdminUserDetailPage({
   const { id } = await params;
   const api = await createApi();
 
-  let user;
-  let memberships: UsersAdminMembershipsByUserItem[] = [];
-
   try {
-    user = await api.admin.users.readOrNull({ params: { id } });
+    // Fetch user and memberships in parallel for faster page load
+    const [user, membershipsResponse] = await Promise.all([
+      api.admin.users.readOrNull({ params: { id } }),
+      api.admin.users
+        .membershipsByUser({ params: { id }, query: { limit: 50 } })
+        .catch(() => ({ items: [] })), // Graceful fallback if memberships fail
+    ]);
+
     if (user === null) return notFound();
 
-    // Admin: fetch memberships for this user
-    const m = await api.admin.users.membershipsByUser({
-      params: { id },
-      query: { limit: 50 },
-    });
-    memberships = m.items ?? [];
+    const memberships: UsersAdminMembershipsByUserItem[] =
+      membershipsResponse.items ?? [];
+
+    return <UserDetailClient user={user} memberships={memberships} />;
   } catch (e) {
     const status = (e as Error & { status?: number }).status;
     if (status === 403) return notFound();
     throw e;
   }
-
-  return <UserDetailClient user={user} memberships={memberships} />;
 }
