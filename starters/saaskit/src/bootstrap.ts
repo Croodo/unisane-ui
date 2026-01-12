@@ -3,7 +3,16 @@
  * Called once at app startup (instrumentation.ts or first request)
  */
 
-import { connectDb, closeDb } from '@unisane/kernel';
+import {
+  connectDb,
+  closeDb,
+  ensureIndexes,
+  db,
+  redis,
+  registerHealthCheck,
+  createMongoHealthCheck,
+  createRedisHealthCheck,
+} from '@unisane/kernel';
 
 // Type for bootstrap status
 let bootstrapped = false;
@@ -21,16 +30,25 @@ export async function bootstrap() {
   await connectDb();
   console.log('[bootstrap] ✓ Database connected');
 
-  // 2. Set up repositories (DI)
+  // 2. Ensure indexes exist (runs in background, won't block startup)
+  await ensureIndexes();
+  console.log('[bootstrap] ✓ Database indexes ensured');
+
+  // 3. Register health checks
+  registerHealthCheck('mongodb', createMongoHealthCheck(() => db()));
+  registerHealthCheck('redis', createRedisHealthCheck(() => redis));
+  console.log('[bootstrap] ✓ Health checks registered');
+
+  // 4. Set up repositories (DI)
   // These functions inject the MongoDB implementations into each module
   await setupRepositories();
   console.log('[bootstrap] ✓ Repositories configured');
 
-  // 3. Set up providers (billing, email, storage, AI)
+  // 5. Set up providers (billing, email, storage, AI)
   await setupProviders();
   console.log('[bootstrap] ✓ Providers configured');
 
-  // 4. Register event handlers
+  // 6. Register event handlers
   await registerEventHandlers();
   console.log('[bootstrap] ✓ Event handlers registered');
 

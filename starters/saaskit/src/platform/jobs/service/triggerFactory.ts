@@ -1,5 +1,5 @@
 import { HEADER_NAMES } from "@unisane/gateway";
-import { metrics } from "@unisane/kernel";
+import { metrics } from "@/src/platform/telemetry";
 
 import type { AuthCtx } from '@unisane/gateway';
 
@@ -40,8 +40,8 @@ export async function triggerJob(args: {
     },
   });
   const ms = Date.now() - t0;
-  try { metrics.inc('admin_job_trigger', { job: jobName, status: resp.status }); } catch {}
-  try { metrics.observe('admin_job_trigger_ms', ms, { job: jobName, status: resp.status }); } catch {}
+  try { metrics.inc('admin_job_trigger', 1, { job: jobName, status: resp.status }); } catch {}
+  try { metrics.timing('admin_job_trigger_ms', ms, { job: jobName, status: resp.status }); } catch {}
 
   // Pass through status/body so clients see 200 (executed) or 202 (lease held)
   const headers = new Headers(resp.headers);

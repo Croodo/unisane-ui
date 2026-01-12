@@ -4,8 +4,7 @@
  * to enrich user data for admin dashboards and detail views.
  */
 
-import { col } from "@unisane/kernel";
-import { softDeleteFilter } from "@unisane/kernel";
+import { col, COLLECTIONS, softDeleteFilter } from "@unisane/kernel";
 
 /**
  * Get membership counts for a single user.
@@ -14,7 +13,7 @@ import { softDeleteFilter } from "@unisane/kernel";
 export async function getMembershipsCount(
   userId: string
 ): Promise<{ tenantsCount: number; adminTenantsCount: number }> {
-  const rows = (await col("memberships")
+  const rows = (await col(COLLECTIONS.MEMBERSHIPS)
     .aggregate([
       {
         $match: {
@@ -62,7 +61,7 @@ export async function getMembershipsCount(
  * Get count of active API keys created by a user.
  */
 export async function getApiKeysCreatedCount(userId: string): Promise<number> {
-  const rows = (await col("apikeys")
+  const rows = (await col(COLLECTIONS.API_KEYS)
     .aggregate([
       {
         $match: {
@@ -81,7 +80,7 @@ export async function getApiKeysCreatedCount(userId: string): Promise<number> {
  * Get the last activity timestamp for a user from audit logs.
  */
 export async function getLastActivity(userId: string): Promise<Date | null> {
-  const row = (await col("audit_logs")
+  const row = (await col(COLLECTIONS.AUDIT_LOGS)
     .aggregate([
       { $match: { actorId: userId } },
       { $group: { _id: null, lastActivityAt: { $max: "$createdAt" } } },
@@ -98,7 +97,7 @@ export async function getLastActivity(userId: string): Promise<Date | null> {
 export async function getTenantMembershipCounts(
   tenantIds: string[]
 ): Promise<Map<string, { membersCount: number; adminsCount: number }>> {
-  const rows = (await col("memberships")
+  const rows = (await col(COLLECTIONS.MEMBERSHIPS)
     .aggregate([
       {
         $match: {
@@ -156,7 +155,7 @@ export async function getTenantMembershipCounts(
 export async function getTenantApiKeyCounts(
   tenantIds: string[]
 ): Promise<Map<string, number>> {
-  const rows = (await col("apikeys")
+  const rows = (await col(COLLECTIONS.API_KEYS)
     .aggregate([
       {
         $match: {

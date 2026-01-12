@@ -32,6 +32,8 @@ export type RedisProvider = {
   ): Promise<void>;
   supportsSubscribe?(): boolean;
   evalsha?(...args: unknown[]): Promise<unknown>; // For @upstash/ratelimit Lua script support
+  // Health check
+  ping(): Promise<string>;
   // Cleanup function for graceful shutdown
   close?(): Promise<void>;
   // Test utilities
@@ -147,6 +149,9 @@ function createMemoryRedis(): RedisProvider {
     async evalsha() {
       return null;
     },
+    async ping() {
+      return 'PONG';
+    },
     async close() {
       // Clear all subscribers on close
       memSubscribers.clear();
@@ -177,6 +182,7 @@ interface IoRedisInstance {
   unsubscribe(channel: string): Promise<void>;
   multi(): { incrby(key: string, by: number): unknown; pexpire(key: string, ms: number): unknown; exec(): Promise<Array<[Error | null, unknown]>> };
   on(event: string, handler: (...args: unknown[]) => void): void;
+  ping(): Promise<string>;
   quit(): Promise<void>;
   disconnect(): void;
 }
@@ -295,6 +301,9 @@ function createIoRedis(url: string): { provider: RedisProvider; clients: { clien
     },
     supportsSubscribe() {
       return true;
+    },
+    async ping() {
+      return client.ping();
     },
     async close() {
       try {

@@ -8,12 +8,15 @@
  * - users.enrichments.mongo.ts - Cross-collection aggregations
  */
 
-import { col } from "@unisane/kernel";
+import {
+  col,
+  COLLECTIONS,
+  softDeleteFilter,
+  maybeObjectId,
+} from "@unisane/kernel";
 import type { Collection } from "mongodb";
 import { ObjectId } from "mongodb";
 import type { GlobalRole } from "@unisane/kernel";
-import { softDeleteFilter } from "@unisane/kernel";
-import { maybeObjectId } from "@unisane/kernel";
 import type {
   UserCreateInput,
   UserUpdateInput,
@@ -49,7 +52,7 @@ type UserDoc = {
 };
 
 function usersCol(): Collection<UserDoc> {
-  return col<UserDoc>("users");
+  return col<UserDoc>(COLLECTIONS.USERS);
 }
 
 // =============================================================================

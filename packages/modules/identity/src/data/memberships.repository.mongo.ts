@@ -231,7 +231,7 @@ export const mongoMembershipsRepository: MembershipsApi = {
     cursor?: string
   ): Promise<{ items: Membership[]; nextCursor?: string }> {
     const max = clampInt(limit, 1, 500);
-    const baseFilter: Filter<MembershipDoc> = { userId, deletedAt: null };
+    const baseFilter: Filter<MembershipDoc> = { userId, ...softDeleteFilter() };
     const projection: Record<string, 0 | 1> = {
       tenantId: 1,
       userId: 1,

@@ -14,6 +14,7 @@ import { ctx, createContext } from "@unisane/kernel";
 type HandlerOpts = {
   op?: OpKey;
   zod?: ZodTypeAny;
+  zodParams?: ZodTypeAny;
   perm?: Permission;
   idempotent?: boolean;
   requireTenantMatch?: boolean;

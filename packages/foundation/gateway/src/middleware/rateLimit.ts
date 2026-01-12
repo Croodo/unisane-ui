@@ -12,8 +12,43 @@ export function ipFrom(req: Request): string {
   return '0.0.0.0';
 }
 
-export function buildRateKey(args: { tenantId: string; userId?: string; name: string }) {
-  return [args.tenantId, args.userId ?? '-', args.name].join(':');
+/**
+ * Build a rate limit key from components.
+ * Uses safe sentinel values for missing components to prevent key collisions.
+ *
+ * Key format: {tenantId}:{userId}:{name}
+ * - tenantId: Tenant ID or 'anon' for unauthenticated
+ * - userId: User ID or 'anon' for unauthenticated
+ * - name: Operation name
+ */
+export function buildRateKey(args: {
+  tenantId?: string | null;
+  userId?: string | null;
+  name: string;
+  ip?: string; // Optional IP for anonymous rate limiting
+}): string {
+  const { tenantId, userId, name, ip } = args;
+
+  // Use 'anon' for unauthenticated/missing values
+  // Include IP hash for anonymous requests to prevent cross-user collisions
+  const tenant = tenantId || 'anon';
+  const user = userId || (ip ? `ip:${hashIp(ip)}` : 'anon');
+
+  return [tenant, user, name].join(':');
+}
+
+/**
+ * Hash IP address for use in rate limit keys.
+ * Uses a simple hash to preserve privacy while still allowing rate limiting.
+ */
+function hashIp(ip: string): string {
+  let hash = 0;
+  for (let i = 0; i < ip.length; i++) {
+    const char = ip.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash).toString(36);
 }
 
 // Fixed-window counter using KV. Key: rl:{key}:{windowStart}

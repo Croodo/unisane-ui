@@ -39,6 +39,15 @@ export * from './pagination';
 // RBAC
 export * from './rbac';
 
+// Security (input sanitization, XSS protection)
+export * from './security/sanitize';
+
+// Health checks
+export * from './health';
+
+// Resilience (circuit breaker, retry, etc.)
+export * from './resilience';
+
 // Constants
 export * from './constants';
 
@@ -64,10 +73,13 @@ export * from './utils/slug';
 export * from './utils/normalize';
 export * from './utils/dto';
 export * from './utils/csv';
-export * from './utils/metrics';
 export * from './utils/ratelimit';
 export * from './utils/jobs';
 export * from './utils/storage';
+
+// Metrics - re-export observabilityMetrics as 'metrics' for convenience
+// The full metrics API is available as 'observabilityMetrics' from './observability'
+export { observabilityMetrics as metrics } from './observability';
 
 // Inngest
 export * from './inngest';

@@ -35,6 +35,22 @@ export type { Permission } from './middleware/rbac';
 export type { AuthCtx } from './auth/auth';
 export * from './middleware/validate';
 
+// Request Logging
+export {
+  configureRequestLogging,
+  getRequestLoggingConfig,
+  resetRequestLoggingConfig,
+  shouldLogRequest,
+  shouldLogBodies,
+  redactSensitiveFields,
+  prepareBodyForLogging,
+  logRequestStart,
+  logRequestCompleted,
+  logRequestError,
+  createRequestLogger,
+} from './middleware/requestLogger';
+export type { RequestLoggingConfig, RequestLogData } from './middleware/requestLogger';
+
 // Errors
 export * from './errors/errors';
 export * from './errors/errorCatalog';
@@ -52,6 +68,18 @@ export * from './headers';
 export * from './rate-limits';
 export * from './logger';
 export * from './telemetry';
+
+// API Versioning
+export {
+  CURRENT_API_VERSION,
+  buildDeprecationHeaders,
+  buildVersionHeader,
+  isPastSunset,
+  daysUntilSunset,
+  formatDeprecationWarning,
+  Version,
+} from './versioning';
+export type { DeprecationInfo } from './versioning';
 
 // Registry types
 export * from './registry/types';

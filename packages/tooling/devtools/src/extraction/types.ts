@@ -61,6 +61,8 @@ export interface RouteGenEntry {
   zodBody?: ZodRef;
   /** Zod schema for query parameters */
   zodQuery?: ZodRef;
+  /** Zod schema for path parameters (runtime validation) */
+  zodParams?: ZodRef;
   /** Require tenant ID in path to match context */
   requireTenantMatch?: boolean;
   /** Require super admin role */

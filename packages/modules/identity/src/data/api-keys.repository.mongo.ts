@@ -1,4 +1,4 @@
-import { col, explicitTenantFilter, clampInt } from '@unisane/kernel';
+import { col, COLLECTIONS, explicitTenantFilter, clampInt } from '@unisane/kernel';
 import type { Document } from 'mongodb';
 
 export type ApiKeyCreateDbInput = {
@@ -13,7 +13,7 @@ export const mongoApiKeysRepository = {
   async create(input: ApiKeyCreateDbInput) {
     const now = new Date();
     // Use explicit tenantId from input - operations happen within ctx.run() but we use the passed value
-    const r = await col('apikeys').insertOne({
+    const r = await col(COLLECTIONS.API_KEYS).insertOne({
       tenantId: input.tenantId,
       name: input.name ?? null,
       hash: input.hash,
@@ -31,7 +31,7 @@ export const mongoApiKeysRepository = {
   },
   async revoke(tenantId: string, keyId: string) {
     // Use explicit tenantId parameter
-    await col('apikeys').updateOne(
+    await col(COLLECTIONS.API_KEYS).updateOne(
       explicitTenantFilter(tenantId, { _id: keyId }) as unknown as Document,
       { $set: { revokedAt: new Date(), updatedAt: new Date() } } as unknown as Document
     );
@@ -39,7 +39,7 @@ export const mongoApiKeysRepository = {
   },
   async listByTenant(tenantId: string, limit = 100) {
     // Use explicit tenantId parameter
-    const rows = await col('apikeys')
+    const rows = await col(COLLECTIONS.API_KEYS)
       .find(explicitTenantFilter(tenantId, {}) as unknown as Document)
       .sort({ createdAt: -1 })
       .limit(clampInt(limit, 1, 500))
@@ -62,7 +62,7 @@ export const mongoApiKeysRepository = {
   // NOTE: Cross-tenant operation - intentionally NOT using tenantFilter()
   // This verifies API key by hash and returns the tenantId for context bootstrapping
   async findActiveByHash(hash: string) {
-    const doc = (await col('apikeys').findOne({ hash, revokedAt: null } as unknown as Document)) as unknown as {
+    const doc = (await col(COLLECTIONS.API_KEYS).findOne({ hash, revokedAt: null } as unknown as Document)) as unknown as {
       _id: unknown;
       tenantId?: string;
       scopes?: string[];

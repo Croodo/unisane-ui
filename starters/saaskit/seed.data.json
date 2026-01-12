@@ -1,0 +1,119 @@
+{
+  "$schema": "https://unisane.dev/schemas/seed.json",
+  "_comment": "Seed data configuration for development. Run: unisane db seed",
+
+  "tenants": [
+    {
+      "slug": "acme",
+      "name": "ACME Corporation",
+      "planId": "pro"
+    },
+    {
+      "slug": "demo",
+      "name": "Demo Company",
+      "planId": "free"
+    },
+    {
+      "slug": "enterprise",
+      "name": "Enterprise Inc",
+      "planId": "business"
+    }
+  ],
+
+  "users": [
+    {
+      "email": "admin@acme.com",
+      "displayName": "Admin User",
+      "password": "admin123",
+      "globalRole": "admin"
+    },
+    {
+      "email": "user@acme.com",
+      "displayName": "Regular User",
+      "password": "user123",
+      "globalRole": "user"
+    },
+    {
+      "email": "demo@demo.com",
+      "displayName": "Demo User",
+      "password": "demo123",
+      "globalRole": "user"
+    },
+    {
+      "email": "owner@enterprise.com",
+      "displayName": "Enterprise Owner",
+      "password": "enterprise123",
+      "globalRole": "user"
+    }
+  ],
+
+  "memberships": [
+    {
+      "tenant": "acme",
+      "email": "admin@acme.com",
+      "roles": ["owner", "admin"]
+    },
+    {
+      "tenant": "acme",
+      "email": "user@acme.com",
+      "roles": ["member"]
+    },
+    {
+      "tenant": "demo",
+      "email": "demo@demo.com",
+      "roles": ["owner"]
+    },
+    {
+      "tenant": "enterprise",
+      "email": "owner@enterprise.com",
+      "roles": ["owner", "admin"]
+    }
+  ],
+
+  "subscriptions": [
+    {
+      "tenant": "acme",
+      "planId": "pro",
+      "status": "active"
+    },
+    {
+      "tenant": "demo",
+      "planId": "free",
+      "status": "active"
+    },
+    {
+      "tenant": "enterprise",
+      "planId": "business",
+      "status": "active"
+    }
+  ],
+
+  "apiKeys": [
+    {
+      "tenant": "acme",
+      "name": "Development API Key",
+      "scopes": ["read", "write"],
+      "actorEmail": "admin@acme.com"
+    },
+    {
+      "tenant": "enterprise",
+      "name": "Production API Key",
+      "scopes": ["read", "write", "admin"],
+      "actorEmail": "owner@enterprise.com"
+    }
+  ],
+
+  "flagOverrides": [
+    {
+      "flagKey": "credits.enabled",
+      "tenant": "enterprise",
+      "value": true
+    }
+  ],
+
+  "generate": {
+    "_comment": "Uncomment to generate synthetic test data",
+    "_tenants": 10,
+    "_usersPerTenant": 5
+  }
+}

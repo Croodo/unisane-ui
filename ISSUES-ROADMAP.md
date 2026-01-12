@@ -1,1155 +1,1414 @@
-# Unisane: Issues & Improvements Roadmap
+# Unisane Production Readiness Roadmap
 
-> Generated from comprehensive codebase analysis
-> Priority: P0 (Critical) → P1 (High) → P2 (Medium) → P3 (Low)
-
----
-
-## ⚠️ Before Starting Any Phase
-
-**IMPORTANT: Verify before implementing!**
-
-Before starting work on any task or phase in this roadmap:
-
-1. **Re-analyze the current state** — The codebase evolves. Re-read relevant files to understand what exists now.
-2. **Validate the proposed approach** — Confirm the solution still makes sense given current architecture.
-3. **Check for existing implementations** — Something may have been added since this roadmap was created.
-4. **Identify dependencies** — Ensure prerequisite tasks are complete.
-5. **Get confirmation** — Discuss the implementation plan before writing code.
-
-> Do NOT blindly follow this document. Treat each task as a starting point for investigation, not a final specification.
+> **Created**: 2026-01-12
+> **Based On**: Comprehensive codebase verification and gap analysis
+> **Current System Rating**: 9.2/10 (Excellent architecture, needs critical gaps filled)
+> **Estimated Time to Production**: 3-5 weeks focused work
 
 ---
 
-## Summary
+## ⚠️ Implementation Guidelines
 
-| Priority      | Count | Effort Estimate |
-| ------------- | ----- | --------------- |
-| P0 - Critical | 4     | ~2-3 weeks      |
-| P1 - High     | 8     | ~3-4 weeks      |
-| P2 - Medium   | 12    | ~4-6 weeks      |
-| P3 - Low      | 10    | ~2-3 weeks      |
+**CRITICAL: Read these guidelines before implementing ANY task:**
+
+### 🚫 DON'Ts (What NOT to Do)
+
+1. **Don't edit generated files** — Files with `/* AUTO-GENERATED */` header will be overwritten
+2. **Don't add backward compatibility** — Pre-launch, just change the code directly
+3. **Don't over-engineer** — Keep solutions simple, solve the immediate problem
+4. **Don't create docs/README files** — Unless explicitly requested in the task
+5. **Don't guess file paths** — Always read/search to find the correct location first
+6. **Don't skip verification** — Always read existing code before editing
+7. **Don't skip testing** — Every code change must have corresponding tests
+8. **Don't commit without linting** — Run `pnpm lint` before committing
+9. **Don't bypass type safety** — Fix type errors, don't use `@ts-ignore` or `any`
+10. **Don't copy-paste without understanding** — Understand the code you're modifying
+
+### ✅ DOs (What TO Do)
+
+1. **DO verify side effects** — Check what else depends on the code you're changing
+2. **DO search for usages** — Use grep/search to find all places that use a function/type
+3. **DO read surrounding code** — Understand the context and patterns used
+4. **DO follow existing patterns** — Match the style and structure of nearby code
+5. **DO test edge cases** — Think about null/undefined, empty arrays, error cases
+6. **DO update imports** — If you move/rename something, update all imports
+7. **DO check for circular dependencies** — Avoid creating import cycles
+8. **DO verify tenant isolation** — Ensure `tenantFilter()` is used for multi-tenant data
+9. **DO use kernel utilities** — Don't recreate existing utilities (check kernel first)
+10. **DO ask for clarification** — If requirements are unclear, ask before implementing
+
+### 🔍 Verification Checklist (Before Marking Task Complete)
+
+Before marking any task as complete, verify:
+
+- [ ] All files compile without errors (`pnpm check-types`)
+- [ ] All tests pass (`pnpm test`)
+- [ ] Linting passes (`pnpm lint`)
+- [ ] No new `@ts-ignore` or `any` types added
+- [ ] All imports updated if files were moved/renamed
+- [ ] Side effects checked (search for usages of modified code)
+- [ ] Tests added for new functionality
+- [ ] Tests updated for modified functionality
+- [ ] Security implications considered (PII, authentication, authorization)
+- [ ] Performance implications considered (N+1 queries, memory leaks)
+- [ ] Documentation updated if public API changed
+
+### 🛡️ Security Checklist (For Security-Related Tasks)
+
+When implementing security-related changes:
+
+- [ ] No secrets logged or exposed in error messages
+- [ ] Input validation using Zod schemas
+- [ ] SQL/NoSQL injection prevented (use parameterized queries)
+- [ ] XSS prevention (use sanitization utilities from kernel)
+- [ ] Authorization checks present (`assertPerm`, `requireAuth`)
+- [ ] Tenant isolation enforced (`tenantFilter`, `withTenantId`)
+- [ ] Rate limiting configured in OpMeta
+- [ ] Audit logging added for sensitive operations
+- [ ] Error messages don't leak internal details
+- [ ] HTTPS enforced (HSTS headers configured)
+
+### 📝 Code Quality Standards
+
+**Naming Conventions**:
+- Use `camelCase` for variables and functions
+- Use `PascalCase` for types, interfaces, and classes
+- Use `SCREAMING_SNAKE_CASE` for constants
+- Prefix boolean variables with `is`, `has`, `should`
+- Use descriptive names (avoid `data`, `temp`, `result` without context)
+
+**File Organization**:
+- One exported function/class per file (except types)
+- Barrel exports in `index.ts` files
+- Group related functionality in folders
+- Keep files under 500 lines (split if larger)
+
+**Error Handling**:
+- Use `DomainError` with specific error codes from catalog
+- Never use empty catch blocks (log at minimum)
+- Return typed errors, don't throw generic `Error`
+- Add `retryable` flag for transient errors
+- Wrap vendor errors with `ProviderError`
+
+**Testing Standards**:
+- Test file naming: `*.test.ts` (not `*.spec.ts` for unit tests)
+- E2E test naming: `*.spec.ts` (in `/e2e/` folder)
+- Minimum 80% coverage for new code
+- Test happy path + error cases + edge cases
+- Mock external dependencies (Stripe, S3, email, etc.)
+- Use descriptive test names: `it('should create user when valid input provided')`
 
 ---
 
-## P0 - Critical (Fix Before Production)
+## 🎯 Goal
 
-### 1. [P0-001] Add Test Infrastructure & Coverage
+Transform Unisane from 90% production-ready to **100% production-ready** by addressing critical security, reliability, and quality gaps in a logical, dependency-aware sequence.
 
-**Problem**: Test directories are empty. No automated testing visible.
+---
 
-**Location**: All packages under `packages/`
+## 📊 Current State Summary
 
-**Risk**: Bugs in production, regression issues, unsafe refactoring
+### ✅ What's Working Excellently
+- **Architecture**: Contract-first with 95% code generation (exceptional)
+- **Type Safety**: Perfect TypeScript + Zod + ts-rest integration
+- **Code Quality**: Clean codebase (12 TODOs, 1 @ts-ignore, minimal console.logs)
+- **Foundation**: Production-ready kernel, gateway, and 8/15 tested modules
+- **Infrastructure**: MongoDB, Redis, Stripe, Auth, Multi-tenancy all working
+
+### ⚠️ Critical Gaps (Blocking Production)
+- **Security**: PII stored in plaintext (encryption utilities exist but unused)
+- **Security**: Missing critical security headers (CSP, Helmet, etc.)
+- **Quality**: 7/15 modules have ZERO tests
+- **Quality**: NO service layer tests exist anywhere
+- **Reliability**: CI allows test failures without blocking merges
+- **Architecture**: Rate limiting policies duplicated (SSOT break)
+
+---
+
+## 📅 Implementation Phases
+
+### Phase 1: Critical Security Fixes (Week 1) 🔒
+**Goal**: Eliminate critical security vulnerabilities
+**Estimated Time**: 5-7 days
+**Blockers**: None - can start immediately
+
+### Phase 2: Quality Foundation (Week 2-3) ✅
+**Goal**: Complete test coverage and fix CI configuration
+**Estimated Time**: 7-10 days
+**Blockers**: Depends on Phase 1 completion
+
+### Phase 3: Production Hardening (Week 3-4) 🛡️
+**Goal**: Add reliability patterns and fix architectural issues
+**Estimated Time**: 5-7 days
+**Blockers**: Depends on Phase 2 completion
+
+### Phase 4: Production Launch Prep (Week 4-5) 🚀
+**Goal**: Final verification, documentation, and deployment
+**Estimated Time**: 3-5 days
+**Blockers**: Depends on Phase 3 completion
+
+---
+
+## Phase 1: Critical Security Fixes (Week 1) 🔒
+
+**Why First**: Security vulnerabilities must be fixed before any production data is handled.
+
+---
+
+### 1.1 Integrate PII Encryption in Database Layer
+
+**Priority**: 🔴 CRITICAL
+**Status**: ❌ Not Started (0%)
+**Estimated Time**: 2-3 days
+**Assignee**: ___________
+
+**Problem**:
+Encryption utilities (`encryptField`, `decryptField`, `createSearchToken`) exist in `packages/foundation/kernel/src/utils/crypto.ts` but are **never used**. User emails and phone numbers are stored in plaintext in MongoDB.
+
+**Impact**: Critical security vulnerability - PII exposure if database is compromised.
 
 **Tasks**:
 
-- [ ] Set up Vitest configuration at monorepo root
-- [ ] Add unit tests for kernel (context, database, cache, events)
-- [ ] Add unit tests for gateway (handlers, middleware, auth)
-- [ ] Add integration tests for each module
-- [ ] Add E2E tests for critical flows (auth, billing, tenants)
-- [ ] Set up CI pipeline for test runs
-- [ ] Add coverage thresholds (suggest: 80% for kernel/gateway)
+- [ ] **1.1.1** Add `DATA_ENCRYPTION_KEY` to `.env.example` with generation instructions
+  - Location: `starters/saaskit/.env.example`
+  - Add documentation on key rotation strategy
 
-**Module Test Checklist** (unit + integration tests per module):
+- [ ] **1.1.2** Update Users Repository to encrypt PII fields
+  - Location: `packages/modules/identity/src/data/users.repository.mongo.ts`
+  - Add fields: `emailEncrypted`, `emailSearchToken`, `phoneEncrypted`, `phoneSearchToken`
+  - Keep plaintext fields temporarily for migration safety
 
-| # | Package | Test Focus Areas | Status |
-|---|---------|------------------|--------|
-| 1 | `kernel` | context, database, cache, events, logging, RBAC | [ ] |
-| 2 | `gateway` | handlers, middleware, auth, rate limiting, errors | [ ] |
-| 3 | `contracts` | schema validation, type exports | [ ] |
-| 4 | `auth` | signin, signup, password reset, OTP, token refresh | [ ] |
-| 5 | `identity` | user CRUD, memberships, API keys, invites | [ ] |
-| 6 | `tenants` | tenant CRUD, slug validation, tenant switching | [ ] |
-| 7 | `billing` | subscriptions, payments, invoices, Stripe integration | [ ] |
-| 8 | `credits` | ledger operations, balance calculations, deduction | [ ] |
-| 9 | `flags` | feature flag CRUD, flag evaluation, overrides | [ ] |
-| 10 | `settings` | settings CRUD, key validation | [ ] |
-| 11 | `storage` | file upload, download, deletion, presigned URLs | [ ] |
-| 12 | `audit` | log creation, log retrieval, filtering | [ ] |
-| 13 | `notify` | notification create, preferences, in-app delivery | [ ] |
-| 14 | `usage` | usage recording, aggregation, limits | [ ] |
-| 15 | `webhooks` | webhook CRUD, event dispatch, retry logic | [ ] |
-| 16 | `ai` | AI service calls, prompt handling | [ ] |
-| 17 | `media` | media processing, transformations | [ ] |
-| 18 | `pdf` | PDF generation, templates | [ ] |
+- [ ] **1.1.3** Update MongoDB schema with new encrypted fields
+  - Add indexes on `emailSearchToken` and `phoneSearchToken`
+  - Ensure `deletedAt` filter still works correctly
 
-**E2E Test Flows** (critical user journeys):
+- [ ] **1.1.4** Update queries to use searchToken for lookups
+  - Find by email: `findOne({ emailSearchToken: createSearchToken(normalizeEmail(email), key) })`
+  - Find by phone: `findOne({ phoneSearchToken: createSearchToken(normalizePhone(phone), key) })`
 
-| # | Flow | Modules Involved | Status |
-|---|------|------------------|--------|
-| 1 | Sign up → Verify email → Create tenant | auth, identity, tenants | [ ] |
-| 2 | Sign in → Access dashboard → Switch tenant | auth, identity, tenants | [ ] |
-| 3 | Subscribe to plan → Payment → Access features | billing, credits, flags | [ ] |
-| 4 | Upload file → Process → Download | storage, media | [ ] |
-| 5 | Invite member → Accept → Access tenant | identity, tenants, notify | [ ] |
-| 6 | Create API key → Make API call → Verify audit | identity, gateway, audit | [ ] |
+- [ ] **1.1.5** Create data migration script
+  - Script location: `scripts/migrations/001-encrypt-pii.ts`
+  - Migrate existing plaintext emails/phones to encrypted fields
+  - Add rollback capability
 
-**Questions for you**:
+- [ ] **1.1.6** Update tests to use encryption
+  - Update identity module tests to verify encryption
+  - Add tests for searchToken lookups
 
-1. What's your target test coverage percentage?
-   Ans: right now we can target core system.
-2. Do you have existing tests elsewhere not in the repo?
-   Ans: Nowhere else.
-3. Preferred E2E framework: Playwright, Cypress, or other?
-   Ans: not sure.
+- [ ] **1.1.7** Run migration on dev/staging databases
+  - Verify all queries still work
+  - Test performance impact of searchToken lookups
 
----
+**Verification**:
+```bash
+# Should find encrypted field usage
+grep -r "encryptField\|decryptField" packages/modules/identity/src/data/
 
-### 2. [P0-002] ~~Fix Type Safety in Generated Code~~ → **MOVED TO P2**
+# Should find searchToken in queries
+grep -r "emailSearchToken\|phoneSearchToken" packages/modules/identity/src/data/
 
-> **INVESTIGATION RESULT**: The `as unknown` casts are **NECESSARY**, not a bug.
+# Tests should pass
+pnpm --filter @unisane/identity test
+```
 
-**Why casts exist (investigated)**:
-1. Query/body parameters extracted as `unknown` from dynamic sources
-2. Conditional spreads create type inference uncertainty for TypeScript
-3. Generator can't statically infer field types from Zod schemas
-4. Runtime safety IS maintained - Zod validates at runtime
-
-**Verdict**: This is working as designed. The cast bridges codegen-time and runtime type systems.
-
-**Moved to P2-001** with reduced scope: Improve generated code readability, not remove casts.
+**Definition of Done**:
+- ✅ All user emails encrypted in database
+- ✅ All user phones encrypted in database
+- ✅ Lookups work correctly with searchToken
+- ✅ Migration script tested on staging
+- ✅ Tests passing with encryption enabled
+- ✅ Performance verified (no significant degradation)
 
 ---
 
-### 3. [P0-003] Add Input Sanitization Layer
+### 1.2 Add Comprehensive Security Headers
 
-**Problem**: No visible XSS/injection sanitization before data storage.
+**Priority**: 🔴 CRITICAL
+**Status**: ❌ Not Started (50% - only poweredByHeader disabled)
+**Estimated Time**: 1 day
+**Assignee**: ___________
 
-**Location**: Gateway layer, before data reaches services
+**Problem**:
+Only `poweredByHeader: false` is configured. Missing critical security headers:
+- No Content-Security-Policy (CSP) - vulnerable to XSS
+- No X-Frame-Options - vulnerable to clickjacking
+- No X-Content-Type-Options - vulnerable to MIME sniffing
+- No HSTS - no HTTPS enforcement
 
-**Risk**: XSS attacks, stored injection vulnerabilities
+**Impact**: Application vulnerable to XSS, clickjacking, and MITM attacks.
 
 **Tasks**:
 
-- [ ] Audit all user input paths
-- [ ] Add sanitization middleware/utility
-- [ ] Sanitize HTML in string fields (or reject)
-- [ ] Add CSP headers in responses
-- [ ] Document which fields allow HTML (if any)
+- [ ] **1.2.1** Add security headers middleware
+  - Location: `starters/saaskit/src/middleware.ts` (create if doesn't exist)
+  - Add all critical security headers
 
-**Questions for you**:
+- [ ] **1.2.2** Configure Content-Security-Policy
+  - Start with restrictive policy
+  - Allow only necessary domains
+  - Document CSP directives
 
-1. Are there any fields that intentionally allow HTML/markdown?
-   Ans: right now no.
-2. Do you use a rich text editor anywhere that needs HTML?
-   Ans: Not right now but will needed in future.
+- [ ] **1.2.3** Add HSTS with long max-age
+  - `Strict-Transport-Security: max-age=31536000; includeSubDomains; preload`
 
----
+- [ ] **1.2.4** Add remaining security headers
+  - `X-Frame-Options: DENY`
+  - `X-Content-Type-Options: nosniff`
+  - `X-XSS-Protection: 1; mode=block`
+  - `Referrer-Policy: no-referrer-when-downgrade`
 
-### 4. [P0-004] Secure Secrets Handling Audit
+- [ ] **1.2.5** Test headers in all environments
+  - Verify headers present in dev
+  - Verify headers present in staging
+  - Use https://securityheaders.com to scan
 
-**Problem**: Need to verify no secrets leak in logs/errors.
+- [ ] **1.2.6** Document CSP exceptions
+  - Document why any `unsafe-inline` or `unsafe-eval` is needed
+  - Plan to remove unsafe directives
 
-**Location**: Throughout codebase
-
-**Risk**: Credential exposure, security breach
-
-**Tasks**:
-
-- [ ] Audit logger calls for sensitive data
-- [ ] Ensure passwords/tokens never logged
-- [ ] Add redaction for sensitive fields in error responses
-- [ ] Verify `.env` files are gitignored
-- [ ] Add secret scanning to CI (e.g., gitleaks)
-
-**Questions for you**:
-
-1. Do you have a secrets management system (Vault, AWS Secrets Manager)?
-   Ans: No
-2. Are there any known places where sensitive data might be logged?
-   Ans: no.
-
----
-
-## P1 - High Priority (Fix Within First Sprint)
-
-### 5. [P1-001] Add OpenTelemetry Tracing
-
-**Problem**: No distributed tracing for debugging production issues.
-
-**Location**: New addition to `packages/foundation/kernel/src/observability/`
-
-**Impact**: Can't trace requests across services, hard to debug latency
-
-**Tasks**:
-
-- [ ] Add OpenTelemetry SDK dependencies
-- [ ] Create tracing module in kernel
-- [ ] Instrument HTTP handlers (gateway)
-- [ ] Instrument database calls
-- [ ] Instrument external service calls (Stripe, etc.)
-- [ ] Add trace ID to logs
-- [ ] Document tracing setup for different backends (Jaeger, Datadog, etc.)
-
-**Suggested Implementation**:
-
+**Implementation Example**:
 ```typescript
-// kernel/src/observability/tracing.ts
-import { trace, SpanKind } from "@opentelemetry/api";
-export const tracer = trace.getTracer("@unisane/kernel");
+// starters/saaskit/src/middleware.ts
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
-export function withSpan<T>(name: string, fn: () => Promise<T>): Promise<T> {
-  return tracer.startActiveSpan(name, async (span) => {
-    try {
-      return await fn();
-    } finally {
-      span.end();
-    }
-  });
+export function middleware(request: NextRequest) {
+  const response = NextResponse.next();
+
+  // Content Security Policy
+  const csp = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: https:",
+    "font-src 'self' data:",
+    "connect-src 'self' https://api.stripe.com",
+    "frame-src https://js.stripe.com",
+  ].join('; ');
+
+  response.headers.set('Content-Security-Policy', csp);
+
+  // HSTS
+  response.headers.set(
+    'Strict-Transport-Security',
+    'max-age=31536000; includeSubDomains; preload'
+  );
+
+  // Other security headers
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('X-XSS-Protection', '1; mode=block');
+  response.headers.set('Referrer-Policy', 'no-referrer-when-downgrade');
+  response.headers.set('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+
+  return response;
 }
-```
 
-**Questions for you**:
-
-1. What observability backend do you plan to use? (Datadog, Grafana, Jaeger, etc.)
-   Ans: Need flexible to switch.
-2. Should tracing be opt-in or always-on?
-   Ans: opt-in
-
----
-
-### 6. [P1-002] Add Health Check Endpoints with Dependency Checks
-
-**Problem**: Current health check only pings, doesn't verify dependencies.
-
-**Location**: `starters/saaskit/src/app/api/health/route.ts`
-
-**Impact**: K8s may route traffic to unhealthy instances
-
-**Tasks**:
-
-- [ ] Add MongoDB connectivity check
-- [ ] Add Redis connectivity check
-- [ ] Add Stripe API check (lightweight)
-- [ ] Create `/health/live` (basic) and `/health/ready` (full) endpoints
-- [ ] Add timeout handling for each check
-- [ ] Return structured health response
-
-**Suggested Response**:
-
-```json
-{
-  "status": "healthy",
-  "checks": {
-    "mongodb": { "status": "up", "latencyMs": 12 },
-    "redis": { "status": "up", "latencyMs": 3 },
-    "stripe": { "status": "up", "latencyMs": 89 }
-  },
-  "version": "1.0.0",
-  "uptime": 3600
-}
-```
-
----
-
-### 7. [P1-003] Add Circuit Breaker Pattern
-
-**Problem**: No resilience patterns for external service failures.
-
-**Location**: Kernel layer, wrapping external calls
-
-**Impact**: Cascading failures when Stripe/external services are down
-
-**Tasks**:
-
-- [ ] Add circuit breaker library (opossum or cockatiel)
-- [ ] Wrap billing provider calls
-- [ ] Wrap email provider calls
-- [ ] Wrap storage provider calls
-- [ ] Add metrics for circuit state
-- [ ] Document failure modes and fallbacks
-
-**External Service Integration Checklist** (wrap each with circuit breaker):
-
-| # | Module | External Service | Fallback Strategy | Status |
-|---|--------|------------------|-------------------|--------|
-| 1 | `billing` | Stripe API (payments, subscriptions) | Queue & retry | [ ] |
-| 2 | `billing` | Stripe Webhooks (signature verify) | Log & alert | [ ] |
-| 3 | `notify` | Email provider (Resend/SendGrid) | Queue for retry | [ ] |
-| 4 | `notify` | SMS provider (Twilio) | Queue for retry | [ ] |
-| 5 | `notify` | Push provider (FCM/APNS) | Queue for retry | [ ] |
-| 6 | `storage` | S3/Cloud Storage (upload/download) | Return error, no queue | [ ] |
-| 7 | `ai` | OpenAI/Anthropic API | Return error with fallback msg | [ ] |
-| 8 | `media` | Image processing service | Skip processing, serve original | [ ] |
-| 9 | `pdf` | PDF generation service | Queue for retry | [ ] |
-| 10 | `webhooks` | Outbound webhook delivery | Exponential backoff retry | [ ] |
-| 11 | `auth` | OAuth providers (Google, GitHub) | Return error | [ ] |
-
-**Questions for you**:
-
-1. What should happen when Stripe is down? Queue requests? Return error?
-   Ans: Do what best practice, top platforms do.
-2. Same question for email - queue or fail?
-   Ans: Same answer above.
-
----
-
-### 8. [P1-004] Fix Memory Leak Risk in Event System
-
-**Problem**: Event handlers may accumulate without proper cleanup.
-
-**Location**: `packages/foundation/kernel/src/events/emitter.ts`
-
-**Current Code** (from analysis):
-
-```typescript
-events.on("event", handler); // Returns unsubscribe function
-// If caller doesn't store and call unsubscribe, handlers accumulate
-```
-
-**Tasks**:
-
-- [ ] Verify handler limit warning is enforced
-- [ ] Add handler count to health metrics
-- [ ] Add automatic cleanup for module-scoped handlers
-- [ ] Document proper subscription lifecycle
-- [ ] Consider WeakRef for handler storage where appropriate
-
----
-
-### 9. [P1-005] Create Repository Base Class to Reduce Duplication
-
-**Problem**: Repetitive mapping code in every MongoDB repository.
-
-**Location**: All files matching `packages/modules/*/src/data/*.repository.mongo.ts`
-
-**Current Pattern** (repeated everywhere):
-
-```typescript
-const base: Record<string, unknown> = {
-  id: String((row as { _id?: unknown })._id ?? ""),
-  userId: String((row as { userId?: unknown }).userId ?? ""),
-  // ... same defensive casting pattern
+export const config = {
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico).*)',
+  ],
 };
 ```
 
+**Verification**:
+```bash
+# Test locally
+curl -I http://localhost:3000 | grep -i "content-security-policy\|x-frame-options\|strict-transport"
+
+# Test on securityheaders.com
+# Should get A+ rating
+```
+
+**Definition of Done**:
+- ✅ All security headers present in responses
+- ✅ CSP configured and tested
+- ✅ HSTS enabled with long max-age
+- ✅ Security headers scan shows A+ rating
+- ✅ Application still functions correctly (no CSP violations)
+
+---
+
+### 1.3 Audit and Fix Secrets Management
+
+**Priority**: 🟡 HIGH (Part of security hardening)
+**Status**: ⚠️ Partial (70% - most secrets handled correctly)
+**Estimated Time**: 1 day
+**Assignee**: ___________
+
+**Problem**:
+Need final verification that no secrets are logged or exposed.
+
 **Tasks**:
 
-- [ ] Create `MongoRepository<TDoc, TView>` base class in kernel
-- [ ] Implement common CRUD operations
-- [ ] Create `DocumentMapper<TDoc, TView>` utility
-- [ ] Add soft-delete helpers to base class
-- [ ] Add tenant-scoped query helpers
+- [ ] **1.3.1** Audit all logger calls for sensitive data
+  - Search for: `log.`, `console.`, `logger.`
+  - Verify no passwords, tokens, or API keys logged
 
-**Module Migration Checklist** (12 modules with repositories):
+- [ ] **1.3.2** Verify error responses don't leak secrets
+  - Check gateway error handlers
+  - Ensure stack traces hidden in production
 
-| # | Module | Repository Files | Status |
-|---|--------|------------------|--------|
-| 1 | `auth` | `auth.repository.mongo.ts` | [ ] |
-| 2 | `identity` | `users.repository.mongo.ts`, `memberships.repository.mongo.ts`, `apikeys.repository.mongo.ts` | [ ] |
-| 3 | `tenants` | `tenants.repository.mongo.ts` | [ ] |
-| 4 | `billing` | `payments.repository.mongo.ts`, `invoices.repository.mongo.ts`, `subscriptions.repository.mongo.ts` | [ ] |
-| 5 | `credits` | `credits.repository.mongo.ts` | [ ] |
-| 6 | `flags` | `flags.repository.mongo.ts` | [ ] |
-| 7 | `settings` | `settings.repository.mongo.ts` | [ ] |
-| 8 | `storage` | `storage.repository.mongo.ts` | [ ] |
-| 9 | `audit` | `audit.repository.mongo.ts` | [ ] |
-| 10 | `notify` | `notify.repository.mongo.ts` | [ ] |
-| 11 | `usage` | `usage.repository.mongo.ts` | [ ] |
-| 12 | `webhooks` | `webhooks.repository.mongo.ts` | [ ] |
+- [ ] **1.3.3** Add secret redaction helper
+  - Location: `packages/foundation/kernel/src/utils/redact.ts`
+  - Redact common secret patterns in logs
 
-**Suggested Implementation**:
+- [ ] **1.3.4** Add secret scanning to CI
+  - Add gitleaks or similar to `.github/workflows/ci.yml`
+  - Scan for committed secrets
+
+- [ ] **1.3.5** Document secret rotation procedures
+  - Location: `docs/operations/secret-rotation.md`
+  - How to rotate JWT keys, encryption keys, API keys
+
+**Definition of Done**:
+- ✅ No secrets found in logs
+- ✅ Error responses don't expose secrets
+- ✅ Secret scanning running in CI
+- ✅ Secret rotation documented
+
+---
+
+## Phase 2: Quality Foundation (Week 2-3) ✅
+
+**Why Second**: Can't confidently deploy without comprehensive test coverage.
+
+---
+
+### 2.1 Complete Test Coverage for Untested Modules
+
+**Priority**: 🔴 CRITICAL
+**Status**: ❌ 7 modules with ZERO tests
+**Estimated Time**: 7-10 days
+**Assignee**: ___________
+
+**Problem**:
+7 out of 15 modules have ZERO tests: `ai`, `audit`, `media`, `notify`, `pdf`, `settings`, `storage`
+
+**Impact**: Cannot safely refactor or deploy these modules without test coverage.
+
+**Module Testing Checklist**:
+
+#### 2.1.1 Settings Module Tests (Day 1)
+- [ ] **Location**: `packages/modules/settings/src/__tests__/`
+- [ ] Create `schemas.test.ts` - Zod schema validation tests
+- [ ] Create `errors.test.ts` - Error catalog tests
+- [ ] Create `constants.test.ts` - Constants validation
+- [ ] Create `service/settings.test.ts` - getSetting, updateSetting, listSettings
+- [ ] Create `data/settings.repository.test.ts` - CRUD operations
+- [ ] **Target**: 50+ tests minimum
+
+#### 2.1.2 Storage Module Tests (Day 2)
+- [ ] **Location**: `packages/modules/storage/src/__tests__/`
+- [ ] Create `schemas.test.ts` - Upload request validation
+- [ ] Create `errors.test.ts` - Storage error codes
+- [ ] Create `service/upload.test.ts` - Upload flow with mocked S3
+- [ ] Create `service/download.test.ts` - Download and presigned URL generation
+- [ ] Create `data/files.repository.test.ts` - File metadata CRUD
+- [ ] **Target**: 60+ tests minimum
+
+#### 2.1.3 Audit Module Tests (Day 3)
+- [ ] **Location**: `packages/modules/audit/src/__tests__/`
+- [ ] Create `schemas.test.ts` - Audit log schemas
+- [ ] Create `service/log.test.ts` - createAuditLog with context
+- [ ] Create `service/query.test.ts` - listAuditLogs with filtering
+- [ ] Create `data/audit-logs.repository.test.ts` - Append-only operations
+- [ ] Test tenant isolation in audit logs
+- [ ] **Target**: 50+ tests minimum
+
+#### 2.1.4 Notify Module Tests (Day 4-5)
+- [ ] **Location**: `packages/modules/notify/src/__tests__/`
+- [ ] Create `schemas.test.ts` - Notification schemas
+- [ ] Create `service/notify.test.ts` - sendNotification with providers
+- [ ] Create `service/preferences.test.ts` - User notification preferences
+- [ ] Create `data/notifications.repository.test.ts` - Notification CRUD
+- [ ] Test email provider integration (mocked)
+- [ ] Test SMS provider integration (mocked)
+- [ ] **Target**: 70+ tests minimum
+
+#### 2.1.5 AI Module Tests (Day 6)
+- [ ] **Location**: `packages/modules/ai/src/__tests__/`
+- [ ] Create `schemas.test.ts` - AI request/response schemas
+- [ ] Create `service/ai.test.ts` - AI service calls (mocked)
+- [ ] Create `service/prompts.test.ts` - Prompt template rendering
+- [ ] Test OpenAI integration (mocked)
+- [ ] Test error handling for API failures
+- [ ] **Target**: 50+ tests minimum
+
+#### 2.1.6 Media Module Tests (Day 7)
+- [ ] **Location**: `packages/modules/media/src/__tests__/`
+- [ ] Create `schemas.test.ts` - Media processing schemas
+- [ ] Create `service/process.test.ts` - Image transformations
+- [ ] Create `data/media.repository.test.ts` - Media metadata CRUD
+- [ ] Test image resize/crop operations
+- [ ] Test video processing (if applicable)
+- [ ] **Target**: 60+ tests minimum
+
+#### 2.1.7 PDF Module Tests (Day 8)
+- [ ] **Location**: `packages/modules/pdf/src/__tests__/`
+- [ ] Create `schemas.test.ts` - PDF generation schemas
+- [ ] Create `service/generate.test.ts` - PDF generation from templates
+- [ ] Create `service/templates.test.ts` - Template rendering
+- [ ] Test PDF generation with mocked library
+- [ ] Test error handling for template errors
+- [ ] **Target**: 50+ tests minimum
+
+**Testing Standards** (Apply to All Modules):
+1. Test happy paths and error cases
+2. Test tenant isolation (verify `tenantFilter()` usage)
+3. Test validation (Zod schemas)
+4. Test repository operations (CRUD)
+5. Test service layer business logic
+6. Mock external dependencies (S3, Stripe, OpenAI, etc.)
+7. Minimum 80% code coverage per module
+
+**Verification**:
+```bash
+# Run all tests
+pnpm test
+
+# Run specific module tests
+pnpm --filter @unisane/settings test
+pnpm --filter @unisane/storage test
+# ... etc
+
+# Check coverage
+pnpm test:coverage
+```
+
+**Definition of Done**:
+- ✅ All 7 modules have comprehensive test suites
+- ✅ Minimum 50 tests per module
+- ✅ Service layer fully tested
+- ✅ Repository layer fully tested
+- ✅ All tests passing
+- ✅ Code coverage ≥80% for each module
+
+---
+
+### 2.2 Add Service Layer Tests for Tested Modules
+
+**Priority**: 🟡 HIGH
+**Status**: ❌ Not Started (0%)
+**Estimated Time**: 3-4 days
+**Assignee**: ___________
+
+**Problem**:
+8 modules have basic tests (schemas, errors, constants) but **NO service layer tests**.
+
+**Modules Needing Service Tests**:
+- `auth` (3 test files, need service tests)
+- `billing` (3 test files, need service tests)
+- `credits` (3 test files, need service tests)
+- `flags` (3 test files, need service tests)
+- `identity` (3 test files, need service tests)
+- `tenants` (3 test files, need service tests)
+- `usage` (3 test files, need service tests)
+- `webhooks` (3 test files, need service tests)
+
+**Tasks**:
+
+- [ ] **2.2.1** Auth Module Service Tests
+  - Test `signup()`, `signin()`, `signout()`, `resetPassword()`
+  - Test OTP flow, phone verification
+  - Test token generation and validation
+  - Target: 80+ new tests
+
+- [ ] **2.2.2** Billing Module Service Tests
+  - Test `subscribe()`, `cancelSubscription()`, `updatePaymentMethod()`
+  - Test webhook handlers (mocked Stripe)
+  - Test invoice generation
+  - Target: 80+ new tests
+
+- [ ] **2.2.3** Credits Module Service Tests
+  - Test `deductCredits()`, `addCredits()`, `getBalance()`
+  - Test ledger operations and balance calculations
+  - Test credit expiration logic
+  - Target: 60+ new tests
+
+- [ ] **2.2.4** Flags Module Service Tests
+  - Test `getFlag()`, `evaluateFlag()`, `createFlag()`
+  - Test flag overrides and rollout percentages
+  - Test tenant-specific flag values
+  - Target: 60+ new tests
+
+- [ ] **2.2.5** Identity Module Service Tests
+  - Test `createUser()`, `updateUser()`, `deleteUser()`
+  - Test membership management
+  - Test API key generation and validation
+  - Target: 100+ new tests
+
+- [ ] **2.2.6** Tenants Module Service Tests
+  - Test `createTenant()`, `switchTenant()`, `deleteTenant()`
+  - Test slug validation and uniqueness
+  - Test tenant isolation
+  - Target: 70+ new tests
+
+- [ ] **2.2.7** Usage Module Service Tests
+  - Test `recordUsage()`, `getUsageStats()`, `checkLimit()`
+  - Test usage aggregation
+  - Test limit enforcement
+  - Target: 60+ new tests
+
+- [ ] **2.2.8** Webhooks Module Service Tests
+  - Test `createWebhook()`, `deliverWebhook()`, `retryWebhook()`
+  - Test signature generation
+  - Test retry logic and exponential backoff
+  - Target: 70+ new tests
+
+**Definition of Done**:
+- ✅ All 8 modules have service layer tests
+- ✅ 60-100 new tests per module
+- ✅ All business logic covered
+- ✅ All tests passing
+
+---
+
+### 2.3 Fix CI Configuration to Block on Test Failures
+
+**Priority**: 🔴 CRITICAL
+**Status**: ❌ Bug exists (tests run with continue-on-error: true)
+**Estimated Time**: 1 hour
+**Assignee**: ___________
+
+**Problem**:
+Tests run with `continue-on-error: true` in `.github/workflows/ci.yml` line 137. This means test failures don't block CI, allowing broken code to be merged.
+
+**Impact**: Broken code can be merged to main branch without anyone noticing.
+
+**Tasks**:
+
+- [ ] **2.3.1** Remove continue-on-error from test job
+  - Location: `.github/workflows/ci.yml` line 138
+  - Remove: `continue-on-error: true`
+
+- [ ] **2.3.2** Ensure all tests are passing before making this change
+  - Run: `pnpm test` locally
+  - Fix any failing tests first
+
+- [ ] **2.3.3** Update CI to fail on test failures
+  - Verify CI fails when tests fail
+  - Test by intentionally breaking a test
+
+- [ ] **2.3.4** Add test failure notifications
+  - Notify on Slack/Discord when CI fails
+  - Add GitHub status check to block merges
+
+**Before**:
+```yaml
+- name: Run tests
+  run: pnpm test
+  continue-on-error: true  # ❌ This is wrong!
+```
+
+**After**:
+```yaml
+- name: Run tests
+  run: pnpm test
+  # No continue-on-error - CI will fail if tests fail ✅
+```
+
+**Verification**:
+```bash
+# Create a failing test
+# Push to a branch
+# Verify CI fails and blocks merge
+```
+
+**Definition of Done**:
+- ✅ `continue-on-error: true` removed
+- ✅ All tests passing before removal
+- ✅ CI fails when tests fail
+- ✅ GitHub merge blocked when CI fails
+
+---
+
+### 2.4 Add Coverage Thresholds to CI
+
+**Priority**: 🟢 MEDIUM
+**Status**: ❌ Not Started
+**Estimated Time**: 2 hours
+**Assignee**: ___________
+
+**Problem**:
+No coverage enforcement. Code coverage could decrease over time.
+
+**Tasks**:
+
+- [ ] **2.4.1** Configure coverage thresholds
+  - Add to `vitest.config.ts` or `jest.config.js`
+  - Set thresholds: 80% statements, 80% branches, 80% functions, 80% lines
+
+- [ ] **2.4.2** Add coverage job to CI
+  - Generate coverage reports in CI
+  - Fail if coverage below thresholds
+
+- [ ] **2.4.3** Add coverage badge to README
+  - Use Codecov or similar
+  - Display coverage percentage
+
+- [ ] **2.4.4** Set per-package thresholds
+  - Higher thresholds for kernel/gateway (90%)
+  - Standard thresholds for modules (80%)
+
+**Definition of Done**:
+- ✅ Coverage thresholds configured
+- ✅ CI fails when coverage below threshold
+- ✅ Coverage badge in README
+- ✅ Per-package thresholds enforced
+
+---
+
+## Phase 3: Production Hardening (Week 3-4) 🛡️
+
+**Why Third**: With security fixed and tests in place, we can safely refactor and harden.
+
+---
+
+### 3.1 Fix Rate Limiting Policy Duplication (SSOT Break)
+
+**Priority**: 🟡 HIGH
+**Status**: ⚠️ Partial (80% - works but has duplication)
+**Estimated Time**: 1-2 days
+**Assignee**: ___________
+
+**Problem**:
+Rate limit policies are duplicated between:
+1. `OpMeta.rateLimitPolicy` (contract metadata)
+2. Gateway middleware configuration
+
+This breaks Single Source of Truth principle.
+
+**Impact**: Inconsistent rate limiting, harder to maintain, risk of config drift.
+
+**Tasks**:
+
+- [ ] **3.1.1** Audit rate limit configuration locations
+  - Find all places rate limits are defined
+  - Document current duplication
+
+- [ ] **3.1.2** Choose single source of truth
+  - **Recommendation**: Use OpMeta as SSOT (already defined in contracts)
+  - Remove from middleware config
+
+- [ ] **3.1.3** Update middleware to read from OpMeta
+  - Middleware should read rate limit policy from OpMeta
+  - No hardcoded rate limits in middleware
+
+- [ ] **3.1.4** Add validation for rate limit policies
+  - Ensure all endpoints have rate limit defined
+  - Warn if missing rate limit policy
+
+- [ ] **3.1.5** Update documentation
+  - Document how to configure rate limits (in OpMeta only)
+  - Document default rate limit policy
+
+**Definition of Done**:
+- ✅ Rate limits only defined in one place (OpMeta)
+- ✅ Middleware reads from OpMeta
+- ✅ No duplication anywhere
+- ✅ Documentation updated
+
+---
+
+### 3.2 Verify Pagination Consistency Across Modules
+
+**Priority**: 🟢 MEDIUM
+**Status**: ⚠️ Partial (70% - cursor exists, not verified everywhere)
+**Estimated Time**: 1-2 days
+**Assignee**: ___________
+
+**Problem**:
+Cursor-based pagination exists but not verified across all modules. Need to ensure no `.skip()` usage anywhere.
+
+**Tasks**:
+
+- [ ] **3.2.1** Audit all list operations in all 15 modules
+  - Find all `list*`, `find*`, `query*` methods
+  - Verify cursor-based pagination used
+
+- [ ] **3.2.2** Search for .skip() usage
+  - Run: `grep -r "\.skip(" packages/modules/`
+  - Remove any `.skip()` calls found
+
+- [ ] **3.2.3** Standardize pagination response format
+  - Ensure all paginated responses have: `{ items, nextCursor, hasMore }`
+  - Document pagination format
+
+- [ ] **3.2.4** Add pagination helper utilities
+  - Location: `packages/foundation/kernel/src/database/pagination.ts`
+  - Reusable cursor encoding/decoding
+
+- [ ] **3.2.5** Update SDK to support cursor pagination
+  - Generated hooks should handle pagination
+  - Add `useInfinite*` hooks for infinite scroll
+
+**Definition of Done**:
+- ✅ All list operations use cursor-based pagination
+- ✅ No `.skip()` usage found anywhere
+- ✅ Consistent pagination response format
+- ✅ Pagination utilities available
+- ✅ SDK supports cursor pagination
+
+---
+
+### 3.3 Complete Circuit Breaker Integration for External Services
+
+**Priority**: 🟡 HIGH
+**Status**: ⚠️ Partial (utilities exist, not fully integrated)
+**Estimated Time**: 2-3 days
+**Assignee**: ___________
+
+**Problem**:
+Circuit breaker utilities exist but external service calls aren't wrapped yet.
+
+**Tasks**:
+
+- [ ] **3.3.1** Wrap Stripe API calls with circuit breaker
+  - Location: `packages/modules/billing/src/service/`
+  - Wrap all Stripe SDK calls
+  - Configure fallback: queue & retry
+
+- [ ] **3.3.2** Wrap email provider calls
+  - Location: `packages/modules/notify/src/service/`
+  - Wrap Resend/SendGrid API calls
+  - Configure fallback: queue for retry
+
+- [ ] **3.3.3** Wrap storage provider calls
+  - Location: `packages/modules/storage/src/service/`
+  - Wrap S3/Cloud Storage operations
+  - Configure fallback: return error (no retry)
+
+- [ ] **3.3.4** Wrap AI provider calls
+  - Location: `packages/modules/ai/src/service/`
+  - Wrap OpenAI/Anthropic API calls
+  - Configure fallback: return error with fallback message
+
+- [ ] **3.3.5** Add circuit breaker metrics
+  - Expose circuit state in health endpoint
+  - Log circuit state changes
+  - Alert when circuit opens
+
+- [ ] **3.3.6** Document circuit breaker behavior
+  - Document failure modes for each service
+  - Document fallback strategies
+  - Document how to manually reset circuits
+
+**Definition of Done**:
+- ✅ All external service calls wrapped with circuit breaker
+- ✅ Appropriate fallback strategies configured
+- ✅ Circuit state exposed in metrics
+- ✅ Documented behavior and fallbacks
+
+---
+
+### 3.4 Add Missing Integration Tests
+
+**Priority**: 🟢 MEDIUM
+**Status**: ❌ Not Started
+**Estimated Time**: 2-3 days
+**Assignee**: ___________
+
+**Problem**:
+Unit tests exist but integration tests are missing. Need tests that verify cross-module workflows.
+
+**Integration Test Scenarios**:
+
+- [ ] **3.4.1** Sign up → Verify email → Create tenant flow
+  - Test auth + identity + tenants integration
+  - Verify all database records created correctly
+
+- [ ] **3.4.2** Subscribe to plan → Payment → Credits added flow
+  - Test billing + credits integration
+  - Verify Stripe webhook handling
+
+- [ ] **3.4.3** File upload → Process → Serve flow
+  - Test storage + media integration
+  - Verify file processing and serving
+
+- [ ] **3.4.4** Invite member → Accept → Permissions granted flow
+  - Test identity + tenants + notify integration
+  - Verify invitation email sent
+
+- [ ] **3.4.5** API key creation → API call → Audit log flow
+  - Test identity + gateway + audit integration
+  - Verify authentication and logging
+
+- [ ] **3.4.6** Usage recording → Limit check → Billing flow
+  - Test usage + credits + billing integration
+  - Verify limit enforcement
+
+**Testing Approach**:
+- Use real database (MongoMemoryServer or test instance)
+- Mock external services (Stripe, email, etc.)
+- Test end-to-end flow including database operations
+- Verify data consistency across modules
+
+**Definition of Done**:
+- ✅ 6+ integration test scenarios implemented
+- ✅ All tests passing
+- ✅ Database operations verified
+- ✅ Cross-module interactions tested
+
+---
+
+### 3.5 Add Enhanced Health Checks with Dependencies
+
+**Priority**: 🟢 MEDIUM
+**Status**: ⚠️ Partial (basic health check exists)
+**Estimated Time**: 1 day
+**Assignee**: ___________
+
+**Problem**:
+Current health check only pings. Need dependency checks for MongoDB, Redis, etc.
+
+**Tasks**:
+
+- [ ] **3.5.1** Add MongoDB connectivity check
+  - Ping database with timeout
+  - Return latency in milliseconds
+
+- [ ] **3.5.2** Add Redis connectivity check
+  - Ping Redis with timeout
+  - Return latency in milliseconds
+
+- [ ] **3.5.3** Create separate endpoints
+  - `/health/live` - Basic liveness (always returns 200)
+  - `/health/ready` - Full readiness (checks all dependencies)
+
+- [ ] **3.5.4** Add structured health response
+  ```json
+  {
+    "status": "healthy",
+    "checks": {
+      "mongodb": { "status": "up", "latencyMs": 12 },
+      "redis": { "status": "up", "latencyMs": 3 }
+    },
+    "version": "1.0.0",
+    "uptime": 3600
+  }
+  ```
+
+- [ ] **3.5.5** Add timeout handling
+  - Each check should timeout after 5s
+  - Return degraded status if checks timeout
+
+**Definition of Done**:
+- ✅ MongoDB and Redis checks implemented
+- ✅ Separate live/ready endpoints
+- ✅ Structured JSON response
+- ✅ Timeout handling working
+
+---
+
+### 3.6 Add Module Boundary Safety Nets
+
+**Priority**: 🟢 MEDIUM
+**Status**: ❌ Not Started
+**Estimated Time**: 1-2 days
+**Assignee**: ___________
+
+**Problem**:
+Modules can currently import from each other's internals, and dependencies between modules are implicit. This makes refactoring risky and module boundaries unclear.
+
+**Impact**:
+- Hard to understand what's "public API" vs internal implementation
+- Risk of breaking changes when refactoring internals
+- Unclear module dependencies make testing harder
+- Future multi-platform refactoring will be more difficult
+
+**Tasks**:
+
+- [ ] **3.6.1** Add explicit module boundaries via index.ts exports
+  - Only export public API from each module's `src/index.ts`
+  - Hide internal implementation (repositories, mappers, infra adapters)
+  - Verify no modules import from other modules' internals (`/domain/`, `/data/`, `/infra/`)
+  - Add TypeScript path mapping to enforce boundaries
+
+- [ ] **3.6.2** Add dependency documentation to each module
+  - Create `README.md` in each module package root
+  - Document required dependencies (which modules it imports)
+  - Document context requirements (AsyncLocalStorage, tenant context, etc.)
+  - Document optional features (credits, webhooks, etc.)
+  - Document exported public API
+
+- [ ] **3.6.3** Make optional dependencies truly optional
+  - Use dynamic imports for optional features (credits, webhooks)
+  - Add feature flags in config (`BILLING_ENABLE_CREDITS`, etc.)
+  - Allow modules to work gracefully without all dependencies
+  - Add runtime checks for optional dependencies
+
+**Implementation Guide**:
+
+**Step 1: Explicit Module Boundaries**
 
 ```typescript
-// kernel/src/database/base-repository.ts
-export abstract class MongoRepository<TDoc, TView> {
-  protected abstract collectionName: string;
-  protected abstract toView(doc: TDoc): TView;
-  protected abstract toDoc(view: Partial<TView>): Partial<TDoc>;
+// ✅ Good: packages/modules/billing/src/index.ts
+// ONLY export public API
+export { BillingService } from './domain/billing.service';
+export type { Subscription, Invoice, PaymentMethod } from './domain/types';
+export type { BillingConfig } from './config';
 
-  protected col() {
-    return col<TDoc>(this.collectionName);
-  }
+// ❌ Don't export internals
+// export { BillingRepository } from './data/repository';  // NO!
+// export { StripeAdapter } from './infra/stripe-adapter';  // NO!
+// export { mapSubscriptionToDTO } from './mappers';  // NO!
+```
 
-  async findById(id: string): Promise<TView | null> {
-    const doc = await this.col().findOne({ _id: maybeObjectId(id) });
-    return doc ? this.toView(doc) : null;
+**Step 2: Module README Template**
+
+```markdown
+# @unisane/billing
+
+Business module for managing subscriptions and payments.
+
+## Public API
+
+### Services
+- `BillingService` - Main service for billing operations
+
+### Types
+- `Subscription` - Subscription entity
+- `Invoice` - Invoice entity
+- `PaymentMethod` - Payment method details
+
+## Dependencies
+
+### Required
+- `@unisane/kernel` - Logger, errors, config utilities
+- `@unisane/tenants` - Tenant context and repository
+- `@unisane/settings` - Billing configuration storage
+
+### Optional
+- `@unisane/credits` - For credit grants after payment (enable with `BILLING_ENABLE_CREDITS=true`)
+- `@unisane/webhooks` - For payment event webhooks (enable with `BILLING_ENABLE_WEBHOOKS=true`)
+
+## Context Requirements
+
+- Requires multi-tenant context via AsyncLocalStorage (`getTenantId()`)
+- Requires Stripe API credentials in environment (`STRIPE_SECRET_KEY`)
+
+## Configuration
+
+```env
+STRIPE_SECRET_KEY=sk_test_...
+BILLING_ENABLE_CREDITS=true    # Optional: Enable credit grants
+BILLING_ENABLE_WEBHOOKS=true   # Optional: Enable webhook events
+```
+
+## Usage
+
+```typescript
+import { BillingService } from '@unisane/billing';
+
+const billingService = new BillingService();
+await billingService.createSubscription({ planId: 'pro', tenantId: 'tenant_123' });
+```
+```
+
+**Step 3: Optional Dependencies**
+
+```typescript
+// packages/modules/billing/src/domain/billing.service.ts
+import { getConfig } from '@unisane/kernel';
+
+export class BillingService {
+  private config = getConfig();
+
+  async processPayment(data: PaymentData) {
+    const payment = await this.stripe.charge(data);
+
+    // Credits are optional - use dynamic import
+    if (this.config.features.billing?.enableCredits) {
+      try {
+        const { grant } = await import('@unisane/credits');
+        await grant(payment.amount * 10);
+      } catch (err) {
+        this.logger.warn('Credits module not available', { err });
+      }
+    }
+
+    // Webhooks are optional
+    if (this.config.features.billing?.enableWebhooks) {
+      try {
+        const { notify } = await import('@unisane/webhooks');
+        await notify('payment.success', { paymentId: payment.id });
+      } catch (err) {
+        this.logger.warn('Webhooks module not available', { err });
+      }
+    }
+
+    return payment;
   }
-  // ... common operations
 }
 ```
 
----
+**Verification**:
 
-### 10. [P1-006] Centralize Collection Names
+```bash
+# Check no modules import internals (should only find index imports)
+grep -r "from '@unisane/[^']*/" packages/modules/ | grep -v "from '@unisane/[^/]*'"
 
-**Problem**: Collection names as magic strings scattered across codebase.
+# Expected: No results (all imports should be from package root, not subpaths)
 
-**Location**: Various repository files
+# Check all modules have README
+find packages/modules -name "README.md" -type f | wc -l
+# Expected: 15 (one per module)
 
-**Current**:
-
-```typescript
-col("authcredentials"); // auth module
-col("users"); // identity module
-col("tenants"); // tenants module
-// etc.
+# Verify exports only from index.ts
+for module in packages/modules/*/; do
+  echo "Checking $module"
+  grep -l "export.*from.*/" "$module/src/index.ts" && echo "  ⚠️  Re-exports internals"
+done
 ```
 
-**Tasks**:
-
-- [ ] Create `COLLECTIONS` constant in kernel
-- [ ] Add TypeScript type for collection names
-- [ ] Document all collections
-
-**Module Update Checklist** (update `col()` calls):
-
-| # | Module | Collection(s) | Status |
-|---|--------|---------------|--------|
-| 1 | `auth` | `authcredentials` | [ ] |
-| 2 | `identity` | `users`, `memberships`, `api_keys` | [ ] |
-| 3 | `tenants` | `tenants` | [ ] |
-| 4 | `billing` | `payments`, `invoices`, `subscriptions`, `tenant_integrations` | [ ] |
-| 5 | `credits` | `credit_ledger` | [ ] |
-| 6 | `flags` | `feature_flags`, `flag_overrides` | [ ] |
-| 7 | `settings` | `settings_kv` | [ ] |
-| 8 | `storage` | `files` | [ ] |
-| 9 | `audit` | `audit_logs` | [ ] |
-| 10 | `notify` | `inapp_notifications`, `notification_preferences` | [ ] |
-| 11 | `usage` | `usage_records` | [ ] |
-| 12 | `webhooks` | `webhooks`, `webhook_events` | [ ] |
-| 13 | `kernel` | `_outbox`, `_dead_letter` | [ ] |
-
-**Implementation**:
-
-```typescript
-// kernel/src/database/collections.ts
-export const COLLECTIONS = {
-  // Auth
-  AUTH_CREDENTIALS: "authcredentials",
-
-  // Identity
-  USERS: "users",
-  MEMBERSHIPS: "memberships",
-  API_KEYS: "api_keys",
-
-  // Tenants
-  TENANTS: "tenants",
-
-  // Billing
-  PAYMENTS: "payments",
-  INVOICES: "invoices",
-  SUBSCRIPTIONS: "subscriptions",
-  TENANT_INTEGRATIONS: "tenant_integrations",
-
-  // Credits
-  CREDIT_LEDGER: "credit_ledger",
-
-  // Flags
-  FEATURE_FLAGS: "feature_flags",
-  FLAG_OVERRIDES: "flag_overrides",
-
-  // Settings
-  SETTINGS_KV: "settings_kv",
-
-  // Storage
-  FILES: "files",
-
-  // Audit
-  AUDIT_LOGS: "audit_logs",
-
-  // Notify
-  INAPP_NOTIFICATIONS: "inapp_notifications",
-  NOTIFICATION_PREFERENCES: "notification_preferences",
-
-  // Usage
-  USAGE_RECORDS: "usage_records",
-
-  // Webhooks
-  WEBHOOKS: "webhooks",
-  WEBHOOK_EVENTS: "webhook_events",
-
-  // Kernel/System
-  OUTBOX: "_outbox",
-  DEAD_LETTER: "_dead_letter",
-} as const;
-
-export type CollectionName = (typeof COLLECTIONS)[keyof typeof COLLECTIONS];
-```
+**Definition of Done**:
+- ✅ All modules only export public API from `src/index.ts`
+- ✅ All modules have `README.md` with dependencies documented
+- ✅ Optional dependencies use dynamic imports
+- ✅ No modules import from other modules' internals
+- ✅ TypeScript compiles without errors
+- ✅ All tests still pass after refactoring
+- ✅ No breaking changes to existing functionality
 
 ---
 
-### 11. [P1-007] Fix Rate Limit Key Collision Risk
+## Phase 4: Production Launch Prep (Week 4-5) 🚀
 
-**Problem**: Rate limit keys may collide if userId/tenantId is undefined.
+**Why Last**: Final polish and verification before production launch.
 
-**Location**: `packages/foundation/gateway/src/middleware/rateLimit.ts`
+---
 
-**Current Key Pattern**:
+### 4.1 Complete Documentation for Production
 
-```typescript
-// Key: rl:{tenantId}:{userId}:{opName}:{windowStart}
-// If userId is undefined: rl:tenant123:undefined:auth.signin:1234567890
-```
+**Priority**: 🟡 HIGH
+**Status**: ⚠️ Partial
+**Estimated Time**: 2-3 days
+**Assignee**: ___________
+
+**Documentation Needed**:
+
+- [ ] **4.1.1** Deployment Guide
+  - Location: `docs/deployment/`
+  - Environment setup (production vs staging)
+  - Database migration procedures
+  - Rollback procedures
+
+- [ ] **4.1.2** Operations Runbooks
+  - Location: `docs/operations/`
+  - How to handle common incidents
+  - Secret rotation procedures
+  - Database backup/restore procedures
+
+- [ ] **4.1.3** Architecture Decision Records (ADRs)
+  - Location: `docs/adr/`
+  - Document why contract-first architecture
+  - Document why AsyncLocalStorage for context
+  - Document why cursor-based pagination
+
+- [ ] **4.1.4** API Documentation
+  - Generate OpenAPI spec
+  - Host API docs (Swagger UI or similar)
+  - Add examples for all endpoints
+
+- [ ] **4.1.5** Security Documentation
+  - Document PII encryption approach
+  - Document authentication flows
+  - Document rate limiting policies
+
+- [ ] **4.1.6** Developer Onboarding Guide
+  - How to set up local environment
+  - How to run tests
+  - How to generate routes/SDK
+  - How to add new modules
+
+**Definition of Done**:
+- ✅ All documentation written and reviewed
+- ✅ Documentation hosted and accessible
+- ✅ New team members can onboard from docs alone
+
+---
+
+### 4.2 Production Environment Setup
+
+**Priority**: 🔴 CRITICAL
+**Status**: ❌ Not Started
+**Estimated Time**: 2 days
+**Assignee**: ___________
 
 **Tasks**:
 
-- [ ] Add validation for key components
-- [ ] Use sentinel values for anonymous users (e.g., `anon` or IP hash)
-- [ ] Add key format documentation
-- [ ] Add tests for edge cases
+- [ ] **4.2.1** Set up production MongoDB cluster
+  - Configure replica set for high availability
+  - Set up automated backups
+  - Configure monitoring and alerts
+
+- [ ] **4.2.2** Set up production Redis/Upstash
+  - Configure persistence (if needed)
+  - Set up monitoring
+  - Configure alerts for connection issues
+
+- [ ] **4.2.3** Configure production secrets
+  - Generate production encryption keys
+  - Generate JWT keys
+  - Store in secrets manager (AWS Secrets Manager, Vault, etc.)
+
+- [ ] **4.2.4** Set up production deployment
+  - Choose deployment platform (Vercel, AWS, GCP, etc.)
+  - Configure CI/CD for automatic deployments
+  - Set up staging environment
+
+- [ ] **4.2.5** Configure monitoring and observability
+  - Set up application monitoring (Datadog, New Relic, etc.)
+  - Set up error tracking (Sentry, Rollbar, etc.)
+  - Set up log aggregation
+  - Configure alerts for critical errors
+
+- [ ] **4.2.6** Set up CDN and caching
+  - Configure CDN for static assets
+  - Configure API response caching where appropriate
+
+- [ ] **4.2.7** Performance testing
+  - Load test critical endpoints
+  - Verify database query performance
+  - Set performance budgets
+
+**Definition of Done**:
+- ✅ Production infrastructure provisioned
+- ✅ Secrets stored securely
+- ✅ Monitoring and alerts configured
+- ✅ Performance validated
 
 ---
 
-### 12. [P1-008] Add Request Validation Middleware for Path Params
+### 4.3 Security Audit and Penetration Testing
 
-**Problem**: Path parameters validated in Zod but not consistently enforced.
-
-**Location**: Gateway layer
+**Priority**: 🔴 CRITICAL
+**Status**: ❌ Not Started
+**Estimated Time**: 2-3 days
+**Assignee**: ___________
 
 **Tasks**:
 
-- [ ] Ensure all path params validated before handler
-- [ ] Add consistent error responses for invalid params
-- [ ] Document param validation patterns
+- [ ] **4.3.1** Run automated security scans
+  - npm audit / pnpm audit
+  - OWASP dependency check
+  - Snyk or similar
+
+- [ ] **4.3.2** Manual security review
+  - Review authentication flows
+  - Review authorization checks
+  - Review SQL/NoSQL injection risks
+  - Review XSS risks
+
+- [ ] **4.3.3** Test tenant isolation
+  - Attempt to access other tenant's data
+  - Verify tenantFilter() used everywhere
+  - Test tenant switching edge cases
+
+- [ ] **4.3.4** Test rate limiting
+  - Verify rate limits enforced
+  - Test rate limit bypass attempts
+
+- [ ] **4.3.5** Test session management
+  - Verify session expiration
+  - Test session fixation attacks
+  - Test CSRF protection
+
+- [ ] **4.3.6** Run penetration testing
+  - Hire external security firm (recommended)
+  - Or use automated pen testing tools
+  - Fix all critical/high findings
+
+**Definition of Done**:
+- ✅ All security scans passing
+- ✅ No critical or high vulnerabilities
+- ✅ Tenant isolation verified
+- ✅ Penetration test completed and findings fixed
 
 ---
 
-## P2 - Medium Priority (Fix Within Month)
+### 4.4 Performance Optimization
 
-### 13. [P2-001] Improve Generated Code Formatting
-
-**Problem**: Generated code has awkward formatting.
-
-**Location**: `packages/tooling/devtools/src/generators/routes/render.ts`
-
-**Current Output**:
-
-```typescript
-async ({ req, params, body, ctx, requestId }) => {const __body: z.output<typeof __BodySchema_POST> = body!;
-```
+**Priority**: 🟢 MEDIUM
+**Status**: ❌ Not Started
+**Estimated Time**: 2-3 days
+**Assignee**: ___________
 
 **Tasks**:
 
-- [ ] Add proper newlines after arrow function
-- [ ] Indent body code properly
-- [ ] Consider using Prettier API for formatting
-- [ ] Add formatting tests
+- [ ] **4.4.1** Database query optimization
+  - Add indexes for common queries
+  - Verify no N+1 query problems
+  - Use explain plans to optimize slow queries
+
+- [ ] **4.4.2** Add database query instrumentation
+  - Log slow queries (>100ms)
+  - Add database metrics to monitoring
+
+- [ ] **4.4.3** API response caching
+  - Cache frequently accessed data
+  - Implement cache invalidation strategy
+  - Add cache hit/miss metrics
+
+- [ ] **4.4.4** Bundle size optimization
+  - Analyze client bundle size
+  - Add code splitting where appropriate
+  - Lazy load non-critical modules
+
+- [ ] **4.4.5** Image optimization
+  - Verify Next.js Image component used
+  - Configure image CDN
+  - Add appropriate image formats (WebP, AVIF)
+
+**Definition of Done**:
+- ✅ All critical endpoints respond in <500ms (p95)
+- ✅ No slow queries (all queries <100ms)
+- ✅ Client bundle size <500kb gzipped
+- ✅ Images optimized and lazy loaded
 
 ---
 
-### 14. [P2-002] Add Schema Registry for Events
+### 4.5 Final Production Readiness Checklist
 
-**Problem**: Event schemas registered at runtime, no central registry.
+**Priority**: 🔴 CRITICAL
+**Status**: ❌ Not Started
+**Estimated Time**: 1 day
+**Assignee**: ___________
 
-**Location**: `packages/foundation/kernel/src/events/`
+**Go/No-Go Checklist**:
 
-**Tasks**:
+#### Security ✅
+- [ ] PII encryption implemented and verified
+- [ ] All security headers present (A+ rating on securityheaders.com)
+- [ ] Secrets audit complete, no secrets in logs
+- [ ] Security scan passing (no critical/high vulnerabilities)
+- [ ] Penetration test complete and findings fixed
 
-- [ ] Create event schema registry file
-- [ ] Document all event types and payloads
-- [ ] Add compile-time event type checking
-- [ ] Generate event documentation
+#### Quality ✅
+- [ ] All 15 modules have test coverage ≥80%
+- [ ] 1000+ tests passing
+- [ ] CI blocking on test failures
+- [ ] Integration tests passing
+- [ ] E2E tests passing
 
----
+#### Reliability ✅
+- [ ] Rate limiting working and consistent (no duplication)
+- [ ] Pagination standardized (cursor-based everywhere)
+- [ ] Circuit breakers integrated for external services
+- [ ] Health checks with dependency monitoring
+- [ ] Error handling comprehensive
 
-### 15. [P2-003] Standardize Null Handling Conventions
+#### Operations ✅
+- [ ] Production infrastructure provisioned
+- [ ] Monitoring and alerts configured
+- [ ] Database backups configured
+- [ ] Documentation complete (deployment, operations, runbooks)
+- [ ] Rollback procedures documented and tested
 
-**Problem**: Inconsistent null vs throw patterns across codebase.
+#### Performance ✅
+- [ ] Load testing complete (meets SLAs)
+- [ ] Database queries optimized (all <100ms)
+- [ ] API endpoints fast (p95 <500ms)
+- [ ] Client bundle optimized (<500kb)
 
-**Examples**:
+#### Compliance ✅
+- [ ] GDPR compliance reviewed (if applicable)
+- [ ] Data retention policies documented
+- [ ] Privacy policy updated
+- [ ] Terms of service updated
 
-```typescript
-// Pattern 1: Return null
-if (!row) return null;
-
-// Pattern 2: Throw error
-if (!row) throw new NotFoundError();
-```
-
-**Tasks**:
-
-- [ ] Document when to return null vs throw
-- [ ] Convention: `findX` returns null, `getX` throws
-- [ ] Add linting rule if possible
-
-**Module Audit Checklist**:
-
-| # | Module | Services to Audit | Status |
-|---|--------|-------------------|--------|
-| 1 | `auth` | `signin`, `signup`, `resetVerify`, `otpVerify` | [ ] |
-| 2 | `identity` | `getUser`, `findUserByEmail`, `getMembership` | [ ] |
-| 3 | `tenants` | `getCurrentTenant`, `readTenant`, `findBySlug` | [ ] |
-| 4 | `billing` | `getSubscription`, `getPayment`, `getInvoice` | [ ] |
-| 5 | `credits` | `getBalance`, `getLedgerEntry` | [ ] |
-| 6 | `flags` | `getFlag`, `getFlagValue` | [ ] |
-| 7 | `settings` | `getSetting`, `getSettings` | [ ] |
-| 8 | `storage` | `getFile`, `getFileMetadata` | [ ] |
-| 9 | `audit` | `getAuditEntry` | [ ] |
-| 10 | `notify` | `getNotification`, `getPreferences` | [ ] |
-| 11 | `usage` | `getUsageRecord` | [ ] |
-| 12 | `webhooks` | `getWebhook`, `getWebhookEvent` | [ ] |
-| 13 | `gateway` | `getAuthCtx`, error handlers | [ ] |
-| 14 | `kernel` | `ctx.get()`, `getTenantId()`, `getUserId()` | [ ] |
-
----
-
-### 16. [P2-004] Add Database Transaction Support
-
-**Problem**: Multi-document operations not atomic.
-
-**Location**: Services that update multiple collections
-
-**Example**: Tenant deletion updates multiple collections without transaction.
-
-**Tasks**:
-
-- [ ] Add transaction helper to kernel
-- [ ] Identify operations needing transactions
-- [ ] Wrap critical operations in transactions
-- [ ] Document transaction patterns
-
-**Implementation**:
-
-```typescript
-// kernel/src/database/transactions.ts
-export async function withTransaction<T>(
-  fn: (session: ClientSession) => Promise<T>
-): Promise<T> {
-  const client = getClient();
-  const session = client.startSession();
-  try {
-    session.startTransaction();
-    const result = await fn(session);
-    await session.commitTransaction();
-    return result;
-  } catch (error) {
-    await session.abortTransaction();
-    throw error;
-  } finally {
-    session.endSession();
-  }
-}
-```
+**Final Sign-off**:
+- [ ] Engineering lead approval
+- [ ] Security team approval
+- [ ] Product lead approval
+- [ ] **READY FOR PRODUCTION LAUNCH** 🚀
 
 ---
 
-### 17. [P2-005] Add API Versioning Strategy
+## 📈 Progress Tracking
 
-**Problem**: API versioned in path (`/api/rest/v1/`) but no migration strategy.
+### Overall Progress
 
-**Tasks**:
+| Phase | Status | Progress | Est. Time | Actual Time |
+|-------|--------|----------|-----------|-------------|
+| Phase 1: Security | ⏳ Not Started | 0% | 5-7 days | ___ |
+| Phase 2: Quality | ⏳ Not Started | 0% | 7-10 days | ___ |
+| Phase 3: Hardening | ⏳ Not Started | 0% | 5-7 days | ___ |
+| Phase 4: Launch Prep | ⏳ Not Started | 0% | 3-5 days | ___ |
+| **TOTAL** | **⏳** | **0%** | **3-5 weeks** | **___** |
 
-- [ ] Document versioning policy
-- [ ] Plan v1 → v2 migration path
-- [ ] Add version negotiation (Accept header?)
-- [ ] Add deprecation warning headers
+### Phase Completion
 
-**Questions for you**:
+**Phase 1: Critical Security Fixes** (0/3 complete)
+- [ ] 1.1 PII Encryption Integration
+- [ ] 1.2 Security Headers
+- [ ] 1.3 Secrets Audit
 
-1. What's your API versioning philosophy? (URL path, header, query param?)
-   Ans: we need what scale better and version proof and future proof less chances of braks, but will work smooth with our system. need deep investigation.
-2. How long should old versions be supported?
-   Ans: as max we can.
+**Phase 2: Quality Foundation** (0/4 complete)
+- [ ] 2.1 Complete Test Coverage (7 modules)
+- [ ] 2.2 Service Layer Tests (8 modules)
+- [ ] 2.3 Fix CI Configuration
+- [ ] 2.4 Coverage Thresholds
 
----
+**Phase 3: Production Hardening** (0/6 complete)
+- [ ] 3.1 Fix Rate Limiting Duplication
+- [ ] 3.2 Verify Pagination Consistency
+- [ ] 3.3 Circuit Breaker Integration
+- [ ] 3.4 Integration Tests
+- [ ] 3.5 Enhanced Health Checks
+- [ ] 3.6 Module Boundary Safety Nets
 
-### 18. [P2-006] Add Request/Response Logging Middleware
-
-**Problem**: No structured request/response logging for debugging.
-
-**Tasks**:
-
-- [ ] Log request method, path, duration
-- [ ] Log response status code
-- [ ] Add correlation ID throughout
-- [ ] Make body logging configurable (security)
-- [ ] Add log sampling for high-traffic endpoints
-
----
-
-### 19. [P2-007] Improve Error Messages for Developers
-
-**Problem**: Some errors are generic, hard to debug.
-
-**Example**:
-
-```typescript
-throw new Error("filters must be valid JSON or base64url JSON");
-// Doesn't say which field failed or what was received
-```
-
-**Tasks**:
-
-- [ ] Audit error messages for debugging clarity
-- [ ] Include relevant context in errors
-- [ ] Add error codes for programmatic handling
-- [ ] Create error message style guide
+**Phase 4: Launch Prep** (0/5 complete)
+- [ ] 4.1 Documentation
+- [ ] 4.2 Production Environment
+- [ ] 4.3 Security Audit
+- [ ] 4.4 Performance Optimization
+- [ ] 4.5 Final Readiness Checklist
 
 ---
 
-### 20. [P2-008] Add Soft Delete Consistency
+## 🎯 Success Metrics
 
-**Problem**: Soft delete pattern used but not consistently.
+### Quality Metrics
+- **Test Coverage**: ≥80% across all modules (currently ~50%)
+- **Test Count**: ≥1500 tests (currently ~900)
+- **CI Reliability**: 100% of test failures block merges (currently 0%)
 
-**Current**:
+### Security Metrics
+- **PII Encryption**: 100% of sensitive fields encrypted (currently 0%)
+- **Security Headers**: A+ rating on securityheaders.com (currently C)
+- **Vulnerabilities**: 0 critical/high vulnerabilities
 
-```typescript
-// Some queries filter deletedAt
-$or: [{ deletedAt: null }, { deletedAt: { $exists: false } }];
+### Reliability Metrics
+- **API Latency**: p95 <500ms for all endpoints
+- **Database Queries**: p95 <100ms for all queries
+- **Circuit Breaker**: 100% of external calls wrapped
 
-// Some don't
-```
-
-**Tasks**:
-
-- [ ] Audit all queries for soft delete handling
-- [ ] Create `withSoftDelete()` query helper
-- [ ] Document soft delete conventions
-- [ ] Add hard delete capability for GDPR
-
-**Module Soft Delete Audit Checklist**:
-
-| # | Module | Collections | Needs Soft Delete? | Audit Status |
-|---|--------|-------------|-------------------|--------------|
-| 1 | `auth` | `authcredentials` | Yes (preserve audit trail) | [ ] |
-| 2 | `identity` | `users` | Yes (GDPR, but preserve ID) | [ ] |
-| 3 | `identity` | `memberships` | Yes (audit trail) | [ ] |
-| 4 | `identity` | `api_keys` | Yes (revocation tracking) | [ ] |
-| 5 | `tenants` | `tenants` | Yes (data preservation) | [ ] |
-| 6 | `billing` | `subscriptions` | Yes (billing history) | [ ] |
-| 7 | `billing` | `payments` | No (immutable records) | [ ] |
-| 8 | `billing` | `invoices` | No (immutable records) | [ ] |
-| 9 | `credits` | `credit_ledger` | No (immutable ledger) | [ ] |
-| 10 | `flags` | `feature_flags` | Yes (restore capability) | [ ] |
-| 11 | `flags` | `flag_overrides` | Yes (restore capability) | [ ] |
-| 12 | `settings` | `settings_kv` | Yes (restore capability) | [ ] |
-| 13 | `storage` | `files` | Yes (undelete period) | [ ] |
-| 14 | `audit` | `audit_logs` | No (immutable by design) | [ ] |
-| 15 | `notify` | `inapp_notifications` | Yes (restore capability) | [ ] |
-| 16 | `notify` | `notification_preferences` | Yes | [ ] |
-| 17 | `usage` | `usage_records` | No (immutable metrics) | [ ] |
-| 18 | `webhooks` | `webhooks` | Yes (restore capability) | [ ] |
-| 19 | `webhooks` | `webhook_events` | No (immutable log) | [ ] |
-
-**Query Patterns to Update**:
-- [ ] All `findOne()` calls must filter `deletedAt: null`
-- [ ] All `find()` calls must filter `deletedAt: null`
-- [ ] All `count()` calls must filter `deletedAt: null`
-- [ ] Add `findIncludingDeleted()` for admin purposes
-- [ ] Add `hardDelete()` for GDPR right-to-erasure
+### System Rating
+- **Current**: 9.2/10 (excellent architecture, critical gaps)
+- **Target**: 9.7/10 (production-ready with all gaps filled)
 
 ---
 
-### 21. [P2-009] Add Pagination Consistency
+## 📚 References
 
-**Problem**: Mixed pagination patterns (offset vs cursor).
-
-**Tasks**:
-
-- [ ] Standardize on cursor-based pagination
-- [ ] Remove offset pagination from admin lists
-- [ ] Document pagination patterns
-- [ ] Add pagination helpers to SDK
+- **Verification Report**: `ROADMAP-VERIFICATION-FINDINGS.md` - Detailed analysis of current state
+- **Previous Roadmap**: `ISSUES-ROADMAP-CLEANED.md` - What was claimed vs reality
+- **Architecture Context**: `CLAUDE.md` - AI-friendly architecture documentation
 
 ---
 
-### 22. [P2-010] Add Bulk Operation Support
-
-**Problem**: No bulk insert/update/delete operations.
-
-**Tasks**:
-
-- [ ] Add bulk operations to repository base
-- [ ] Add bulk endpoints where needed (admin operations)
-- [ ] Handle partial failures gracefully
-
----
-
-### 23. [P2-011] Add Field-Level Encryption for Sensitive Data
-
-> **INVESTIGATION RESULT**: Audit completed. Core auth is secure, PII needs encryption.
-
-**Already Secure** ✅:
-- Passwords: Scrypt hash (N=16384, proper parameters)
-- API Keys: SHA-256 hash (plaintext never stored)
-- JWTs: RS256 signing with key rotation
-- OAuth Tokens: Not persisted (good design)
-
-**Needs Encryption** ⚠️:
-| Field | Collection | Risk | Priority |
-|-------|------------|------|----------|
-| `email` | users | PII, GDPR | High |
-| `phone` | users | PII, GDPR | High |
-| `firstName`, `lastName` | users | PII | Medium |
-| `settings.value` | settings_kv | May contain secrets | Medium |
-| webhook payloads | webhook_events | May contain sensitive data | Low |
-
-**Tasks**:
-
-- [ ] Add AES-256-GCM encryption utility to kernel
-- [ ] Add `DATA_ENCRYPTION_KEY` env variable
-- [ ] Encrypt email/phone with deterministic token for search
-- [ ] Add encryption layer to settings repository
-- [ ] Implement key rotation support
-- [ ] Create migration to encrypt existing PII
-- [ ] Document encryption approach
-
-**PII Field Encryption Checklist** (fields requiring encryption):
-
-| # | Module | Collection | Field | Type | Searchable? | Status |
-|---|--------|------------|-------|------|-------------|--------|
-| 1 | `identity` | `users` | `email` | PII | Yes (lookup) | [ ] |
-| 2 | `identity` | `users` | `phone` | PII | Yes (lookup) | [ ] |
-| 3 | `identity` | `users` | `firstName` | PII | No | [ ] |
-| 4 | `identity` | `users` | `lastName` | PII | No | [ ] |
-| 5 | `identity` | `users` | `avatarUrl` | Low risk | No | [ ] |
-| 6 | `identity` | `api_keys` | N/A (already hashed) | Secure | N/A | ✅ |
-| 7 | `auth` | `authcredentials` | N/A (password hashed) | Secure | N/A | ✅ |
-| 8 | `tenants` | `tenants` | `billingEmail` | PII | Yes (lookup) | [ ] |
-| 9 | `tenants` | `tenants` | `billingAddress` | PII | No | [ ] |
-| 10 | `billing` | `payments` | `cardLast4` | Low risk | No | [ ] |
-| 11 | `billing` | `invoices` | `customerEmail` | PII | No | [ ] |
-| 12 | `settings` | `settings_kv` | `value` (when sensitive) | Variable | No | [ ] |
-| 13 | `notify` | `notification_preferences` | `email` | PII | Yes | [ ] |
-| 14 | `notify` | `notification_preferences` | `phone` | PII | Yes | [ ] |
-| 15 | `webhooks` | `webhook_events` | `payload` (may contain PII) | Variable | No | [ ] |
-| 16 | `audit` | `audit_logs` | `metadata` (may contain PII) | Variable | No | [ ] |
-
-**Encryption Strategy by Field Type**:
-
-| Field Type | Encryption Method | Search Token |
-|------------|-------------------|--------------|
-| Email (searchable) | AES-256-GCM | SHA-256(normalize(email)) |
-| Phone (searchable) | AES-256-GCM | SHA-256(normalize(phone)) |
-| Names (display only) | AES-256-GCM | None |
-| Settings (variable) | AES-256-GCM (flagged keys only) | None |
-| Payloads (audit) | AES-256-GCM | None |
-
-**Recommended Implementation**:
-```typescript
-// Searchable encryption pattern for email/phone
-{
-  email_encrypted: "base64(iv+tag+ciphertext)",  // AES-256-GCM
-  email_search_token: "sha256(normalize(email))", // For lookups
-}
-```
-
----
-
-### 24. [P2-012] Add Webhook Signature Verification
-
-**Problem**: Need to verify incoming webhooks are authentic.
-
-**Location**: Webhook handlers for Stripe, etc.
-
-**Tasks**:
-
-- [ ] Verify Stripe webhook signatures
-- [ ] Add signature verification middleware
-- [ ] Handle signature failures gracefully
-- [ ] Log verification failures for monitoring
-
----
-
-## P3 - Low Priority (Backlog)
-
-### 25. [P3-001] Add GraphQL Support
-
-**Problem**: REST only, some use cases better with GraphQL.
-
-**Tasks**:
-
-- [ ] Evaluate if GraphQL needed
-- [ ] Add GraphQL layer using contracts as source
-- [ ] Generate GraphQL schema from Zod
-
-**Questions for you**:
-
-1. Do you have use cases requiring GraphQL?
-   Ans: Not right now.
-2. Is this a priority?
-   Ans: We might in future add support for graphql.
-
----
-
-### 26. [P3-002] Add WebSocket Support for Real-time
-
-**Problem**: No real-time capabilities.
-
-**Tasks**:
-
-- [ ] Add WebSocket server
-- [ ] Integrate with Redis pub/sub
-- [ ] Add client SDK for subscriptions
-- [ ] Document real-time patterns
-
----
-
-### 27. [P3-003] Add Multi-Region Deployment Guide
-
-**Problem**: No documentation for multi-region setup.
-
-**Tasks**:
-
-- [ ] Document database replication
-- [ ] Document CDN setup
-- [ ] Add region-aware routing
-- [ ] Document data residency compliance
-
----
-
-### 28. [P3-004] Reduce Bundle Size of Generated SDK
-
-**Problem**: Generated types file is 27KB+.
-
-**Tasks**:
-
-- [ ] Evaluate tree-shaking effectiveness
-- [ ] Split types by domain
-- [ ] Lazy load SDK modules
-
----
-
-### 29. [P3-005] ~~Add Admin UI for Module Management~~ → **REMOVED**
-
-> **Your note**: Already exists under `starters/saaskit`
-
-This item has been removed from the roadmap.
-
----
-
-### 30. [P3-006] Add Plugin System
-
-**Problem**: Extensions require modifying core code.
-
-**Tasks**:
-
-- [ ] Design plugin architecture
-- [ ] Add plugin hooks
-- [ ] Document plugin development
-
----
-
-### 31. [P3-007] Add Database Migration System → **UPGRADE TO P1**
-
-> **INVESTIGATION RESULT**: CLI stubs exist but NOTHING is implemented.
-
-**What exists**:
-- ✅ Solid MongoDB connection management
-- ✅ Index management (`ensureIndexes()`) - well designed but not called at startup
-- ✅ CLI stubs: `db push`, `db pull`, `db seed`, `db migrate`, `db indexes`
-- ❌ All commands show "not yet implemented"
-- ❌ No migration versioning or history
-
-**Tasks**:
-
-- [ ] Implement `db indexes` command (use existing `ensureIndexes()`)
-- [ ] Call `ensureIndexes()` during app startup
-- [ ] Implement migration runner with versioning
-- [ ] Add migration history collection
-- [ ] Create migration templates
-- [ ] Implement `db seed` with sample data
-- [ ] Add rollback support
-
-**Module Index Registration Checklist**:
-
-| # | Module | Collections | Indexes to Define | Status |
-|---|--------|-------------|-------------------|--------|
-| 1 | `auth` | `authcredentials` | `userId`, `email`, `tenantId` | [ ] |
-| 2 | `identity` | `users` | `email` (unique), `tenantId`, `deletedAt` | [ ] |
-| 3 | `identity` | `memberships` | `userId+tenantId` (compound), `tenantId` | [ ] |
-| 4 | `identity` | `api_keys` | `keyHash` (unique), `userId`, `tenantId` | [ ] |
-| 5 | `tenants` | `tenants` | `slug` (unique), `ownerId`, `deletedAt` | [ ] |
-| 6 | `billing` | `subscriptions` | `tenantId`, `stripeId`, `status` | [ ] |
-| 7 | `billing` | `payments` | `tenantId`, `stripeId`, `createdAt` | [ ] |
-| 8 | `billing` | `invoices` | `tenantId`, `stripeId`, `createdAt` | [ ] |
-| 9 | `credits` | `credit_ledger` | `tenantId`, `userId`, `createdAt` | [ ] |
-| 10 | `flags` | `feature_flags` | `tenantId`, `key` (unique per tenant) | [ ] |
-| 11 | `flags` | `flag_overrides` | `flagId+userId` (compound) | [ ] |
-| 12 | `settings` | `settings_kv` | `tenantId+key` (compound unique) | [ ] |
-| 13 | `storage` | `files` | `tenantId`, `userId`, `path`, `deletedAt` | [ ] |
-| 14 | `audit` | `audit_logs` | `tenantId`, `userId`, `action`, `createdAt` | [ ] |
-| 15 | `notify` | `inapp_notifications` | `userId`, `tenantId`, `read`, `createdAt` | [ ] |
-| 16 | `notify` | `notification_preferences` | `userId+tenantId` (compound unique) | [ ] |
-| 17 | `usage` | `usage_records` | `tenantId`, `metric`, `timestamp` | [ ] |
-| 18 | `webhooks` | `webhooks` | `tenantId`, `url`, `deletedAt` | [ ] |
-| 19 | `webhooks` | `webhook_events` | `webhookId`, `status`, `createdAt` | [ ] |
-| 20 | `kernel` | `_outbox` | `status`, `createdAt`, `processAfter` | [ ] |
-| 21 | `kernel` | `_dead_letter` | `originalQueue`, `createdAt` | [ ] |
-
-**Seed Data Modules** (for development/testing):
-
-| # | Module | Seed Data Description | Status |
-|---|--------|----------------------|--------|
-| 1 | `identity` | Demo users (admin, member, viewer) | [ ] |
-| 2 | `tenants` | Demo tenant with sample config | [ ] |
-| 3 | `billing` | Sample subscription and payment history | [ ] |
-| 4 | `flags` | Sample feature flags | [ ] |
-| 5 | `settings` | Default settings values | [ ] |
-
-**Recommended Approach**: Custom lightweight system (not migrate-mongo) since:
-- Index system already exists
-- MongoDB schema-less means fewer structural migrations
-- Most "migrations" are data transformations or index changes
-
----
-
-### 32. [P3-008] Add Performance Benchmarks
-
-**Problem**: No baseline performance metrics.
-
-**Tasks**:
-
-- [ ] Add benchmark suite
-- [ ] Measure handler latency
-- [ ] Measure database query performance
-- [ ] Track performance over time
-
----
-
-### 33. [P3-009] Add Internationalization (i18n) Support
-
-**Problem**: No i18n for error messages or UI.
-
-**Tasks**:
-
-- [ ] Add i18n library
-- [ ] Extract error messages
-- [ ] Add locale detection
-- [ ] Document translation workflow
-
-**Questions for you**:
-
-1. Is i18n a priority for your target market?
-   Ans: not right now.
-2. Which languages do you need to support?
-   Ans: we will plan it later.
-
----
-
-### 34. [P3-010] Document Global State Patterns
-
-**Problem**: Global state pattern non-standard, can confuse developers.
-
-**Location**: `global.__kernelContextStorage` and similar
-
-**Tasks**:
-
-- [ ] Document why global state is used
-- [ ] Document Next.js/Turbopack considerations
-- [ ] Add debugging guide for context issues
-
----
-
-## Implementation Order Recommendation (UPDATED)
-
-> Updated based on investigation findings
-
-### Phase 1: Foundation & Security (Weeks 1-2)
-
-| # | ID | Task | Effort |
-|---|-----|------|--------|
-| 1 | P0-001 | Test Infrastructure (Vitest + Playwright) | 3-4 days |
-| 2 | P0-003 | Input Sanitization Layer | 2 days |
-| 3 | P0-004 | Secrets Audit & Redaction | 1 day |
-| 4 | P1-006 | Centralize Collection Names | 0.5 day |
-| 5 | NEW | Call `ensureIndexes()` at startup | 0.5 day |
-
-### Phase 2: Reliability & Observability (Weeks 3-4)
-
-| # | ID | Task | Effort |
-|---|-----|------|--------|
-| 6 | P1-001 | OpenTelemetry Tracing (opt-in) | 2-3 days |
-| 7 | P1-002 | Health Checks with Dependencies | 1 day |
-| 8 | P1-003 | Circuit Breakers (billing, email, storage) | 2 days |
-| 9 | P1-004 | Event Memory Leak Fix | 1 day |
-| 10 | P1-007 | Rate Limit Key Safety | 0.5 day |
-
-### Phase 3: Code Quality & DX (Weeks 5-6)
-
-| # | ID | Task | Effort |
-|---|-----|------|--------|
-| 11 | P1-005 | Repository Base Class | 3-4 days |
-| 12 | P2-001 | Generated Code Formatting (Prettier) | 1 day |
-| 13 | P2-003 | Standardize Null Handling | 1 day |
-| 14 | P2-007 | Improve Error Messages | 1-2 days |
-
-### Phase 4: Data & Compliance (Weeks 7-8)
-
-| # | ID | Task | Effort |
-|---|-----|------|--------|
-| 15 | P2-004 | Database Transaction Support | 2 days |
-| 16 | P2-011 | PII Encryption (email, phone) | 3-4 days |
-| 17 | P1-009 | Migration System Implementation | 3 days |
-| 18 | P2-008 | Soft Delete Consistency | 1 day |
-
-### Phase 5: Polish & Features (Ongoing)
-
-| # | ID | Task | Priority |
-|---|-----|------|----------|
-| 19 | P2-006 | Request/Response Logging | When needed |
-| 20 | P2-009 | Pagination Consistency | When needed |
-| 21 | P3-002 | WebSocket Support | Future |
-| 22 | P3-001 | GraphQL Support | Future |
-| 23 | P3-009 | i18n Support | Future |
-
----
-
-## Revised Priority Summary
-
-| Priority | Original Count | After Investigation |
-|----------|---------------|---------------------|
-| **P0 - Critical** | 4 | **3** (type casts moved to P2) |
-| **P1 - High** | 8 | **9** (migrations upgraded) |
-| **P2 - Medium** | 12 | **11** (P2-011 has more detail) |
-| **P3 - Low** | 10 | **8** (admin UI removed, migrations upgraded) |
-
----
-
-## Questions Summary
-
-Please answer these to help prioritize and plan:
-
-### Critical Questions
-
-1. **Testing**: What's your target coverage? Any existing tests? Preferred E2E framework?
-
-2. **Type Casts**: Why were `as unknown` casts needed in generated code?
-
-3. **HTML Fields**: Any fields that intentionally allow HTML/rich text?
-
-4. **Secrets**: Do you have secrets management? Any known logging of sensitive data?
-
-### High Priority Questions
-
-5. **Observability**: What backend? (Datadog, Grafana, Jaeger)
-
-6. **Resilience**: What should happen when Stripe/email is down?
-
-7. **API Versioning**: Philosophy on versioning and deprecation?
-
-### Lower Priority Questions
-
-8. **Encryption**: Which fields are sensitive? Need searchable encryption?
-
-9. **GraphQL**: Is this needed?
-
-10. **Migrations**: Current approach? Preferred tool?
-
-11. **i18n**: Priority? Target languages?
-
----
-
-## Notes
-
-- Estimates are rough, actual time depends on team size and familiarity
-- Some items can be parallelized across team members
-- P0 items should block production deployment
-- P1 items should be in first production release
-- P2/P3 can be prioritized based on user feedback
-
-### Pre-Launch Policy
-
-> **⚠️ No Backward Compatibility Required**
->
-> This system is **pre-launch** and not yet in production. Therefore:
-> - No deprecated APIs or code paths will be maintained
-> - Breaking changes can be made freely without migration paths
-> - No backward compatibility shims, re-exports, or `_deprecated` suffixes needed
-> - Unused code should be deleted completely, not commented out
-> - When refactoring, simply replace the old implementation—no "old" vs "new" coexistence
->
-> This policy will change once the system is launched and has external users.
+## 🔄 Roadmap Maintenance
+
+**Update Frequency**: Weekly
+**Owner**: Engineering Lead
+**Review Process**:
+1. Update task completion status
+2. Update progress percentages
+3. Update actual time spent
+4. Adjust estimates based on velocity
+5. Add/remove tasks as needed
+
+**Last Updated**: 2026-01-12
+**Next Review**: 2026-01-19

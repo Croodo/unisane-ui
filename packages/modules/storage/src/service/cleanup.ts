@@ -46,7 +46,7 @@ export async function cleanupOrphanedUploads(): Promise<{
     return deleted;
   });
 
-  metrics.inc("storage.cleanup.orphaned", { cleaned: success, failed });
+  metrics.increment("storage.cleanup.orphaned", { labels: { cleaned: String(success), failed: String(failed) } });
 
   return { checked: orphans.length, cleaned: success, failed };
 }
@@ -78,10 +78,8 @@ export async function cleanupDeletedFiles(): Promise<{
     return StorageRepo.hardDelete(file.id);
   });
 
-  metrics.inc("storage.cleanup.deleted", {
-    cleaned: success,
-    failed,
-    s3Errors,
+  metrics.increment("storage.cleanup.deleted", {
+    labels: { cleaned: String(success), failed: String(failed), s3Errors: String(s3Errors) },
   });
 
   return { checked: deleted.length, cleaned: success, failed, s3Errors };

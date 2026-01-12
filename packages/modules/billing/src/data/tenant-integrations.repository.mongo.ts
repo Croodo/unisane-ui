@@ -1,4 +1,4 @@
-import { col } from "@unisane/kernel";
+import { col, COLLECTIONS } from "@unisane/kernel";
 import type { Collection, Document, FindCursor } from "mongodb";
 import type { TenantIntegrationsRepo } from "../domain/ports/tenantIntegrations";
 import type { TenantIntegrationRef } from "../domain/types";
@@ -17,7 +17,7 @@ type TenantIntegrationDoc = {
 } & Document;
 
 const tiCol = (): Collection<TenantIntegrationDoc> =>
-  col<TenantIntegrationDoc>("tenantintegrations");
+  col<TenantIntegrationDoc>(COLLECTIONS.TENANT_INTEGRATIONS);
 
 export const mongoTenantIntegrationsRepo: TenantIntegrationsRepo = {
   listByProviderCursor(

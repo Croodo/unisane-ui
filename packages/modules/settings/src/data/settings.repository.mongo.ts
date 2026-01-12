@@ -1,4 +1,4 @@
-import { col } from "@unisane/kernel";
+import { col, COLLECTIONS } from "@unisane/kernel";
 import type {
   PatchResult,
   PatchConflict,
@@ -20,7 +20,7 @@ type SettingsKVDoc = {
   updatedAt?: Date;
 };
 
-const settingsCol = () => col<SettingsKVDoc>("settings_kv");
+const settingsCol = () => col<SettingsKVDoc>(COLLECTIONS.SETTINGS);
 
 function mapDocToSettingRow(doc: SettingsKVDoc | null): SettingRow | null {
   if (!doc) return null;

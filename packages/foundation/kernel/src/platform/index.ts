@@ -10,7 +10,6 @@
  * 2. In your application bootstrap, call the set* functions to inject implementations
  */
 
-export * from './telemetry';
 export * from './config';
 export * from './metering';
 export * from './outbox';

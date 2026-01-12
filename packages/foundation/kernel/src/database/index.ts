@@ -30,22 +30,30 @@ export async function dbHealth() {
 
 /**
  * Database-agnostic transaction wrapper.
- * For MongoDB (without replica set), this is a no-op passthrough.
- * For other providers (MySQL, etc.), wraps the function in a transaction.
- * Services can call withTransaction regardless of provider for consistent semantics.
+ *
+ * For MongoDB with replica set: Uses real transactions with ClientSession.
+ * For MongoDB without replica set: No-op passthrough (set MONGODB_TRANSACTIONS_ENABLED=false).
+ * For other providers: Falls back to no-op passthrough.
+ *
+ * @example
+ * ```typescript
+ * // Simple usage - session passed to callback
+ * await withTransaction(async (session) => {
+ *   await col('users').updateOne({ _id }, { $set: { name } }, { session });
+ *   await col('audit').insertOne({ action: 'user.updated' }, { session });
+ * });
+ * ```
  */
-export async function withTransaction<T>(fn: () => Promise<T>): Promise<T> {
-  const provider = getDbProvider();
-  switch (provider) {
-    case 'mongo':
-      // Mongo transaction support requires sessions and replica set; for local/dev and most flows, we no-op.
-      // Services remain consistent by calling withTransaction regardless of provider.
-      return fn();
-    default:
-      // For unsupported providers, just run the function directly
-      return fn();
-  }
-}
+export { withMongoTransaction as withTransaction } from './transactions';
+
+// Transaction utilities
+export {
+  withMongoTransaction,
+  withRetryableTransaction,
+  isTransactionsEnabled,
+  DEFAULT_TRANSACTION_OPTIONS,
+} from './transactions';
+export type { TransactionAwareOptions } from './transactions';
 
 // Re-export commonly used items
 export { col, db, closeDb } from './connection';
@@ -84,6 +92,85 @@ export { maybeObjectId } from './objectid';
 
 // Index management
 export { ensureIndexes, listIndexes, dropIndexes, INDEX_DEFINITIONS } from './indexes';
+
+// Migration system
+export {
+  runMigrations,
+  getMigrationStatus,
+  getPendingMigrations,
+  hasPendingMigrations,
+  getAppliedMigrations,
+  resetMigrationHistory,
+} from './migrations/index';
+export type {
+  Migration,
+  MigrationContext,
+  MigrationLogger,
+  MigrationDirection,
+  MigrationLogDoc,
+  MigrationRunResult,
+  MigrationRunOptions,
+  MigrationStatus,
+} from './migrations/index';
+
+// Seed system
+export {
+  runSeed,
+  loadSeedConfig,
+  getDefaultSeedConfig,
+} from './seed/index';
+export type {
+  SeedConfig,
+  SeedTenant,
+  SeedUser,
+  SeedMembership,
+  SeedApiKey,
+  SeedSubscription,
+  SeedFlagOverride,
+  SeedGenerateConfig,
+  SeedLogger,
+  SeedRunOptions,
+  SeedRunResult,
+  SeedProviders,
+} from './seed/index';
+
+// Collection names
+export { COLLECTIONS, getAllCollectionNames, isValidCollectionName } from './collections';
+export type { CollectionName } from './collections';
+
+// Base repository utilities
+export {
+  createMongoRepository,
+  createTenantScopedRepository,
+  buildStandardUpdateSet,
+} from './base-repository';
+export type {
+  BaseDocument,
+  BaseView,
+  RepositoryConfig,
+  BaseMongoRepository,
+  TenantScopedRepository,
+  BulkCreateResult,
+  BulkDeleteResult,
+} from './base-repository';
+
+// Document mapper utilities
+export {
+  idToString,
+  dateToIsoString,
+  coalesce,
+  createDocumentMapper,
+  createBatchMapper,
+  viewsToMap,
+  buildCreateTimestamps,
+  buildUpdateTimestamp,
+  buildSoftDeleteTimestamps,
+} from './document-mapper';
+export type {
+  MapperOptions,
+  TimestampFields,
+  SoftDeleteField,
+} from './document-mapper';
 
 /**
  * Check if an error is a duplicate key error (Mongo or MySQL).

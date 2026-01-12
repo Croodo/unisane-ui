@@ -50,3 +50,11 @@ export type {
   MetricOptions,
   HistogramConfig,
 } from './metrics';
+
+// OpenTelemetry integration (opt-in)
+export {
+  initOpenTelemetry,
+  isOTelInitialized,
+  flushOTelSpans,
+} from './otel';
+export type { OTelOptions } from './otel';

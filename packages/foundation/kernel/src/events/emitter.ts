@@ -84,26 +84,49 @@ export function setMaxHandlersPerType(max: number): void {
 }
 
 /**
- * Get current handler statistics for debugging.
+ * Get current handler statistics for debugging and monitoring.
+ * Use this in health checks to detect handler accumulation.
  */
 export function getHandlerStats(): {
   totalTypeHandlers: number;
   globalHandlers: number;
   registrationCount: number;
+  maxHandlersPerType: number;
+  potentialLeak: boolean;
   byType: Record<string, number>;
 } {
   const byType: Record<string, number> = {};
   let totalTypeHandlers = 0;
+  let potentialLeak = false;
+
   for (const [type, handlers] of state.handlers) {
     byType[type] = handlers.size;
     totalTypeHandlers += handlers.size;
+    if (handlers.size >= state.maxHandlersPerType * 0.8) {
+      potentialLeak = true; // Warn at 80% of limit
+    }
   }
+
+  if (state.globalHandlers.size >= state.maxHandlersPerType * 0.8) {
+    potentialLeak = true;
+  }
+
   return {
     totalTypeHandlers,
     globalHandlers: state.globalHandlers.size,
     registrationCount: state.registrationCount,
+    maxHandlersPerType: state.maxHandlersPerType,
+    potentialLeak,
     byType,
   };
+}
+
+/**
+ * Check if there's a potential memory leak based on handler counts.
+ * Returns true if any handler type is at 80%+ of the limit.
+ */
+export function hasHandlerLeakRisk(): boolean {
+  return getHandlerStats().potentialLeak;
 }
 
 /**

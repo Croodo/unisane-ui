@@ -1,4 +1,4 @@
-import { col, connectDb as connectDriverDb } from "@unisane/kernel";
+import { col, COLLECTIONS, connectDb as connectDriverDb } from "@unisane/kernel";
 import type {
   TenantsRepoPort,
   TenantFilter,
@@ -27,7 +27,7 @@ type TenantDoc = {
   deletedAt?: Date | null;
 } & Document;
 
-const tenantsCol = () => col<TenantDoc>("tenants");
+const tenantsCol = () => col<TenantDoc>(COLLECTIONS.TENANTS);
 
 /**
  * Build MongoDB filter for tenants (SSOT).
@@ -170,7 +170,7 @@ export const TenantsRepoMongo: TenantsRepoPort = {
 
     // 1) Revoke all API keys (security first)
     try {
-      const apiKeysResult = await col("apikeys").updateMany(
+      const apiKeysResult = await col(COLLECTIONS.API_KEYS).updateMany(
         { tenantId, revokedAt: null } as Document,
         { $set: { revokedAt: now, updatedAt: now } } as Document
       );
@@ -179,7 +179,7 @@ export const TenantsRepoMongo: TenantsRepoPort = {
 
     // 2) Soft delete memberships
     try {
-      const membershipsResult = await col("memberships").updateMany(
+      const membershipsResult = await col(COLLECTIONS.MEMBERSHIPS).updateMany(
         { tenantId, ...softDeleteFilter() } as Document,
         { $set: { deletedAt: now, updatedAt: now } } as Document
       );
@@ -188,7 +188,7 @@ export const TenantsRepoMongo: TenantsRepoPort = {
 
     // 3) Mark storage files as deleted (cleanup job handles provider)
     try {
-      const storageResult = await col("storage_files").updateMany(
+      const storageResult = await col(COLLECTIONS.FILES).updateMany(
         { tenantId, status: { $ne: "deleted" } } as Document,
         { $set: { status: "deleted", deletedAt: now, updatedAt: now } } as Document
       );

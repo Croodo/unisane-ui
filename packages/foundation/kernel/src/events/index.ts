@@ -65,6 +65,9 @@ export type { RegisteredEventType } from './registry';
 export {
   events,
   setOutboxAccessor,
+  setMaxHandlersPerType,
+  getHandlerStats,
+  hasHandlerLeakRisk,
   UnregisteredEventError,
   EventValidationError,
 } from './emitter';
@@ -72,3 +75,26 @@ export {
 // Outbox Worker
 export { createOutboxWorker } from './outbox-worker';
 export type { OutboxWorkerOptions, OutboxWorker } from './outbox-worker';
+
+// Event Schemas - Central registry of all event types and their schemas
+export {
+  EventSchemas,
+  registerAllEventSchemas,
+  getSchema,
+  isValidEventType,
+  getEventTypesByModule,
+  // Base schemas
+  TenantEventSchema,
+  UserActionEventSchema,
+  // Individual schemas for direct import if needed
+  TenantCreatedSchema,
+  TenantDeletedSchema,
+  StorageUploadRequestedSchema,
+  StorageUploadConfirmedSchema,
+  CreditsGrantedSchema,
+  CreditsConsumedSchema,
+} from './schemas';
+export type { EventType, EventPayload, AnyEventPayload } from './schemas';
+
+// Typed event emission helpers
+export { emitTyped, emitTypedReliable, onTyped } from './typed-emitter';

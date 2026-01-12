@@ -1,4 +1,4 @@
-import type { ZodTypeAny } from "zod";
+import type { ZodTypeAny, ZodError } from "zod";
 import { parseJson } from "./validate";
 import { getAuthCtx } from "../auth/auth";
 import { hasPerm } from './rbac';
@@ -15,6 +15,7 @@ import { assertCsrfForCookieAuth } from "./csrf";
 export type GuardOpts<Body, Params> = {
   op?: OpKey;
   zod?: ZodTypeAny;
+  zodParams?: ZodTypeAny;
   perm?: Permission;
   idempotent?: boolean;
   requireTenantMatch?: boolean;
@@ -25,16 +26,45 @@ export type GuardOpts<Body, Params> = {
   rateCost?: number;
 };
 
+/**
+ * Format Zod validation errors into a user-friendly message.
+ */
+function formatZodErrors(error: ZodError): string {
+  return error.errors
+    .map((e) => {
+      const path = e.path.length > 0 ? `${e.path.join('.')}: ` : '';
+      return `${path}${e.message}`;
+    })
+    .join('; ');
+}
+
+/**
+ * Validate path parameters against a Zod schema.
+ * Throws validation error if validation fails.
+ */
+function validateParams<Params>(params: Params, schema: ZodTypeAny): Params {
+  const result = schema.safeParse(params);
+  if (!result.success) {
+    throw ERR.validation(`Invalid path parameters: ${formatZodErrors(result.error)}`);
+  }
+  return result.data as Params;
+}
+
 export async function guard<Body = unknown, Params extends Record<string, unknown> = Record<string, unknown>>(
   req: Request,
   routeParams: Params,
   opts: GuardOpts<Body, Params>
 ): Promise<{ ctx: AuthCtx; body: Body; params: Params; rl: RateResult | null }> {
+  // Validate path parameters first (before auth, as this is a request format issue)
+  const validatedParams = opts.zodParams
+    ? validateParams(routeParams, opts.zodParams)
+    : routeParams;
+
   const ctx = await getAuthCtx(req);
   if (!ctx.isAuthed && !opts.allowUnauthed) throw ERR.loginRequired();
 
   if (opts.requireTenantMatch && ctx.isAuthed) {
-    const paramTenant = (routeParams as { tenantId?: string } | undefined)?.tenantId;
+    const paramTenant = (validatedParams as { tenantId?: string } | undefined)?.tenantId;
     if (!ctx.isSuperAdmin && paramTenant && ctx.tenantId !== paramTenant) throw ERR.forbidden();
   }
   if (ctx.isAuthed) {
@@ -52,7 +82,7 @@ export async function guard<Body = unknown, Params extends Record<string, unknow
   if (opts.op) {
     const policy = getRatePolicy(opts.op);
     const key =
-      opts.rateKey?.({ req, ctx, body, params: routeParams }) ??
+      opts.rateKey?.({ req, ctx, body, params: validatedParams }) ??
       buildRateKey({ tenantId: ctx.tenantId ?? ipFrom(req), ...(ctx.userId ? { userId: ctx.userId } : {}), name: opts.op });
     rl = await rateLimit(key, policy.max, policy.windowSec, opts.rateCost ?? 1);
     if (!rl.allowed) {
@@ -62,5 +92,5 @@ export async function guard<Body = unknown, Params extends Record<string, unknow
     }
   }
 
-  return { ctx, body, params: routeParams, rl };
+  return { ctx, body, params: validatedParams, rl };
 }

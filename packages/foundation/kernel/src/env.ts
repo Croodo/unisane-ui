@@ -26,6 +26,8 @@ const BaseEnvSchema = z.object({
   // MongoDB connection pool tuning (optional, sensible defaults provided)
   MONGODB_MAX_POOL_SIZE: z.coerce.number().int().positive().optional(),
   MONGODB_MIN_POOL_SIZE: z.coerce.number().int().nonnegative().optional(),
+  // MongoDB transactions require replica set; set to false for local dev without replica set
+  MONGODB_TRANSACTIONS_ENABLED: z.coerce.boolean().optional().default(true),
   // MySQL (variant)
   MYSQL_URL: z.string().url().optional(),
   // MySQL connection variables (optional alternative to MYSQL_URL)
@@ -160,6 +162,10 @@ const BaseEnvSchema = z.object({
 
   // Pro feature gates (developer-friendly; optional)
   SAASKIT_ENABLE_PRO_JOBS: z.coerce.boolean().default(false),
+
+  // Field-level encryption for PII (optional; required for GDPR compliance)
+  // Generate with: node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+  DATA_ENCRYPTION_KEY: z.string().optional(),
 });
 
 export const EnvSchema = BaseEnvSchema.superRefine((v, ctx) => {

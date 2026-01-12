@@ -1,9 +1,8 @@
-import { col } from '@unisane/kernel';
+import { col, COLLECTIONS, maybeObjectId } from '@unisane/kernel';
 import type { AuthCredentialView } from '../domain/types';
 import type { AuthCredentialRepoPort } from '../domain/ports';
 import { ObjectId } from 'mongodb';
 import type { Document, Filter, UpdateFilter } from 'mongodb';
-import { maybeObjectId } from '@unisane/kernel';
 
 type AuthCredentialDoc = {
   _id?: string | ObjectId;
@@ -19,7 +18,7 @@ type AuthCredentialDoc = {
   updatedAt?: Date;
 };
 
-const credCol = () => col<AuthCredentialDoc>('authcredentials');
+const credCol = () => col<AuthCredentialDoc>(COLLECTIONS.AUTH_CREDENTIALS);
 
 export const AuthCredentialRepoMongo: AuthCredentialRepoPort = {
   async findByEmailNorm(emailNorm: string): Promise<AuthCredentialView | null> {

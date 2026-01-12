@@ -2,37 +2,34 @@
 
 > **Parent:** [ARCHITECTURE.md](./ARCHITECTURE.md)
 
-Complete guide for creating new modules in the Unisane platform.
+Complete guide for creating new modules in the Unisane platform based on current implementation patterns (January 2026).
 
 ---
 
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [Module Layers](#module-layers)
+2. [Module Structure](#module-structure)
 3. [Creating a New Module](#creating-a-new-module)
-4. [Module Structure](#module-structure)
-5. [Domain Layer](#domain-layer)
-   - [schemas.ts vs types.ts](#schemasts-vs-typests--the-critical-distinction)
-   - [Avoiding Duplication](#avoiding-duplication)
-6. [Service Implementation](#service-implementation)
-7. [Data Layer](#data-layer)
-8. [Contract Definition](#contract-definition)
-9. [Event Integration](#event-integration)
-10. [Testing Your Module](#testing-your-module)
-11. [Module Checklist](#module-checklist)
+4. [Domain Layer](#domain-layer)
+5. [Data Layer](#data-layer)
+6. [Service Layer](#service-layer)
+7. [Contract Definition](#contract-definition)
+8. [Event Integration](#event-integration)
+9. [Testing Your Module](#testing-your-module)
+10. [Module Checklist](#module-checklist)
 
 ---
 
 ## Overview
 
-Modules are self-contained business logic packages that follow clean architecture principles. Each module:
+Modules are self-contained business logic packages following clean architecture principles. Each module:
 
 - Has a single responsibility
-- Exposes a clean public API
-- Manages its own data
-- Communicates via events for side effects
-- Respects layer dependencies
+- Exposes a clean public API through barrel exports
+- Manages its own data via repository pattern
+- Communicates via typed events for side effects
+- Uses contract-first codegen for API routes
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -47,122 +44,102 @@ Modules are self-contained business logic packages that follow clean architectur
 │  ┌─────────────────────────────────────────────────────┐    │
 │  │                  SERVICE LAYER                       │    │
 │  │         Business logic, orchestration                │    │
-│  │         service/{operation}.ts (one per fn)          │    │
+│  │         service/{operation}.ts                       │    │
 │  └─────────────────────────────────────────────────────┘    │
 │                          │                                   │
 │  ┌─────────────────────────────────────────────────────┐    │
 │  │                   DATA LAYER                         │    │
-│  │       Repository, models, database access            │    │
-│  │              data/*.repository.ts                    │    │
+│  │       Repository pattern with MongoDB                │    │
+│  │       data/*.repository.mongo.ts                     │    │
 │  └─────────────────────────────────────────────────────┘    │
 │                          │                                   │
 │  ┌─────────────────────────────────────────────────────┐    │
 │  │                  DOMAIN LAYER                        │    │
-│  │           Types, schemas, constants                  │    │
-│  │                 domain/types.ts                      │    │
+│  │           Types, Zod schemas, constants              │    │
+│  │                 domain/                              │    │
 │  └─────────────────────────────────────────────────────┘    │
 │                                                              │
 └─────────────────────────────────────────────────────────────┘
 ```
 
+### Key Statistics
+
+Based on current implementation (January 2026):
+- **15 business modules** in production
+- **~21,000 LOC** of module business logic
+- **800+ tests** passing (241 kernel, 100 gateway, 11 module tests)
+- **51 E2E tests** with Playwright
+- **Repository pattern** with base utilities
+- **Typed events** with Zod schemas (35+ events in registry)
+
 ---
 
-## Module Layers
+## Module Structure
 
-Modules are organized into layers based on their dependencies. **Lower layers cannot import from higher layers.**
+### Current Module Organization
+
+All 15 production modules follow this structure:
 
 ```
-Layer 0: KERNEL (foundation)
-├── ctx, db, redis, events, logger, errors
+packages/modules/{module}/
+├── package.json
+├── tsconfig.json
+├── README.md                    # Required documentation
 │
-Layer 1: GATEWAY (API infrastructure)
-├── handler, middleware, auth, rate-limit
+├── src/
+│   ├── index.ts                 # Public API exports
+│   │
+│   ├── service/                 # Business logic
+│   │   ├── {operation}.ts       # One operation per file
+│   │   └── index.ts             # Barrel export
+│   │
+│   ├── data/                    # Data access
+│   │   └── {entity}.repository.mongo.ts
+│   │
+│   └── domain/                  # Types & schemas
+│       ├── types.ts             # TypeScript types
+│       ├── schemas.ts           # Zod schemas (if API module)
+│       ├── constants.ts         # Enums, magic values
+│       └── errors.ts            # Domain errors (optional)
 │
-Layer 2: FOUNDATION (no business deps)
-├── identity, settings, storage
-│
-Layer 3: CORE (basic business)
-├── tenants, auth, sso
-│
-Layer 4: BUSINESS (feature modules)
-├── billing, flags, audit
-│
-Layer 5: FEATURES (advanced)
-├── credits, usage, notify, webhooks, ai, media
+└── test/
+    └── {service}.test.ts        # Vitest tests
 ```
 
-### Dependency Rules
+### Example: @unisane/credits Module
 
-```typescript
-// ✅ ALLOWED - Lower layer importing from lower layer
-// In packages/tenants (Layer 3)
-import { ctx, logger } from "@unisane/kernel";     // Layer 0 ✓
-import { withAuth } from "@unisane/gateway";       // Layer 1 ✓
-import { getUserById } from "@unisane/identity";   // Layer 2 ✓
-
-// ❌ FORBIDDEN - Lower layer importing from higher layer
-// In packages/tenants (Layer 3)
-import { getBalance } from "@unisane/credits";     // Layer 5 ✗ VIOLATION!
 ```
-
-### Checking Layer Violations
-
-```bash
-# Run layer violation check
-pnpm check:layers
-
-# Output:
-# ❌ packages/tenants/src/service/tenants.ts
-#    Line 5: Cannot import from @unisane/credits (Layer 5) in Layer 3 module
+packages/modules/credits/
+├── src/
+│   ├── index.ts
+│   ├── service/
+│   │   ├── addCredits.ts
+│   │   ├── deductCredits.ts
+│   │   ├── getBalance.ts
+│   │   └── index.ts
+│   ├── data/
+│   │   └── transactions.repository.mongo.ts
+│   └── domain/
+│       ├── types.ts
+│       ├── constants.ts
+│       └── errors.ts
+└── test/
+    └── credits.test.ts          # 49 tests passing
 ```
 
 ---
 
 ## Creating a New Module
 
-### Step 1: Use the Generator
-
-```bash
-# Generate a new module
-pnpm gen:module rewards
-
-# Options:
-#   --layer=4        # Specify layer (default: auto-detect)
-#   --with-contract  # Include contract boilerplate
-#   --with-events    # Include event definitions
-```
-
-This creates:
-
-```
-packages/rewards/
-├── package.json
-├── tsconfig.json
-├── src/
-│   ├── index.ts
-│   ├── service/
-│   │   ├── getBalance.ts
-│   │   ├── grantRewards.ts
-│   │   └── index.ts           # Barrel export
-│   ├── data/
-│   │   └── rewards.repository.ts
-│   └── domain/
-│       └── types.ts
-└── __tests__/
-    └── getBalance.test.ts
-```
-
-### Step 2: Manual Creation (Alternative)
-
-If not using the generator:
+### Step 1: Create Package Structure
 
 ```bash
 # Create directory structure
-mkdir -p packages/rewards/src/{service,data,domain}
-mkdir -p packages/rewards/__tests__
+mkdir -p packages/modules/rewards/src/{service,data,domain}
+mkdir -p packages/modules/rewards/test
 
 # Create package.json
-cat > packages/rewards/package.json << 'EOF'
+cat > packages/modules/rewards/package.json << 'EOF'
 {
   "name": "@unisane/rewards",
   "version": "0.0.0",
@@ -175,101 +152,52 @@ cat > packages/rewards/package.json << 'EOF'
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts",
     "test": "vitest run",
+    "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@unisane/kernel": "workspace:*"
   },
   "devDependencies": {
-    "tsup": "^8.0.0",
-    "typescript": "^5.3.0",
-    "vitest": "^1.0.0"
+    "@unisane/test-utils": "workspace:*",
+    "typescript": "^5.9.0",
+    "vitest": "^2.0.0"
   }
 }
 EOF
 
 # Create tsconfig.json
-cat > packages/rewards/tsconfig.json << 'EOF'
+cat > packages/modules/rewards/tsconfig.json << 'EOF'
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src"
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "__tests__"]
+  "exclude": ["node_modules", "dist", "test"]
 }
 EOF
 ```
 
----
-
-## Module Structure
-
-### Recommended File Organization
-
-**Important: One function per file in the service layer.** Each service function gets its own file, exported via a barrel `index.ts`. This prevents large files, makes code easier to navigate, and enables clear import paths.
-
-```
-packages/rewards/
-├── package.json
-├── tsconfig.json
-│
-├── src/
-│   ├── index.ts                    # Public API exports
-│   │
-│   ├── service/                    # Business logic — ONE FUNCTION PER FILE
-│   │   ├── getBalance.ts           # Single function: getBalance()
-│   │   ├── grantRewards.ts         # Single function: grantRewards()
-│   │   ├── redeemRewards.ts        # Single function: redeemRewards()
-│   │   ├── getHistory.ts           # Single function: getHistory()
-│   │   └── index.ts                # Barrel export: re-exports all functions
-│   │
-│   ├── data/                       # Data access
-│   │   ├── rewards.repository.ts   # Public repo (uses selectRepo)
-│   │   └── rewards.repository.mongo.ts  # MongoDB implementation
-│   │
-│   ├── domain/                     # Types, schemas & constants
-│   │   ├── schemas.ts              # Zod schemas (API input validation)
-│   │   ├── types.ts                # TypeScript types (internal models)
-│   │   ├── ports.ts                # Repository interfaces
-│   │   ├── constants.ts            # Magic values
-│   │   ├── errors.ts               # Domain-specific errors
-│   │   ├── keys.ts                 # Cache key builders
-│   │   └── index.ts                # Domain exports
-│   │
-│   └── events/                     # Event definitions (optional)
-│       ├── handlers.ts             # Event handlers
-│       └── index.ts                # Event exports
-│
-└── __tests__/
-    ├── getBalance.test.ts          # Test per service file
-    ├── grantRewards.test.ts
-    ├── rewards.repository.test.ts
-    └── fixtures/
-        └── rewards.fixtures.ts
-```
-
-### Public API (index.ts)
+### Step 2: Create Public API (index.ts)
 
 ```typescript
-// packages/rewards/src/index.ts
+// packages/modules/rewards/src/index.ts
 
 /**
  * @module @unisane/rewards
  * @description Rewards and loyalty points management
- * @layer 5
  */
 
 // ═══════════════════════════════════════════════════════════════
-// SERVICE EXPORTS (from barrel)
+// SERVICE EXPORTS
 // ═══════════════════════════════════════════════════════════════
 export {
   getBalance,
-  grantRewards,
-  redeemRewards,
+  addCredits,
+  deductCredits,
   getHistory,
 } from "./service";
 
@@ -277,396 +205,126 @@ export {
 // TYPE EXPORTS
 // ═══════════════════════════════════════════════════════════════
 export type {
-  Reward,
   RewardBalance,
   RewardTransaction,
-  RedemptionOption,
-  GrantRewardsInput,
-  RedeemRewardsInput,
+  AddCreditsInput,
+  DeductCreditsInput,
 } from "./domain/types";
 
 // ═══════════════════════════════════════════════════════════════
 // CONSTANT EXPORTS
 // ═══════════════════════════════════════════════════════════════
-export { REWARD_TYPES, REDEMPTION_STATUS } from "./domain/constants";
-
-// ═══════════════════════════════════════════════════════════════
-// ERROR EXPORTS
-// ═══════════════════════════════════════════════════════════════
-export { InsufficientRewardsError, RewardExpiredError } from "./domain/errors";
+export { REWARD_TYPES } from "./domain/constants";
 ```
 
 ---
 
 ## Domain Layer
 
-The domain layer defines the **shape of data** in your module. It contains no business logic—only type definitions, validation schemas, and constants.
+The domain layer defines data shapes, validation schemas, and business constants.
 
-### Domain Files Overview
+### File Structure
 
 ```
 domain/
-├── schemas.ts      # Zod schemas for API INPUT validation
-├── types.ts        # TypeScript types for INTERNAL models
-├── ports.ts        # Repository interfaces (optional)
+├── types.ts        # TypeScript types (internal models)
+├── schemas.ts      # Zod schemas (API validation)
 ├── constants.ts    # Enums, magic values
-├── errors.ts       # Domain-specific error classes
-├── keys.ts         # Cache key builders
-└── index.ts        # Barrel exports
+└── errors.ts       # Domain-specific errors (optional)
 ```
 
-### schemas.ts vs types.ts — The Critical Distinction
-
-These two files serve **different purposes** and should NOT be consolidated:
-
-| Aspect | `schemas.ts` | `types.ts` |
-|--------|--------------|------------|
-| **Purpose** | API input/output validation | Internal domain models |
-| **Contains** | Zod schemas (`z.object({...})`) | TypeScript types (`type X = {...}`) |
-| **Runtime** | Has runtime validation | Compile-time only |
-| **Used at** | API boundary (route handlers) | Service/data layer |
-| **Validates** | External untrusted input | N/A (trusted internal data) |
-| **Transforms** | May coerce strings to numbers, dates, etc. | Pure shape definition |
-
-#### When to Use Each
-
-```
-CLIENT REQUEST                    INTERNAL PROCESSING
-      │                                  │
-      ▼                                  ▼
-┌─────────────┐                  ┌─────────────┐
-│ schemas.ts  │                  │  types.ts   │
-│             │                  │             │
-│ ZGrantInput │ ──validates──►   │ LedgerEntry │
-│ ZListQuery  │   transforms     │ BalanceView │
-│ ZUpdateBody │                  │ ServiceArgs │
-└─────────────┘                  └─────────────┘
-      │                                  │
-   API Layer                      Service/Data Layer
-```
-
-### schemas.ts — API Input Validation
-
-**Purpose:** Define Zod schemas for validating data coming FROM clients (requests) or going TO clients (responses).
+### domain/types.ts — Internal Types
 
 ```typescript
-// domain/schemas.ts
-import { z } from "zod";
-
-// ═══════════════════════════════════════════════════════════════
-// INPUT SCHEMAS — What clients SEND to us
-// ═══════════════════════════════════════════════════════════════
+// packages/modules/rewards/src/domain/types.ts
 
 /**
- * Grant rewards to a tenant.
- * Used in: POST /api/rewards/grant
+ * Database document as stored in MongoDB
  */
-export const ZGrantRewards = z.object({
-  amount: z.number().int().positive(),
-  reason: z.string().min(2).max(200),
-  expiresAt: z.string().datetime().optional(),  // ISO string from client
-  idem: z.string().uuid(),                       // Idempotency key
-});
-
-/**
- * Redeem rewards from balance.
- * Used in: POST /api/rewards/redeem
- */
-export const ZRedeemRewards = z.object({
-  amount: z.number().int().positive(),
-  redemptionId: z.string().min(1),
-});
-
-/**
- * List rewards with pagination.
- * Used in: GET /api/rewards/history
- */
-export const ZListRewards = z.object({
-  cursor: z.string().optional(),
-  limit: z.coerce.number().int().min(1).max(100).default(20),
-  type: z.enum(["grant", "redeem"]).optional(),
-});
-
-// ═══════════════════════════════════════════════════════════════
-// INFERRED TYPES — For TypeScript convenience
-// ═══════════════════════════════════════════════════════════════
-
-export type GrantRewardsInput = z.infer<typeof ZGrantRewards>;
-export type RedeemRewardsInput = z.infer<typeof ZRedeemRewards>;
-export type ListRewardsQuery = z.infer<typeof ZListRewards>;
-```
-
-**Key characteristics:**
-- Uses Zod validation methods: `.min()`, `.max()`, `.email()`, `.uuid()`, etc.
-- May transform data: `.coerce.number()` converts string "10" to number 10
-- Dates come as ISO strings from API, not Date objects
-- Always export inferred types: `z.infer<typeof ZSchema>`
-
-### types.ts — Internal Domain Models
-
-**Purpose:** Define TypeScript types for internal data structures—database records, service function arguments, computed views.
-
-```typescript
-// domain/types.ts
-
-// ═══════════════════════════════════════════════════════════════
-// DATABASE MODELS — Shape of documents in MongoDB
-// ═══════════════════════════════════════════════════════════════
-
-/**
- * Raw reward document as stored in database.
- * Note: Uses Date objects, not ISO strings.
- */
-export type RewardDoc = {
+export type RewardTransactionDoc = {
   _id: string;
   tenantId: string;
+  type: "credit" | "debit";
   amount: number;
-  type: "grant" | "redeem";
+  balance: number;      // Balance after this transaction
   reason: string;
-  consumed: number;
-  expiresAt: Date | null;      // Date object, not string
+  metadata?: Record<string, unknown>;
   createdAt: Date;
-  updatedAt: Date;
 };
 
-// ═══════════════════════════════════════════════════════════════
-// VIEW MODELS — Transformed data for service/API responses
-// ═══════════════════════════════════════════════════════════════
-
 /**
- * Reward entry as returned to clients.
- * Transformed from RewardDoc by repository.
+ * View model for API responses
  */
-export type RewardEntry = {
-  id: string;                  // Mapped from _id
+export type RewardTransaction = {
+  id: string;
+  type: "credit" | "debit";
   amount: number;
-  type: "grant" | "redeem";
+  balance: number;
   reason: string;
   createdAt: Date;
-  expiresAt: Date | null;
 };
 
 /**
- * Aggregated balance view.
+ * Aggregated balance view
  */
 export type RewardBalance = {
-  total: number;
-  available: number;
-  consumed: number;
-  expiringSoon: number;        // Computed field
-};
-
-// ═══════════════════════════════════════════════════════════════
-// SERVICE ARGUMENTS — Internal function parameters
-// ═══════════════════════════════════════════════════════════════
-
-/**
- * Arguments for balance lookup.
- * Used internally by service functions.
- */
-export type GetBalanceArgs = {
-  tenantId: string;
-  includeExpired?: boolean;
+  balance: number;
+  totalCredits: number;
+  totalDebits: number;
 };
 
 /**
- * Arguments for consuming rewards.
+ * Service function arguments
  */
-export type ConsumeRewardsArgs = {
+export type AddCreditsInput = {
   tenantId: string;
   amount: number;
   reason: string;
-  feature?: string;
+  metadata?: Record<string, unknown>;
 };
-```
 
-**Key characteristics:**
-- Pure TypeScript types (no Zod, no runtime)
-- Uses `Date` objects, not ISO strings
-- Includes internal fields not exposed to API (`_id`, `tenantId`)
-- Defines service function argument shapes
-- May include computed/aggregated fields
-
-### Real-World Example: Why They Differ
-
-Consider a "grant rewards" operation:
-
-```typescript
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// schemas.ts — API Input (from client)
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-export const ZGrantRewards = z.object({
-  amount: z.number().int().positive(),
-  reason: z.string().min(2),
-  expiresAt: z.string().datetime().optional(),  // ◄── ISO string
-});
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// types.ts — Database Document
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-export type RewardDoc = {
-  _id: string;                    // ◄── Internal ID
-  tenantId: string;               // ◄── Not in API input
+export type DeductCreditsInput = {
+  tenantId: string;
   amount: number;
   reason: string;
-  expiresAt: Date | null;         // ◄── Date object
-  createdAt: Date;                // ◄── Auto-generated
+  metadata?: Record<string, unknown>;
 };
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// The transformation happens in the service layer:
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// API Input (schemas.ts)     →    DB Document (types.ts)
-// {                                {
-//   amount: 100,                     _id: "uuid",
-//   reason: "bonus",                 tenantId: "tenant-123",  ◄── Added from ctx
-//   expiresAt: "2025-12-31"          amount: 100,
-// }                                  reason: "bonus",
-//                                    expiresAt: new Date("2025-12-31"),  ◄── Parsed
-//                                    createdAt: new Date(),  ◄── Auto-set
-//                                  }
 ```
 
-### Avoiding Duplication
-
-**Problem:** Sometimes the same shape appears in both files.
+### domain/schemas.ts — Zod Validation (for API modules)
 
 ```typescript
-// ❌ BAD — Duplicated shape
-// schemas.ts
-export const ZRewardView = z.object({ id: z.string(), amount: z.number() });
-
-// types.ts
-export type RewardView = { id: string; amount: number };  // Same shape!
-```
-
-**Solution:** If you need BOTH Zod validation AND TypeScript type for the SAME shape, define it once:
-
-```typescript
-// ✅ GOOD — Single source of truth
-// schemas.ts
-export const ZRewardView = z.object({
-  id: z.string(),
-  amount: z.number(),
-  type: z.enum(["grant", "redeem"]),
-  createdAt: z.string().datetime(),
-});
-
-// Export inferred type — no need to duplicate in types.ts
-export type RewardView = z.infer<typeof ZRewardView>;
-```
-
-```typescript
-// types.ts — Only types NOT covered by schemas
-export type RewardDoc = { ... };      // DB-specific
-export type GetBalanceArgs = { ... }; // Service args
-export type InternalStats = { ... };  // Computed/internal
-```
-
-### When to Create Each File
-
-| Scenario | Create in |
-|----------|-----------|
-| Validating POST/PUT request body | `schemas.ts` |
-| Validating query parameters | `schemas.ts` |
-| Validating API response shape | `schemas.ts` |
-| Defining database document structure | `types.ts` |
-| Defining service function arguments | `types.ts` |
-| Defining internal computed types | `types.ts` |
-| Defining types shared with other modules | `types.ts` |
-
-### Complete Domain Layer Example
-
-```typescript
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// domain/schemas.ts
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// packages/modules/rewards/src/domain/schemas.ts
 import { z } from "zod";
 
-// Input schemas
-export const ZCreateReward = z.object({
+/**
+ * Add credits input schema
+ */
+export const ZAddCredits = z.object({
   amount: z.number().int().positive(),
   reason: z.string().min(2).max(200),
-  type: z.enum(["signup_bonus", "referral", "manual"]),
-  expiresAt: z.string().datetime().optional(),
-  idem: z.string().uuid(),
+  metadata: z.record(z.unknown()).optional(),
 });
 
-export const ZRedeemReward = z.object({
+/**
+ * Deduct credits input schema
+ */
+export const ZDeductCredits = z.object({
   amount: z.number().int().positive(),
-  itemId: z.string().min(1),
+  reason: z.string().min(2).max(200),
+  metadata: z.record(z.unknown()).optional(),
 });
 
-export const ZListQuery = z.object({
-  cursor: z.string().optional(),
-  limit: z.coerce.number().int().min(1).max(100).default(20),
-});
-
-// Response schemas (for documentation/validation)
-export const ZRewardResponse = z.object({
-  id: z.string(),
-  amount: z.number(),
-  type: z.string(),
-  reason: z.string(),
-  createdAt: z.string().datetime(),
-  expiresAt: z.string().datetime().nullable(),
-});
-
-// Inferred types
-export type CreateRewardInput = z.infer<typeof ZCreateReward>;
-export type RedeemRewardInput = z.infer<typeof ZRedeemReward>;
-export type ListQuery = z.infer<typeof ZListQuery>;
-export type RewardResponse = z.infer<typeof ZRewardResponse>;
+// Inferred types for convenience
+export type AddCreditsInput = z.infer<typeof ZAddCredits>;
+export type DeductCreditsInput = z.infer<typeof ZDeductCredits>;
 ```
 
-```typescript
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// domain/types.ts
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-// Database document
-export type RewardDoc = {
-  _id: string;
-  tenantId: string;
-  userId: string;
-  amount: number;
-  type: "signup_bonus" | "referral" | "manual";
-  reason: string;
-  consumed: number;
-  idemKey: string;
-  expiresAt: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
-};
-
-// Aggregated balance
-export type RewardBalance = {
-  total: number;
-  available: number;
-  consumed: number;
-  pending: number;
-  expiringSoon: number;
-};
-
-// Service arguments
-export type GetBalanceArgs = { tenantId: string };
-export type ConsumeArgs = {
-  tenantId: string;
-  amount: number;
-  reason: string;
-};
-
-// Pagination result
-export type RewardPage = {
-  items: RewardDoc[];
-  nextCursor?: string;
-};
-```
+### domain/constants.ts
 
 ```typescript
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// domain/constants.ts
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// packages/modules/rewards/src/domain/constants.ts
+
 export const REWARD_TYPES = {
   SIGNUP_BONUS: "signup_bonus",
   REFERRAL: "referral",
@@ -674,13 +332,12 @@ export const REWARD_TYPES = {
 } as const;
 
 export const DEFAULT_EXPIRY_DAYS = 365;
-export const MAX_REDEMPTION_PER_DAY = 10;
 ```
 
+### domain/errors.ts (optional)
+
 ```typescript
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// domain/errors.ts
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// packages/modules/rewards/src/domain/errors.ts
 import { DomainError } from "@unisane/kernel";
 
 export class InsufficientRewardsError extends DomainError {
@@ -691,646 +348,69 @@ export class InsufficientRewardsError extends DomainError {
     );
   }
 }
-
-export class RewardExpiredError extends DomainError {
-  constructor(rewardId: string) {
-    super("REWARD_EXPIRED", `Reward ${rewardId} has expired`);
-  }
-}
-```
-
-```typescript
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// domain/keys.ts
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-export const rewardKeys = {
-  balance: (tenantId: string) => `rewards:balance:${tenantId}`,
-  idemLock: (tenantId: string, idem: string) => `rewards:idem:${tenantId}:${idem}`,
-  dailyCount: (tenantId: string, date: string) => `rewards:daily:${tenantId}:${date}`,
-} as const;
-```
-
-### ports.ts — Repository Interfaces (Database Abstraction)
-
-**Purpose:** Define interfaces for data access operations to support **multiple database backends**.
-
-SaasKit is designed to support multiple databases:
-- **MongoDB** (default, fully implemented)
-- **PostgreSQL** (planned)
-- **MySQL** (planned)
-
-The `ports.ts` file defines the **contract** that all database implementations must follow. This allows users to switch databases via configuration without changing service code.
-
-#### How Database Selection Works
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                   DATABASE ABSTRACTION                       │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  ┌─────────────────┐                                        │
-│  │  domain/ports   │  ◄── Interface (contract)              │
-│  │  RewardRepoPort │                                        │
-│  └────────┬────────┘                                        │
-│           │                                                  │
-│           │ implements                                       │
-│           ▼                                                  │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │                 data/ implementations                │    │
-│  ├─────────────────┬─────────────────┬─────────────────┤    │
-│  │ rewards.repo    │ rewards.repo    │ rewards.repo    │    │
-│  │ .mongo.ts       │ .postgres.ts    │ .mysql.ts       │    │
-│  │ (implemented)   │ (future)        │ (future)        │    │
-│  └─────────────────┴─────────────────┴─────────────────┘    │
-│           │                                                  │
-│           │ selectRepo()                                     │
-│           ▼                                                  │
-│  ┌─────────────────┐                                        │
-│  │ data/rewards    │  ◄── Public repository (delegates)     │
-│  │ .repository.ts  │                                        │
-│  └─────────────────┘                                        │
-│           │                                                  │
-│           │ used by                                          │
-│           ▼                                                  │
-│  ┌─────────────────┐                                        │
-│  │ service/        │  ◄── Business logic (DB-agnostic)      │
-│  │ rewards.service │                                        │
-│  └─────────────────┘                                        │
-│                                                              │
-└─────────────────────────────────────────────────────────────┘
-```
-
-#### Defining a Repository Port
-
-```typescript
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// domain/ports.ts
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-import type { RewardDoc, RewardBalance, RewardPage } from "./types";
-
-/**
- * Repository interface for rewards data access.
- *
- * All database implementations (MongoDB, PostgreSQL, MySQL) must
- * implement this interface. Services use only these methods,
- * making them database-agnostic.
- */
-export interface RewardRepoPort {
-  // Queries
-  findById(tenantId: string, id: string): Promise<RewardDoc | null>;
-  findByIdem(tenantId: string, idemKey: string): Promise<RewardDoc | null>;
-  getBalance(tenantId: string): Promise<RewardBalance>;
-  listPage(args: { tenantId: string; limit: number; cursor?: string }): Promise<RewardPage>;
-
-  // Mutations
-  insert(doc: Omit<RewardDoc, "_id" | "createdAt" | "updatedAt">): Promise<{ id: string }>;
-  updateConsumed(tenantId: string, id: string, consumed: number): Promise<void>;
-
-  // Batch operations (for admin)
-  getBalancesByTenantIds(tenantIds: string[]): Promise<Map<string, number>>;
-}
-```
-
-#### Implementing for MongoDB
-
-```typescript
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// data/rewards.repository.mongo.ts
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-import { col } from "@/src/core/db/connection";
-import type { RewardRepoPort } from "../domain/ports";
-import type { RewardDoc, RewardBalance } from "../domain/types";
-
-const collection = () => col<RewardDoc>("rewards");
-
-export const RewardRepoMongo: RewardRepoPort = {
-  async findById(tenantId, id) {
-    return collection().findOne({ _id: id, tenantId });
-  },
-
-  async findByIdem(tenantId, idemKey) {
-    return collection().findOne({ tenantId, idemKey });
-  },
-
-  async getBalance(tenantId) {
-    const [result] = await collection().aggregate<RewardBalance>([
-      { $match: { tenantId } },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: "$amount" },
-          consumed: { $sum: "$consumed" },
-        },
-      },
-      {
-        $project: {
-          total: 1,
-          consumed: 1,
-          available: { $subtract: ["$total", "$consumed"] },
-        },
-      },
-    ]).toArray();
-
-    return result ?? { total: 0, consumed: 0, available: 0 };
-  },
-
-  async insert(doc) {
-    const now = new Date();
-    const result = await collection().insertOne({
-      ...doc,
-      _id: crypto.randomUUID(),
-      createdAt: now,
-      updatedAt: now,
-    } as RewardDoc);
-    return { id: result.insertedId };
-  },
-
-  // ... other methods
-};
-```
-
-#### Future: Implementing for PostgreSQL
-
-```typescript
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// data/rewards.repository.postgres.ts (future)
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-import { db } from "@/src/core/db/postgres";
-import { rewards } from "@/src/core/db/schema";
-import type { RewardRepoPort } from "../domain/ports";
-
-export const RewardRepoPostgres: RewardRepoPort = {
-  async findById(tenantId, id) {
-    return db.query.rewards.findFirst({
-      where: (r, { eq, and }) => and(eq(r.id, id), eq(r.tenantId, tenantId)),
-    });
-  },
-
-  async getBalance(tenantId) {
-    const result = await db
-      .select({
-        total: sql<number>`sum(amount)`,
-        consumed: sql<number>`sum(consumed)`,
-      })
-      .from(rewards)
-      .where(eq(rewards.tenantId, tenantId));
-
-    return {
-      total: result[0]?.total ?? 0,
-      consumed: result[0]?.consumed ?? 0,
-      available: (result[0]?.total ?? 0) - (result[0]?.consumed ?? 0),
-    };
-  },
-
-  // ... other methods using Drizzle ORM
-};
-```
-
-#### The Repository Selector
-
-```typescript
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// data/rewards.repository.ts (public API)
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-import type { RewardRepoPort } from "../domain/ports";
-import { selectRepo } from "@/src/core/repo";
-import { RewardRepoMongo } from "./rewards.repository.mongo";
-// import { RewardRepoPostgres } from "./rewards.repository.postgres"; // future
-
-// selectRepo picks the implementation based on DB_PROVIDER env var
-const repo = selectRepo<RewardRepoPort>({
-  mongo: RewardRepoMongo,
-  // postgres: RewardRepoPostgres,  // future
-  // mysql: RewardRepoMySQL,        // future
-});
-
-// Export individual functions for service layer
-export const findById = repo.findById;
-export const findByIdem = repo.findByIdem;
-export const getBalance = repo.getBalance;
-export const listPage = repo.listPage;
-export const insert = repo.insert;
-```
-
-#### How Users Switch Databases
-
-```bash
-# .env - Default (MongoDB)
-DB_PROVIDER=mongo
-
-# .env - Future (PostgreSQL)
-DB_PROVIDER=postgres
-```
-
-The `selectRepo` function reads `DB_PROVIDER` and returns the appropriate implementation:
-
-```typescript
-// core/repo/select.ts
-export function selectRepo<T>(adapters: { mongo: T } & Partial<Record<DbProvider, T>>): T {
-  const db = getDbProvider(); // reads DB_PROVIDER env
-  return adapters[db] ?? adapters.mongo; // fallback to mongo
-}
-```
-
-#### Why This Pattern Matters
-
-| Benefit | Explanation |
-|---------|-------------|
-| **User choice** | Users can choose MongoDB, PostgreSQL, or MySQL based on their existing stack |
-| **Service isolation** | Services don't know/care which database is used |
-| **Easy migration** | Switch databases by implementing the port + changing env var |
-| **Type safety** | Interface ensures all implementations have the same methods |
-| **Testability** | Can inject mock repositories for testing |
-| **Future-proof** | Add new databases without changing service code |
-
-#### Summary: Data Layer Files
-
-```
-domain/
-└── ports.ts                         # Interface (contract) for all DB implementations
-
-data/
-├── rewards.repository.ts            # Public API — uses selectRepo() to delegate
-├── rewards.repository.mongo.ts      # MongoDB implementation (default)
-├── rewards.repository.postgres.ts   # PostgreSQL implementation (future)
-└── rewards.repository.mysql.ts      # MySQL implementation (future)
-```
-
-#### When to Define Ports
-
-| Scenario | Use ports.ts? |
-|----------|---------------|
-| Module has database operations | ✅ Yes — always define the interface |
-| Module only uses cache (Redis) | ❌ No — Redis API is uniform |
-| Module calls external APIs | ❌ No — use provider interfaces instead |
-| Module is pure computation | ❌ No — no data layer needed |
-
-### Database-Agnostic Patterns (CRITICAL)
-
-To support multiple databases (MongoDB, PostgreSQL, MySQL), follow these rules **strictly**:
-
-#### ❌ NEVER Do This (Database-Specific)
-
-```typescript
-// ❌ WRONG - Direct MongoDB imports in service layer
-import { ObjectId } from "mongodb";
-import { col } from "@unisane/kernel";
-
-// ❌ WRONG - Using _id directly (MongoDB-specific)
-const doc = await col("users").findOne({ _id: new ObjectId(id) });
-
-// ❌ WRONG - MongoDB-specific operators in service
-const users = await col("users").find({ age: { $gt: 18 } }).toArray();
-
-// ❌ WRONG - Importing repository.mongo.ts directly
-import { UserRepoMongo } from "../data/user.repository.mongo";
-```
-
-#### ✅ ALWAYS Do This (Database-Agnostic)
-
-```typescript
-// ✅ CORRECT - Import from public repository (not .mongo.ts)
-import { UserRepo } from "../data/user.repository";
-
-// ✅ CORRECT - Use string IDs, let repository handle conversion
-const user = await UserRepo.findById(id); // id is string
-
-// ✅ CORRECT - Use repository methods, not raw queries
-const users = await UserRepo.findAdults(); // Repository implements the query
-
-// ✅ CORRECT - Domain types use string IDs
-type User = {
-  id: string;        // ✅ string, not ObjectId
-  tenantId: string;
-  email: string;
-  createdAt: Date;   // ✅ Date objects are universal
-};
-```
-
-#### Repository Implementation Rules
-
-| Layer | Can Use | Cannot Use |
-|-------|---------|------------|
-| **Service** | `UserRepo.findById()` | `ObjectId`, `col()`, MongoDB operators |
-| **Repository (public)** | `selectRepo()` | Direct DB calls |
-| **Repository (.mongo.ts)** | `ObjectId`, `col()`, `$gt`, `$in` | Nothing restricted |
-| **Domain types** | `string` for IDs | `ObjectId` type |
-
-#### ID Handling Pattern
-
-```typescript
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// domain/types.ts — Use string IDs
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-export type User = {
-  id: string;           // ✅ string - database agnostic
-  tenantId: string;
-  email: string;
-};
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// data/user.repository.mongo.ts — Convert to ObjectId internally
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-import { ObjectId } from "mongodb";
-import { col } from "@unisane/kernel";
-
-// Internal MongoDB document type (not exported to domain)
-interface UserDoc {
-  _id: ObjectId;        // MongoDB uses ObjectId internally
-  tenantId: string;
-  email: string;
-}
-
-// Convert MongoDB doc to domain type
-function toDto(doc: UserDoc): User {
-  return {
-    id: doc._id.toHexString(),  // ObjectId → string
-    tenantId: doc.tenantId,
-    email: doc.email,
-  };
-}
-
-async function findById(id: string): Promise<User | null> {
-  if (!ObjectId.isValid(id)) return null;  // Validate before conversion
-  const doc = await col<UserDoc>("users").findOne({ _id: new ObjectId(id) });
-  return doc ? toDto(doc) : null;
-}
-```
-
-#### Why This Matters
-
-| Without Abstraction | With Abstraction |
-|--------------------|------------------|
-| Change DB = rewrite services | Change DB = add new repo file |
-| 50+ files to modify | 1 file per module |
-| High risk of bugs | Isolated changes |
-| Long migration | Quick migration |
-
----
-
-## Service Implementation
-
-### Service File Guidelines
-
-- **One function per file** — Each service function lives in its own file
-- **Barrel export via index.ts** — All functions re-exported from `service/index.ts`
-- **Use kernel utilities** — `getTenantId()`, `getUserId()`, `logger`, `events`, etc.
-- **No direct HTTP handling** — Services are transport-agnostic
-- **Filename matches function** — `grantRewards.ts` exports `grantRewards()`
-
-### Service File Pattern
-
-```
-service/
-├── getBalance.ts       # export async function getBalance() { ... }
-├── grantRewards.ts     # export async function grantRewards() { ... }
-├── redeemRewards.ts    # export async function redeemRewards() { ... }
-├── getHistory.ts       # export async function getHistory() { ... }
-└── index.ts            # Re-exports all functions
-```
-
-### Service Barrel Export (service/index.ts)
-
-```typescript
-// packages/rewards/src/service/index.ts
-
-/**
- * Service barrel export.
- * Re-exports all service functions for clean imports.
- */
-
-export { getBalance } from "./getBalance";
-export { grantRewards } from "./grantRewards";
-export { redeemRewards } from "./redeemRewards";
-export { getHistory } from "./getHistory";
-```
-
-### Example Service File
-
-Each service file follows this pattern:
-
-```typescript
-// packages/rewards/src/service/grantRewards.ts
-
-import { getTenantId, getUserId, logger, events } from "@unisane/kernel";
-import { RewardsRepo } from "../data/rewards.repository";
-import { REWARDS_EVENTS } from "../domain/constants";
-import type { GrantRewardsArgs } from "../domain/types";
-import { ERR } from "@unisane/gateway";
-
-// ════════════════════════════════════════════════════════════════════════════
-// Grant Rewards
-// ════════════════════════════════════════════════════════════════════════════
-
-export type { GrantRewardsArgs };
-
-/**
- * Grant rewards to a tenant.
- *
- * @throws {ValidationError} If amount is invalid
- */
-export async function grantRewards(args: GrantRewardsArgs) {
-  const tenantId = getTenantId();
-  const userId = getUserId();
-
-  // Validation
-  if (args.amount <= 0) {
-    throw ERR.validation("Amount must be positive");
-  }
-
-  // Create transaction
-  const transaction = await RewardsRepo.insertTransaction({
-    tenantId,
-    type: "grant",
-    amount: args.amount,
-    reason: args.reason,
-    expiresAt: args.expiresAt ?? null,
-  });
-
-  logger.info("rewards.granted", {
-    tenantId,
-    amount: args.amount,
-    transactionId: transaction.id,
-  });
-
-  // Emit event for side effects
-  await events.emit(REWARDS_EVENTS.GRANTED, {
-    tenantId,
-    userId,
-    transactionId: transaction.id,
-    amount: args.amount,
-  });
-
-  return transaction;
-}
-```
-
-### Another Example: getBalance.ts
-
-```typescript
-// packages/rewards/src/service/getBalance.ts
-
-import { getTenantId, logger } from "@unisane/kernel";
-import { RewardsRepo } from "../data/rewards.repository";
-import type { RewardBalance } from "../domain/types";
-
-// ════════════════════════════════════════════════════════════════════════════
-// Get Balance
-// ════════════════════════════════════════════════════════════════════════════
-
-export type { RewardBalance };
-
-/**
- * Get the current reward balance for the current tenant.
- */
-export async function getBalance(): Promise<RewardBalance> {
-  const tenantId = getTenantId();
-
-  const balance = await RewardsRepo.getBalance(tenantId);
-
-  logger.info("rewards.balance.retrieved", { tenantId, balance: balance.total });
-
-  return balance;
-}
-```
-
-### Service File Naming Convention
-
-| Function | Filename |
-|----------|----------|
-| `getBalance()` | `getBalance.ts` |
-| `grantRewards()` | `grantRewards.ts` |
-| `redeemRewards()` | `redeemRewards.ts` |
-| `getHistory()` | `getHistory.ts` |
-| `cancelSubscription()` | `cancelSubscription.ts` |
-| `listInvoices()` | `listInvoices.ts` |
-
-### Why One Function Per File?
-
-| Benefit | Explanation |
-|---------|-------------|
-| **Easy navigation** | Find function by filename — no searching within large files |
-| **Clear ownership** | Each file has single responsibility |
-| **Better diffs** | Git diffs show exactly which function changed |
-| **Parallel development** | Multiple devs can work on different functions without conflicts |
-| **Consistent pattern** | Every module follows the same structure |
-| **Test alignment** | Test files map directly to service files |
-
-### Context Usage Pattern
-
-Use `getTenantId()` and `getUserId()` helpers from kernel — they return `string` (not `string | undefined`) and throw if not set:
-
-```typescript
-// Always use getTenantId()/getUserId() at the start of service functions
-export async function someServiceFunction(args: SomeArgs) {
-  const tenantId = getTenantId();  // Returns string, throws if not set
-  const userId = getUserId();      // Returns string, throws if not set
-
-  // Use tenantId for data scoping
-  const data = await Repository.findByTenant(tenantId);
-
-  // Include context in logs for tracing
-  logger.info("operation.completed", { tenantId, userId });
-
-  return data;
-}
-```
-
-**Why `getTenantId()` instead of `ctx.get().tenantId`?**
-
-| Pattern | Return Type | Behavior |
-|---------|-------------|----------|
-| `ctx.get().tenantId` | `string \| undefined` | Requires null checks |
-| `getTenantId()` | `string` | Throws if not set — cleaner code |
-
-```typescript
-// ❌ BAD — Requires null checks or type assertions
-const { tenantId } = ctx.get();
-await repo.find(tenantId!);  // Unsafe assertion
-
-// ✅ GOOD — Type-safe, throws if context not set
-const tenantId = getTenantId();
-await repo.find(tenantId);   // tenantId is guaranteed string
 ```
 
 ---
 
 ## Data Layer
 
-### Repository Pattern
+The data layer implements repository pattern with MongoDB.
+
+### Current Pattern (2026)
+
+After P1-005 implementation, use base repository utilities for new modules:
 
 ```typescript
-// packages/rewards/src/data/rewards.repository.ts
+// packages/modules/rewards/src/data/transactions.repository.mongo.ts
 
-import { db, withTransaction } from "@unisane/kernel";
-import type { RewardTransaction, RewardBalance } from "../domain/types";
+import { col } from "@unisane/kernel";
+import type { RewardTransactionDoc, RewardBalance } from "../domain/types";
 
-const collection = () => db.collection<RewardDoc>("rewards");
-const transactionsCollection = () => db.collection<TransactionDoc>("rewardTransactions");
-
-// ═══════════════════════════════════════════════════════════════
-// TYPES
-// ═══════════════════════════════════════════════════════════════
-
-interface RewardDoc {
-  _id: string;
-  tenantId: string;
-  amount: number;
-  type: string;
-  expiresAt: Date | null;
-  consumed: number;
-  createdAt: Date;
-}
-
-interface TransactionDoc {
-  _id: string;
-  tenantId: string;
-  type: "grant" | "redeem";
-  amount: number;
-  reason: string;
-  metadata?: Record<string, unknown>;
-  createdAt: Date;
-}
+const collection = () => col<RewardTransactionDoc>("reward_transactions");
 
 // ═══════════════════════════════════════════════════════════════
 // QUERIES
 // ═══════════════════════════════════════════════════════════════
 
 export async function getBalance(tenantId: string): Promise<RewardBalance> {
-  const pipeline = [
-    { $match: { tenantId } },
-    {
-      $group: {
-        _id: null,
-        total: { $sum: "$amount" },
-        consumed: { $sum: "$consumed" },
+  const [result] = await collection()
+    .aggregate<RewardBalance>([
+      { $match: { tenantId } },
+      {
+        $group: {
+          _id: null,
+          totalCredits: {
+            $sum: { $cond: [{ $eq: ["$type", "credit"] }, "$amount", 0] },
+          },
+          totalDebits: {
+            $sum: { $cond: [{ $eq: ["$type", "debit"] }, "$amount", 0] },
+          },
+        },
       },
-    },
-  ];
+      {
+        $project: {
+          totalCredits: 1,
+          totalDebits: 1,
+          balance: { $subtract: ["$totalCredits", "$totalDebits"] },
+        },
+      },
+    ])
+    .toArray();
 
-  const [result] = await collection().aggregate(pipeline).toArray();
-
-  return {
-    total: result?.total ?? 0,
-    consumed: result?.consumed ?? 0,
-    available: (result?.total ?? 0) - (result?.consumed ?? 0),
-  };
+  return (
+    result ?? {
+      balance: 0,
+      totalCredits: 0,
+      totalDebits: 0,
+    }
+  );
 }
 
-export async function findActiveRewards(
-  tenantId: string,
-  amount: number
-): Promise<RewardDoc[]> {
-  const now = new Date();
-
+export async function getLatestTransaction(
+  tenantId: string
+): Promise<RewardTransactionDoc | null> {
   return collection()
-    .find({
-      tenantId,
-      $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }],
-      $expr: { $lt: ["$consumed", "$amount"] },
-    })
-    .sort({ expiresAt: 1, createdAt: 1 }) // FIFO by expiry
-    .toArray();
+    .findOne({ tenantId }, { sort: { createdAt: -1 } });
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1338,17 +418,17 @@ export async function findActiveRewards(
 // ═══════════════════════════════════════════════════════════════
 
 export async function insertTransaction(
-  data: Omit<TransactionDoc, "_id" | "createdAt">
-): Promise<RewardTransaction> {
-  const doc: TransactionDoc = {
+  data: Omit<RewardTransactionDoc, "_id" | "createdAt">
+): Promise<{ id: string }> {
+  const doc: RewardTransactionDoc = {
     _id: crypto.randomUUID(),
     ...data,
     createdAt: new Date(),
   };
 
-  await transactionsCollection().insertOne(doc);
+  await collection().insertOne(doc);
 
-  return mapToTransaction(doc);
+  return { id: doc._id };
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1359,19 +439,14 @@ export async function listTransactions(options: {
   tenantId: string;
   cursor?: string;
   limit: number;
-  type?: "grant" | "redeem";
-}): Promise<{ transactions: RewardTransaction[]; nextCursor?: string }> {
+}): Promise<{ items: RewardTransactionDoc[]; nextCursor?: string }> {
   const filter: Record<string, unknown> = { tenantId: options.tenantId };
-
-  if (options.type) {
-    filter.type = options.type;
-  }
 
   if (options.cursor) {
     filter._id = { $lt: options.cursor };
   }
 
-  const docs = await transactionsCollection()
+  const docs = await collection()
     .find(filter)
     .sort({ _id: -1 })
     .limit(options.limit + 1)
@@ -1381,242 +456,385 @@ export async function listTransactions(options: {
   const items = hasMore ? docs.slice(0, -1) : docs;
 
   return {
-    transactions: items.map(mapToTransaction),
+    items,
     nextCursor: hasMore ? items[items.length - 1]._id : undefined,
-  };
-}
-
-// ═══════════════════════════════════════════════════════════════
-// MAPPERS
-// ═══════════════════════════════════════════════════════════════
-
-function mapToTransaction(doc: TransactionDoc): RewardTransaction {
-  return {
-    id: doc._id,
-    tenantId: doc.tenantId,
-    type: doc.type,
-    amount: doc.amount,
-    reason: doc.reason,
-    metadata: doc.metadata,
-    createdAt: doc.createdAt,
   };
 }
 ```
 
-### Cache Keys
+### Database-Agnostic Pattern
+
+**CRITICAL**: Follow these rules for future database support (PostgreSQL, MySQL):
 
 ```typescript
-// packages/rewards/src/data/keys.ts
+// ✅ CORRECT - Use string IDs in domain types
+export type RewardTransaction = {
+  id: string;           // NOT ObjectId
+  tenantId: string;
+  amount: number;
+  createdAt: Date;      // Date objects are universal
+};
 
-export const rewardKeys = {
-  balance: (tenantId: string) => `rewards:balance:${tenantId}`,
-  history: (tenantId: string) => `rewards:history:${tenantId}`,
-  transaction: (id: string) => `rewards:tx:${id}`,
-} as const;
+// ✅ CORRECT - Import from public repository
+import { RewardRepo } from "../data/rewards.repository";
+
+// ✅ CORRECT - Let repository handle ID conversion
+const transaction = await RewardRepo.findById(id);
+
+// ❌ WRONG - Don't use MongoDB-specific types in service layer
+import { ObjectId } from "mongodb";
+const doc = await col("rewards").findOne({ _id: new ObjectId(id) });
+```
+
+### Using Base Repository Utilities
+
+For simple CRUD operations, use kernel base repository (implemented in P1-005):
+
+```typescript
+import { createTenantScopedRepository } from "@unisane/kernel";
+
+const rewardsRepo = createTenantScopedRepository<
+  RewardDoc,
+  RewardView,
+  CreateInput,
+  UpdateInput
+>({
+  collectionName: "rewards",
+  mapDocToView: (doc) => ({
+    id: String(doc._id),
+    amount: doc.amount,
+    createdAt: doc.createdAt,
+  }),
+  buildDocFromInput: (input, now) => ({
+    ...input,
+    createdAt: now,
+    updatedAt: now,
+    deletedAt: null,
+  }),
+  buildUpdateSet: (update, now) => ({
+    ...update,
+    updatedAt: now,
+  }),
+});
+
+// Use generated methods
+export const findById = rewardsRepo.findById;
+export const findMany = rewardsRepo.findMany;
+export const create = rewardsRepo.create;
+export const softDelete = rewardsRepo.softDelete;
+```
+
+---
+
+## Service Layer
+
+Service layer implements business logic. Each operation gets its own file.
+
+### Service File Pattern
+
+```
+service/
+├── getBalance.ts       # export async function getBalance()
+├── addCredits.ts       # export async function addCredits()
+├── deductCredits.ts    # export async function deductCredits()
+├── getHistory.ts       # export async function getHistory()
+└── index.ts            # Barrel export
+```
+
+### Example Service File
+
+```typescript
+// packages/modules/rewards/src/service/addCredits.ts
+
+import { getTenantId, getUserId, logger } from "@unisane/kernel";
+import { emitTyped } from "@unisane/kernel";
+import * as RewardRepo from "../data/transactions.repository.mongo";
+import type { AddCreditsInput } from "../domain/types";
+import { ERR } from "@unisane/kernel";
+
+/**
+ * Add credits to a tenant's balance
+ */
+export async function addCredits(
+  input: AddCreditsInput
+): Promise<{ id: string; balance: number }> {
+  const tenantId = getTenantId(); // Throws if not set
+  const userId = getUserId();
+
+  // Validation
+  if (input.amount <= 0) {
+    throw ERR.invalidInput("Amount must be positive");
+  }
+
+  // Get latest balance
+  const latest = await RewardRepo.getLatestTransaction(tenantId);
+  const previousBalance = latest?.balance ?? 0;
+  const newBalance = previousBalance + input.amount;
+
+  // Create transaction
+  const result = await RewardRepo.insertTransaction({
+    tenantId,
+    type: "credit",
+    amount: input.amount,
+    balance: newBalance,
+    reason: input.reason,
+    metadata: input.metadata,
+  });
+
+  logger.info("credits.added", {
+    tenantId,
+    userId,
+    amount: input.amount,
+    balance: newBalance,
+  });
+
+  // Emit typed event (P2-002 implementation)
+  await emitTyped("credits.added", {
+    tenantId,
+    userId,
+    transactionId: result.id,
+    amount: input.amount,
+    balance: newBalance,
+  });
+
+  return { id: result.id, balance: newBalance };
+}
+```
+
+### Service Barrel Export
+
+```typescript
+// packages/modules/rewards/src/service/index.ts
+
+export { getBalance } from "./getBalance";
+export { addCredits } from "./addCredits";
+export { deductCredits } from "./deductCredits";
+export { getHistory } from "./getHistory";
+```
+
+### Context Usage Pattern
+
+Always use `getTenantId()` and `getUserId()` at the start of service functions:
+
+```typescript
+export async function someOperation(input: Input) {
+  const tenantId = getTenantId(); // Returns string, throws if not set
+  const userId = getUserId();     // Returns string, throws if not set
+
+  // Use for data scoping
+  const data = await repo.findByTenant(tenantId);
+
+  // Include in logs for tracing
+  logger.info("operation.completed", { tenantId, userId });
+
+  return data;
+}
 ```
 
 ---
 
 ## Contract Definition
 
-### Adding to Contracts Package
+For modules that expose API endpoints, define contracts for codegen.
+
+### Contract File
 
 ```typescript
-// packages/contracts/src/rewards/rewards.contract.ts
+// starters/saaskit/src/contracts/rewards.contract.ts
 
 import { initContract } from "@ts-rest/core";
 import { z } from "zod";
-import {
-  RewardBalanceSchema,
-  RewardTransactionSchema,
-  GrantRewardsSchema,
-  RedeemRewardsSchema,
-} from "./rewards.schema";
+import { withMeta, defineOpMeta } from "@/src/contracts/meta";
+import { ZAddCredits, ZDeductCredits } from "@unisane/rewards/domain/schemas";
 
 const c = initContract();
 
-export const rewardsContract = c.router(
-  {
-    // Get balance
-    balance: {
+export const rewardsContract = c.router({
+  // Get balance
+  getBalance: withMeta(
+    {
       method: "GET",
-      path: "/rewards/balance",
-      responses: {
-        200: RewardBalanceSchema,
-      },
-      summary: "Get reward balance for current tenant",
-    },
-
-    // Grant rewards
-    grant: {
-      method: "POST",
-      path: "/rewards/grant",
-      body: GrantRewardsSchema,
-      responses: {
-        201: RewardTransactionSchema,
-        400: z.object({ error: z.string() }),
-      },
-      summary: "Grant rewards to tenant",
-    },
-
-    // Redeem rewards
-    redeem: {
-      method: "POST",
-      path: "/rewards/redeem",
-      body: RedeemRewardsSchema,
-      responses: {
-        200: RewardTransactionSchema,
-        400: z.object({ error: z.string() }),
-      },
-      summary: "Redeem rewards",
-    },
-
-    // Get history
-    history: {
-      method: "GET",
-      path: "/rewards/history",
-      query: z.object({
-        cursor: z.string().optional(),
-        limit: z.coerce.number().min(1).max(100).default(20),
-        type: z.enum(["grant", "redeem"]).optional(),
-      }),
+      path: "/api/rest/v1/rewards/balance",
       responses: {
         200: z.object({
-          items: z.array(RewardTransactionSchema),
-          nextCursor: z.string().optional(),
+          balance: z.number(),
+          totalCredits: z.number(),
+          totalDebits: z.number(),
         }),
       },
-      summary: "Get reward transaction history",
     },
-  },
-  {
-    pathPrefix: "/api/v1",
-  }
-);
+    defineOpMeta({
+      op: "rewards.getBalance",
+      requireUser: true,
+      perm: "rewards:read",
+      service: {
+        importPath: "@unisane/rewards",
+        fn: "getBalance",
+        invoke: "object",
+        callArgs: [],
+      },
+    })
+  ),
+
+  // Add credits
+  addCredits: withMeta(
+    {
+      method: "POST",
+      path: "/api/rest/v1/rewards/add",
+      body: ZAddCredits,
+      responses: {
+        201: z.object({
+          id: z.string(),
+          balance: z.number(),
+        }),
+      },
+    },
+    defineOpMeta({
+      op: "rewards.addCredits",
+      requireUser: true,
+      perm: "rewards:write",
+      idempotent: true,
+      service: {
+        importPath: "@unisane/rewards",
+        fn: "addCredits",
+        invoke: "object",
+        callArgs: [{ name: "input", from: "body" }],
+      },
+      invalidate: [{ kind: "prefix", key: ["rewards", "balance"] }],
+    })
+  ),
+});
 ```
 
-### Adding Operation Metadata
+### Generated Route
+
+Running `npm run routes:gen` creates:
 
 ```typescript
-// packages/contracts/src/meta.ts
+// starters/saaskit/src/app/api/rest/v1/rewards/balance/route.ts
+/* AUTO-GENERATED — DO NOT EDIT */
+import { makeHandler } from "@unisane/gateway";
+import { getBalance } from "@unisane/rewards";
 
-export const opMeta = defineOpMeta({
-  // ... existing ops ...
-
-  // ─────────────────────────────────────────────────────────
-  // REWARDS
-  // ─────────────────────────────────────────────────────────
-  "rewards.balance": {
-    auth: "required",
-    rateLimit: { key: "tenant", limit: 100, window: "1m" },
-    service: "rewards",
-    fn: "getRewardBalance",
-    cache: { ttl: 10, scope: "tenant" },
+export const GET = makeHandler(
+  {
+    op: "rewards.getBalance",
+    requireUser: true,
+    perm: "rewards:read",
   },
+  async ({ ctx }) => {
+    const result = await getBalance();
+    return result;
+  }
+);
 
-  "rewards.grant": {
-    auth: "required",
-    permission: "rewards:grant",
-    rateLimit: { key: "tenant", limit: 50, window: "1m" },
-    service: "rewards",
-    fn: "grantRewards",
-  },
+export const runtime = "nodejs";
+```
 
-  "rewards.redeem": {
-    auth: "required",
-    permission: "rewards:redeem",
-    rateLimit: { key: "tenant", limit: 100, window: "1m" },
-    service: "rewards",
-    fn: "redeemRewards",
-  },
+### Generated React Hook
 
-  "rewards.history": {
-    auth: "required",
-    rateLimit: { key: "tenant", limit: 100, window: "1m" },
-    service: "rewards",
-    fn: "getRewardHistory",
-  },
-});
+Running `npm run sdk:gen` creates:
+
+```typescript
+// starters/saaskit/src/sdk/hooks/generated/domains/rewards.hooks.ts
+/* AUTO-GENERATED — DO NOT EDIT */
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+
+export function useRewardsGetBalance(options?) {
+  return useQuery({
+    queryKey: ["rewards", "balance"],
+    queryFn: async () => {
+      const api = await browserApi();
+      return unwrapResponse(await api.rewards.getBalance());
+    },
+    ...options,
+  });
+}
+
+export function useRewardsAddCredits(options?) {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (variables) => {
+      const api = await browserApi();
+      return unwrapResponse(await api.rewards.addCredits({ body: variables }));
+    },
+    onSuccess: (data, variables, context) => {
+      // Auto-invalidate balance query (from metadata)
+      qc.invalidateQueries({ queryKey: ["rewards", "balance"] });
+      options?.onSuccess?.(data, variables, context);
+    },
+    ...options,
+  });
+}
 ```
 
 ---
 
 ## Event Integration
 
+Use the typed event system (implemented in P2-002).
+
 ### Defining Events
 
+Events are centralized in `kernel/src/events/schemas.ts`:
+
 ```typescript
-// packages/rewards/src/events/index.ts
+// kernel/src/events/schemas.ts (registry)
 
-import { events } from "@unisane/kernel";
+import { z } from "zod";
 
-// ═══════════════════════════════════════════════════════════════
-// EVENT TYPES
-// ═══════════════════════════════════════════════════════════════
+export const EventSchemas = {
+  // ... existing events
 
-export interface RewardsGrantedEvent {
-  tenantId: string;
-  userId: string;
-  transactionId: string;
-  amount: number;
-  type: string;
-}
+  // Rewards events
+  "rewards.added": z.object({
+    tenantId: z.string(),
+    userId: z.string(),
+    transactionId: z.string(),
+    amount: z.number(),
+    balance: z.number(),
+  }),
 
-export interface RewardsRedeemedEvent {
-  tenantId: string;
-  userId: string;
-  transactionId: string;
-  amount: number;
-  redemptionId: string;
-}
+  "rewards.deducted": z.object({
+    tenantId: z.string(),
+    userId: z.string(),
+    transactionId: z.string(),
+    amount: z.number(),
+    balance: z.number(),
+  }),
+} as const;
+```
 
-// ═══════════════════════════════════════════════════════════════
-// EVENT HANDLERS
-// ═══════════════════════════════════════════════════════════════
+### Emitting Typed Events
 
-// Handle billing events to grant rewards
-events.on("billing.subscription.created", async (event) => {
-  const { tenantId, planId } = event;
+```typescript
+import { emitTyped } from "@unisane/kernel";
 
-  // Grant signup bonus
-  await grantRewards({
-    amount: 100,
-    type: "signup_bonus",
-    reason: `Signup bonus for ${planId} plan`,
-  });
-});
-
-// Handle usage events
-events.on("usage.milestone.reached", async (event) => {
-  const { tenantId, milestone } = event;
-
-  // Grant milestone rewards
-  await grantRewards({
-    amount: milestone.rewardAmount,
-    type: "milestone",
-    reason: `Reached ${milestone.name}`,
-  });
+// Type-safe emission - TS enforces correct payload
+await emitTyped("rewards.added", {
+  tenantId,
+  userId,
+  transactionId: result.id,
+  amount: input.amount,
+  balance: newBalance,
 });
 ```
 
-### Emitting Events
+### Listening to Events
 
 ```typescript
-// In service functions
-await events.emit("rewards.granted", {
-  tenantId,
-  userId,
-  transactionId: transaction.id,
-  amount: input.amount,
-  type: input.type,
-});
+import { onTyped } from "@unisane/kernel";
 
-// For critical events that must not be lost
-await events.emitReliable("rewards.redeemed", {
-  tenantId,
-  userId,
-  transactionId: transaction.id,
-  amount: input.amount,
+// Type-safe subscription
+onTyped("rewards.added", async (event) => {
+  console.log(event.payload.balance); // Typed correctly
+
+  // Send notification
+  await sendNotification({
+    userId: event.payload.userId,
+    message: `You received ${event.payload.amount} credits!`,
+  });
 });
 ```
 
@@ -1626,91 +844,89 @@ await events.emitReliable("rewards.redeemed", {
 
 ### Unit Tests
 
+Use Vitest with test utils from kernel:
+
 ```typescript
-// packages/rewards/__tests__/rewards.service.test.ts
+// packages/modules/rewards/test/addCredits.test.ts
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { ctx } from "@unisane/kernel";
-import { grantRewards, getRewardBalance } from "../src/service/rewards.service";
-import * as repository from "../src/data/rewards.repository";
+import { setContext, clearContext } from "@unisane/kernel";
+import { addCredits } from "../src/service/addCredits";
+import * as RewardRepo from "../src/data/transactions.repository.mongo";
 
-vi.mock("../src/data/rewards.repository");
+vi.mock("../src/data/transactions.repository.mongo");
 
-describe("rewards.service", () => {
+describe("addCredits", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Mock context
-    vi.spyOn(ctx, "get").mockReturnValue({
-      tenantId: "tenant-123",
-      userId: "user-456",
-      requestId: "req-789",
+    // Set test context
+    setContext({
+      requestId: "test_req",
+      tenantId: "test_tenant",
+      userId: "test_user",
     });
   });
 
-  describe("grantRewards", () => {
-    it("grants rewards successfully", async () => {
-      const mockTransaction = {
-        id: "tx-1",
-        tenantId: "tenant-123",
-        type: "grant",
-        amount: 100,
-        reason: "Test",
-        createdAt: new Date(),
-      };
-
-      vi.spyOn(repository, "insertTransaction").mockResolvedValue(mockTransaction);
-
-      const result = await grantRewards({
-        amount: 100,
-        type: "signup_bonus",
-        reason: "Test",
-      });
-
-      expect(result.amount).toBe(100);
-      expect(repository.insertTransaction).toHaveBeenCalledWith(
-        expect.objectContaining({
-          tenantId: "tenant-123",
-          amount: 100,
-        })
-      );
-    });
-
-    it("throws ValidationError for negative amount", async () => {
-      await expect(
-        grantRewards({
-          amount: -10,
-          type: "signup_bonus",
-          reason: "Test",
-        })
-      ).rejects.toThrow("Amount must be positive");
-    });
+  afterEach(() => {
+    clearContext();
   });
 
-  describe("getRewardBalance", () => {
-    it("returns balance", async () => {
-      vi.spyOn(repository, "getBalance").mockResolvedValue({
-        total: 500,
-        consumed: 100,
-        available: 400,
-      });
-
-      const result = await getRewardBalance();
-
-      expect(result.available).toBe(400);
+  it("should add credits successfully", async () => {
+    vi.spyOn(RewardRepo, "getLatestTransaction").mockResolvedValue({
+      _id: "tx1",
+      tenantId: "test_tenant",
+      type: "credit",
+      amount: 100,
+      balance: 100,
+      reason: "Previous",
+      createdAt: new Date(),
     });
+
+    vi.spyOn(RewardRepo, "insertTransaction").mockResolvedValue({
+      id: "tx2",
+    });
+
+    const result = await addCredits({
+      tenantId: "test_tenant",
+      amount: 50,
+      reason: "Test credit",
+    });
+
+    expect(result.balance).toBe(150);
+    expect(RewardRepo.insertTransaction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tenantId: "test_tenant",
+        type: "credit",
+        amount: 50,
+        balance: 150,
+      })
+    );
+  });
+
+  it("should throw for negative amount", async () => {
+    await expect(
+      addCredits({
+        tenantId: "test_tenant",
+        amount: -10,
+        reason: "Test",
+      })
+    ).rejects.toThrow("Amount must be positive");
   });
 });
 ```
 
 ### Integration Tests
 
+Test full flows with real database:
+
 ```typescript
-// packages/rewards/__tests__/rewards.integration.test.ts
+// packages/modules/rewards/test/rewards.integration.test.ts
 
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { setupTestDb, teardownTestDb, createTestContext } from "@unisane/kernel/testing";
-import { grantRewards, redeemRewards, getRewardBalance } from "../src";
+import { setupTestDb, teardownTestDb } from "@unisane/test-utils";
+import { setContext, clearContext } from "@unisane/kernel";
+import { addCredits, deductCredits, getBalance } from "../src";
 
 describe("rewards integration", () => {
   beforeAll(async () => {
@@ -1721,35 +937,56 @@ describe("rewards integration", () => {
     await teardownTestDb();
   });
 
-  it("full rewards lifecycle", async () => {
-    await createTestContext({ tenantId: "test-tenant" }, async () => {
-      // Grant rewards
-      const grant = await grantRewards({
-        amount: 100,
-        type: "signup_bonus",
-        reason: "Welcome bonus",
-      });
-      expect(grant.amount).toBe(100);
-
-      // Check balance
-      const balance1 = await getRewardBalance();
-      expect(balance1.available).toBe(100);
-
-      // Redeem some
-      const redeem = await redeemRewards({
-        amount: 30,
-        reason: "Discount redemption",
-        redemptionId: "redemption-1",
-      });
-      expect(redeem.amount).toBe(-30);
-
-      // Check final balance
-      const balance2 = await getRewardBalance();
-      expect(balance2.available).toBe(70);
+  it("should handle credit lifecycle", async () => {
+    setContext({
+      requestId: "test",
+      tenantId: "test_tenant",
+      userId: "test_user",
     });
+
+    // Add credits
+    await addCredits({
+      tenantId: "test_tenant",
+      amount: 100,
+      reason: "Test credit",
+    });
+
+    // Check balance
+    const balance1 = await getBalance();
+    expect(balance1.balance).toBe(100);
+
+    // Deduct some
+    await deductCredits({
+      tenantId: "test_tenant",
+      amount: 30,
+      reason: "Test debit",
+    });
+
+    // Check final balance
+    const balance2 = await getBalance();
+    expect(balance2.balance).toBe(70);
+
+    clearContext();
   });
 });
 ```
+
+### Current Test Coverage
+
+Based on ISSUES-ROADMAP.md (P0-001):
+
+| Module | Tests | Status |
+|--------|-------|--------|
+| kernel | 241 | ✅ Complete |
+| gateway | 100 | ✅ Complete |
+| auth | 77 | ✅ Complete |
+| identity | 111 | ✅ Complete |
+| tenants | 74 | ✅ Complete |
+| billing | 103 | ✅ Complete |
+| credits | 49 | ✅ Complete |
+| flags | 65 | ✅ Complete |
+| usage | 44 | ✅ Complete |
+| webhooks | 42 | ✅ Complete |
 
 ---
 
@@ -1759,118 +996,139 @@ Use this checklist when creating a new module:
 
 ### Setup
 - [ ] Created package directory structure
-- [ ] Added `package.json` with correct name and dependencies
+- [ ] Added `package.json` with correct dependencies
 - [ ] Added `tsconfig.json` extending base config
-- [ ] Added to workspace root `pnpm-workspace.yaml` if needed
-- [ ] Verified layer assignment is correct
+- [ ] Created `README.md` with module documentation
 
 ### Domain Layer
-- [ ] Created `domain/types.ts` with all TypeScript interfaces
+- [ ] Created `domain/types.ts` with TypeScript types
+- [ ] Created `domain/schemas.ts` with Zod schemas (if API module)
 - [ ] Created `domain/constants.ts` for magic values
-- [ ] Created `domain/errors.ts` for domain-specific errors
-- [ ] All types are exported from `index.ts`
+- [ ] Created `domain/errors.ts` for domain-specific errors (if needed)
+- [ ] All types use `string` for IDs (not `ObjectId`)
 
 ### Data Layer
-- [ ] Created `data/{entity}.repository.ts` (public, uses `selectRepo()`)
-- [ ] Created `data/{entity}.repository.mongo.ts` (MongoDB implementation)
-- [ ] Created `domain/ports.ts` with repository interface
-- [ ] Created `domain/keys.ts` for cache key patterns (**NOT** `data/keys.ts`)
-- [ ] All database operations use `tenantFilter()` from kernel
-- [ ] No direct `ObjectId` usage outside `.mongo.ts` files
-- [ ] Domain types use `string` for IDs (not `ObjectId`)
-- [ ] Pagination implemented with cursor pattern
-- [ ] Indexes documented/created
+- [ ] Created `data/{entity}.repository.mongo.ts`
+- [ ] All queries use automatic tenant scoping
+- [ ] Cursor-based pagination implemented
+- [ ] No `ObjectId` types exposed to service layer
+- [ ] Soft delete pattern used (`deletedAt` field)
 
 ### Service Layer
-- [ ] Created `service/{operation}.ts` files (one function per file)
+- [ ] Created one file per operation in `service/`
 - [ ] Created `service/index.ts` barrel export
-- [ ] All functions use `getTenantId()`/`getUserId()` for context
-- [ ] Import from `data/{entity}.repository.ts` (NOT `.mongo.ts`)
-- [ ] No direct MongoDB imports (`ObjectId`, `col()`) in service files
-- [ ] Proper logging with structured data
-- [ ] Events emitted for side effects
+- [ ] All functions use `getTenantId()`/`getUserId()`
+- [ ] No direct MongoDB imports in service files
+- [ ] Proper structured logging
+- [ ] Typed events emitted for mutations
 - [ ] Input validation in service layer
-- [ ] Error handling with domain errors
 
 ### Public API
 - [ ] `index.ts` exports all public functions and types
-- [ ] Module JSDoc with `@module`, `@description`, `@layer`
+- [ ] Module JSDoc with `@module` and `@description`
 - [ ] No internal types/functions leaked
-- [ ] Re-exported types for consumer convenience
 
 ### Contract (if API module)
-- [ ] Created contract in `packages/contracts/src/{module}/`
-- [ ] Added Zod schemas for request/response
-- [ ] Added to root contract composition
-- [ ] Added `defineOpMeta` entries for all operations
-
-### Testing
-- [ ] Unit tests for service functions
-- [ ] Repository tests with mock data
-- [ ] Integration tests for critical paths
-- [ ] Test fixtures created
-
-### Documentation
-- [ ] **README.md in package root** (REQUIRED - see template below)
-- [ ] Updated `starterPackages` in build-starter.ts
-- [ ] Added to ARCHITECTURE.md module list (if significant)
-
-### README.md Template
-
-Every package MUST have a `README.md` in its root:
-
-```markdown
-# @unisane/{module-name}
-
-> {One-line description of what this module does}
-
-## Overview
-
-{2-3 sentences explaining the module's purpose and main features}
-
-## Installation
-
-This package is part of the Unisane monorepo and is not published separately.
-
-## Usage
-
-\`\`\`typescript
-import { functionName } from "@unisane/{module-name}";
-
-// Example usage
-const result = await functionName({ ... });
-\`\`\`
-
-## API
-
-### Functions
-
-| Function | Description |
-|----------|-------------|
-| `functionName()` | Brief description |
-| `anotherFunction()` | Brief description |
-
-### Types
-
-| Type | Description |
-|------|-------------|
-| `TypeName` | Brief description |
+- [ ] Created contract in `starters/saaskit/src/contracts/`
+- [ ] Added Zod schemas for validation
+- [ ] Added `defineOpMeta` for code generation
+- [ ] Specified `invalidate` keys for React Query
 
 ### Events
+- [ ] Added event schemas to `kernel/src/events/schemas.ts`
+- [ ] Used `emitTyped()` for type-safe emission
+- [ ] Used `onTyped()` for type-safe subscriptions
 
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `module.event.name` | `{ field: type }` | When this event fires |
+### Testing
+- [ ] Unit tests for service functions (Vitest)
+- [ ] Integration tests for critical paths
+- [ ] Test fixtures created
+- [ ] Mocked external dependencies
 
-## Dependencies
+### Documentation
+- [ ] **README.md** in package root (REQUIRED)
+- [ ] Updated module list in ARCHITECTURE.md
+- [ ] Added collection names to centralized registry (P1-006)
 
-- `@unisane/kernel` - Core utilities
-- `@unisane/gateway` - API layer (if applicable)
+---
 
-## Layer
+## Recent Improvements
 
-This module is at **Layer {N}** in the architecture hierarchy.
-\`\`\`
+Based on ISSUES-ROADMAP.md, these improvements are now available:
+
+### P0-001: Test Infrastructure ✅
+- 800+ tests passing across foundation and modules
+- 51 E2E tests with Playwright
+- Vitest configuration at monorepo root
+
+### P1-005: Repository Base Class ✅
+- `createTenantScopedRepository()` for new modules
+- Common CRUD operations with soft delete
+- Document mapping utilities
+- Use for NEW repositories only (existing ones stable)
+
+### P2-002: Event Schema Registry ✅
+- Centralized event registry in `kernel/src/events/schemas.ts`
+- Type-safe `emitTyped()` and `onTyped()` helpers
+- 35+ event schemas registered
+- Compile-time type checking
+
+### P2-003: Null Handling Convention ✅
+- Documented `findX()` vs `getX()` pattern
+- `findX()` returns `T | null` (absence is valid)
+- `getX()` returns `T` (throws if not found)
+
+### P2-004: Transaction Support ✅
+- `withTransaction()` helper in kernel
+- `withRetryableTransaction()` for critical operations
+- Session management handled automatically
+- MongoDB replica set required
+
+### P2-005: API Versioning ✅
+- URL-based versioning (`/api/rest/v1/`)
+- RFC 8594 deprecation headers
+- Version lifecycle documented
+- `buildDeprecationHeaders()` utility
+
+### P2-006: Request Logging ✅
+- Structured request/response logging
+- Configurable body logging for security
+- Sampling support for high-traffic endpoints
+- Sensitive field redaction
+
+### P2-008: Soft Delete Consistency ✅
+- `softDeleteFilter()` helper in kernel
+- Automatic filtering in base repository
+- `hardDelete()` for GDPR compliance
+- Consistent across all modules
+
+### P2-009: Pagination Consistency ✅
+- Cursor-based pagination standardized
+- No `.skip()` operations (performance)
+- Documented in `kernel/src/pagination/types.ts`
+- All 37 modules use cursor pagination
+
+### P2-011: Field Encryption ✅
+- AES-256-GCM encryption utilities in kernel
+- `encryptField()` and `decryptField()`
+- `createSearchToken()` for indexed lookups
+- `DATA_ENCRYPTION_KEY` env variable
+
+---
+
+## Summary
+
+Follow these key principles when creating modules:
+
+1. **One operation per service file** - Easy navigation and testing
+2. **Repository pattern** - Abstract database implementation
+3. **String IDs in domain types** - Database-agnostic
+4. **Typed events** - Use `emitTyped()` and `onTyped()`
+5. **Cursor pagination** - Performance and consistency
+6. **Soft delete** - Use `softDeleteFilter()` everywhere
+7. **Contract-first** - Define contracts, generate code
+8. **Test comprehensively** - Unit + integration + E2E
+9. **Document thoroughly** - README.md required
 
 ---
 

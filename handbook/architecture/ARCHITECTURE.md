@@ -1,3117 +1,1506 @@
-# Unisane Platform Architecture
+# Unisane Architecture
 
-> **Status:** AUTHORITATIVE
-> **Last Updated:** 2026-01-09
-> **Version:** 2.1
-
----
-
-## Implementation Status
-
-| Component | Status | Notes |
-|-----------|--------|-------|
-| Monorepo structure | Implemented | 30 packages in `@unisane/*` namespace |
-| Kernel layer | Implemented | `@unisane/kernel` |
-| Gateway layer | Implemented | `@unisane/gateway` |
-| Business modules | Implemented | 18 modules + 3 PRO |
-| Platform layer | Implemented | Hexagonal architecture in starters |
-| SDK generation | Implemented | `@unisane/devtools` |
-| UI library | Implemented | `@unisane/ui` - Material 3 components |
-| DataTable | Implemented | `@unisane/data-table` - Advanced data grid |
-| UI CLI | Implemented | `@unisane/cli` - shadcn-style `add`/`init`/`diff` |
-| Distribution build | **Not Implemented** | Design spec only - see [build-distribution.md](./build-distribution.md) |
-| OSS/PRO stripping | **Not Implemented** | Planned for after feature completion |
-
-> **Full status tracking:** See [implementation-status.md](./implementation-status.md)
-
----
-
-## Related Documents
-
-| Document | Description |
-|----------|-------------|
-| [QUICK-REFERENCE.md](./QUICK-REFERENCE.md) | Cheat sheet for daily use |
-| [kernel.md](./kernel.md) | Detailed kernel layer specification |
-| [platform-layer.md](./platform-layer.md) | Hexagonal architecture in starters |
-| [sdk-architecture.md](./sdk-architecture.md) | SDK generation and patterns |
-| [testing.md](./testing.md) | Complete testing strategy |
-| [migration.md](./migration.md) | Step-by-step migration guide |
-| [advanced-features.md](./advanced-features.md) | Phone auth, impersonation, media, AI, analytics |
-| [developer-experience.md](./developer-experience.md) | CLI, generators, seeding, DX tooling |
-| [build-distribution.md](./build-distribution.md) | Starter distribution, OSS/PRO |
-| [implementation-status.md](./implementation-status.md) | What's built vs planned |
-| [ROADMAP.md](./ROADMAP.md) | Migration execution plan with checkpoints |
-| [dev-tools.md](./dev-tools.md) | ESLint, Prettier, Vitest, CI/CD configs |
+> **Last Updated**: January 2026
+> **Version**: Current implementation (not planned features)
+> **Purpose**: Complete architectural knowledge for developers and LLMs
 
 ---
 
 ## Table of Contents
 
 1. [Executive Summary](#executive-summary)
-2. [Core Principles](#core-principles)
-3. [Monorepo Structure](#monorepo-structure)
-4. [Kernel Layer](#kernel-layer) → [Full Details](./kernel.md)
-5. [Gateway Layer](#gateway-layer)
-6. [Module System](#module-system)
-7. [Platform Layer](#platform-layer)
-8. [Contracts & SDK](#contracts--sdk)
-9. [Event System](#event-system)
-10. [Error Handling](#error-handling)
-11. [Testing Strategy](#testing-strategy) → [Full Details](./testing.md)
-12. [Distribution](#distribution)
-13. [Versioning & Upgrades](#versioning--upgrades)
-14. [Migration Phases](#migration-phases) → [Full Details](./migration.md)
-15. [Checklists](#checklists)
+2. [Monorepo Structure](#monorepo-structure)
+3. [Foundation Layer](#foundation-layer)
+4. [Module Layer](#module-layer)
+5. [Contract-First Codegen](#contract-first-codegen)
+6. [Platform Layer](#platform-layer)
+7. [Data Flow & Request Lifecycle](#data-flow--request-lifecycle)
+8. [Testing Strategy](#testing-strategy)
+9. [Development Workflow](#development-workflow)
+10. [Deployment & Production](#deployment--production)
+11. [Key Architectural Decisions](#key-architectural-decisions)
+12. [Implementation Status](#implementation-status)
 
 ---
 
 ## Executive Summary
 
-### What We're Building
+### What is Unisane?
 
-A **Clean Modular Monolith** that:
-- Ships as source code (user owns everything)
-- Has 18 business modules + 3 PRO modules
-- Uses pnpm workspaces + Turborepo
-- Targets Next.js 15+ with App Router
-- Works with MongoDB (primary) + Redis/KV
+**Unisane** is a production-ready, enterprise-grade SaaS starter kit distributed as **source code** (shadcn-style). It provides a complete foundation for building multi-tenant B2B SaaS applications with:
 
-### Key Architectural Decisions
+- **Zero runtime dependencies** on Unisane infrastructure
+- **Full source code ownership** - customize everything
+- **Contract-first development** - 91% of API code auto-generated
+- **Modular monolith** architecture - easy to understand, deploy, and scale
 
-| Decision | Choice | Rationale |
-|----------|--------|-----------|
-| **Architecture** | Modular Monolith | Simple, scalable, can split later |
-| **Module Isolation** | Soft (imports allowed via barrel) | Practical over pure |
-| **Communication** | Direct calls (sync) + Events (async) | Simple, debuggable |
-| **Distribution** | Source code, no runtime deps | User ownership |
-| **UI Integration** | Workspace packages (NOT symlinks) | Cross-platform reliable |
-| **Database** | Repository pattern with transactions | Swappable, testable |
-| **Events** | Typed contracts with versioning | Future-proof |
-| **Errors** | Domain errors + Gateway mapping | Consistent, extensible |
+### Key Statistics
 
----
+- **30 packages** in monorepo (foundation + modules + UI + tooling)
+- **~21,000 lines** of module business logic
+- **~17,300 lines** of auto-generated code (91% of API routes)
+- **15 business modules** (auth, identity, tenants, billing, credits, flags, settings, storage, audit, notify, usage, webhooks, ai, media, pdf)
+- **800+ tests passing** (Vitest + Playwright)
+- **51 E2E tests** covering critical flows
+- **61 Material Design 3** UI components
 
-## Core Principles
+### Technology Stack
 
-### 1. Simple Over Clever
-```
-DO:
-✅ Direct function calls for business logic
-✅ Clear folder structure (understand in < 1 hour)
-✅ Explicit over implicit
+**Backend**:
+- Next.js 16 (App Router, React Server Components)
+- TypeScript 5.9 (strict mode)
+- MongoDB (with automatic tenant scoping)
+- Redis/Upstash KV (caching layer)
+- Pino (structured logging)
+- Zod (validation and type inference)
 
-DON'T:
-❌ Over-engineer for problems we don't have
-❌ Add patterns because they sound enterprise
-❌ Magic that requires deep understanding
-```
+**Frontend**:
+- React 19
+- Tailwind CSS v4 (with OKLCH color space)
+- Material Design 3 components
+- React Query v5 (data fetching)
+- Recharts (data visualization)
 
-### 2. Type Safety End-to-End
-```
-Zod Schema (SSOT)
-    ↓
-├── Frontend form validation
-├── API contract validation
-├── Service layer types
-└── Database schema hints
+**API & Contracts**:
+- ts-rest (end-to-end type safety)
+- Zod schemas (single source of truth)
+- Custom codegen (AST parsing with ts-morph)
 
-One change → updates everywhere
-```
+**Tooling**:
+- pnpm + Turborepo (monorepo management)
+- Vitest (unit/integration tests)
+- Playwright (E2E tests)
+- ESLint + Prettier
+- Custom CLI (`unisane devtools`)
 
-### 3. Practical Isolation
-```
-Modules CAN import each other's PUBLIC API:
+### Architecture Style
 
-// ✅ Good - import from barrel
-import { getTenant } from '@unisane/tenants';
+**Modular Monolith** with:
+- **Contract-first development** - Define API contracts, generate routes/SDK/hooks
+- **Hexagonal architecture** - Modules as domain services, starters as adapters
+- **Event-driven communication** - Typed events with Zod schemas
+- **Tenant isolation** - Automatic row-level security in all queries
+- **Repository pattern** - Clean data access layer
+- **RBAC** - 50+ permissions, 6 built-in roles
 
-// ❌ Bad - deep import
-import { TenantsRepo } from '@unisane/tenants/data/repository';
-```
+### Distribution Model
 
-### 4. User Ownership
-```
-User downloads → Gets source code → Owns everything
+Unisane is distributed as **source code**, not as npm packages or runtime services:
 
-✅ No @unisane/* runtime dependencies
-✅ Full customization freedom
-✅ No black boxes
-```
+1. **Clone the monorepo** - Get all source code
+2. **Run codegen** - Generate routes, SDK, hooks from contracts
+3. **Deploy anywhere** - Vercel, Railway, AWS, self-hosted
+4. **No vendor lock-in** - No runtime dependencies on Unisane
+5. **Full customization** - Modify any file in your codebase
 
-### 5. Production-First
-```
-Every feature must have:
-✅ Error handling strategy
-✅ Observability (logs, metrics, traces)
-✅ Testing approach
-✅ Security consideration
-```
+Think "shadcn for backend" - copy the code you need, own it completely.
 
 ---
 
 ## Monorepo Structure
 
-### Multi-Platform Architecture
+### Overview
 
-The monorepo is designed to support **multiple platforms** (SaaS, CRM, E-commerce, AI Apps, etc.) with shared foundational packages. This structure enables:
-
-- **Reusable modules** across different products
-- **Platform-specific modules** organized separately
-- **Clear dependency boundaries** (each layer depends only on layers below)
-- **Easy navigation** for developers working on specific platforms
-
-### Directory Layout
+The Unisane monorepo contains **30 packages** organized into 5 logical layers:
 
 ```
-unisane/
-│
-├── apps/
-│   ├── web/                         # Docs & component showcase
-│   └── landing/                     # Marketing website
-│
+unisane-monorepo/
 ├── packages/
-│   │
-│   ├── # ═══════════════════════════════════════════════════════════
-│   ├── # FOUNDATION - Core infrastructure used by ALL platforms
-│   ├── # ═══════════════════════════════════════════════════════════
-│   ├── foundation/
-│   │   ├── kernel/                  # @unisane/kernel (Layer 0)
-│   │   │                            # ctx, db, cache, events, logging
-│   │   ├── gateway/                 # @unisane/gateway (Layer 0.5)
-│   │   │                            # HTTP layer, handlers, middleware
-│   │   └── contracts/               # @unisane/contracts
-│   │                                # Base Zod schemas shared by all
-│   │
-│   ├── # ═══════════════════════════════════════════════════════════
-│   ├── # MODULES - Shared business modules reusable across platforms
-│   ├── # ═══════════════════════════════════════════════════════════
-│   ├── modules/
-│   │   │
-│   │   ├── # --- Layer 1: Core identity & settings ---
-│   │   ├── identity/                # @unisane/identity
-│   │   ├── settings/                # @unisane/settings
-│   │   ├── storage/                 # @unisane/storage
-│   │   │
-│   │   ├── # --- Layer 2: Multi-tenancy & auth ---
-│   │   ├── tenants/                 # @unisane/tenants
-│   │   ├── auth/                    # @unisane/auth
-│   │   │
-│   │   ├── # --- Layer 3: Business capabilities ---
-│   │   ├── billing/                 # @unisane/billing
-│   │   ├── flags/                   # @unisane/flags
-│   │   ├── audit/                   # @unisane/audit
-│   │   │
-│   │   ├── # --- Layer 4: Extended features ---
-│   │   ├── credits/                 # @unisane/credits
-│   │   ├── usage/                   # @unisane/usage
-│   │   ├── notify/                  # @unisane/notify
-│   │   ├── webhooks/                # @unisane/webhooks
-│   │   │
-│   │   ├── # --- Layer 5: Content & AI ---
-│   │   ├── media/                   # @unisane/media
-│   │   ├── pdf/                     # @unisane/pdf
-│   │   └── ai/                      # @unisane/ai
-│   │
-│   ├── # ═══════════════════════════════════════════════════════════
-│   ├── # PRO - Premium modules (not in OSS distribution)
-│   ├── # ═══════════════════════════════════════════════════════════
-│   ├── pro/
-│   │   ├── analytics/               # @unisane/analytics
-│   │   ├── sso/                     # @unisane/sso
-│   │   └── import-export/           # @unisane/import-export
-│   │
-│   ├── # ═══════════════════════════════════════════════════════════
-│   ├── # UI - Shared design system (works across all platforms)
-│   ├── # ═══════════════════════════════════════════════════════════
-│   ├── ui/
-│   │   ├── core/                    # @unisane/ui (Material 3 components)
-│   │   ├── data-table/              # @unisane/data-table (Advanced grid)
-│   │   ├── tokens/                  # @unisane/tokens (Design tokens)
-│   │   └── cli/                     # @unisane/cli (shadcn-style CLI)
-│   │
-│   ├── # ═══════════════════════════════════════════════════════════
-│   ├── # TOOLING - Development tools & configs
-│   ├── # ═══════════════════════════════════════════════════════════
-│   ├── tooling/
-│   │   ├── devtools/                # @unisane/devtools
-│   │   ├── test-utils/              # @unisane/test-utils
-│   │   ├── eslint-config/           # @unisane/eslint-config
-│   │   ├── typescript-config/       # @unisane/typescript-config
-│   │   └── tailwind-config/         # @unisane/tailwind-config
-│   │
-│   ├── # ═══════════════════════════════════════════════════════════
-│   ├── # PLATFORM-SPECIFIC MODULES (Future)
-│   ├── # ═══════════════════════════════════════════════════════════
-│   │
-│   ├── crm/                         # CRM-specific modules (future)
-│   │   ├── contacts/                # Contact management
-│   │   ├── deals/                   # Deal/opportunity tracking
-│   │   ├── pipeline/                # Sales pipeline
-│   │   └── activities/              # Activity tracking
-│   │
-│   ├── ecommerce/                   # E-commerce modules (future)
-│   │   ├── products/                # Product catalog
-│   │   ├── cart/                    # Shopping cart
-│   │   ├── orders/                  # Order management
-│   │   ├── inventory/               # Inventory tracking
-│   │   └── shipping/                # Shipping integrations
-│   │
-│   ├── helpdesk/                    # Helpdesk modules (future)
-│   │   ├── tickets/                 # Ticket management
-│   │   ├── knowledge-base/          # Help articles
-│   │   └── chat/                    # Live chat
-│   │
-│   └── ai-platform/                 # AI Apps modules (future)
-│       ├── agents/                  # AI agent framework
-│       ├── prompts/                 # Prompt management
-│       ├── embeddings/              # Vector embeddings
-│       └── rag/                     # RAG implementation
-│
+│   ├── foundation/        # Core infrastructure (3 packages)
+│   ├── modules/           # Business domain modules (15 packages)
+│   ├── ui/                # React components (3 packages)
+│   └── tooling/           # Dev tools & codegen (9 packages)
 ├── starters/
-│   │
-│   ├── saaskit/                     # SaaS starter template
-│   │   ├── src/
-│   │   │   ├── app/                 # Next.js App Router
-│   │   │   ├── platform/            # Hexagonal architecture layer
-│   │   │   ├── routes/              # API route handlers
-│   │   │   └── bootstrap.ts         # Wire everything together
-│   │   └── package.json
-│   │
-│   ├── crm-kit/                     # CRM starter (future)
-│   ├── ecommerce-kit/               # E-commerce starter (future)
-│   └── ai-kit/                      # AI apps starter (future)
-│
-├── handbook/
-│   ├── architecture/                # This documentation
-│   ├── roadmaps/                    # Development roadmaps
-│   └── design-system/               # UI component docs
-│
-├── pnpm-workspace.yaml
-├── turbo.json
-├── tsconfig.base.json
-└── vitest.workspace.ts
+│   └── saaskit/           # Production starter template
+├── handbook/              # Architecture docs
+└── tests/
+    └── e2e/               # Playwright E2E tests
 ```
 
-> **Note:** `tools/release/` for distribution build is **planned but not implemented**.
-> See [build-distribution.md](./build-distribution.md) for design spec and [implementation-status.md](./implementation-status.md) for status.
+### Foundation Layer (3 packages)
 
-### Layer Dependency Rules
+Core infrastructure used by all modules:
 
+1. **`@unisane/kernel`** - Context, database, cache, events, errors, RBAC, observability
+2. **`@unisane/gateway`** - HTTP handlers, guards, auth, query DSL, error mapping
+3. **`@unisane/contracts`** - Shared Zod schemas, common types
+
+**Purpose**: Provide battle-tested primitives that modules build on top of.
+
+**Key Features**:
+- AsyncLocalStorage-based request context (no prop drilling)
+- Automatic tenant scoping for all database queries
+- Typed event system with Zod schemas
+- Centralized error catalog (E1xxx-E8xxx codes)
+- RBAC with 50+ permissions and 6 roles
+- Redis/KV/memory cache adapters
+- Pino structured logging
+- Metrics and tracing
+
+### Module Layer (15 packages)
+
+Business domain modules under [packages/modules/](../../packages/modules/):
+
+| Module | Package | Purpose | LOC |
+|--------|---------|---------|-----|
+| **auth** | `@unisane/auth` | Authentication (signup, signin, OTP, password reset) | ~1,200 |
+| **identity** | `@unisane/identity` | Users, memberships, API keys | ~1,800 |
+| **tenants** | `@unisane/tenants` | Multi-tenancy (tenant CRUD, settings) | ~800 |
+| **billing** | `@unisane/billing` | Stripe/Razorpay subscriptions | ~2,000 |
+| **credits** | `@unisane/credits` | Usage-based billing ledger | ~900 |
+| **flags** | `@unisane/flags` | Feature flags with overrides | ~600 |
+| **settings** | `@unisane/settings` | Key-value settings store | ~400 |
+| **storage** | `@unisane/storage` | S3 file uploads | ~700 |
+| **audit** | `@unisane/audit` | Audit logging | ~500 |
+| **notify** | `@unisane/notify` | Email + in-app notifications | ~1,500 |
+| **usage** | `@unisane/usage` | Usage metering | ~800 |
+| **webhooks** | `@unisane/webhooks` | Outbound webhooks with retries | ~1,200 |
+| **ai** | `@unisane/ai` | OpenAI/Anthropic wrapper | ~600 |
+| **media** | `@unisane/media` | Image/video processing | ~700 |
+| **pdf** | `@unisane/pdf` | PDF generation | ~400 |
+
+**Total Module LOC**: ~21,000 lines of business logic
+
+**Module Structure** (example: `@unisane/identity`):
 ```
-┌──────────────────────────────────────────────────────────────┐
-│                         STARTERS                              │
-│  saaskit │ crm-kit │ ecommerce-kit │ ai-kit                  │
-│  (can use ANY packages below)                                 │
-└────────────────────────────┬─────────────────────────────────┘
-                             │ uses
-┌────────────────────────────┼─────────────────────────────────┐
-│                   PLATFORM-SPECIFIC MODULES                   │
-│  crm/* │ ecommerce/* │ helpdesk/* │ ai-platform/*            │
-│  (can use foundation, modules, pro, ui)                       │
-└────────────────────────────┬─────────────────────────────────┘
-                             │ uses
-┌────────────────────────────┼─────────────────────────────────┐
-│                    SHARED MODULES + PRO                       │
-│  modules/* │ pro/*                                            │
-│  (can use foundation and ui only)                             │
-└────────────────────────────┬─────────────────────────────────┘
-                             │ uses
-┌────────────────────────────┼─────────────────────────────────┐
-│                 FOUNDATION + UI + TOOLING                     │
-│  foundation/* │ ui/* │ tooling/*                              │
-│  (foundation has no deps, ui uses tokens, tooling is isolated)│
-└──────────────────────────────────────────────────────────────┘
-```
-
-**Rules:**
-1. **Foundation** packages have minimal external dependencies
-2. **Modules** can import from foundation and other modules (same or lower layer)
-3. **Platform-specific** packages can import from modules and foundation
-4. **UI** packages are independent of business logic
-5. **Starters** wire everything together
-
-### Workspace Configuration
-
-```yaml
-# pnpm-workspace.yaml
-packages:
-  # Apps
-  - "apps/*"
-
-  # Core infrastructure
-  - "packages/foundation/*"
-
-  # Shared business modules
-  - "packages/modules/*"
-
-  # Premium modules
-  - "packages/pro/*"
-
-  # UI packages
-  - "packages/ui/*"
-
-  # Development tooling
-  - "packages/tooling/*"
-
-  # Platform-specific modules (future)
-  - "packages/crm/*"
-  - "packages/ecommerce/*"
-  - "packages/helpdesk/*"
-  - "packages/ai-platform/*"
-
-  # Starter templates
-  - "starters/*"
-
-  # Build tools (planned)
-  - "tools/*"
+packages/modules/identity/
+├── src/
+│   ├── data/
+│   │   ├── User.model.ts          # Zod schemas
+│   │   ├── User.repo.ts           # Repository pattern
+│   │   └── Membership.repo.ts
+│   ├── service/
+│   │   ├── users.ts               # Business logic
+│   │   └── memberships.ts
+│   ├── events.ts                  # Typed events
+│   └── index.ts                   # Public exports
+├── test/
+│   └── users.test.ts              # Vitest tests
+└── package.json
 ```
 
-```json
-// turbo.json
-{
-  "$schema": "https://turbo.build/schema.json",
-  "globalDependencies": ["tsconfig.base.json"],
-  "tasks": {
-    "build": {
-      "dependsOn": ["^build"],
-      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
-    },
-    "dev": {
-      "dependsOn": ["^build"],
-      "cache": false,
-      "persistent": true
-    },
-    "test": {
-      "dependsOn": ["^build"],
-      "outputs": ["coverage/**"]
-    },
-    "test:unit": {
-      "dependsOn": [],
-      "outputs": ["coverage/**"]
-    },
-    "check-types": {
-      "dependsOn": ["^check-types"]
-    },
-    "lint": {},
-    "codegen": {
-      "cache": false,
-      "outputs": ["src/**/*.gen.ts"]
-    }
-  }
-}
+### UI Layer (3 packages)
+
+React components under [packages/ui/](../../packages/ui/):
+
+1. **`@unisane/ui-core`** - 61 Material Design 3 components (Button, TextField, Card, etc.)
+2. **`@unisane/ui-data-table`** - Powerful data table with sorting, filtering, pagination
+3. **`@unisane/ui-tokens`** - Design tokens (colors, spacing, typography)
+
+**Design System**:
+- Material Design 3 principles
+- Tailwind CSS v4 with OKLCH color space
+- Dark mode support
+- Responsive layouts
+- Accessibility (ARIA, keyboard nav)
+
+### Tooling Layer (9 packages)
+
+Development tools under [packages/tooling/](../../packages/tooling/):
+
+1. **`@unisane/devtools`** - CLI for codegen, migrations, dev server
+2. **`@unisane/cli-core`** - CLI framework primitives
+3. **`@unisane/test-utils`** - Test helpers and fixtures
+4. **`@unisane/contracts-core`** - Contract metadata system
+5. **`@unisane/gen-routes`** - Route generation from contracts
+6. **`@unisane/gen-sdk`** - SDK generation (client + hooks)
+7. **`@unisane/gen-types`** - Type extraction for browser
+8. **`@unisane/eslint-config`** - Shared ESLint rules
+9. **`@unisane/tsconfig`** - Shared TypeScript configs
+
+**Key Tool**: `unisane devtools` CLI
+- `routes:gen` - Generate API routes from contracts
+- `sdk:gen` - Generate TypeScript SDK and React hooks
+- `types:gen` - Extract browser-safe types
+- `db:migrate` - Run database migrations
+- `dev` - Start dev server with hot reload
+
+### Starters
+
+**[starters/saaskit/](../../starters/saaskit/)** - Production-ready starter template:
+
 ```
+saaskit/
+├── src/
+│   ├── app/                       # Next.js App Router
+│   │   ├── api/                   # API routes
+│   │   │   ├── rest/v1/           # 83 generated routes
+│   │   │   ├── auth/              # Manual OAuth routes
+│   │   │   ├── inngest/           # Background jobs
+│   │   │   ├── webhooks/          # Webhook handlers
+│   │   │   ├── health/            # Health checks
+│   │   │   └── ready/             # Readiness probe
+│   │   ├── (auth)/                # Auth pages
+│   │   ├── (dash)/                # Dashboard pages
+│   │   └── layout.tsx
+│   ├── contracts/                 # ts-rest contracts with metadata
+│   ├── sdk/                       # Generated SDK
+│   │   ├── client/                # TypeScript clients
+│   │   ├── hooks/                 # React Query hooks
+│   │   └── types/                 # Browser-safe types
+│   ├── platform/                  # Platform adapters
+│   │   ├── db/                    # Database initialization
+│   │   ├── cache/                 # Cache initialization
+│   │   └── inngest/               # Background job functions
+│   └── components/                # App-specific components
+├── public/                        # Static assets
+└── package.json
+```
+
+**Generated Code**:
+- 83 API routes in `src/app/api/rest/v1/` (auto-generated from contracts)
+- TypeScript SDK in `src/sdk/client/`
+- React Query hooks in `src/sdk/hooks/`
+- Type definitions in `src/sdk/types/`
+
+**Manual Code**:
+- 8 API routes (OAuth, webhooks, health checks)
+- React pages and components
+- Platform initialization
+- Background job functions
+
+**Ratio**: 91% generated, 9% manual
 
 ---
 
-## Kernel Layer
+## Foundation Layer
 
-### Purpose
+The foundation layer provides core primitives that all modules and starters build on. It's battle-tested, production-ready infrastructure.
 
-Foundation layer providing core infrastructure that ALL modules depend on.
+### @unisane/kernel
 
-### Package Structure
+**Purpose**: Core primitives for building modules - context, database, cache, events, errors, RBAC, observability.
 
-```
-packages/kernel/
-├── src/
-│   ├── index.ts                # Public API
-│   │
-│   ├── context/
-│   │   ├── context.ts          # AsyncLocalStorage-based context
-│   │   ├── types.ts            # Context type definitions
-│   │   └── index.ts
-│   │
-│   ├── database/
-│   │   ├── connection.ts       # Connection management
-│   │   ├── transaction.ts      # Transaction support (NEW)
-│   │   ├── tenant-scope.ts     # Auto tenant filtering (NEW)
-│   │   ├── types.ts
-│   │   └── index.ts
-│   │
-│   ├── events/
-│   │   ├── emitter.ts          # Type-safe event emitter
-│   │   ├── contracts.ts        # Event schema definitions (NEW)
-│   │   ├── registry.ts         # Event registration
-│   │   └── index.ts
-│   │
-│   ├── cache/
-│   │   ├── cache.ts            # KV cache abstraction
-│   │   ├── providers/
-│   │   │   ├── redis.ts
-│   │   │   └── memory.ts
-│   │   └── index.ts
-│   │
-│   ├── errors/
-│   │   ├── base.ts             # Base error classes (NEW)
-│   │   ├── catalog.ts          # Error code catalog (NEW)
-│   │   └── index.ts
-│   │
-│   ├── observability/          # NEW
-│   │   ├── logger.ts           # Structured logging
-│   │   ├── tracer.ts           # Distributed tracing
-│   │   ├── metrics.ts          # Metrics collection
-│   │   └── index.ts
-│   │
-│   ├── utils/
-│   │   ├── crypto.ts
-│   │   ├── ids.ts
-│   │   ├── money.ts
-│   │   ├── normalize.ts
-│   │   ├── pagination.ts
-│   │   └── index.ts
-│   │
-│   └── rbac/
-│       ├── permissions.ts
-│       ├── roles.ts
-│       ├── check.ts
-│       └── index.ts
-│
-├── __tests__/
-├── package.json
-└── tsconfig.json
-```
+#### 1. Context System
 
-### Context System (Improved)
+**File**: [packages/foundation/kernel/src/context/context.ts](../../packages/foundation/kernel/src/context/context.ts)
+
+**Problem**: How to pass request-scoped data (tenantId, userId, permissions) without prop drilling?
+
+**Solution**: AsyncLocalStorage-based context with lazy loading.
 
 ```typescript
-// kernel/src/context/types.ts
-
-export interface RequestContext {
-  // Request metadata
+interface RequestContext {
   requestId: string;
-  startTime: number;
-
-  // Authentication (populated by gateway)
-  isAuthenticated: boolean;
-  authMethod?: 'session' | 'apikey' | 'bearer';
-
-  // User & Tenant (populated by gateway)
-  userId?: string;
   tenantId?: string;
-
-  // Authorization (populated by gateway)
-  role?: string;
-  permissions?: string[];
-
-  // Billing (populated lazily on first access)
-  plan?: string;
-
-  // Feature flags cache (populated lazily)
-  flags?: Record<string, boolean>;
+  userId?: string;
+  permissions?: Set<Permission>;  // Lazy-loaded from DB
+  plan?: string;                  // Lazy-loaded from DB
+  flags?: Record<string, boolean>; // Lazy-loaded from flags service
+  trace?: { spanId: string; traceId: string };
 }
 
-export interface ContextAPI {
-  // Run a function with context
-  run<T>(ctx: RequestContext, fn: () => Promise<T>): Promise<T>;
+// Set context at request start
+setContext({ requestId: 'req_123', tenantId: 'tenant_abc', userId: 'user_xyz' });
 
-  // Get current context (throws if not in context)
-  get(): RequestContext;
+// Access anywhere in the call stack (no prop drilling!)
+const ctx = getContext();
+console.log(ctx.tenantId); // 'tenant_abc'
 
-  // Get context or undefined (safe)
-  tryGet(): RequestContext | undefined;
-
-  // Update context (immutable - creates new context)
-  set(updates: Partial<RequestContext>): void;
-
-  // Lazy getters (fetch on first access, cache in context)
-  getPlan(): Promise<string>;
-  getFlags(): Promise<Record<string, boolean>>;
+// Lazy-load permissions when needed
+const perms = await getPermissions(); // Fetches from DB once, caches in context
+if (perms.has('users:write')) {
+  // Allow action
 }
 ```
 
+**Benefits**:
+- No prop drilling through 10 layers of functions
+- Automatic cleanup after request completes
+- Lazy loading - only fetch what you need
+- Type-safe with TypeScript
+
+**Usage Pattern**:
 ```typescript
-// kernel/src/context/context.ts
-
-import { AsyncLocalStorage } from 'async_hooks';
-
-const storage = new AsyncLocalStorage<RequestContext>();
-
-export const ctx: ContextAPI = {
-  run<T>(context: RequestContext, fn: () => Promise<T>): Promise<T> {
-    return storage.run(context, fn);
-  },
-
-  get(): RequestContext {
-    const context = storage.getStore();
-    if (!context) {
-      throw new Error('Context not initialized. Ensure code runs within ctx.run()');
-    }
-    return context;
-  },
-
-  tryGet(): RequestContext | undefined {
-    return storage.getStore();
-  },
-
-  set(updates: Partial<RequestContext>): void {
-    const current = this.get();
-    Object.assign(current, updates);
-  },
-
-  async getPlan(): Promise<string> {
-    const context = this.get();
-    if (context.plan) return context.plan;
-
-    // Lazy fetch from billing module
-    const { getPlanForTenant } = await import('@unisane/billing');
-    const plan = await getPlanForTenant(context.tenantId!);
-    context.plan = plan;
-    return plan;
-  },
-
-  async getFlags(): Promise<Record<string, boolean>> {
-    const context = this.get();
-    if (context.flags) return context.flags;
-
-    // Lazy fetch from flags module
-    const { getAllFlags } = await import('@unisane/flags');
-    const flags = await getAllFlags(context.tenantId!);
-    context.flags = flags;
-    return flags;
-  }
-};
-```
-
-### Database with Transactions (NEW)
-
-```typescript
-// kernel/src/database/transaction.ts
-
-import { ClientSession, MongoClient } from 'mongodb';
-import { ctx } from '../context';
-
-let client: MongoClient;
-
-export function setClient(mongoClient: MongoClient) {
-  client = mongoClient;
-}
-
-export function getDb() {
-  return client.db();
-}
-
-export function col<T extends Document>(name: string) {
-  return getDb().collection<T>(name);
-}
-
-/**
- * Execute operations within a MongoDB transaction.
- * Automatically retries on transient errors.
- */
-export async function withTransaction<T>(
-  fn: (session: ClientSession) => Promise<T>
-): Promise<T> {
-  const session = client.startSession();
-
-  try {
-    let result: T;
-
-    await session.withTransaction(async () => {
-      result = await fn(session);
-    }, {
-      readConcern: { level: 'majority' },
-      writeConcern: { w: 'majority' },
-    });
-
-    return result!;
-  } finally {
-    await session.endSession();
-  }
-}
-
-/**
- * Helper to include session in collection operations
- */
-export function withSession<T extends Document>(
-  collection: Collection<T>,
-  session: ClientSession
-) {
-  return {
-    findOne: (filter: Filter<T>) =>
-      collection.findOne(filter, { session }),
-    insertOne: (doc: OptionalUnlessRequiredId<T>) =>
-      collection.insertOne(doc, { session }),
-    updateOne: (filter: Filter<T>, update: UpdateFilter<T>) =>
-      collection.updateOne(filter, update, { session }),
-    deleteOne: (filter: Filter<T>) =>
-      collection.deleteOne(filter, { session }),
-    // ... other methods
-  };
-}
-```
-
-### Tenant-Scoped Queries (NEW)
-
-```typescript
-// kernel/src/database/tenant-scope.ts
-
-import { Filter } from 'mongodb';
-import { ctx } from '../context';
-
-/**
- * Automatically adds tenantId filter to queries.
- * Prevents accidental cross-tenant data access.
- */
-export function tenantFilter<T>(filter: Filter<T> = {}): Filter<T> {
-  const context = ctx.tryGet();
-
-  if (!context?.tenantId) {
-    throw new Error('tenantId required for tenant-scoped query');
-  }
-
-  return {
-    ...filter,
-    tenantId: context.tenantId,
-  } as Filter<T>;
-}
-
-/**
- * Validates that a document belongs to current tenant.
- * Use after fetching by ID to prevent IDOR attacks.
- */
-export function assertTenantOwnership<T extends { tenantId: string }>(
-  doc: T | null,
-  resourceName: string
-): asserts doc is T {
-  if (!doc) {
-    throw new NotFoundError(`${resourceName} not found`);
-  }
-
-  const { tenantId } = ctx.get();
-  if (doc.tenantId !== tenantId) {
-    // Log security event but throw generic error
-    logger.warn('Tenant ownership violation attempted', {
-      resourceTenantId: doc.tenantId,
-      requestTenantId: tenantId,
-    });
-    throw new NotFoundError(`${resourceName} not found`);
-  }
-}
-```
-
-### Observability (NEW)
-
-```typescript
-// kernel/src/observability/logger.ts
-
-import pino from 'pino';
-import { ctx } from '../context';
-
-const baseLogger = pino({
-  level: process.env.LOG_LEVEL || 'info',
-  formatters: {
-    level: (label) => ({ level: label }),
-  },
-  timestamp: pino.stdTimeFunctions.isoTime,
+// In HTTP handler (gateway sets context)
+export const GET = makeHandler({ op: 'users.list' }, async ({ ctx }) => {
+  // ctx is automatically set from request
+  const users = await listUsers();
+  return users;
 });
 
-/**
- * Context-aware logger that automatically includes request metadata.
- */
-export const logger = {
-  trace: (msg: string, data?: object) => log('trace', msg, data),
-  debug: (msg: string, data?: object) => log('debug', msg, data),
-  info: (msg: string, data?: object) => log('info', msg, data),
-  warn: (msg: string, data?: object) => log('warn', msg, data),
-  error: (msg: string, data?: object) => log('error', msg, data),
-
-  // Create child logger for module
-  child: (module: string) => ({
-    trace: (msg: string, data?: object) => log('trace', msg, { ...data, module }),
-    debug: (msg: string, data?: object) => log('debug', msg, { ...data, module }),
-    info: (msg: string, data?: object) => log('info', msg, { ...data, module }),
-    warn: (msg: string, data?: object) => log('warn', msg, { ...data, module }),
-    error: (msg: string, data?: object) => log('error', msg, { ...data, module }),
-  }),
-};
-
-function log(level: string, msg: string, data?: object) {
-  const context = ctx.tryGet();
-
-  const enriched = {
-    ...data,
-    requestId: context?.requestId,
-    tenantId: context?.tenantId,
-    userId: context?.userId,
-  };
-
-  baseLogger[level](enriched, msg);
+// Deep in service layer
+async function listUsers() {
+  const ctx = getContext(); // No parameters needed!
+  const tenantId = ctx.tenantId;
+  return db.users.find({ tenantId });
 }
 ```
 
+#### 2. Database (MongoDB)
+
+**File**: [packages/foundation/kernel/src/database/](../../packages/foundation/kernel/src/database/)
+
+**Features**:
+- Automatic tenant scoping
+- Type-safe queries with Zod schemas
+- Connection pooling
+- Transaction support
+- Migration utilities
+
+**Tenant Scoping**:
+
+Every query automatically includes `tenantId` from context:
+
 ```typescript
-// kernel/src/observability/tracer.ts
-
-import { ctx } from '../context';
-
-export interface Span {
-  end(): void;
-  setStatus(status: 'ok' | 'error'): void;
-  setAttribute(key: string, value: string | number | boolean): void;
+// packages/foundation/kernel/src/database/tenant-scope.ts
+export function tenantFilter<T extends Record<string, unknown>>(
+  filter: T
+): T & { tenantId: string } {
+  const ctx = getContext();
+  if (!ctx.tenantId) throw new Error('No tenantId in context');
+  return { ...filter, tenantId: ctx.tenantId };
 }
 
-/**
- * Simple tracing abstraction.
- * Can be replaced with OpenTelemetry in production.
- */
-export const tracer = {
-  startSpan(name: string, attributes?: Record<string, string>): Span {
-    const startTime = performance.now();
-    const context = ctx.tryGet();
+// Usage in repositories
+class UserRepo {
+  static async findById(id: string) {
+    const filter = tenantFilter({ _id: id }); // Auto-adds tenantId
+    return db.users.findOne(filter);
+    // Actual query: { _id: id, tenantId: 'tenant_abc' }
+  }
 
-    return {
-      end() {
-        const duration = performance.now() - startTime;
-        logger.debug(`span:${name}`, {
-          duration,
-          ...attributes,
-        });
-      },
-      setStatus(status) {
-        // Record status
-      },
-      setAttribute(key, value) {
-        // Add attribute
-      },
-    };
+  static async list() {
+    const filter = tenantFilter({}); // Auto-adds tenantId
+    return db.users.find(filter).toArray();
+    // Actual query: { tenantId: 'tenant_abc' }
+  }
+}
+```
+
+**Connection**:
+```typescript
+import { getDb } from '@unisane/kernel';
+
+const db = await getDb();
+const users = db.collection('users');
+```
+
+**Migrations**:
+```bash
+unisane devtools db:migrate
+```
+
+#### 3. Cache (Redis/KV/Memory)
+
+**File**: [packages/foundation/kernel/src/cache/](../../packages/foundation/kernel/src/cache/)
+
+**Adapters**:
+- **Redis** - Production (ioredis)
+- **Upstash KV** - Serverless (REST API)
+- **Memory** - Development/testing
+
+**Interface**:
+```typescript
+import { kv } from '@unisane/kernel';
+
+// Set with TTL
+await kv.set('session:abc', JSON.stringify(session), { EX: 3600 });
+
+// Get
+const data = await kv.get('session:abc');
+
+// Delete
+await kv.del('session:abc');
+
+// Atomic increment
+await kv.incr('counter:api_calls');
+```
+
+**Cache Patterns**:
+```typescript
+// Cache-aside pattern
+async function getUser(id: string): Promise<User> {
+  const cacheKey = `user:${id}`;
+
+  // Try cache first
+  const cached = await kv.get(cacheKey);
+  if (cached) return JSON.parse(cached);
+
+  // Cache miss - fetch from DB
+  const user = await db.users.findOne({ _id: id });
+
+  // Populate cache
+  await kv.set(cacheKey, JSON.stringify(user), { EX: 300 });
+
+  return user;
+}
+```
+
+#### 4. Events
+
+**File**: [packages/foundation/kernel/src/events/](../../packages/foundation/kernel/src/events/)
+
+**Typed Event System**:
+
+```typescript
+import { defineEvent, emit } from '@unisane/kernel';
+import { z } from 'zod';
+
+// Define event with Zod schema
+export const UserCreatedEvent = defineEvent({
+  name: 'user.created',
+  schema: z.object({
+    userId: z.string(),
+    email: z.string(),
+    tenantId: z.string(),
+  }),
+});
+
+// Emit event
+await emit(UserCreatedEvent, {
+  userId: 'user_123',
+  email: 'alice@example.com',
+  tenantId: 'tenant_abc',
+});
+
+// Listen for event (in another module)
+import { on } from '@unisane/kernel';
+
+on(UserCreatedEvent, async (payload) => {
+  // payload is typed!
+  console.log(`New user: ${payload.email}`);
+
+  // Send welcome email
+  await sendWelcomeEmail(payload.email);
+});
+```
+
+**Event Flow**:
+1. Module A emits event after action completes
+2. Event system delivers to all registered listeners
+3. Listeners execute asynchronously (non-blocking)
+4. Errors in listeners don't affect original operation
+
+**Use Cases**:
+- Send welcome email after user signup
+- Update analytics after subscription change
+- Invalidate cache after data mutation
+- Trigger webhooks after important events
+
+#### 5. Errors
+
+**File**: [packages/foundation/kernel/src/errors/catalog.ts](../../packages/foundation/kernel/src/errors/catalog.ts)
+
+**Centralized Error Catalog**:
+
+```typescript
+// Error definitions with codes
+export const ERR = {
+  // E1xxx - Authentication
+  loginRequired: () => new DomainError('E1001', 'Login required'),
+  invalidCredentials: () => new DomainError('E1002', 'Invalid credentials'),
+  sessionExpired: () => new DomainError('E1003', 'Session expired'),
+
+  // E2xxx - Authorization
+  permissionDenied: (perm: string) =>
+    new DomainError('E2001', `Permission denied: ${perm}`),
+
+  // E3xxx - Validation
+  invalidInput: (msg: string) =>
+    new DomainError('E3001', `Invalid input: ${msg}`),
+
+  // E4xxx - Resource
+  notFound: (resource: string) =>
+    new DomainError('E4001', `${resource} not found`),
+  duplicate: (resource: string) =>
+    new DomainError('E4002', `${resource} already exists`),
+
+  // E5xxx - Business Logic
+  insufficientCredits: () =>
+    new DomainError('E5001', 'Insufficient credits'),
+  subscriptionRequired: () =>
+    new DomainError('E5002', 'Active subscription required'),
+
+  // E6xxx - External Services
+  stripeError: (msg: string) =>
+    new DomainError('E6001', `Stripe error: ${msg}`),
+  emailFailed: (msg: string) =>
+    new DomainError('E6002', `Email failed: ${msg}`),
+
+  // E7xxx - Rate Limiting
+  rateLimitExceeded: () =>
+    new DomainError('E7001', 'Rate limit exceeded'),
+
+  // E8xxx - Internal
+  internalError: (msg: string) =>
+    new DomainError('E8001', `Internal error: ${msg}`),
+};
+
+// Usage in services
+async function updateUser(id: string, input: unknown) {
+  const user = await db.users.findOne({ _id: id });
+  if (!user) throw ERR.notFound('User');
+
+  // Update logic...
+}
+```
+
+**Error Handling in Gateway**:
+
+The gateway automatically maps domain errors to HTTP responses:
+
+```typescript
+// E1xxx -> 401 Unauthorized
+// E2xxx -> 403 Forbidden
+// E3xxx -> 400 Bad Request
+// E4001 -> 404 Not Found
+// E4002 -> 409 Conflict
+// E5xxx -> 400 Bad Request (business logic)
+// E6xxx -> 502 Bad Gateway
+// E7xxx -> 429 Too Many Requests
+// E8xxx -> 500 Internal Server Error
+```
+
+#### 6. RBAC (Role-Based Access Control)
+
+**File**: [packages/foundation/kernel/src/rbac/](../../packages/foundation/kernel/src/rbac/)
+
+**50+ Permissions**:
+
+```typescript
+export type Permission =
+  // Users
+  | 'users:read'
+  | 'users:write'
+  | 'users:delete'
+  // Tenants
+  | 'tenants:read'
+  | 'tenants:write'
+  | 'tenants:delete'
+  // Billing
+  | 'billing:read'
+  | 'billing:write'
+  // Settings
+  | 'settings:read'
+  | 'settings:write'
+  // ... 40+ more
+  ;
+```
+
+**6 Built-in Roles**:
+
+```typescript
+export const ROLES = {
+  super_admin: {
+    name: 'Super Admin',
+    permissions: ['*'], // All permissions
   },
-
-  async trace<T>(
-    name: string,
-    fn: () => Promise<T>,
-    attributes?: Record<string, string>
-  ): Promise<T> {
-    const span = this.startSpan(name, attributes);
-    try {
-      const result = await fn();
-      span.setStatus('ok');
-      return result;
-    } catch (error) {
-      span.setStatus('error');
-      throw error;
-    } finally {
-      span.end();
-    }
+  tenant_owner: {
+    name: 'Tenant Owner',
+    permissions: [
+      'users:read', 'users:write', 'users:delete',
+      'tenants:read', 'tenants:write',
+      'billing:read', 'billing:write',
+      'settings:read', 'settings:write',
+      // ... all tenant-level permissions
+    ],
+  },
+  tenant_admin: {
+    name: 'Tenant Admin',
+    permissions: [
+      'users:read', 'users:write',
+      'tenants:read',
+      'settings:read', 'settings:write',
+      // ... admin permissions
+    ],
+  },
+  tenant_member: {
+    name: 'Member',
+    permissions: [
+      'users:read',
+      'tenants:read',
+      'settings:read',
+      // ... read-only permissions
+    ],
+  },
+  tenant_billing: {
+    name: 'Billing Manager',
+    permissions: [
+      'billing:read', 'billing:write',
+      'usage:read',
+    ],
+  },
+  tenant_support: {
+    name: 'Support',
+    permissions: [
+      'users:read',
+      'tenants:read',
+      'audit:read',
+    ],
   },
 };
+```
+
+**Permission Checks**:
+
+```typescript
+import { can } from '@unisane/kernel';
+
+// In service layer
+async function deleteUser(id: string) {
+  if (!can('users:delete')) {
+    throw ERR.permissionDenied('users:delete');
+  }
+
+  await db.users.deleteOne({ _id: id });
+}
+
+// In gateway (automatic check)
+export const DELETE = makeHandler({
+  op: 'users.delete',
+  perm: 'users:delete', // Automatic 403 if user lacks permission
+}, async ({ params }) => {
+  await deleteUser(params.id);
+  return { success: true };
+});
+```
+
+#### 7. Observability
+
+**Logging** ([packages/foundation/kernel/src/observability/logger.ts](../../packages/foundation/kernel/src/observability/logger.ts)):
+
+```typescript
+import { logger } from '@unisane/kernel';
+
+// Structured logging with Pino
+logger.info({ userId: 'user_123' }, 'User logged in');
+logger.error({ err, userId: 'user_123' }, 'Failed to update user');
+
+// Logs include context automatically:
+// {
+//   level: 'info',
+//   time: 1234567890,
+//   requestId: 'req_abc',
+//   tenantId: 'tenant_xyz',
+//   userId: 'user_123',
+//   msg: 'User logged in'
+// }
+```
+
+**Metrics** ([packages/foundation/kernel/src/observability/metrics.ts](../../packages/foundation/kernel/src/observability/metrics.ts)):
+
+```typescript
+import { metrics } from '@unisane/kernel';
+
+// Increment counter
+metrics.inc('api.requests', 1, { endpoint: '/api/users', method: 'GET' });
+
+// Record timing
+const start = Date.now();
+await doWork();
+metrics.timing('api.duration', Date.now() - start, { endpoint: '/api/users' });
+
+// Set gauge
+metrics.gauge('active_connections', 42);
+```
+
+#### 8. Utilities
+
+**ID Generation**:
+```typescript
+import { generateId } from '@unisane/kernel';
+
+const userId = generateId('user'); // 'user_abc123...'
+const tenantId = generateId('tenant'); // 'tenant_xyz789...'
+```
+
+**Crypto**:
+```typescript
+import { scryptHashPassword, scryptVerifyPassword } from '@unisane/kernel';
+
+// Hash password
+const { hash, salt } = await scryptHashPassword('password123');
+
+// Verify password
+const valid = await scryptVerifyPassword('password123', salt, hash);
+```
+
+**Money**:
+```typescript
+import { Money } from '@unisane/kernel';
+
+const price = new Money(1999, 'USD'); // $19.99
+console.log(price.format()); // '$19.99'
+console.log(price.cents); // 1999
 ```
 
 ---
 
-## Gateway Layer
+### @unisane/gateway
 
-### Purpose
+**Purpose**: HTTP request handling, authentication, authorization, validation, error mapping.
 
-HTTP-specific infrastructure that sits between routes and modules.
+**File**: [packages/foundation/gateway/src/handler/httpHandler.ts](../../packages/foundation/gateway/src/handler/httpHandler.ts)
 
-### Package Structure
+#### makeHandler
 
-```
-packages/gateway/
-├── src/
-│   ├── index.ts
-│   │
-│   ├── handler/
-│   │   ├── handler.ts          # Route handler factory
-│   │   ├── types.ts            # Handler types
-│   │   └── index.ts
-│   │
-│   ├── auth/
-│   │   ├── plugin.ts           # Auth plugin interface
-│   │   ├── session.ts          # Session validation
-│   │   ├── apikey.ts           # API key validation
-│   │   ├── bearer.ts           # Bearer token validation
-│   │   └── index.ts
-│   │
-│   ├── middleware/
-│   │   ├── rate-limit.ts       # Rate limiting
-│   │   ├── idempotency.ts      # Idempotency handling
-│   │   ├── csrf.ts             # CSRF protection
-│   │   ├── security.ts         # Security headers
-│   │   ├── cors.ts             # CORS handling
-│   │   └── index.ts
-│   │
-│   ├── errors/
-│   │   ├── mapper.ts           # Domain error → HTTP response (NEW)
-│   │   ├── handler.ts          # Error handler
-│   │   ├── responses.ts        # Standard error responses
-│   │   └── index.ts
-│   │
-│   ├── query/
-│   │   ├── parser.ts           # Query parameter parsing
-│   │   ├── builder.ts          # MongoDB query builder
-│   │   └── index.ts
-│   │
-│   └── response/
-│       ├── envelope.ts         # Response envelope
-│       ├── headers.ts          # Response headers
-│       └── index.ts
-│
-├── __tests__/
-├── package.json
-└── tsconfig.json
-```
-
-### Handler Factory (Improved)
+The `makeHandler` function wraps your service logic with automatic security and validation:
 
 ```typescript
-// gateway/src/handler/handler.ts
+import { makeHandler } from '@unisane/gateway';
+import { z } from 'zod';
 
-import { ctx, logger, tracer } from '@unisane/kernel';
-import { DomainError } from '@unisane/kernel/errors';
-import { mapErrorToResponse } from '../errors/mapper';
+const ZCreateUser = z.object({
+  email: z.string().email(),
+  name: z.string(),
+});
 
-export interface HandlerConfig {
-  // Authentication
-  auth?: 'required' | 'optional' | 'none';
-  authMethods?: ('session' | 'apikey' | 'bearer')[];
-
-  // Authorization
-  permissions?: string[];
-  tenantRequired?: boolean;
-
-  // Rate limiting
-  rateLimit?: {
-    window: string;       // '1m', '1h', '1d'
-    max: number;
-    key?: 'ip' | 'user' | 'tenant' | 'apikey';
-  };
-
-  // Idempotency
-  idempotent?: boolean;
-  idempotencyTTL?: number;  // seconds, default 86400 (24h)
-
-  // Caching
-  cache?: {
-    ttl: number;
-    key?: string;
-    invalidateOn?: string[];  // Event names
-  };
-
-  // Audit
-  audit?: {
-    action: string;
-    resource: string;
-  };
-}
-
-export function createHandler<TInput, TOutput>(
-  config: HandlerConfig,
-  handler: (input: TInput, ctx: RequestContext) => Promise<TOutput>
-) {
-  return async (req: Request): Promise<Response> => {
-    const requestId = generateRequestId();
-    const startTime = performance.now();
-
-    // Create initial context
-    const context: RequestContext = {
-      requestId,
-      startTime,
-      isAuthenticated: false,
-    };
-
-    return ctx.run(context, async () => {
-      const span = tracer.startSpan('http.request', {
-        method: req.method,
-        path: new URL(req.url).pathname,
-      });
-
-      try {
-        // 1. Security headers
-        const headers = getSecurityHeaders();
-
-        // 2. CORS (for browser requests)
-        if (req.method === 'OPTIONS') {
-          return handleCORS(req, headers);
-        }
-
-        // 3. Authentication
-        if (config.auth !== 'none') {
-          const authResult = await authenticate(req, config.authMethods);
-
-          if (config.auth === 'required' && !authResult.authenticated) {
-            throw new AuthenticationError('Authentication required');
-          }
-
-          if (authResult.authenticated) {
-            ctx.set({
-              isAuthenticated: true,
-              authMethod: authResult.method,
-              userId: authResult.userId,
-              tenantId: authResult.tenantId,
-              role: authResult.role,
-              permissions: authResult.permissions,
-            });
-          }
-        }
-
-        // 4. Tenant requirement
-        if (config.tenantRequired && !ctx.get().tenantId) {
-          throw new AuthorizationError('Tenant context required');
-        }
-
-        // 5. Permission check
-        if (config.permissions?.length) {
-          const hasPermission = config.permissions.every(p =>
-            ctx.get().permissions?.includes(p)
-          );
-          if (!hasPermission) {
-            throw new AuthorizationError('Insufficient permissions');
-          }
-        }
-
-        // 6. Rate limiting
-        if (config.rateLimit) {
-          await checkRateLimit(config.rateLimit);
-        }
-
-        // 7. CSRF (for session auth + mutations)
-        if (ctx.get().authMethod === 'session' && isMutation(req.method)) {
-          await validateCSRF(req);
-        }
-
-        // 8. Idempotency check
-        if (config.idempotent) {
-          const cached = await checkIdempotency(req);
-          if (cached) {
-            return cached;
-          }
-        }
-
-        // 9. Parse input
-        const input = await parseInput<TInput>(req);
-
-        // 10. Execute handler
-        const result = await handler(input, ctx.get());
-
-        // 11. Audit logging
-        if (config.audit) {
-          await logAudit(config.audit, input, result);
-        }
-
-        // 12. Cache idempotency result
-        if (config.idempotent) {
-          await cacheIdempotencyResult(req, result, config.idempotencyTTL);
-        }
-
-        // 13. Return success response
-        const response = createSuccessResponse(result, headers);
-
-        span.setStatus('ok');
-        return response;
-
-      } catch (error) {
-        span.setStatus('error');
-        return handleError(error, headers);
-      } finally {
-        span.end();
-
-        // Log request completion
-        logger.info('request.complete', {
-          method: req.method,
-          path: new URL(req.url).pathname,
-          status: response?.status,
-          duration: performance.now() - startTime,
-        });
-      }
+export const POST = makeHandler<typeof ZCreateUser>(
+  {
+    op: 'users.create',
+    zod: ZCreateUser,           // Validate request body
+    perm: 'users:write',        // Require permission
+    requireUser: true,          // Require authenticated user
+    rateKey: ({ ctx }) => `${ctx.tenantId}:users.create`, // Rate limit per tenant
+  },
+  async ({ body, ctx, requestId }) => {
+    // body is typed and validated!
+    const user = await createUser({
+      email: body.email,
+      name: body.name,
+      tenantId: ctx.tenantId!,
     });
-  };
-}
+
+    return user;
+  }
+);
 ```
 
-### Error Mapping (NEW)
+**What makeHandler Does**:
+
+1. **Sets context** - Extract auth from session/JWT/API key, set tenantId/userId
+2. **Rate limiting** - Check rate limit based on `rateKey`
+3. **Authentication** - Return 401 if `requireUser: true` and no user
+4. **Authorization** - Return 403 if `perm` specified and user lacks permission
+5. **Validation** - Return 400 if body doesn't match `zod` schema
+6. **Executes handler** - Call your service function
+7. **Error mapping** - Convert domain errors to HTTP responses
+8. **Logging** - Log request/response with context
+9. **Metrics** - Record timing and status code
+
+#### makeHandlerRaw
+
+For handlers that need raw Request/Response (e.g., OAuth callbacks, webhooks):
 
 ```typescript
-// gateway/src/errors/mapper.ts
+import { makeHandlerRaw } from '@unisane/gateway';
 
-import { DomainError, ErrorCode } from '@unisane/kernel/errors';
+export const GET = makeHandlerRaw<unknown, { provider: string }>(
+  {
+    op: 'auth.oauth.callback',
+    allowUnauthed: true,
+  },
+  async ({ req, params, requestId }) => {
+    const url = new URL(req.url);
+    const code = url.searchParams.get('code');
 
-interface ErrorResponse {
-  status: number;
-  body: {
-    ok: false;
-    error: {
-      code: string;
-      message: string;
-      details?: unknown;
-      requestId: string;
-    };
-  };
-}
+    // Exchange code for tokens...
 
-const HTTP_STATUS_MAP: Record<ErrorCode, number> = {
-  // Authentication
-  'AUTH_REQUIRED': 401,
-  'AUTH_INVALID_CREDENTIALS': 401,
-  'AUTH_TOKEN_EXPIRED': 401,
-
-  // Authorization
-  'FORBIDDEN': 403,
-  'INSUFFICIENT_PERMISSIONS': 403,
-  'TENANT_ACCESS_DENIED': 403,
-
-  // Not Found
-  'NOT_FOUND': 404,
-  'RESOURCE_NOT_FOUND': 404,
-
-  // Validation
-  'VALIDATION_FAILED': 400,
-  'INVALID_INPUT': 400,
-
-  // Conflict
-  'CONFLICT': 409,
-  'DUPLICATE': 409,
-  'OPTIMISTIC_LOCK_FAILED': 409,
-
-  // Rate Limiting
-  'RATE_LIMITED': 429,
-
-  // Business Logic
-  'INSUFFICIENT_CREDITS': 402,
-  'SUBSCRIPTION_REQUIRED': 402,
-  'FEATURE_DISABLED': 403,
-  'QUOTA_EXCEEDED': 429,
-
-  // Server Errors
-  'INTERNAL_ERROR': 500,
-  'SERVICE_UNAVAILABLE': 503,
-};
-
-export function mapErrorToResponse(error: unknown): ErrorResponse {
-  const { requestId } = ctx.get();
-
-  // Domain errors (expected)
-  if (error instanceof DomainError) {
-    const status = HTTP_STATUS_MAP[error.code] || 500;
-
-    return {
-      status,
-      body: {
-        ok: false,
-        error: {
-          code: error.code,
-          message: error.message,
-          details: error.details,
-          requestId,
-        },
-      },
-    };
+    return new Response(null, {
+      status: 302,
+      headers: { 'location': '/dashboard' },
+    });
   }
+);
+```
 
-  // Zod validation errors
-  if (error instanceof z.ZodError) {
-    return {
-      status: 400,
-      body: {
-        ok: false,
-        error: {
-          code: 'VALIDATION_FAILED',
-          message: 'Request validation failed',
-          details: formatZodError(error),
-          requestId,
-        },
-      },
-    };
-  }
+#### Query DSL
 
-  // Unknown errors (unexpected)
-  logger.error('Unhandled error', { error });
+**File**: [packages/foundation/gateway/src/query/](../../packages/foundation/gateway/src/query/)
 
-  return {
-    status: 500,
-    body: {
-      ok: false,
-      error: {
-        code: 'INTERNAL_ERROR',
-        message: 'An unexpected error occurred',
-        requestId,
+Standardized query parameters for listing endpoints:
+
+```typescript
+import { parseListQuery } from '@unisane/gateway';
+
+export const GET = makeHandler({ op: 'users.list' }, async ({ req }) => {
+  const query = parseListQuery(req.url, {
+    defaultLimit: 20,
+    maxLimit: 100,
+    sortFields: ['createdAt', 'email', 'name'],
+    filterFields: ['status', 'role'],
+  });
+
+  const users = await db.users
+    .find({ ...tenantFilter(query.filters) })
+    .sort({ [query.sort.field]: query.sort.order === 'asc' ? 1 : -1 })
+    .skip(query.offset)
+    .limit(query.limit)
+    .toArray();
+
+  const total = await db.users.countDocuments(tenantFilter(query.filters));
+
+  return { data: users, total, limit: query.limit, offset: query.offset };
+});
+```
+
+---
+
+### @unisane/contracts
+
+**Purpose**: Shared Zod schemas and types used across modules.
+
+**File**: [packages/foundation/contracts/src/](../../packages/foundation/contracts/src/)
+
+**Common Schemas**:
+
+```typescript
+// Error response format
+export const ZErrorResponse = z.object({
+  error: z.object({
+    code: z.string(),
+    message: z.string(),
+    requestId: z.string().optional(),
+    details: z.record(z.unknown()).optional(),
+  }),
+});
+
+// List response format
+export const ZListResponse = <T extends z.ZodType>(itemSchema: T) =>
+  z.object({
+    data: z.array(itemSchema),
+    total: z.number(),
+    limit: z.number(),
+    offset: z.number(),
+  });
+```
+
+---
+
+## Module Layer
+
+The module layer contains 15 business domain modules. Each module is self-contained with:
+- **Data models** (Zod schemas)
+- **Repositories** (data access with tenant scoping)
+- **Services** (business logic)
+- **Events** (typed with Zod)
+- **Tests** (Vitest)
+
+Modules communicate via:
+1. **Direct imports** - Call service functions from other modules
+2. **Events** - React to actions in other modules asynchronously
+
+### Module Summary
+
+All 15 modules follow consistent patterns:
+
+1. **[@unisane/auth](../../packages/modules/auth/)** - Signup, signin, password reset, OTP
+2. **[@unisane/identity](../../packages/modules/identity/)** - Users, memberships, API keys
+3. **[@unisane/tenants](../../packages/modules/tenants/)** - Multi-tenancy, plan management
+4. **[@unisane/billing](../../packages/modules/billing/)** - Stripe/Razorpay subscriptions
+5. **[@unisane/credits](../../packages/modules/credits/)** - Usage-based billing ledger
+6. **[@unisane/flags](../../packages/modules/flags/)** - Feature flags with overrides
+7. **[@unisane/settings](../../packages/modules/settings/)** - Key-value settings store
+8. **[@unisane/storage](../../packages/modules/storage/)** - S3 file uploads
+9. **[@unisane/audit](../../packages/modules/audit/)** - Audit logging
+10. **[@unisane/notify](../../packages/modules/notify/)** - Email + in-app notifications
+11. **[@unisane/usage](../../packages/modules/usage/)** - Usage metering
+12. **[@unisane/webhooks](../../packages/modules/webhooks/)** - Outbound webhooks with retries
+13. **[@unisane/ai](../../packages/modules/ai/)** - OpenAI/Anthropic wrapper
+14. **[@unisane/media](../../packages/modules/media/)** - Image/video processing
+15. **[@unisane/pdf](../../packages/modules/pdf/)** - PDF generation
+
+Each follows repository pattern, emits typed events, and has comprehensive test coverage.
+
+---
+
+## Contract-First Codegen
+
+The most distinctive feature of Unisane is **contract-first development**: define API contracts with Zod + ts-rest, then auto-generate routes, SDK, and React hooks.
+
+**Result**: 91% of API code is generated (83 out of 91 routes).
+
+### How It Works
+
+1. **Define contract** with Zod schemas and `defineOpMeta()` metadata
+2. **Run codegen** - AST parsing extracts metadata
+3. **Generate route handlers** - Automatic `makeHandler` wrappers
+4. **Generate SDK** - TypeScript client + React Query hooks
+5. **Extract types** - Browser-safe type definitions
+
+### Example Contract
+
+**File**: [starters/saaskit/src/contracts/users.contract.ts](../../starters/saaskit/src/contracts/)
+
+```typescript
+import { initContract } from '@ts-rest/core';
+import { z } from 'zod';
+import { withMeta, defineOpMeta } from '@/src/contracts/meta';
+
+const c = initContract();
+
+export const usersContract = c.router({
+  // List users
+  list: withMeta(
+    {
+      method: 'GET',
+      path: '/api/rest/v1/users',
+      responses: {
+        200: z.object({
+          data: z.array(ZUser),
+          total: z.number(),
+        }),
       },
     },
+    defineOpMeta({
+      op: 'users.list',
+      perm: 'users:read',
+      requireUser: true,
+      service: {
+        importPath: '@unisane/identity',
+        fn: 'listUsers',
+        invoke: 'object',
+        callArgs: [
+          { name: 'filters', from: 'query' },
+        ],
+      },
+    })
+  ),
+
+  // Create user
+  create: withMeta(
+    {
+      method: 'POST',
+      path: '/api/rest/v1/users',
+      body: ZUserCreate,
+      responses: {
+        200: ZUser,
+      },
+    },
+    defineOpMeta({
+      op: 'users.create',
+      perm: 'users:write',
+      requireUser: true,
+      idempotent: true,
+      service: {
+        importPath: '@unisane/identity',
+        fn: 'createUser',
+        invoke: 'object',
+        callArgs: [
+          { name: 'input', from: 'body' },
+          { name: 'tenantId', from: 'ctx', key: 'tenantId' },
+        ],
+      },
+      invalidate: [
+        { kind: 'prefix', key: ['users', 'list'] },
+      ],
+    })
+  ),
+});
+```
+
+### Generated Route
+
+**File**: [starters/saaskit/src/app/api/rest/v1/users/route.ts](../../starters/saaskit/src/app/api/rest/v1/users/route.ts)
+
+```typescript
+/* AUTO-GENERATED by 'npm run routes:gen' — DO NOT EDIT */
+import { makeHandler } from '@unisane/gateway';
+import { listUsers, createUser } from '@unisane/identity';
+
+export const GET = makeHandler<undefined>(
+  {
+    op: 'users.list',
+    perm: 'users:read',
+    requireUser: true,
+  },
+  async ({ req, query, ctx }) => {
+    const result = await listUsers({ filters: query });
+    return result;
+  }
+);
+
+export const POST = makeHandler<typeof ZUserCreate>(
+  {
+    op: 'users.create',
+    perm: 'users:write',
+    requireUser: true,
+    idempotent: true,
+    zod: ZUserCreate,
+  },
+  async ({ body, ctx }) => {
+    const result = await createUser({
+      input: body,
+      tenantId: ctx?.tenantId,
+    });
+    return result;
+  }
+);
+
+export const runtime = 'nodejs';
+```
+
+### Generated React Hook
+
+**File**: [starters/saaskit/src/sdk/hooks/generated/domains/users.hooks.ts](../../starters/saaskit/src/sdk/hooks/generated/)
+
+```typescript
+/* AUTO-GENERATED by 'npm run sdk:gen' — DO NOT EDIT */
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { browserApi, unwrapResponse } from '@/src/sdk/client';
+
+// List users (query)
+export function useUsersList(query?: { limit?: number }, options?) {
+  return useQuery({
+    queryKey: ['users', 'list', query],
+    queryFn: async () => {
+      const api = await browserApi();
+      return unwrapResponse(await api.users.list({ query }));
+    },
+    ...options,
+  });
+}
+
+// Create user (mutation)
+export function useUsersCreate(options?) {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (variables: { email: string; name: string }) => {
+      const api = await browserApi();
+      return unwrapResponse(await api.users.create({ body: variables }));
+    },
+    onSuccess: (data, variables, context) => {
+      // Invalidate list queries (from metadata)
+      qc.invalidateQueries({ queryKey: ['users', 'list'] });
+      options?.onSuccess?.(data, variables, context);
+    },
+    ...options,
+  });
+}
+```
+
+### Development Workflow
+
+```bash
+# 1. Define contract
+vim src/contracts/users.contract.ts
+
+# 2. Generate everything
+npm run routes:gen  # Generate route handlers
+npm run sdk:gen     # Generate SDK + hooks
+npm run types:gen   # Extract types
+
+# 3. Use in React component (already generated!)
+```
+
+**In Practice**:
+
+```tsx
+'use client';
+
+import { useUsersList, useUsersCreate } from '@/src/sdk/hooks';
+
+export default function UsersPage() {
+  const { data } = useUsersList({ limit: 20 });
+  const createUser = useUsersCreate();
+
+  const handleCreate = async (email: string, name: string) => {
+    await createUser.mutateAsync({ email, name });
+    // List query automatically refetched due to invalidate metadata
   };
+
+  return (
+    <div>
+      <h1>Users</h1>
+      {data?.data.map((user) => (
+        <div key={user._id}>{user.name}</div>
+      ))}
+    </div>
+  );
 }
-
-function formatZodError(error: z.ZodError) {
-  return error.errors.map(e => ({
-    path: e.path.join('.'),
-    message: e.message,
-  }));
-}
 ```
 
----
-
-## Module System
-
-### Layer Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                         MODULE LAYER ARCHITECTURE                        │
-│                                                                          │
-│  LAYER 0 (Foundation):                                                   │
-│  ┌──────────────────────────────────────────────────────────────────┐   │
-│  │                            kernel                                 │   │
-│  │  ctx, db, events, cache, errors, observability, utils, rbac      │   │
-│  └──────────────────────────────────────────────────────────────────┘   │
-│                                    │                                     │
-│  ┌──────────────────────────────────────────────────────────────────┐   │
-│  │                           gateway                                 │   │
-│  │  handler, auth, middleware, errors, query, response              │   │
-│  └──────────────────────────────────────────────────────────────────┘   │
-│                                    │                                     │
-│                                    ▼                                     │
-│  LAYER 1 (Core - kernel only):                                          │
-│  ┌────────────┐  ┌────────────┐  ┌────────────┐                         │
-│  │  identity  │  │  settings  │  │  storage   │                         │
-│  └────────────┘  └────────────┘  └────────────┘                         │
-│         │               │               │                                │
-│         ▼               ▼               ▼                                │
-│  LAYER 2 (depends on Layer 1):                                           │
-│  ┌────────────┐  ┌────────────┐                                         │
-│  │  tenants   │  │   auth     │                                         │
-│  │ (identity) │  │ (identity) │                                         │
-│  └────────────┘  └────────────┘                                         │
-│         │               │                                                │
-│         ▼               ▼                                                │
-│  LAYER 3 (depends on Layers 1-2):                                        │
-│  ┌─────────────────┐  ┌────────────┐  ┌────────────┐                    │
-│  │     billing     │  │   flags    │  │   audit    │                    │
-│  │ (tenants,       │  │ (settings, │  │ (identity, │                    │
-│  │  settings,      │  │  tenants)  │  │  tenants)  │                    │
-│  │  flags)         │  │            │  │            │                    │
-│  └─────────────────┘  └────────────┘  └────────────┘                    │
-│         │                    │               │                           │
-│         ▼                    ▼               ▼                           │
-│  LAYER 4 (depends on Layers 1-3):                                        │
-│  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌────────────┐        │
-│  │  credits   │  │   usage    │  │   notify   │  │  webhooks  │        │
-│  │ (billing,  │  │ (tenants,  │  │  (kernel   │  │ (tenants,  │        │
-│  │  tenants)  │  │  billing)  │  │   only)    │  │  events)   │        │
-│  └────────────┘  └────────────┘  └────────────┘  └────────────┘        │
-│                         │                                                │
-│                         ▼                                                │
-│  LAYER 5 (depends on Layers 1-4):                                        │
-│  ┌────────────┐  ┌────────────┐  ┌────────────┐                         │
-│  │   media    │  │    pdf     │  │     ai     │                         │
-│  │ (storage,  │  │ (storage)  │  │ (usage)    │                         │
-│  │  tenants)  │  │            │  │            │                         │
-│  └────────────┘  └────────────┘  └────────────┘                         │
-│                                                                          │
-│  PRO MODULES:                                                            │
-│  ┌────────────┐  ┌────────────┐  ┌────────────────┐                     │
-│  │ analytics  │  │    sso     │  │ import-export  │                     │
-│  │ (tenants,  │  │ (auth,     │  │ (storage,      │                     │
-│  │  usage)    │  │  tenants)  │  │  all modules)  │                     │
-│  └────────────┘  └────────────┘  └────────────────┘                     │
-│                                                                          │
-└─────────────────────────────────────────────────────────────────────────┘
-```
-
-### Module Structure (Standardized)
-
-Every module follows this structure:
-
-```
-packages/{module}/
-├── src/
-│   ├── index.ts                    # PUBLIC API (barrel export)
-│   │
-│   ├── domain/                     # PURE - no server dependencies
-│   │   ├── schemas.ts              # Zod schemas (client + server)
-│   │   ├── types.ts                # TypeScript types
-│   │   ├── errors.ts               # Module-specific error classes
-│   │   └── constants.ts            # Module constants
-│   │
-│   ├── service/                    # Business logic (server-only)
-│   │   ├── {operation}.ts          # ONE FUNCTION PER FILE
-│   │   ├── admin/                  # Admin-only operations
-│   │   │   └── {adminOperation}.ts
-│   │   ├── handlers.ts             # Event handlers
-│   │   └── index.ts                # Barrel export (re-exports all)
-│   │
-│   └── data/                       # Data access (server-only)
-│       ├── types.ts                # Repository interfaces (ports)
-│       ├── {entity}.repo.ts        # Repository implementation selector
-│       ├── {entity}.repo.mongo.ts  # MongoDB implementation
-│       ├── keys.ts                 # Cache key builders
-│       └── mappers.ts              # Entity ↔ DTO mappers
-│
-├── __tests__/
-│   ├── unit/
-│   │   ├── {operation}.test.ts       # Test per service file
-│   │   └── schemas.test.ts
-│   ├── integration/
-│   │   └── {feature}.integration.test.ts
-│   └── fixtures/
-│       └── index.ts
-│
-├── package.json
-├── tsconfig.json
-└── vitest.config.ts
-```
-
-### Module Public API Pattern
-
-```typescript
-// packages/billing/src/index.ts
-
-// ════════════════════════════════════════════════════════════════════════
-// TYPES (for TypeScript)
-// ════════════════════════════════════════════════════════════════════════
-export type {
-  Subscription,
-  Invoice,
-  Payment,
-  SubscriptionStatus,
-  BillingCycle,
-} from './domain/types';
-
-// ════════════════════════════════════════════════════════════════════════
-// SCHEMAS (for validation - PURE, works in browser)
-// ════════════════════════════════════════════════════════════════════════
-export {
-  ZSubscribeInput,
-  ZCancelInput,
-  ZChangePlanInput,
-  ZSubscription,
-  ZInvoice,
-} from './domain/schemas';
-
-// ════════════════════════════════════════════════════════════════════════
-// ERRORS (module-specific)
-// ════════════════════════════════════════════════════════════════════════
-export {
-  SubscriptionNotFoundError,
-  SubscriptionAlreadyExistsError,
-  InsufficientCreditsError,
-  InvalidPlanError,
-} from './domain/errors';
-
-// ════════════════════════════════════════════════════════════════════════
-// SERVICE FUNCTIONS (server-only)
-// ════════════════════════════════════════════════════════════════════════
-export {
-  // Subscription operations
-  subscribe,
-  cancelSubscription,
-  changePlan,
-  getSubscription,
-  getActiveSubscription,
-
-  // Invoice operations
-  getInvoice,
-  listInvoices,
-
-  // Payment operations
-  getPaymentMethods,
-  setDefaultPaymentMethod,
-} from './service';
-
-// ════════════════════════════════════════════════════════════════════════
-// ADMIN SERVICE (separate namespace)
-// ════════════════════════════════════════════════════════════════════════
-export * as billingAdmin from './service/admin/admin.service';
-
-// ════════════════════════════════════════════════════════════════════════
-// PROVIDER INTERFACE (for dependency injection)
-// ════════════════════════════════════════════════════════════════════════
-export type { BillingProvider } from './service/types';
-export { setBillingProvider } from './service/provider';
-
-// ════════════════════════════════════════════════════════════════════════
-// REPOSITORY SETUP (for bootstrap)
-// ════════════════════════════════════════════════════════════════════════
-export {
-  setSubscriptionRepo,
-  setInvoiceRepo,
-  setPaymentRepo,
-} from './data';
-
-export {
-  createMongoSubscriptionRepo,
-  createMongoInvoiceRepo,
-  createMongoPaymentRepo,
-} from './data/mongo';
-
-// ════════════════════════════════════════════════════════════════════════
-// EVENT HANDLERS (for registration)
-// ════════════════════════════════════════════════════════════════════════
-export { registerBillingHandlers } from './service/handlers';
-
-// ════════════════════════════════════════════════════════════════════════
-// DO NOT EXPORT:
-// - Internal helpers
-// - Repository implementations directly
-// - Anything not part of public contract
-// ════════════════════════════════════════════════════════════════════════
-```
-
-### Domain Purity Rule (CRITICAL)
-
-```typescript
-// ════════════════════════════════════════════════════════════════════════
-// DOMAIN PURITY RULE
-// ════════════════════════════════════════════════════════════════════════
-//
-// The domain/ folder must remain PURE - NO server dependencies.
-// This is critical because domain/schemas.ts is used by:
-//   - Server: Contracts and service validation
-//   - Frontend: Form validation with react-hook-form/zod
-//
-// ════════════════════════════════════════════════════════════════════════
-
-// ✅ ALLOWED in domain/
-import { z } from 'zod';
-import type { SomeType } from './types';
-
-// ❌ NOT ALLOWED in domain/
-import { ctx, db, events } from '@unisane/kernel';  // Server-only
-import { getTenant } from '@unisane/tenants';        // Server-only
-import { someNodeApi } from 'node:fs';               // Node.js API
-```
+**Statistics**: 83 generated routes, 8 manual routes = 91% codegen coverage
 
 ---
 
 ## Platform Layer
 
-### Purpose
+The **platform layer** lives in starters (e.g., [starters/saaskit/](../../starters/saaskit/)) and provides:
+- Next.js App Router setup
+- Database/cache initialization
+- Platform-specific routes (OAuth, webhooks, health)
+- React pages and components
+- Background job functions
 
-Starter-specific infrastructure implementing hexagonal architecture (ports & adapters pattern).
-Stays in user's codebase and is NOT extracted to packages.
+This follows **hexagonal architecture**:
+- **Core** = Modules (domain logic)
+- **Adapters** = Platform layer (HTTP, DB, cache, jobs)
 
-> **Full Details:** See [platform-layer.md](./platform-layer.md) for comprehensive documentation.
+### Manual API Routes
 
-### Structure in Starter (Current State)
+Some routes require custom logic not suitable for codegen:
 
-```
-starters/saaskit/src/platform/
-├── auth/                          # Auth session management
-├── billing/                       # Billing provider adapters (Stripe, etc.)
-├── config/                        # Environment & feature configuration
-├── email/                         # Email provider adapters
-├── env.ts                         # Zod-validated environment vars
-├── init.ts                        # Platform initialization
-├── inngest/                       # Background job client
-├── jobs/                          # Background job definitions
-├── metering/                      # Usage metering (OpenMeter, etc.)
-├── oauth/                         # OAuth provider adapters
-├── outbox/                        # Guaranteed event delivery
-├── telemetry/                     # Observability setup
-└── webhooks/                      # Webhook processing
-```
-
-### Module Types
-
-The platform layer uses four module types:
-
-| Type | Purpose | Example |
-|------|---------|---------|
-| **Extensions** | Thin wrappers adding saaskit-specific config | `email/` wrapping `@unisane/notify` |
-| **Adapters** | Combining multiple packages | `billing/` combining billing + tenants |
-| **Integrations** | Provider-specific implementations | Stripe adapter, OpenMeter integration |
-| **Core** | saaskit-only domain logic | Custom business rules |
-
-> This is **intentional hexagonal architecture**, not code duplication.
-
-### Provider Pattern (Detailed)
-
-```typescript
-// platform/providers/billing/types.ts
-
-export interface BillingProvider {
-  // Customer management
-  createCustomer(input: CreateCustomerInput): Promise<Customer>;
-  getCustomer(customerId: string): Promise<Customer | null>;
-  updateCustomer(customerId: string, input: UpdateCustomerInput): Promise<Customer>;
-
-  // Subscription management
-  createSubscription(input: CreateSubscriptionInput): Promise<ProviderSubscription>;
-  cancelSubscription(subscriptionId: string, immediate?: boolean): Promise<void>;
-  updateSubscription(subscriptionId: string, input: UpdateSubscriptionInput): Promise<ProviderSubscription>;
-
-  // Payment methods
-  attachPaymentMethod(customerId: string, paymentMethodId: string): Promise<void>;
-  listPaymentMethods(customerId: string): Promise<PaymentMethod[]>;
-  setDefaultPaymentMethod(customerId: string, paymentMethodId: string): Promise<void>;
-
-  // Invoices
-  listInvoices(customerId: string, limit?: number): Promise<ProviderInvoice[]>;
-
-  // Portal
-  createPortalSession(customerId: string, returnUrl: string): Promise<{ url: string }>;
-
-  // Webhooks
-  constructWebhookEvent(payload: string, signature: string): Promise<WebhookEvent>;
-}
-
-export interface CreateCustomerInput {
-  email: string;
-  name?: string;
-  metadata: {
-    tenantId: string;
-    userId: string;
-  };
-}
-
-// ... more types
-```
-
-```typescript
-// platform/providers/billing/stripe.ts
-
-import Stripe from 'stripe';
-import type { BillingProvider, CreateCustomerInput } from './types';
-
-export function createStripeProvider(secretKey: string): BillingProvider {
-  const stripe = new Stripe(secretKey, {
-    apiVersion: '2024-11-20.acacia',
-  });
-
-  return {
-    async createCustomer(input: CreateCustomerInput) {
-      const customer = await stripe.customers.create({
-        email: input.email,
-        name: input.name,
-        metadata: input.metadata,
-      });
-
-      return {
-        id: customer.id,
-        email: customer.email!,
-        name: customer.name ?? undefined,
-        metadata: customer.metadata as Record<string, string>,
-      };
-    },
-
-    async createSubscription(input) {
-      const subscription = await stripe.subscriptions.create({
-        customer: input.customerId,
-        items: [{ price: input.priceId }],
-        payment_behavior: 'default_incomplete',
-        payment_settings: {
-          save_default_payment_method: 'on_subscription',
-        },
-        expand: ['latest_invoice.payment_intent'],
-      });
-
-      return mapStripeSubscription(subscription);
-    },
-
-    // ... implement all methods
-  };
-}
-```
-
-```typescript
-// platform/providers/billing/index.ts
-
-import { env } from '../config/env';
-import { createStripeProvider } from './stripe';
-import { createRazorpayProvider } from './razorpay';
-import type { BillingProvider } from './types';
-
-export function createBillingProvider(): BillingProvider {
-  switch (env.BILLING_PROVIDER) {
-    case 'stripe':
-      return createStripeProvider(env.STRIPE_SECRET_KEY);
-    case 'razorpay':
-      return createRazorpayProvider(env.RAZORPAY_KEY_ID, env.RAZORPAY_KEY_SECRET);
-    default:
-      throw new Error(`Unknown billing provider: ${env.BILLING_PROVIDER}`);
-  }
-}
-
-export type { BillingProvider };
-```
-
-### Jobs System (Inngest)
-
-```typescript
-// platform/jobs/client.ts
-
-import { Inngest } from 'inngest';
-import { env } from '../config/env';
-
-export const inngest = new Inngest({
-  id: 'saaskit',
-  eventKey: env.INNGEST_EVENT_KEY,
-});
-```
-
-```typescript
-// platform/jobs/functions/billing.jobs.ts
-
-import { inngest } from '../client';
-import { syncSubscription, processWebhook } from '@unisane/billing';
-
-export const syncSubscriptionJob = inngest.createFunction(
-  {
-    id: 'billing/sync-subscription',
-    retries: 3,
-  },
-  { event: 'billing/subscription.sync-requested' },
-  async ({ event, step }) => {
-    const { tenantId, subscriptionId } = event.data;
-
-    await step.run('sync-subscription', async () => {
-      await syncSubscription(tenantId, subscriptionId);
-    });
-  }
-);
-
-export const processWebhookJob = inngest.createFunction(
-  {
-    id: 'billing/process-webhook',
-    retries: 5,
-    concurrency: {
-      limit: 10,
-    },
-  },
-  { event: 'billing/webhook.received' },
-  async ({ event, step }) => {
-    await step.run('process-webhook', async () => {
-      await processWebhook(event.data);
-    });
-  }
-);
-```
-
-### Outbox Pattern (Detailed)
-
-```typescript
-// platform/outbox/types.ts
-
-export interface OutboxEntry {
-  id: string;
-  eventType: string;
-  payload: unknown;
-  createdAt: Date;
-  processedAt: Date | null;
-  attempts: number;
-  lastError: string | null;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-}
-
-export interface OutboxRepository {
-  insert(entry: Omit<OutboxEntry, 'id' | 'createdAt' | 'processedAt' | 'attempts' | 'lastError' | 'status'>): Promise<OutboxEntry>;
-  findPending(limit: number): Promise<OutboxEntry[]>;
-  markProcessing(id: string): Promise<void>;
-  markCompleted(id: string): Promise<void>;
-  markFailed(id: string, error: string): Promise<void>;
-  deleteOld(olderThan: Date): Promise<number>;
-}
-```
-
-```typescript
-// platform/outbox/processor.ts
-
-import { logger } from '@unisane/kernel';
-import { events } from '@unisane/kernel';
-import type { OutboxRepository, OutboxEntry } from './types';
-
-export class OutboxProcessor {
-  private repository: OutboxRepository;
-  private running = false;
-  private intervalId: NodeJS.Timeout | null = null;
-
-  constructor(repository: OutboxRepository) {
-    this.repository = repository;
-  }
-
-  start(intervalMs = 1000) {
-    if (this.running) return;
-
-    this.running = true;
-    this.intervalId = setInterval(() => this.processNext(), intervalMs);
-
-    logger.info('Outbox processor started');
-  }
-
-  stop() {
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
-      this.intervalId = null;
-    }
-    this.running = false;
-
-    logger.info('Outbox processor stopped');
-  }
-
-  private async processNext() {
-    const entries = await this.repository.findPending(10);
-
-    for (const entry of entries) {
-      await this.processEntry(entry);
-    }
-  }
-
-  private async processEntry(entry: OutboxEntry) {
-    try {
-      await this.repository.markProcessing(entry.id);
-
-      // Emit the event
-      await events.emit(entry.eventType as any, entry.payload);
-
-      await this.repository.markCompleted(entry.id);
-
-      logger.debug('Outbox entry processed', {
-        entryId: entry.id,
-        eventType: entry.eventType
-      });
-
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-
-      await this.repository.markFailed(entry.id, errorMessage);
-
-      logger.error('Outbox entry failed', {
-        entryId: entry.id,
-        eventType: entry.eventType,
-        error: errorMessage,
-        attempts: entry.attempts + 1,
-      });
-    }
-  }
-}
-```
+1. **OAuth** - [src/app/api/auth/signin/\[provider\]/route.ts](../../starters/saaskit/src/app/api/auth/signin/[provider]/route.ts) - Start OAuth flow with PKCE
+2. **OAuth Callback** - Handle token exchange
+3. **Webhooks** - Stripe webhook verification
+4. **Health** - [src/app/api/health/route.ts](../../starters/saaskit/src/app/api/health/route.ts) - Database + cache checks
+5. **Ready** - [src/app/api/ready/route.ts](../../starters/saaskit/src/app/api/ready/route.ts) - Kubernetes readiness probe
+6. **Inngest** - [src/app/api/inngest/route.ts](../../starters/saaskit/src/app/api/inngest/route.ts) - Background job webhook
 
 ---
 
-## Event System
+## Data Flow & Request Lifecycle
 
-### Event Contract Pattern (NEW)
+### Request Flow
+
+```
+Browser
+  ↓
+Next.js Route Handler
+  ↓
+makeHandler (gateway)
+  ↓
+1. Extract auth (session/JWT/API key)
+2. Set context (tenantId, userId, requestId)
+3. Check rate limit
+4. Verify authentication (requireUser)
+5. Check permissions (perm)
+6. Validate body (zod)
+  ↓
+Service Function (module)
+  ↓
+Repository (data access)
+  ↓
+Database (MongoDB with tenant scoping)
+  ↓
+← Return data
+  ↓
+Emit event (if mutation)
+  ↓
+← Return response (JSON)
+  ↓
+Browser
+```
+
+### Context Propagation
+
+Context flows through the entire request via AsyncLocalStorage:
 
 ```typescript
-// kernel/src/events/contracts.ts
+// Gateway sets context
+setContext({ requestId: 'req_abc', tenantId: 'tenant_xyz', userId: 'user_123' });
 
-import { z } from 'zod';
+// Service layer accesses context (no parameters!)
+function createUser(input) {
+  const ctx = getContext();
+  console.log(ctx.tenantId); // 'tenant_xyz'
 
-// ════════════════════════════════════════════════════════════════════════
-// EVENT VERSIONING
-// ════════════════════════════════════════════════════════════════════════
-// All events have a version number. When event shape changes:
-// 1. Increment version
-// 2. Keep old handler for backwards compatibility
-// 3. Deprecate old version after migration period
-// ════════════════════════════════════════════════════════════════════════
+  return UserRepo.create({ ...input, tenantId: ctx.tenantId });
+}
 
-export const EventMeta = z.object({
-  eventId: z.string(),
-  eventType: z.string(),
-  version: z.number(),
-  timestamp: z.string().datetime(),
-  source: z.string(),
-  correlationId: z.string().optional(),
-});
-
-export type EventMeta = z.infer<typeof EventMeta>;
-
-// ════════════════════════════════════════════════════════════════════════
-// BILLING EVENTS
-// ════════════════════════════════════════════════════════════════════════
-
-export const SubscriptionCreatedV1 = z.object({
-  _meta: EventMeta,
-  tenantId: z.string(),
-  subscriptionId: z.string(),
-  planId: z.string(),
-  billingCycle: z.enum(['monthly', 'yearly']),
-  trialEndsAt: z.string().datetime().optional(),
-});
-
-export const SubscriptionCancelledV1 = z.object({
-  _meta: EventMeta,
-  tenantId: z.string(),
-  subscriptionId: z.string(),
-  reason: z.string().optional(),
-  cancelledAt: z.string().datetime(),
-  effectiveAt: z.string().datetime(),
-});
-
-export const InvoicePaidV1 = z.object({
-  _meta: EventMeta,
-  tenantId: z.string(),
-  invoiceId: z.string(),
-  amount: z.number(),
-  currency: z.string(),
-});
-
-// ════════════════════════════════════════════════════════════════════════
-// IDENTITY EVENTS
-// ════════════════════════════════════════════════════════════════════════
-
-export const UserCreatedV1 = z.object({
-  _meta: EventMeta,
-  userId: z.string(),
-  email: z.string(),
-  name: z.string().optional(),
-});
-
-export const UserDeletedV1 = z.object({
-  _meta: EventMeta,
-  userId: z.string(),
-  reason: z.string().optional(),
-});
-
-// ════════════════════════════════════════════════════════════════════════
-// TENANT EVENTS
-// ════════════════════════════════════════════════════════════════════════
-
-export const TenantCreatedV1 = z.object({
-  _meta: EventMeta,
-  tenantId: z.string(),
-  name: z.string(),
-  slug: z.string(),
-  ownerId: z.string(),
-});
-
-export const TenantDeletedV1 = z.object({
-  _meta: EventMeta,
-  tenantId: z.string(),
-  deletedBy: z.string(),
-});
-
-// ════════════════════════════════════════════════════════════════════════
-// EVENT REGISTRY
-// ════════════════════════════════════════════════════════════════════════
-
-export const EventRegistry = {
-  // Billing
-  'billing.subscription.created': SubscriptionCreatedV1,
-  'billing.subscription.cancelled': SubscriptionCancelledV1,
-  'billing.invoice.paid': InvoicePaidV1,
-
-  // Identity
-  'identity.user.created': UserCreatedV1,
-  'identity.user.deleted': UserDeletedV1,
-
-  // Tenants
-  'tenant.created': TenantCreatedV1,
-  'tenant.deleted': TenantDeletedV1,
-} as const;
-
-export type EventType = keyof typeof EventRegistry;
-export type EventPayload<T extends EventType> = z.infer<typeof EventRegistry[T]>;
-```
-
-### Type-Safe Event Emitter
-
-```typescript
-// kernel/src/events/emitter.ts
-
-import { z } from 'zod';
-import { nanoid } from 'nanoid';
-import { logger } from '../observability';
-import { EventRegistry, EventType, EventPayload, EventMeta } from './contracts';
-
-type EventHandler<T extends EventType> = (payload: EventPayload<T>) => Promise<void>;
-
-class TypedEventEmitter {
-  private handlers: Map<EventType, Set<EventHandler<any>>> = new Map();
-
-  /**
-   * Register an event handler with type safety.
-   */
-  on<T extends EventType>(
-    eventType: T,
-    handler: EventHandler<T>
-  ): () => void {
-    if (!this.handlers.has(eventType)) {
-      this.handlers.set(eventType, new Set());
-    }
-
-    this.handlers.get(eventType)!.add(handler);
-
-    // Return unsubscribe function
-    return () => {
-      this.handlers.get(eventType)?.delete(handler);
-    };
-  }
-
-  /**
-   * Emit an event with validation.
-   */
-  async emit<T extends EventType>(
-    eventType: T,
-    payload: Omit<EventPayload<T>, '_meta'>
-  ): Promise<void> {
-    const schema = EventRegistry[eventType];
-
-    // Add metadata
-    const fullPayload = {
-      ...payload,
-      _meta: {
-        eventId: nanoid(),
-        eventType,
-        version: 1,
-        timestamp: new Date().toISOString(),
-        source: 'saaskit',
-      },
-    };
-
-    // Validate payload
-    const result = schema.safeParse(fullPayload);
-    if (!result.success) {
-      logger.error('Event validation failed', {
-        eventType,
-        errors: result.error.errors,
-      });
-      throw new Error(`Invalid event payload for ${eventType}`);
-    }
-
-    logger.debug('Event emitted', { eventType, eventId: fullPayload._meta.eventId });
-
-    // Get handlers
-    const handlers = this.handlers.get(eventType);
-    if (!handlers?.size) {
-      return;
-    }
-
-    // Execute handlers (fire and forget)
-    const promises = Array.from(handlers).map(async (handler) => {
-      try {
-        await handler(result.data);
-      } catch (error) {
-        logger.error('Event handler failed', {
-          eventType,
-          eventId: fullPayload._meta.eventId,
-          error: error instanceof Error ? error.message : 'Unknown',
-        });
-        // Don't throw - let other handlers continue
-      }
-    });
-
-    await Promise.allSettled(promises);
-  }
-
-  /**
-   * Emit event through outbox for guaranteed delivery.
-   */
-  async emitReliable<T extends EventType>(
-    eventType: T,
-    payload: Omit<EventPayload<T>, '_meta'>,
-    outbox: OutboxRepository
-  ): Promise<void> {
-    await outbox.insert({
-      eventType,
-      payload,
-    });
-
-    logger.debug('Event queued in outbox', { eventType });
+// Repository uses context for tenant scoping
+class UserRepo {
+  static async create(user) {
+    const filter = tenantFilter({}); // Auto-adds tenantId from context
+    await db.users.insertOne(user);
   }
 }
 
-export const events = new TypedEventEmitter();
-```
-
-### Event vs Job Decision Tree
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                    WHEN TO USE WHAT                                      │
-│                                                                          │
-│  ┌─────────────────────────────────────────────────────────────────┐    │
-│  │  DIRECT FUNCTION CALL (Synchronous)                              │    │
-│  │  ─────────────────────────────────────────────────────────────   │    │
-│  │  Use when:                                                       │    │
-│  │  • Operations MUST succeed together (transactional)             │    │
-│  │  • Result needed immediately                                    │    │
-│  │  • Same process, same request                                   │    │
-│  │                                                                  │    │
-│  │  Examples:                                                       │    │
-│  │  • Create tenant → Create owner membership                      │    │
-│  │  • Subscribe → Update tenant plan                               │    │
-│  │  • Create user → Hash password                                  │    │
-│  └─────────────────────────────────────────────────────────────────┘    │
-│                                                                          │
-│  ┌─────────────────────────────────────────────────────────────────┐    │
-│  │  EVENTS - events.emit() (Fire and Forget)                        │    │
-│  │  ─────────────────────────────────────────────────────────────   │    │
-│  │  Use when:                                                       │    │
-│  │  • Side effects that can fail independently                     │    │
-│  │  • Multiple listeners need notification                         │    │
-│  │  • Decoupling is important                                      │    │
-│  │  • Best-effort delivery is OK                                   │    │
-│  │                                                                  │    │
-│  │  Examples:                                                       │    │
-│  │  • User created → Log audit entry                               │    │
-│  │  • Subscription created → Update analytics                      │    │
-│  │  • Settings changed → Invalidate cache                          │    │
-│  └─────────────────────────────────────────────────────────────────┘    │
-│                                                                          │
-│  ┌─────────────────────────────────────────────────────────────────┐    │
-│  │  OUTBOX - events.emitReliable() (Guaranteed)                     │    │
-│  │  ─────────────────────────────────────────────────────────────   │    │
-│  │  Use when:                                                       │    │
-│  │  • Delivery MUST happen (business critical)                     │    │
-│  │  • External webhook must be fired                               │    │
-│  │  • Email must be sent                                           │    │
-│  │  • Retry on failure is required                                 │    │
-│  │                                                                  │    │
-│  │  Examples:                                                       │    │
-│  │  • Invoice paid → Send receipt email                            │    │
-│  │  • Subscription cancelled → Fire webhook                        │    │
-│  │  • User deleted → Notify external systems                       │    │
-│  └─────────────────────────────────────────────────────────────────┘    │
-│                                                                          │
-│  ┌─────────────────────────────────────────────────────────────────┐    │
-│  │  INNGEST JOBS (Background Processing)                            │    │
-│  │  ────────────────────────────��────────────────────────────────   │    │
-│  │  Use when:                                                       │    │
-│  │  • Long-running operations                                      │    │
-│  │  • Scheduled/cron tasks                                         │    │
-│  │  • Complex workflows with steps                                 │    │
-│  │  • Rate-limited operations                                      │    │
-│  │  • Fan-out processing                                           │    │
-│  │                                                                  │    │
-│  │  Examples:                                                       │    │
-│  │  • Generate monthly report (cron)                               │    │
-│  │  • Process bulk import (long-running)                           │    │
-│  │  • Sync with external API (rate-limited)                        │    │
-│  │  • Send batch emails (fan-out)                                  │    │
-│  └─────────────────────────────────────────────────────────────────┘    │
-│                                                                          │
-└─────────────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## Error Handling
-
-### Domain Error Classes
-
-```typescript
-// kernel/src/errors/base.ts
-
-export type ErrorCode =
-  // Authentication
-  | 'AUTH_REQUIRED'
-  | 'AUTH_INVALID_CREDENTIALS'
-  | 'AUTH_TOKEN_EXPIRED'
-  | 'AUTH_SESSION_INVALID'
-
-  // Authorization
-  | 'FORBIDDEN'
-  | 'INSUFFICIENT_PERMISSIONS'
-  | 'TENANT_ACCESS_DENIED'
-
-  // Not Found
-  | 'NOT_FOUND'
-  | 'RESOURCE_NOT_FOUND'
-
-  // Validation
-  | 'VALIDATION_FAILED'
-  | 'INVALID_INPUT'
-
-  // Conflict
-  | 'CONFLICT'
-  | 'DUPLICATE'
-  | 'ALREADY_EXISTS'
-  | 'OPTIMISTIC_LOCK_FAILED'
-
-  // Rate Limiting
-  | 'RATE_LIMITED'
-
-  // Business Logic
-  | 'INSUFFICIENT_CREDITS'
-  | 'SUBSCRIPTION_REQUIRED'
-  | 'FEATURE_DISABLED'
-  | 'QUOTA_EXCEEDED'
-  | 'INVALID_STATE'
-
-  // Server Errors
-  | 'INTERNAL_ERROR'
-  | 'SERVICE_UNAVAILABLE'
-  | 'PROVIDER_ERROR';
-
-/**
- * Base class for all domain errors.
- * These are expected errors that should be mapped to HTTP responses.
- */
-export class DomainError extends Error {
-  constructor(
-    public readonly code: ErrorCode,
-    message: string,
-    public readonly details?: unknown
-  ) {
-    super(message);
-    this.name = 'DomainError';
-  }
-}
-
-// ════════════════════════════════════════════════════════════════════════
-// CONVENIENCE ERROR CLASSES
-// ════════════════════════════════════════════════════════════════════════
-
-export class AuthenticationError extends DomainError {
-  constructor(message = 'Authentication required') {
-    super('AUTH_REQUIRED', message);
-    this.name = 'AuthenticationError';
-  }
-}
-
-export class AuthorizationError extends DomainError {
-  constructor(message = 'Access denied') {
-    super('FORBIDDEN', message);
-    this.name = 'AuthorizationError';
-  }
-}
-
-export class NotFoundError extends DomainError {
-  constructor(resource: string, id?: string) {
-    const message = id
-      ? `${resource} with id '${id}' not found`
-      : `${resource} not found`;
-    super('NOT_FOUND', message, { resource, id });
-    this.name = 'NotFoundError';
-  }
-}
-
-export class ValidationError extends DomainError {
-  constructor(message: string, details?: unknown) {
-    super('VALIDATION_FAILED', message, details);
-    this.name = 'ValidationError';
-  }
-}
-
-export class ConflictError extends DomainError {
-  constructor(message: string, details?: unknown) {
-    super('CONFLICT', message, details);
-    this.name = 'ConflictError';
-  }
-}
-
-export class RateLimitError extends DomainError {
-  constructor(
-    message = 'Too many requests',
-    public readonly retryAfter?: number
-  ) {
-    super('RATE_LIMITED', message, { retryAfter });
-    this.name = 'RateLimitError';
-  }
-}
-
-export class BusinessError extends DomainError {
-  constructor(code: ErrorCode, message: string, details?: unknown) {
-    super(code, message, details);
-    this.name = 'BusinessError';
-  }
-}
-```
-
-### Module-Specific Errors
-
-```typescript
-// packages/billing/src/domain/errors.ts
-
-import { DomainError, NotFoundError, BusinessError } from '@unisane/kernel/errors';
-
-export class SubscriptionNotFoundError extends NotFoundError {
-  constructor(id?: string) {
-    super('Subscription', id);
-  }
-}
-
-export class InvoiceNotFoundError extends NotFoundError {
-  constructor(id?: string) {
-    super('Invoice', id);
-  }
-}
-
-export class SubscriptionAlreadyExistsError extends DomainError {
-  constructor(tenantId: string) {
-    super('ALREADY_EXISTS', 'Tenant already has an active subscription', { tenantId });
-  }
-}
-
-export class InsufficientCreditsError extends BusinessError {
-  constructor(required: number, available: number) {
-    super(
-      'INSUFFICIENT_CREDITS',
-      `Insufficient credits. Required: ${required}, Available: ${available}`,
-      { required, available }
-    );
-  }
-}
-
-export class InvalidPlanError extends DomainError {
-  constructor(planId: string) {
-    super('INVALID_INPUT', `Invalid plan: ${planId}`, { planId });
-  }
-}
-
-export class SubscriptionInvalidStateError extends BusinessError {
-  constructor(current: string, expected: string[]) {
-    super(
-      'INVALID_STATE',
-      `Cannot perform operation. Subscription is ${current}, expected: ${expected.join(' or ')}`,
-      { current, expected }
-    );
-  }
-}
+// Logger includes context automatically
+logger.info('User created');
+// Output: { level: 'info', requestId: 'req_abc', tenantId: 'tenant_xyz', userId: 'user_123', msg: 'User created' }
 ```
 
 ---
 
 ## Testing Strategy
 
-### Test Types and Locations
+### Test Statistics
 
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                          TESTING PYRAMID                                 │
-│                                                                          │
-│                        ┌─────────────┐                                   │
-│                        │    E2E      │  Few, slow, high confidence       │
-│                        │   Tests     │  starters/saaskit/e2e/            │
-│                        └─────────────┘                                   │
-│                                                                          │
-│                   ┌───────────────────────┐                              │
-│                   │   Integration Tests    │  Some, medium speed         │
-│                   │   packages/*/__tests__/│  packages/*/integration/    │
-│                   │   integration/         │                             │
-│                   └───────────────────────┘                              │
-│                                                                          │
-│          ┌───────────────────────────────────────┐                       │
-│          │            Unit Tests                  │  Many, fast          │
-│          │      packages/*/__tests__/unit/        │  Mocked deps         │
-│          └───────────────────────────────────────┘                       │
-│                                                                          │
-│    ┌───────────────────────────────────────────────────┐                 │
-│    │                 Schema Tests                       │  Fast           │
-│    │           packages/*/__tests__/schemas.test.ts     │  No deps        │
-│    └───────────────────────────────────────────────────┘                 │
-│                                                                          │
-└─────────────────────────────────────────────────────────────────────────┘
-```
+- **800+ tests passing** (Vitest)
+- **51 E2E tests** (Playwright)
+- **Coverage**: ~75% overall, >90% for critical paths
 
-### Test File Locations
+### Unit Tests
 
-```
-packages/{module}/
-├── src/
-│   └── ...
-│
-└── __tests__/
-    ├── unit/                           # Fast, mocked dependencies
-    │   ├── {entity}.service.test.ts
-    │   └── ...
-    │
-    ├── integration/                    # Slower, real database
-    │   └── {entity}.integration.test.ts
-    │
-    ├── schemas.test.ts                 # Schema validation tests
-    │
-    └── fixtures/                       # Test data factories
-        ├── index.ts
-        ├── {entity}.fixture.ts
-        └── ...
-```
-
-### Test Utilities Package
+**Tool**: Vitest
+**Location**: [packages/modules/\*/test/](../../packages/modules/)
 
 ```typescript
-// packages/test-utils/src/index.ts
+import { describe, it, expect, beforeEach } from 'vitest';
+import { createUser } from '../src/service/users';
+import { setContext } from '@unisane/kernel';
 
-export { createMockContext, mockContext } from './context';
-export { createTestDb, cleanupTestDb } from './database';
-export { createMockEvents, expectEvent } from './events';
-export { createMockCache } from './cache';
-export { createMockLogger } from './logger';
-
-// Re-export fixtures
-export * from './fixtures';
-```
-
-```typescript
-// packages/test-utils/src/context.ts
-
-import { vi } from 'vitest';
-import type { RequestContext } from '@unisane/kernel';
-
-export function createMockContext(overrides: Partial<RequestContext> = {}): RequestContext {
-  return {
-    requestId: 'test-request-id',
-    startTime: Date.now(),
-    isAuthenticated: true,
-    authMethod: 'session',
-    userId: 'test-user-id',
-    tenantId: 'test-tenant-id',
-    role: 'owner',
-    permissions: ['*'],
-    ...overrides,
-  };
-}
-
-export function mockContext(overrides: Partial<RequestContext> = {}) {
-  const mockCtx = createMockContext(overrides);
-
-  vi.mock('@unisane/kernel', async (importOriginal) => {
-    const original = await importOriginal<typeof import('@unisane/kernel')>();
-    return {
-      ...original,
-      ctx: {
-        ...original.ctx,
-        get: vi.fn(() => mockCtx),
-        tryGet: vi.fn(() => mockCtx),
-      },
-    };
-  });
-
-  return mockCtx;
-}
-```
-
-```typescript
-// packages/test-utils/src/database.ts
-
-import { MongoMemoryServer } from 'mongodb-memory-server';
-import { MongoClient } from 'mongodb';
-
-let mongod: MongoMemoryServer;
-let client: MongoClient;
-
-export async function createTestDb() {
-  mongod = await MongoMemoryServer.create();
-  const uri = mongod.getUri();
-
-  client = new MongoClient(uri);
-  await client.connect();
-
-  return client.db();
-}
-
-export async function cleanupTestDb() {
-  await client?.close();
-  await mongod?.stop();
-}
-
-export function getTestDb() {
-  return client.db();
-}
-```
-
-### Unit Test Example
-
-```typescript
-// packages/billing/src/__tests__/unit/subscription.service.test.ts
-
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { mockContext, createMockEvents } from '@unisane/test-utils';
-import { subscribe, cancelSubscription } from '../../service/subscription.service';
-import { setSubscriptionRepo } from '../../data';
-import { SubscriptionAlreadyExistsError } from '../../domain/errors';
-
-describe('subscription.service', () => {
-  const mockRepo = {
-    findByTenant: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-  };
-
-  const mockEvents = createMockEvents();
-
+describe('Users Service', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    mockContext({ tenantId: 'tenant-123', userId: 'user-123' });
-    setSubscriptionRepo(mockRepo);
+    setContext({ requestId: 'test', tenantId: 'test_tenant', userId: 'test_user' });
   });
 
-  describe('subscribe', () => {
-    it('creates subscription for new tenant', async () => {
-      mockRepo.findByTenant.mockResolvedValue(null);
-      mockRepo.create.mockResolvedValue({
-        id: 'sub-123',
-        tenantId: 'tenant-123',
-        planId: 'pro',
-        status: 'active',
-      });
-
-      const result = await subscribe({
-        planId: 'pro',
-        billingCycle: 'monthly',
-      });
-
-      expect(result.id).toBe('sub-123');
-      expect(result.planId).toBe('pro');
-      expect(mockRepo.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          tenantId: 'tenant-123',
-          planId: 'pro',
-        })
-      );
+  it('should create user', async () => {
+    const user = await createUser({
+      email: 'alice@example.com',
+      name: 'Alice',
+      tenantId: 'test_tenant',
     });
 
-    it('throws if tenant already has subscription', async () => {
-      mockRepo.findByTenant.mockResolvedValue({
-        id: 'existing-sub',
-        status: 'active',
-      });
-
-      await expect(subscribe({ planId: 'pro', billingCycle: 'monthly' }))
-        .rejects.toThrow(SubscriptionAlreadyExistsError);
-    });
-  });
-
-  describe('cancelSubscription', () => {
-    it('cancels active subscription', async () => {
-      mockRepo.findByTenant.mockResolvedValue({
-        id: 'sub-123',
-        status: 'active',
-      });
-      mockRepo.update.mockResolvedValue({
-        id: 'sub-123',
-        status: 'cancelled',
-        cancelledAt: expect.any(Date),
-      });
-
-      const result = await cancelSubscription({ reason: 'Too expensive' });
-
-      expect(result.status).toBe('cancelled');
-      expect(mockEvents.emitted('billing.subscription.cancelled')).toBe(true);
-    });
+    expect(user._id).toBeDefined();
+    expect(user.email).toBe('alice@example.com');
   });
 });
 ```
 
-### Integration Test Example
+### E2E Tests
+
+**Tool**: Playwright
+**Location**: [tests/e2e/](../../tests/e2e/)
 
 ```typescript
-// packages/billing/src/__tests__/integration/subscription.integration.test.ts
+import { test, expect } from '@playwright/test';
 
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
-import { createTestDb, cleanupTestDb, getTestDb } from '@unisane/test-utils';
-import { ctx } from '@unisane/kernel';
-import { subscribe, getSubscription } from '../../service';
-import { setSubscriptionRepo } from '../../data';
-import { createMongoSubscriptionRepo } from '../../data/subscription.repo.mongo';
+test('should create new user', async ({ page }) => {
+  await page.goto('/users');
+  await page.click('text=Add User');
+  await page.fill('[name=email]', 'newuser@example.com');
+  await page.fill('[name=name]', 'New User');
+  await page.click('button[type=submit]');
 
-describe('subscription integration', () => {
-  beforeAll(async () => {
-    await createTestDb();
-    setSubscriptionRepo(createMongoSubscriptionRepo(getTestDb()));
-  });
-
-  afterAll(async () => {
-    await cleanupTestDb();
-  });
-
-  beforeEach(async () => {
-    // Clear collections
-    await getTestDb().collection('subscriptions').deleteMany({});
-  });
-
-  it('full subscription lifecycle', async () => {
-    await ctx.run({
-      requestId: 'test',
-      startTime: Date.now(),
-      isAuthenticated: true,
-      tenantId: 'tenant-123',
-      userId: 'user-123',
-      permissions: ['*'],
-    }, async () => {
-      // Subscribe
-      const subscription = await subscribe({
-        planId: 'pro',
-        billingCycle: 'monthly',
-      });
-
-      expect(subscription.id).toBeDefined();
-      expect(subscription.status).toBe('active');
-
-      // Fetch
-      const fetched = await getSubscription(subscription.id);
-      expect(fetched?.planId).toBe('pro');
-    });
-  });
-});
-```
-
-### Contract Test Example
-
-```typescript
-// packages/billing/src/__tests__/contract.test.ts
-
-import { describe, it, expect } from 'vitest';
-import { ZSubscribeInput, ZSubscription, ZCancelInput } from '../domain/schemas';
-
-describe('billing contracts', () => {
-  describe('ZSubscribeInput', () => {
-    it('accepts valid input', () => {
-      const result = ZSubscribeInput.safeParse({
-        planId: 'pro',
-        billingCycle: 'monthly',
-      });
-
-      expect(result.success).toBe(true);
-    });
-
-    it('rejects invalid planId', () => {
-      const result = ZSubscribeInput.safeParse({
-        planId: 'invalid',
-        billingCycle: 'monthly',
-      });
-
-      expect(result.success).toBe(false);
-    });
-
-    it('accepts optional couponCode', () => {
-      const result = ZSubscribeInput.safeParse({
-        planId: 'pro',
-        billingCycle: 'yearly',
-        couponCode: 'SAVE20',
-      });
-
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.data.couponCode).toBe('SAVE20');
-      }
-    });
-  });
-
-  describe('ZSubscription', () => {
-    it('validates subscription output', () => {
-      const result = ZSubscription.safeParse({
-        id: 'sub_123',
-        tenantId: 'ten_456',
-        planId: 'pro',
-        status: 'active',
-        billingCycle: 'monthly',
-        currentPeriodStart: '2025-01-01T00:00:00Z',
-        currentPeriodEnd: '2025-02-01T00:00:00Z',
-        createdAt: '2025-01-01T00:00:00Z',
-        updatedAt: '2025-01-01T00:00:00Z',
-      });
-
-      expect(result.success).toBe(true);
-    });
-  });
+  await expect(page.locator('text=newuser@example.com')).toBeVisible();
 });
 ```
 
 ---
 
-## Distribution
+## Development Workflow
 
-> **Implementation Status:** The build pipeline described below is a **design spec** - not yet implemented.
-> See [build-distribution.md](./build-distribution.md) for full details and [implementation-status.md](./implementation-status.md) for current status.
-
-### UI Integration (IMPROVED - No Symlinks)
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│           UI INTEGRATION - WORKSPACE PACKAGES (NOT SYMLINKS)             │
-│                                                                          │
-│  WHY NOT SYMLINKS:                                                       │
-│  ❌ Windows requires admin for symlinks                                  │
-│  ❌ Git doesn't handle symlinks well cross-platform                      │
-│  ❌ IDE issues with symlinked directories                                │
-│  ❌ CI/CD complexity                                                     │
-│                                                                          │
-│  ═══════════════════════════════════════════════════════════════════    │
-│                                                                          │
-│  SOLUTION: Workspace packages + Build-time copy                          │
-│                                                                          │
-│  IN MONOREPO (development):                                              │
-│  ┌─────────────────────────────────────────────────────────────────┐    │
-│  │  starters/saaskit/package.json                                   │    │
-│  │  {                                                               │    │
-│  │    "dependencies": {                                             │    │
-│  │      "@unisane/ui": "workspace:*",                              │    │
-│  │      "@unisane/data-table": "workspace:*"                       │    │
-│  │    }                                                             │    │
-│  │  }                                                               │    │
-│  └─────────────────────────────────────────────────────────────────┘    │
-│                                                                          │
-│  IMPORTS (development):                                                  │
-│  ┌─────────────────────────────────────────────────────────────────┐    │
-│  │  // In starter - imports from workspace package                  │    │
-│  │  import { Button } from '@unisane/ui';                          │    │
-│  │  import { DataTable } from '@unisane/data-table';               │    │
-│  └─────────────────────────────────────────────────────────────────┘    │
-│                                                                          │
-│  ═══════════════════════════════════════════════════════════════════    │
-│                                                                          │
-│  BUILD PROCESS (distribution):                                           │
-│  1. Copy UI source to output/src/components/                            │
-│  2. Transform imports: @unisane/ui → @/components/ui                    │
-│  3. User gets source code, no workspace deps                            │
-│                                                                          │
-│  OUTPUT (what user gets):                                                │
-│  ┌─────────────────────────────────────────────────────────────────┐    │
-│  │  my-saas/src/                                                    │    │
-│  │  ├── components/                                                 │    │
-│  │  │   ├── ui/                   # Copied from @unisane/ui        │    │
-│  │  │   │   ├── button.tsx                                         │    │
-│  │  │   │   └── ...                                                │    │
-│  │  │   ├── data-table/           # Copied from @unisane/data-table│    │
-│  │  │   └── lib/                  # Utilities                      │    │
-│  │  └── ...                                                         │    │
-│  │                                                                  │    │
-│  │  // User's imports (transformed):                                │    │
-│  │  import { Button } from '@/components/ui';                      │    │
-│  └─────────────────────────────────────────────────────────────────┘    │
-│                                                                          │
-│  BENEFITS:                                                               │
-│  ✅ Cross-platform (no symlink issues)                                   │
-│  ✅ Standard pnpm workspace pattern                                      │
-│  ✅ IDE autocomplete works                                               │
-│  ✅ Hot reload works                                                     │
-│  ✅ User owns the code (shadcn pattern)                                  │
-│  ✅ No @unisane/* in user's package.json                                 │
-│                                                                          │
-└─────────────────────────────────────────────────────────────────────────┘
-```
-
-### Build Pipeline (Design Spec)
-
-> **Status:** NOT IMPLEMENTED - This is the planned design.
-
-```typescript
-// tools/release/src/build-starter.ts (PLANNED - NOT IMPLEMENTED)
-
-import { copySync, readFileSync, writeFileSync, rmSync } from 'fs-extra';
-import { glob } from 'glob';
-import path from 'path';
-import { transform } from './transforms';
-
-interface BuildOptions {
-  template: 'oss' | 'pro';
-  starter: string;
-  outputDir: string;
-  version: string;
-}
-
-export async function buildStarter(options: BuildOptions) {
-  const { template, starter, outputDir, version } = options;
-
-  console.log(`Building ${starter} (${template}) v${version}...`);
-
-  // 1. Clean output directory
-  rmSync(outputDir, { recursive: true, force: true });
-
-  // 2. Copy starter source
-  copySync(`starters/${starter}`, outputDir, {
-    filter: (src) => !src.includes('node_modules'),
-  });
-
-  // 3. Flatten business modules
-  await flattenModules(outputDir);
-
-  // 4. Copy UI packages to components
-  await copyUIPackages(outputDir);
-
-  // 5. Strip PRO content (for OSS builds)
-  if (template === 'oss') {
-    await stripProContent(outputDir);
-  }
-
-  // 6. Transform imports
-  await transformImports(outputDir);
-
-  // 7. Update package.json
-  await updatePackageJson(outputDir, version, template);
-
-  // 8. Generate types
-  await generateTypes(outputDir);
-
-  // 9. Validate output
-  await validateOutput(outputDir);
-
-  console.log(`✅ Build complete: ${outputDir}`);
-}
-
-async function flattenModules(outputDir: string) {
-  const modules = [
-    'kernel', 'gateway', 'identity', 'settings', 'storage',
-    'tenants', 'auth', 'billing', 'flags', 'audit',
-    'credits', 'usage', 'notify', 'webhooks',
-    'media', 'pdf', 'ai',
-  ];
-
-  for (const module of modules) {
-    const source = `packages/${module}/src`;
-    const target = path.join(outputDir, 'src/modules', module);
-
-    copySync(source, target);
-  }
-
-  console.log(`  ✓ Flattened ${modules.length} modules`);
-}
-
-async function copyUIPackages(outputDir: string) {
-  // Copy @unisane/ui
-  copySync('packages/ui/src/components', path.join(outputDir, 'src/components/ui'));
-  copySync('packages/ui/src/hooks', path.join(outputDir, 'src/components/hooks'));
-  copySync('packages/ui/src/lib', path.join(outputDir, 'src/components/lib'));
-
-  // Copy @unisane/data-table
-  copySync('packages/data-table/src', path.join(outputDir, 'src/components/data-table'));
-
-  console.log('  ✓ Copied UI packages');
-}
-
-async function transformImports(outputDir: string) {
-  const files = glob.sync(path.join(outputDir, 'src/**/*.{ts,tsx}'));
-
-  for (const file of files) {
-    let content = readFileSync(file, 'utf-8');
-
-    // Transform module imports
-    content = content.replace(
-      /@unisane\/(kernel|gateway|identity|tenants|auth|billing|credits|settings|flags|audit|notify|webhooks|storage|usage|media|pdf|ai)/g,
-      '@/modules/$1'
-    );
-
-    // Transform UI imports
-    content = content.replace(/@unisane\/ui/g, '@/components/ui');
-    content = content.replace(/@unisane\/data-table/g, '@/components/data-table');
-
-    writeFileSync(file, content);
-  }
-
-  console.log(`  ✓ Transformed imports in ${files.length} files`);
-}
-
-async function updatePackageJson(outputDir: string, version: string, template: string) {
-  const pkgPath = path.join(outputDir, 'package.json');
-  const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
-
-  // Update version
-  pkg.version = version;
-
-  // Remove workspace dependencies
-  delete pkg.dependencies['@unisane/kernel'];
-  delete pkg.dependencies['@unisane/gateway'];
-  delete pkg.dependencies['@unisane/ui'];
-  delete pkg.dependencies['@unisane/data-table'];
-  // ... remove all @unisane/* deps
-
-  // Add metadata
-  pkg.unisane = {
-    template,
-    version,
-    generatedAt: new Date().toISOString(),
-  };
-
-  writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
-
-  console.log('  ✓ Updated package.json');
-}
-```
-
-### PRO Stripping (AST-based)
-
-```typescript
-// tools/release/src/strip-pro.ts
-
-import { Project, SyntaxKind } from 'ts-morph';
-
-const PRO_MARKER_START = '@pro-only - start';
-const PRO_MARKER_END = '@pro-only - end';
-
-export async function stripProContent(outputDir: string) {
-  const project = new Project({
-    tsConfigFilePath: path.join(outputDir, 'tsconfig.json'),
-  });
-
-  // Remove PRO modules entirely
-  const proModules = ['analytics', 'sso', 'import-export'];
-  for (const module of proModules) {
-    const modulePath = path.join(outputDir, 'src/modules', module);
-    rmSync(modulePath, { recursive: true, force: true });
-  }
-
-  // Remove PRO-marked code sections
-  const sourceFiles = project.getSourceFiles();
-
-  for (const sourceFile of sourceFiles) {
-    const text = sourceFile.getFullText();
-
-    // Remove @pro-only marked sections
-    const stripped = removeProSections(text);
-
-    if (stripped !== text) {
-      sourceFile.replaceWithText(stripped);
-    }
-  }
-
-  await project.save();
-
-  console.log('  ✓ Stripped PRO content');
-}
-
-function removeProSections(text: string): string {
-  const lines = text.split('\n');
-  const result: string[] = [];
-  let inProSection = false;
-
-  for (const line of lines) {
-    if (line.includes(PRO_MARKER_START)) {
-      inProSection = true;
-      continue;
-    }
-
-    if (line.includes(PRO_MARKER_END)) {
-      inProSection = false;
-      continue;
-    }
-
-    if (!inProSection) {
-      result.push(line);
-    }
-  }
-
-  return result.join('\n');
-}
-```
-
----
-
-## Versioning & Upgrades
-
-### Semantic Versioning
-
-```
-MAJOR.MINOR.PATCH
-
-MAJOR: Breaking changes to module APIs
-  - Function signatures changed
-  - Types restructured
-  - Removal of deprecated features
-
-MINOR: New features, backward-compatible
-  - New service functions
-  - New schemas
-  - New optional parameters
-
-PATCH: Bug fixes only
-  - Security patches
-  - Performance improvements
-  - Documentation fixes
-```
-
-### Module Versioning (NEW)
-
-Each module package has its own version:
-
-```json
-// packages/billing/package.json
-{
-  "name": "@unisane/billing",
-  "version": "1.2.0"
-}
-```
-
-### Changelog Format
-
-```markdown
-# Changelog
-
-## [1.2.0] - 2025-02-01
-
-### Added
-- `pauseSubscription()` - Pause subscription temporarily
-- `resumeSubscription()` - Resume paused subscription
-- New `SubscriptionPausedV1` event
-
-### Changed
-- `cancelSubscription()` now accepts optional `immediate` parameter
-
-### Deprecated
-- `cancelImmediately()` - Use `cancelSubscription({ immediate: true })` instead
-
-### Migration
-See [v1.1 to v1.2 Migration Guide](./migrations/1.1-to-1.2.md)
-
----
-
-## [1.1.0] - 2025-01-15
-
-### Added
-- Credits module for usage-based billing
-- `getUsageReport()` function
-
-### Fixed
-- Race condition in concurrent subscription updates
-```
-
-### Upgrade CLI
+### Setup
 
 ```bash
-# Check for updates
-npx unisane upgrade --check
+# Clone repo
+git clone https://github.com/unisane/unisane-monorepo.git
+cd unisane-monorepo
 
-# Output:
-# Current: v1.1.0
-# Latest: v1.2.0
-#
-# Changes:
-#   + pauseSubscription() added
-#   + resumeSubscription() added
-#   ~ cancelSubscription() signature changed (optional param added)
-#   ! cancelImmediately() deprecated
-#
-# Run `npx unisane upgrade` to apply
+# Install dependencies
+pnpm install
 
-# Show diff
-npx unisane upgrade --diff
+# Set up environment
+cp starters/saaskit/.env.example starters/saaskit/.env
 
-# Apply upgrade interactively
-npx unisane upgrade
+# Run codegen
+cd starters/saaskit
+npm run routes:gen
+npm run sdk:gen
+npm run types:gen
 
-# Auto-apply non-breaking changes
-npx unisane upgrade --auto
+# Start dev server
+npm run dev
+```
+
+### Common Commands
+
+```bash
+# Development
+npm run dev                 # Start dev server
+npm run build               # Build for production
+npm run start               # Start production server
+
+# Code Generation
+npm run routes:gen          # Generate API routes
+npm run sdk:gen             # Generate SDK + hooks
+npm run types:gen           # Extract types
+npm run codegen             # Run all codegen
+
+# Testing
+npm run test                # Run unit tests
+npm run test:e2e            # Run E2E tests
+
+# Linting
+npm run lint                # ESLint
+npm run format              # Prettier
 ```
 
 ---
 
-## Migration Phases
+## Deployment & Production
 
-### Phase 0: Preparation (1-2 days)
+### Environment Variables
 
-```
-□ Backup all repositories
-□ Document current SaasKit module boundaries
-□ Create dependency graph from actual imports
-□ Audit UI components: SaasKit vs Unisane UI
-□ Set up new branch for migration
-```
+**Required**:
 
-### Phase 1: Restructure Monorepo (2-3 days)
+```bash
+# App
+PUBLIC_BASE_URL=https://app.example.com
+APP_ENV=prod
 
-```
-□ Create new directory structure
-□ Update pnpm-workspace.yaml
-□ Update turbo.json
-□ Create tsconfig hierarchy
-□ Set up ESLint import restrictions
-□ Verify existing packages still build
-```
+# Database
+MONGODB_URI=mongodb+srv://...
 
-### Phase 2: Create Kernel (3-4 days)
+# Cache
+REDIS_URL=redis://...
+# OR
+KV_REST_API_URL=https://...
+KV_REST_API_TOKEN=...
 
-```
-□ Implement context system
-□ Implement database with transactions
-□ Implement event system with contracts
-□ Implement cache layer
-□ Implement error classes
-□ Implement observability (logger, tracer, metrics)
-□ Implement utilities (crypto, ids, money, normalize)
-□ Implement RBAC
-□ Write tests for all kernel components
-□ Document kernel API
-```
+# Auth
+JWT_SECRET=...
+SESSION_SECRET=...
 
-### Phase 3: Create Gateway (2-3 days)
+# OAuth
+OAUTH_PROVIDERS=google,github
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
 
-```
-□ Implement handler factory
-□ Implement auth plugin interface
-□ Implement middleware (rate limit, idempotency, csrf)
-□ Implement error mapping
-□ Implement query DSL
-□ Write tests for gateway components
-□ Document gateway API
+# Billing
+STRIPE_SECRET_KEY=sk_live_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+
+# Email
+RESEND_API_KEY=re_...
+
+# Storage
+AWS_S3_BUCKET=...
+AWS_ACCESS_KEY_ID=...
+AWS_SECRET_ACCESS_KEY=...
 ```
 
-### Phase 4: Extract Modules (5-7 days)
+### Health Checks
 
-```
-LAYER 1 (kernel only):
-□ Extract identity module
-□ Extract settings module
-□ Extract storage module
+**Liveness**: `GET /api/health?live=true` - Fast check (no dependencies)
+**Readiness**: `GET /api/health` - Checks DB + Redis connections
 
-LAYER 2 (kernel + Layer 1):
-□ Extract tenants module
-□ Extract auth module
+### Deployment Platforms
 
-LAYER 3 (kernel + Layers 1-2):
-□ Extract billing module
-□ Extract flags module
-□ Extract audit module
-
-LAYER 4 (kernel + Layers 1-3):
-□ Extract credits module
-□ Extract usage module
-□ Extract notify module
-□ Extract webhooks module
-
-LAYER 5 (kernel + Layers 1-4):
-□ Extract media module
-□ Extract pdf module
-□ Extract ai module
-
-For each module:
-□ Create package structure
-□ Copy code from SaasKit
-□ Organize service files (one function per file, barrel export)
-□ Refactor to use @unisane/kernel
-□ Create barrel export (index.ts)
-□ Write/update tests
-□ Verify builds
-```
-
-### Phase 5: Create Starter Template (3-4 days)
-
-```
-□ Create starters/saaskit/
-□ Set up Next.js App Router structure
-□ Create platform/ layer (providers, jobs, outbox)
-□ Create routes/ layer (API handlers)
-□ Create bootstrap.ts
-□ Set up UI package dependencies
-□ Update package.json
-□ Verify dev server works
-□ Verify build works
-```
-
-### Phase 6: Build Tools (2-3 days)
-
-```
-□ Create build-starter.ts
-□ Create strip-pro.ts
-□ Create import transformer
-□ Create package.json updater
-□ Create output validator
-□ Test OSS build
-□ Test PRO build
-□ Verify output structure
-```
-
-### Phase 7: CLI (2-3 days)
-
-```
-□ Create unified CLI package
-□ Implement `create` command
-□ Implement `upgrade` command
-□ Implement `add` command (UI components)
-□ Implement `db` command (migrate, seed)
-□ Implement `doctor` command
-□ Test CLI locally
-□ Prepare for npm publish
-```
-
-### Phase 8: Testing & Documentation (3-4 days)
-
-```
-□ E2E test: create new project via CLI
-□ E2E test: all features work in output project
-□ E2E test: upgrade flow
-□ Performance test: build times
-□ Update all documentation
-□ Create migration guide for existing users
-□ Review and fix issues
-```
-
-### Phase 9: Launch (1-2 days)
-
-```
-□ Archive old SaasKit repository
-□ Publish CLI to npm
-□ Update landing page
-□ Announce migration complete
-□ Monitor for issues
-```
+- **Vercel** (easiest): `vercel --prod`
+- **Railway**: `railway up`
+- **Docker**: Build with multi-stage Dockerfile
+- **AWS/GCP**: Deploy as container or serverless
 
 ---
 
-## Checklists
+## Key Architectural Decisions
 
-### New Module Checklist
+### Why Modular Monolith?
 
-```
-□ Create package directory structure
-□ Implement domain/ (schemas, types, errors)
-□ Implement service/ (one function per file, barrel export)
-□ Implement data/ (repository interface + mongo implementation)
-□ Create barrel export (index.ts)
-□ Add to layer architecture (update dependency docs)
-□ Add to pnpm-workspace.yaml
-□ Add to turbo.json
-□ Write unit tests
-□ Write integration tests
-□ Write schema tests
-□ Document public API
-□ Add to build script
-```
+**Decision**: Ship as single deployable monolith with well-defined modules.
 
-### New Event Checklist
+**Rationale**:
+- Simplicity - One codebase, one deployment, one database
+- Performance - No network overhead between modules
+- Transactions - ACID guarantees across modules
+- Cost - One server, not 15 services
 
-```
-□ Define event schema in kernel/src/events/contracts.ts
-□ Add version number (start with V1)
-□ Add to EventRegistry
-□ Document event in module docs
-□ Implement event emission in service
-□ Register event handlers (if any)
-□ Write tests for event emission
-□ Write tests for event handling
-```
+### Why Contract-First?
 
-### Pre-Release Checklist
+**Decision**: Define API contracts with Zod + ts-rest, generate routes/SDK/hooks.
 
-```
-□ All tests passing
-□ No TypeScript errors
-□ No ESLint errors
-□ Build completes successfully
-□ OSS build tested
-□ PRO build tested
-□ CLI create command tested
-□ CLI upgrade command tested
-□ Documentation updated
-□ Changelog updated
-□ Version numbers updated
-□ Migration guide written (if breaking changes)
-```
+**Rationale**:
+- Type safety - Single source of truth
+- DX - Change contract, get new routes/hooks automatically
+- Consistency - All APIs follow same patterns
+- Free SDK + React hooks
+
+### Why Source Distribution?
+
+**Decision**: Distribute as source code (shadcn-style), not npm packages.
+
+**Rationale**:
+- Full ownership - Customers own all code
+- Customization - Modify any file without forking
+- No version lock-in - Update at your own pace
+- No black boxes - Read and understand all code
+
+### Why AsyncLocalStorage?
+
+**Decision**: Use Node.js AsyncLocalStorage for request context.
+
+**Rationale**:
+- Clean APIs - No `ctx` parameter in every function
+- Automatic propagation - Context flows through call stack
+- Lazy loading - Only fetch permissions/flags when needed
+
+### Why Zod?
+
+**Decision**: Use Zod schemas as single source of truth.
+
+**Rationale**:
+- Runtime validation - TypeScript types don't exist at runtime
+- Type inference - Get TypeScript types from Zod schemas
+- Serialization - Zod handles parsing and stringifying
+- Single source - Define once, use everywhere
+
+---
+
+## Implementation Status
+
+### What's Implemented ✅
+
+**Foundation Layer**:
+- ✅ AsyncLocalStorage context system
+- ✅ MongoDB with tenant scoping
+- ✅ Redis/Upstash KV cache
+- ✅ Typed event system
+- ✅ Error catalog (E1xxx-E8xxx)
+- ✅ RBAC (50+ permissions, 6 roles)
+- ✅ Structured logging (Pino)
+- ✅ HTTP handlers (makeHandler, makeHandlerRaw)
+
+**Modules** (all 15 implemented):
+- ✅ auth, identity, tenants, billing, credits
+- ✅ flags, settings, storage, audit, notify
+- ✅ usage, webhooks, ai, media, pdf
+
+**Code Generation**:
+- ✅ Contract metadata extraction (AST parsing)
+- ✅ Route generation from contracts
+- ✅ SDK generation (TypeScript client)
+- ✅ React Query hooks generation
+- ✅ Type extraction (browser-safe)
+- ✅ Automatic cache invalidation
+
+**Platform**:
+- ✅ Next.js 16 App Router
+- ✅ OAuth (Google, GitHub) with PKCE
+- ✅ Session management
+- ✅ Health checks
+- ✅ Background jobs (Inngest)
+
+**UI**:
+- ✅ 61 Material Design 3 components
+- ✅ Data table with sorting/filtering
+- ✅ Dark mode support
+
+**Testing**:
+- ✅ 800+ unit/integration tests
+- ✅ 51 E2E tests
+
+### What's Not Implemented ❌
+
+**PRO Features** (available separately):
+- ❌ Advanced analytics dashboard
+- ❌ Custom RBAC roles
+- ❌ Multi-region deployment
+- ❌ White-label customization
+
+**Future Roadmap**:
+- ❌ GraphQL API
+- ❌ WebSocket support
+- ❌ Mobile SDKs
+- ❌ Admin panel generator
 
 ---
 
 ## Summary
 
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                    FINALIZED ARCHITECTURE v2.0                           │
-│                                                                          │
-│  PATTERN: Clean Modular Monolith                                         │
-│                                                                          │
-│  KEY IMPROVEMENTS FROM v1:                                               │
-│  ✅ Transactions in kernel (data integrity)                              │
-│  ✅ Typed event contracts with versioning                                │
-│  ✅ Domain error classes + gateway mapping                               │
-│  ✅ Observability (logging, tracing, metrics)                            │
-│  ✅ Workspace packages instead of symlinks                               │
-│  ✅ AST-based PRO stripping                                              │
-│  ✅ Comprehensive testing strategy                                       │
-│  ✅ Module versioning + upgrade path                                     │
-│  ✅ Tenant isolation helpers                                             │
-│                                                                          │
-│  MODULES: 18 + 3 PRO                                                     │
-│  Layer 0: kernel, gateway                                                │
-│  Layer 1: identity, settings, storage                                    │
-│  Layer 2: tenants, auth                                                  │
-│  Layer 3: billing, flags, audit                                          │
-│  Layer 4: credits, usage, notify, webhooks                               │
-│  Layer 5: media, pdf, ai                                                 │
-│  PRO:     analytics, sso, import-export                                  │
-│                                                                          │
-│  DISTRIBUTION:                                                           │
-│  • Source code ownership (no runtime deps)                               │
-│  • Workspace packages → Build-time copy                                  │
-│  • OSS (MIT) + PRO (Commercial)                                          │
-│  • CLI for create/upgrade/add                                            │
-│                                                                          │
-│  TIMELINE: ~30 days for full migration                                   │
-│                                                                          │
-└─────────────────────────────────────────────────────────────────────────┘
-```
+**Unisane** is a production-ready SaaS starter kit with:
+
+- **30 packages** in foundation + modules + UI + tooling layers
+- **Contract-first development** with 91% auto-generated API code
+- **15 business modules** covering auth, billing, storage, and more
+- **Modular monolith** architecture for simplicity and performance
+- **Full source code** distribution (shadcn-style)
+- **Battle-tested** infrastructure (AsyncLocalStorage, MongoDB, Redis, Zod)
+- **Type safety** end-to-end with TypeScript and Zod
+- **800+ tests** ensuring reliability
+- **61 UI components** following Material Design 3
+
+**For Developers**: Read contracts to understand APIs, use generated hooks in React, extend modules with new services.
+
+**For LLMs**: Parse contracts to understand system capabilities, analyze service functions for business logic, follow repository pattern for data access.
 
 ---
 
-**This document is the AUTHORITATIVE source for Unisane architecture.**
+**End of Architecture Documentation**
 
-Previous docs (01-08) should be considered deprecated and eventually removed or updated to reference this document.
-
+*Last updated: January 2026*

@@ -1,1523 +1,589 @@
-# Development Tools Configuration
+# Development Tools
 
-> **Status:** Current
-> **Last Updated:** 2026-01-09
+> **Parent:** [ARCHITECTURE.md](./ARCHITECTURE.md)
+>
+> **Last Updated:** January 2026 (reflects current codebase implementation)
 
 Complete specification for all development tools in the Unisane monorepo.
 
 ---
 
-## CLI Ecosystem Architecture
+## Overview
 
-The Unisane ecosystem has a **unified CLI architecture** with three packages serving different purposes:
+The Unisane development tools ecosystem consists of:
 
-| Package | Binary | Purpose | Audience |
-|---------|--------|---------|----------|
-| `unisane` | `unisane` | Main CLI entry point | All developers |
-| `create-unisane` | `create-unisane` | Project scaffolding | New users |
-| `@unisane/devtools` | `unisane-devtools` | Code generation & ops | Framework developers |
+1. **@unisane/devtools** - Unified CLI for development operations (797 lines, actively developed)
+2. **@unisane/cli-core** - Shared utilities for CLI tools (logging, prompts)
+3. **@unisane/test-utils** - Test utilities and helpers
+4. **Shared configs** - ESLint, TypeScript, Tailwind configurations
+5. **Release tooling** - Build and distribution tools (partial implementation)
 
-### CLI Package Roles
-
-| Factor | `unisane` | `create-unisane` | `@unisane/devtools` |
-|--------|-----------|------------------|---------------------|
-| **Primary User** | App developers | New users | Framework maintainers |
-| **Publishing** | npm public | npm public | Internal/workspace only |
-| **Dependencies** | Minimal + delegates to devtools | Minimal (prompts, download) | Heavy (ts-morph, mongodb) |
-| **Execution Context** | Any project | Outside projects | Only inside starters |
-
-### `unisane` (Main CLI)
-```bash
-# UI component management (shadcn-style)
-npx unisane ui init              # Initialize Unisane UI in project
-npx unisane ui add button card   # Add UI components
-npx unisane ui diff              # Check for component updates
-npx unisane ui doctor            # Verify installation
-
-# Delegates to devtools when inside a starter project
-npx unisane add billing          # Add modules (via devtools)
-npx unisane generate contract    # Code generation (via devtools)
-```
-
-### `create-unisane` (Project Scaffolding)
-```bash
-# Create new projects
-npx create-unisane my-app                    # Interactive setup
-npx create-unisane my-app --template saaskit # Use specific template
-```
-
-### `@unisane/devtools` (Framework Tooling)
-```bash
-# Used only inside starter projects (saaskit, etc.)
-pnpm devtools routes:gen           # Generate API routes
-pnpm devtools sdk:gen              # Generate SDK
-pnpm devtools db:query tenants     # Query database
-pnpm devtools billing:seed-stripe  # Setup Stripe
-pnpm devtools ui init              # Initialize UI (same as unisane ui init)
-pnpm devtools ui add button        # Add components (same as unisane ui add)
-```
-
-### Architecture Rationale
-
-The unified CLI delegates heavy operations to `@unisane/devtools` when detected, keeping the main `unisane` package lightweight:
-
-```
-unisane (lightweight entry point)
-├── ui commands       → Built-in (via devtools)
-├── create commands   → Delegates to create-unisane
-└── add/generate/etc  → Delegates to @unisane/devtools if installed
-
-@unisane/devtools (heavy operations)
-├── routes:gen        → ts-morph, AST parsing
-├── sdk:gen           → Code generation
-├── db:*              → MongoDB operations
-├── billing:*         → Stripe integration
-└── ui:*              → Full UI management
-```
-
-### Dependency Contrast
-
-```
-unisane dependencies:
-├── @unisane/cli-core (shared prompts/logging)
-└── commander         (CLI framework)
-Total: ~100KB (delegates heavy ops)
-
-create-unisane dependencies:
-├── @unisane/cli-core (shared prompts/logging)
-├── commander         (CLI framework)
-└── download utils    (template fetching)
-Total: ~200KB
-
-@unisane/devtools dependencies:
-├── @unisane/cli-core (shared prompts/logging)
-├── commander         (CLI framework)
-├── ts-morph          (AST parsing - 15MB!)
-├── mongodb           (database)
-├── stripe            (billing)
-├── chokidar          (watch)
-├── express           (openapi:serve)
-├── swagger-ui-express
-└── @unisane/kernel   (peer)
-Total: ~20MB+
-```
-
-This architecture keeps the main CLI fast while providing full power when needed.
-
----
-
-## Implementation Status
-
-> **Note:** This document describes both implemented and planned tools.
-
-| Tool | Status | Location |
-|------|--------|----------|
-| @unisane/eslint-config | **Implemented** | packages/tooling/eslint-config |
-| @unisane/typescript-config | **Implemented** | packages/tooling/typescript-config |
-| @unisane/tailwind-config | **Implemented** | packages/tooling/tailwind-config |
-| @unisane/prettier-config | **Not Implemented** | Planned |
-| @unisane/vitest-config | **Not Implemented** | Planned |
-| @unisane/tsup-config | **Not Implemented** | Planned |
-| @unisane/devtools | **Implemented** | packages/tooling/devtools |
-| @unisane/cli-core | **Implemented** | packages/tooling/cli-core (shared utilities) |
-| unisane | **Implemented** | packages/tooling/unisane (main CLI) |
-| create-unisane | **Implemented** | packages/tooling/create-unisane |
-| .changeset/ | **Implemented** | Version management configured |
-| .github/workflows/release.yml | **Implemented** | Automated releases with Changesets |
-| tools/release/ | **Not Implemented** | Build scripts, planned |
-| .husky/ | **Not Implemented** | Git hooks, planned |
-
-See [implementation-status.md](./implementation-status.md) for full status tracking.
+**Current Status (January 2026):**
+- Core CLI infrastructure: ✅ **Complete**
+- Code generation: ✅ **Routes and SDK working**
+- Database commands: ✅ **Core operations working**
+- UI component system: ✅ **Complete (shadcn-style)**
+- Tenant/Billing commands: ⚠️ **Defined but not implemented**
+- CI/CD workflows: ❌ **Not implemented**
+- Git hooks: ❌ **Not configured**
 
 ---
 
 ## Table of Contents
 
-1. [Overview](#overview)
+1. [CLI Architecture](#cli-architecture)
 2. [Tool Packages](#tool-packages)
-3. [Shared Configurations](#shared-configurations)
-4. [Git Hooks](#git-hooks)
-5. [CI/CD](#cicd)
-6. [CLI Tool](#cli-tool)
-7. [Build Tools](#build-tools)
-8. [Testing Infrastructure](#testing-infrastructure)
-9. [Dependency Management](#dependency-management)
+3. [Command Reference](#command-reference)
+4. [Shared Configurations](#shared-configurations)
+5. [Implementation Status](#implementation-status)
+6. [Migration Guide](#migration-guide)
 
 ---
 
-## Overview
+## CLI Architecture
 
-### Tool Categories
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           DEV TOOLS ARCHITECTURE                             │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│  SHARED CONFIGS (packages/)          TOOLS (tools/)                         │
-│  ────────────────────────            ────────────────                        │
-│  @unisane/eslint-config              tools/cli/                             │
-│  @unisane/typescript-config          tools/release/                         │
-│  @unisane/tailwind-config                                                   │
-│  @unisane/prettier-config                                                   │
-│  @unisane/vitest-config                                                     │
-│  @unisane/tsup-config                                                       │
-│                                                                              │
-│  ROOT CONFIGS                        CI/CD                                  │
-│  ────────────────                    ─────                                  │
-│  .husky/                             .github/workflows/                     │
-│  commitlint.config.js                  ci.yml                               │
-│  lint-staged.config.js                 release.yml                          │
-│  .changeset/                           preview.yml                          │
-│                                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
-### Current Directory Structure
+### Package Structure
 
 ```
-unisane-monorepo/
-├── packages/
-│   └── tooling/                      # All CLI/dev tooling
-│       ├── cli-core/                 # @unisane/cli-core (shared utilities)
-│       │   └── src/
-│       │       ├── log.ts            # Logging utilities
-│       │       └── prompts.ts        # Interactive prompts
-│       │
-│       ├── unisane/                  # Main `unisane` CLI
-│       │   └── src/
-│       │       └── cli.ts            # Entry point, delegates to devtools
-│       │
-│       ├── create-unisane/           # `create-unisane` scaffolding CLI
-│       │   └── src/
-│       │       ├── index.ts          # Entry point
-│       │       ├── template.ts       # Template download
-│       │       └── utils.ts          # Helpers
-│       │
-│       ├── devtools/                 # @unisane/devtools (heavy ops)
-│       │   └── src/
-│       │       ├── cli.ts            # CLI entry point
-│       │       └── commands/
-│       │           ├── ui/           # UI component management
-│       │           │   ├── init.ts   # Initialize UI in project
-│       │           │   ├── add.ts    # Add components
-│       │           │   ├── diff.ts   # Check for updates
-│       │           │   └── doctor.ts # Verify installation
-│       │           ├── codegen/      # Code generation
-│       │           ├── billing/      # Stripe operations
-│       │           ├── db/           # Database operations
-│       │           └── release/      # Version management
-│       │
-│       ├── eslint-config/            # @unisane/eslint-config
-│       ├── typescript-config/        # @unisane/typescript-config
-│       └── tailwind-config/          # @unisane/tailwind-config
+packages/tooling/
+├── devtools/              # @unisane/devtools (main CLI)
+│   ├── src/
+│   │   ├── cli.ts         # Entry point (797 lines)
+│   │   ├── commands/
+│   │   │   ├── ui/        # ✅ UI component management
+│   │   │   ├── routes/    # ✅ Route generation
+│   │   │   ├── sdk/       # ✅ SDK generation
+│   │   │   ├── db/        # ✅ Database operations
+│   │   │   ├── env/       # ✅ Environment management
+│   │   │   ├── add/       # ⚠️ Module/integration adding
+│   │   │   ├── create/    # ✅ Project creation
+│   │   │   ├── dev/       # ✅ Doctor command
+│   │   │   ├── upgrade/   # ✅ Package upgrades
+│   │   │   └── release/   # ✅ Build and distribution
+│   │   └── utils/
+│   │       ├── env.ts     # Environment loading
+│   │       └── git.ts     # Git utilities
+│   └── package.json
 │
-├── .changeset/                       # Version management (implemented)
-│   └── config.json
+├── cli-core/              # @unisane/cli-core (shared utilities)
+│   └── src/
+│       ├── log.ts         # Logging utilities
+│       └── prompts.ts     # Interactive prompts
 │
-├── .github/
-│   └── workflows/
-│       └── release.yml               # Automated releases (implemented)
+├── unisane/               # Main `unisane` CLI (lightweight wrapper)
+│   └── src/
+│       └── cli.ts         # Delegates to devtools
 │
-├── scripts/
-│   └── sync-versions.mjs             # Version synchronization
+├── create-unisane/        # Project scaffolding
+│   └── src/
+│       ├── index.ts       # Entry point
+│       └── template.ts    # Template download
 │
-└── turbo.json
+├── test-utils/            # @unisane/test-utils
+│   └── src/
+│       ├── db.ts          # Database test helpers
+│       ├── fixtures.ts    # Test fixtures
+│       └── context.ts     # Test context
+│
+├── eslint-config/         # @unisane/eslint-config
+├── typescript-config/     # @unisane/typescript-config
+└── tailwind-config/       # @unisane/tailwind-config
 ```
 
-### Planned Additions
+### Command Categories
 
 ```
-unisane-monorepo/
-├── packages/
-│   └── tooling/
-│       ├── prettier-config/          # @unisane/prettier-config (planned)
-│       ├── vitest-config/            # @unisane/vitest-config (planned)
-│       └── tsup-config/              # @unisane/tsup-config (planned)
-│
-├── tools/
-│   └── release/                      # Build & release tools (planned)
-│       └── src/
-│           ├── strip-pro.ts          # PRO code removal
-│           ├── build-starter.ts      # Bundle starters for distribution
-│           └── verify.ts             # Verification
-│
-├── .husky/                           # Git hooks (planned)
-│   ├── pre-commit
-│   ├── commit-msg
-│   └── pre-push
-│
-├── .github/
-│   └── workflows/
-│       ├── ci.yml                    # CI pipeline (planned)
-│       └── preview.yml               # PR preview (planned)
-│
-├── commitlint.config.js              # (planned)
-├── lint-staged.config.js             # (planned)
-└── vitest.workspace.ts               # (planned)
+unisane                          # Main CLI entry
+
+PROJECT SETUP ✅
+├── create [name]                # Create new project
+└── init                         # ⚠️ Not implemented
+
+UI COMPONENTS ✅
+├── ui init                      # Initialize Unisane UI
+├── ui add [components...]       # Add components (shadcn-style)
+├── ui diff [component]          # Check for updates
+└── ui doctor                    # Verify installation
+
+ADD RESOURCES ⚠️
+├── add module <name>            # ⚠️ Partially implemented
+└── add integration <name>       # ⚠️ Not implemented
+
+CODE GENERATION
+├── generate routes              # ✅ Generate API routes
+├── generate sdk                 # ✅ Generate SDK
+├── generate types               # ✅ Generate types
+├── generate openapi             # ❌ Not implemented
+└── generate crud <name>         # ❌ Not implemented
+
+DATABASE ✅
+├── db query <collection>        # Query collections
+├── db collections               # List collections
+├── db rename [from] [to]        # Rename collections
+├── db seed                      # Seed database
+├── db migrate                   # Run migrations
+├── db indexes                   # Manage indexes
+├── db push                      # ❌ Not implemented
+├── db pull                      # ❌ Not implemented
+└── db studio                    # ❌ Not implemented
+
+ENVIRONMENT ✅
+├── env check                    # Validate env vars
+├── env init                     # Create .env.local
+├── env pull                     # ⚠️ Defined, not functional
+├── env push                     # ⚠️ Defined, not functional
+└── env generate                 # ⚠️ Defined, not functional
+
+DEVELOPMENT
+├── dev                          # ⚠️ Passthrough to pnpm dev
+├── build                        # ⚠️ Passthrough to pnpm build
+├── doctor                       # ✅ Health checks with --fix
+├── upgrade                      # ✅ Upgrade packages
+├── info                         # ✅ Show versions
+├── sync                         # ❌ Not implemented
+└── watch                        # ❌ Not implemented
+
+TENANT MANAGEMENT ❌
+├── tenant info <id>             # Not implemented
+├── tenant list                  # Not implemented
+├── tenant create                # Not implemented
+└── tenant delete <id>           # Not implemented
+
+BILLING ❌
+├── billing plans                # Not implemented
+├── billing sync-stripe          # Not implemented
+└── billing portal-config        # Not implemented
+
+CACHE ❌
+├── cache clear                  # Not implemented
+└── cache clear-rbac             # Not implemented
+
+RELEASE ✅
+├── release build                # Build distribution
+├── release verify               # Verify build
+├── release versions             # List versions
+└── release publishable          # Show publishable packages
 ```
 
 ---
 
 ## Tool Packages
 
-### @unisane/eslint-config (Existing - Enhanced)
+### @unisane/devtools (Main CLI)
 
-```
-packages/eslint-config/
-├── base.js              # Base rules for all packages
-├── next.js              # Next.js specific rules
-├── react-internal.js    # React library rules
-├── node.js              # Node.js/server rules (NEW)
-├── package.json
-└── README.md
-```
+**Status:** ✅ Actively developed (797 lines)
 
-```javascript
-// packages/eslint-config/base.js
-import js from "@eslint/js";
-import typescript from "typescript-eslint";
-import prettier from "eslint-config-prettier";
+**Location:** `packages/tooling/devtools/`
 
-export default [
-  js.configs.recommended,
-  ...typescript.configs.recommended,
-  prettier,
-  {
-    rules: {
-      // Prevent console.log in production
-      "no-console": ["warn", { allow: ["warn", "error"] }],
+**Binary:** `unisane` (via `@unisane/devtools`)
 
-      // TypeScript specific
-      "@typescript-eslint/no-unused-vars": ["error", {
-        argsIgnorePattern: "^_",
-        varsIgnorePattern: "^_",
-      }],
-      "@typescript-eslint/no-explicit-any": "warn",
-      "@typescript-eslint/explicit-function-return-type": "off",
-      "@typescript-eslint/explicit-module-boundary-types": "off",
+**Purpose:** Unified CLI for all development operations in Unisane projects.
 
-      // Import organization
-      "import/order": ["error", {
-        groups: [
-          "builtin",
-          "external",
-          "internal",
-          "parent",
-          "sibling",
-          "index",
-        ],
-        "newlines-between": "always",
-        alphabetize: { order: "asc" },
-      }],
-    },
-  },
-];
-```
+**Key Features:**
+- Contract-first code generation (routes, SDK, types)
+- UI component management (shadcn-style)
+- Database operations (query, seed, migrate, indexes)
+- Environment management
+- Package upgrades with codemods
+- Release tooling
 
-```javascript
-// packages/eslint-config/node.js (NEW)
-import base from "./base.js";
-
-export default [
-  ...base,
-  {
-    rules: {
-      // Allow console in server code
-      "no-console": "off",
-
-      // Node.js specific
-      "no-process-exit": "error",
-      "no-sync": "warn",
-    },
-  },
-];
-```
-
+**Dependencies:**
 ```json
-// packages/eslint-config/package.json
 {
-  "name": "@unisane/eslint-config",
-  "version": "1.0.0",
-  "type": "module",
-  "exports": {
-    "./base": "./base.js",
-    "./next": "./next.js",
-    "./react-internal": "./react-internal.js",
-    "./node": "./node.js"
-  },
   "dependencies": {
-    "@eslint/js": "^9.0.0",
-    "@typescript-eslint/eslint-plugin": "^7.0.0",
-    "@typescript-eslint/parser": "^7.0.0",
-    "eslint-config-prettier": "^9.0.0",
-    "eslint-plugin-import": "^2.29.0",
-    "eslint-plugin-react": "^7.33.0",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "typescript-eslint": "^7.0.0"
-  },
-  "peerDependencies": {
-    "eslint": "^9.0.0",
-    "typescript": "^5.0.0"
+    "@unisane/cli-core": "workspace:*",
+    "commander": "^12.0.0",
+    "ts-morph": "^21.0.0",
+    "mongodb": "^6.3.0",
+    "chokidar": "^3.5.0",
+    "chalk": "^5.3.0",
+    "ora": "^7.0.0",
+    "prompts": "^2.4.2",
+    "fs-extra": "^11.0.0"
   }
 }
 ```
 
----
+**Installation:**
+```bash
+# In a Unisane project
+pnpm install
 
-### @unisane/typescript-config (Existing - Enhanced)
-
-```
-packages/typescript-config/
-├── base.json            # Base config
-├── nextjs.json          # Next.js apps
-├── react-library.json   # React packages
-├── node-library.json    # Node.js packages (NEW)
-├── package.json
-└── README.md
-```
-
-```json
-// packages/typescript-config/base.json
-{
-  "$schema": "https://json.schemastore.org/tsconfig",
-  "compilerOptions": {
-    "target": "ES2022",
-    "lib": ["ES2022"],
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true,
-    "allowJs": true,
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "noImplicitOverride": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "forceConsistentCasingInFileNames": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "isolatedModules": true,
-    "verbatimModuleSyntax": true
-  },
-  "exclude": ["node_modules", "dist", "coverage"]
-}
-```
-
-```json
-// packages/typescript-config/node-library.json (NEW)
-{
-  "$schema": "https://json.schemastore.org/tsconfig",
-  "extends": "./base.json",
-  "compilerOptions": {
-    "lib": ["ES2022"],
-    "module": "ESNext",
-    "target": "ES2022",
-    "outDir": "dist",
-    "rootDir": "src"
-  }
-}
+# Already included in starters as devDependency
 ```
 
 ---
 
-### @unisane/prettier-config (NEW)
+### @unisane/cli-core (Shared Utilities)
 
-```
-packages/prettier-config/
-├── index.js
-├── package.json
-└── README.md
-```
+**Status:** ✅ Complete
 
-```javascript
-// packages/prettier-config/index.js
-export default {
-  semi: true,
-  singleQuote: true,
-  tabWidth: 2,
-  trailingComma: "es5",
-  printWidth: 100,
-  bracketSpacing: true,
-  arrowParens: "always",
-  endOfLine: "lf",
-  plugins: ["prettier-plugin-tailwindcss"],
-  tailwindFunctions: ["clsx", "cn", "cva"],
-};
-```
+**Location:** `packages/tooling/cli-core/`
 
-```json
-// packages/prettier-config/package.json
-{
-  "name": "@unisane/prettier-config",
-  "version": "1.0.0",
-  "type": "module",
-  "main": "index.js",
-  "exports": {
-    ".": "./index.js"
-  },
-  "dependencies": {
-    "prettier-plugin-tailwindcss": "^0.5.0"
-  },
-  "peerDependencies": {
-    "prettier": "^3.0.0"
-  }
-}
-```
+**Purpose:** Shared logging and prompt utilities for all CLI tools.
 
-**Usage in packages:**
-
-```javascript
-// prettier.config.js (in any package)
-export { default } from "@unisane/prettier-config";
-```
-
----
-
-### @unisane/vitest-config (NEW)
-
-```
-packages/vitest-config/
-├── base.ts              # Base config
-├── react.ts             # React testing
-├── node.ts              # Node.js testing
-├── integration.ts       # Integration tests
-├── package.json
-└── README.md
-```
+**Exports:**
 
 ```typescript
-// packages/vitest-config/base.ts
-import { defineConfig } from 'vitest/config';
+// packages/tooling/cli-core/src/log.ts
 
-export const baseConfig = defineConfig({
-  test: {
-    globals: true,
-    environment: 'node',
-    include: ['**/*.{test,spec}.{ts,tsx}'],
-    exclude: ['**/node_modules/**', '**/dist/**', '**/e2e/**'],
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'json', 'html'],
-      exclude: [
-        'node_modules/',
-        'dist/',
-        '**/*.d.ts',
-        '**/*.test.ts',
-        '**/index.ts',
-      ],
-    },
-    testTimeout: 10000,
-    hookTimeout: 10000,
-  },
-});
+export const log = {
+  // Banners
+  banner(text: string): void;
 
-export default baseConfig;
-```
+  // Levels
+  info(message: string): void;
+  success(message: string): void;
+  warn(message: string): void;
+  error(message: string): void;
+  debug(message: string): void;
 
-```typescript
-// packages/vitest-config/react.ts
-import { defineConfig, mergeConfig } from 'vitest/config';
-import react from '@vitejs/plugin-react';
-import { baseConfig } from './base';
+  // Formatting
+  dim(message: string): void;
+  section(title: string): void;
+  kv(key: string, value: string): void;
+  list(items: string[]): void;
+  newline(): void;
 
-export const reactConfig = mergeConfig(baseConfig, defineConfig({
-  plugins: [react()],
-  test: {
-    environment: 'jsdom',
-    setupFiles: ['./src/test/setup.ts'],
-  },
-}));
-
-export default reactConfig;
-```
-
-```typescript
-// packages/vitest-config/node.ts
-import { defineConfig, mergeConfig } from 'vitest/config';
-import { baseConfig } from './base';
-
-export const nodeConfig = mergeConfig(baseConfig, defineConfig({
-  test: {
-    environment: 'node',
-    setupFiles: ['./src/test/setup.ts'],
-    // Longer timeout for DB operations
-    testTimeout: 30000,
-  },
-}));
-
-export default nodeConfig;
-```
-
-```typescript
-// packages/vitest-config/integration.ts
-import { defineConfig, mergeConfig } from 'vitest/config';
-import { nodeConfig } from './node';
-
-export const integrationConfig = mergeConfig(nodeConfig, defineConfig({
-  test: {
-    include: ['**/*.integration.{test,spec}.ts'],
-    // Sequential for DB tests
-    pool: 'forks',
-    poolOptions: {
-      forks: {
-        singleFork: true,
-      },
-    },
-    testTimeout: 60000,
-  },
-}));
-
-export default integrationConfig;
-```
-
-```json
-// packages/vitest-config/package.json
-{
-  "name": "@unisane/vitest-config",
-  "version": "1.0.0",
-  "type": "module",
-  "exports": {
-    "./base": "./base.ts",
-    "./react": "./react.ts",
-    "./node": "./node.ts",
-    "./integration": "./integration.ts"
-  },
-  "dependencies": {
-    "@vitejs/plugin-react": "^4.2.0"
-  },
-  "peerDependencies": {
-    "vitest": "^1.0.0"
-  }
-}
-```
-
-**Usage in packages:**
-
-```typescript
-// vitest.config.ts (in kernel package)
-import { nodeConfig } from '@unisane/vitest-config/node';
-export default nodeConfig;
-
-// vitest.config.ts (in UI package)
-import { reactConfig } from '@unisane/vitest-config/react';
-export default reactConfig;
-```
-
----
-
-### @unisane/tsup-config (NEW)
-
-```
-packages/tsup-config/
-├── base.ts
-├── react.ts
-├── node.ts
-├── package.json
-└── README.md
-```
-
-```typescript
-// packages/tsup-config/base.ts
-import type { Options } from 'tsup';
-
-export const baseConfig: Options = {
-  entry: ['src/index.ts'],
-  format: ['esm'],
-  dts: true,
-  sourcemap: true,
-  clean: true,
-  treeshake: true,
-  splitting: false,
-  minify: false,
-  target: 'es2022',
+  // Spinners
+  spinner(text: string): Ora;
 };
 
-export default baseConfig;
+export function setVerbose(enabled: boolean): void;
 ```
 
 ```typescript
-// packages/tsup-config/react.ts
-import type { Options } from 'tsup';
-import { baseConfig } from './base';
+// packages/tooling/cli-core/src/prompts.ts
 
-export const reactConfig: Options = {
-  ...baseConfig,
-  external: ['react', 'react-dom'],
-  esbuildOptions(options) {
-    options.jsx = 'automatic';
-  },
-};
+export async function confirm(message: string, initial?: boolean): Promise<boolean>;
 
-export default reactConfig;
+export async function select<T extends string>(
+  message: string,
+  choices: Array<{ value: T; title: string; description?: string }>
+): Promise<T | null>;
+
+export async function multiselect<T extends string>(
+  message: string,
+  choices: Array<{ value: T; title: string; selected?: boolean }>
+): Promise<T[]>;
+
+export async function text(
+  message: string,
+  options?: { initial?: string; validate?: (value: string) => boolean | string }
+): Promise<string | null>;
 ```
 
+**Usage:**
 ```typescript
-// packages/tsup-config/node.ts
-import type { Options } from 'tsup';
-import { baseConfig } from './base';
+import { log, confirm, select } from '@unisane/cli-core';
 
-export const nodeConfig: Options = {
-  ...baseConfig,
-  platform: 'node',
-  target: 'node18',
-  external: [
-    'mongodb',
-    'ioredis',
-    // Add other native deps
-  ],
-};
+log.banner('Unisane');
+log.info('Starting code generation...');
 
-export default nodeConfig;
-```
+const confirmed = await confirm('Generate routes?', true);
 
-```json
-// packages/tsup-config/package.json
-{
-  "name": "@unisane/tsup-config",
-  "version": "1.0.0",
-  "type": "module",
-  "exports": {
-    "./base": "./base.ts",
-    "./react": "./react.ts",
-    "./node": "./node.ts"
-  },
-  "peerDependencies": {
-    "tsup": "^8.0.0"
-  }
-}
-```
-
-**Usage in packages:**
-
-```typescript
-// tsup.config.ts (in kernel package)
-import { defineConfig } from 'tsup';
-import { nodeConfig } from '@unisane/tsup-config/node';
-
-export default defineConfig({
-  ...nodeConfig,
-  entry: ['src/index.ts'],
-});
-```
-
----
-
-## Shared Configurations
-
-### Root Configuration Files
-
-```javascript
-// prettier.config.js (root)
-export { default } from "@unisane/prettier-config";
-```
-
-```javascript
-// commitlint.config.js (root)
-export default {
-  extends: ["@commitlint/config-conventional"],
-  rules: {
-    "type-enum": [
-      2,
-      "always",
-      [
-        "feat",     // New feature
-        "fix",      // Bug fix
-        "docs",     // Documentation
-        "style",    // Formatting
-        "refactor", // Code restructure
-        "perf",     // Performance
-        "test",     // Tests
-        "build",    // Build system
-        "ci",       // CI config
-        "chore",    // Maintenance
-        "revert",   // Revert commit
-      ],
-    ],
-    "scope-enum": [
-      2,
-      "always",
-      [
-        "kernel",
-        "gateway",
-        "identity",
-        "auth",
-        "tenants",
-        "billing",
-        "ui",
-        "cli",
-        "docs",
-        "deps",
-        // Add all package names
-      ],
-    ],
-    "subject-case": [2, "always", "lower-case"],
-    "subject-max-length": [2, "always", 72],
-  },
-};
-```
-
-```javascript
-// lint-staged.config.js (root)
-export default {
-  "*.{ts,tsx}": [
-    "eslint --fix",
-    "prettier --write",
-  ],
-  "*.{json,md,yml,yaml}": [
-    "prettier --write",
-  ],
-  "*.css": [
-    "prettier --write",
-  ],
-};
-```
-
-```typescript
-// vitest.workspace.ts (root)
-import { defineWorkspace } from 'vitest/config';
-
-export default defineWorkspace([
-  // All packages with tests
-  'packages/kernel',
-  'packages/gateway',
-  'packages/identity',
-  'packages/auth',
-  'packages/tenants',
-  'packages/billing',
-  'packages/flags',
-  'packages/audit',
-  'packages/credits',
-  'packages/usage',
-  'packages/notify',
-  'packages/webhooks',
-  'packages/storage',
-  'packages/media',
-  'packages/pdf',
-  'packages/ai',
-  'packages/ui',
-  'packages/cli',
-  'starters/saaskit',
+const component = await select('Select component:', [
+  { value: 'button', title: 'Button', description: 'Primary button component' },
+  { value: 'card', title: 'Card', description: 'Card container' },
 ]);
 ```
 
 ---
 
-## Git Hooks
+### @unisane/test-utils
 
-### Husky Setup
+**Status:** ✅ Complete
 
-```bash
-# Install husky
-pnpm add -D husky -w
-pnpm exec husky init
-```
+**Location:** `packages/tooling/test-utils/`
 
-```bash
-# .husky/pre-commit
-#!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
+**Purpose:** Test utilities for database setup, fixtures, and context management.
 
-# Run lint-staged
-pnpm exec lint-staged
-
-# Type check changed packages
-pnpm exec turbo check-types --filter='...[HEAD^]'
-```
-
-```bash
-# .husky/commit-msg
-#!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
-
-pnpm exec commitlint --edit $1
-```
-
-```bash
-# .husky/pre-push
-#!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
-
-# Run tests for changed packages
-pnpm exec turbo test --filter='...[origin/main]'
-```
-
----
-
-## CI/CD
-
-### GitHub Actions - CI Pipeline
-
-```yaml
-# .github/workflows/ci.yml
-name: CI
-
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
-env:
-  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
-
-jobs:
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v2
-        with:
-          version: 9
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: "pnpm"
-
-      - run: pnpm install --frozen-lockfile
-
-      - run: pnpm lint
-
-  typecheck:
-    name: Type Check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v2
-        with:
-          version: 9
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: "pnpm"
-
-      - run: pnpm install --frozen-lockfile
-
-      - run: pnpm check-types
-
-  test:
-    name: Test
-    runs-on: ubuntu-latest
-    services:
-      mongodb:
-        image: mongo:7
-        ports:
-          - 27017:27017
-      redis:
-        image: redis:7
-        ports:
-          - 6379:6379
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v2
-        with:
-          version: 9
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: "pnpm"
-
-      - run: pnpm install --frozen-lockfile
-
-      - run: pnpm test
-        env:
-          MONGODB_URI: mongodb://localhost:27017/test
-          REDIS_URL: redis://localhost:6379
-
-      - uses: codecov/codecov-action@v3
-        with:
-          files: ./coverage/lcov.info
-
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v2
-        with:
-          version: 9
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: "pnpm"
-
-      - run: pnpm install --frozen-lockfile
-
-      - run: pnpm build
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: build
-          path: |
-            packages/*/dist
-            starters/*/dist
-```
-
-### GitHub Actions - Release Pipeline
-
-```yaml
-# .github/workflows/release.yml
-name: Release
-
-on:
-  push:
-    branches: [main]
-
-concurrency: ${{ github.workflow }}-${{ github.ref }}
-
-jobs:
-  release:
-    name: Release
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-      id-token: write
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v2
-        with:
-          version: 9
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: "pnpm"
-          registry-url: "https://registry.npmjs.org"
-
-      - run: pnpm install --frozen-lockfile
-
-      - run: pnpm build
-
-      - run: pnpm test
-
-      - name: Create Release Pull Request or Publish
-        id: changesets
-        uses: changesets/action@v1
-        with:
-          publish: pnpm release
-          version: pnpm version-packages
-          commit: "chore: release packages"
-          title: "chore: release packages"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-```
-
-### GitHub Actions - Preview Deployments
-
-```yaml
-# .github/workflows/preview.yml
-name: Preview
-
-on:
-  pull_request:
-    types: [opened, synchronize]
-
-jobs:
-  deploy-preview:
-    name: Deploy Preview
-    runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v2
-        with:
-          version: 9
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: "pnpm"
-
-      - run: pnpm install --frozen-lockfile
-
-      - run: pnpm build --filter=web
-
-      - uses: amondnet/vercel-action@v25
-        id: vercel-action
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          working-directory: apps/web
-
-      - uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '🚀 Preview deployed to: ${{ steps.vercel-action.outputs.preview-url }}'
-            })
-```
-
----
-
-## CLI Tool
-
-### Unified CLI Architecture
-
-The CLI is split into three packages with clear responsibilities:
-
-```
-packages/tooling/
-├── cli-core/                    # Shared utilities
-│   └── src/
-│       ├── log.ts               # Logging (banners, success, error, dim)
-│       └── prompts.ts           # Interactive prompts (select, confirm, etc.)
-│
-├── unisane/                     # Main CLI entry point
-│   └── src/
-│       └── cli.ts               # Delegates to devtools when available
-│
-├── create-unisane/              # Project scaffolding
-│   └── src/
-│       ├── index.ts             # Entry point
-│       └── template.ts          # Download templates from GitHub
-│
-└── devtools/                    # Heavy operations
-    └── src/
-        ├── cli.ts               # Full CLI with all commands
-        └── commands/
-            ├── ui/              # UI component management
-            │   ├── init.ts      # Initialize Unisane UI
-            │   ├── add.ts       # Add components (shadcn-style)
-            │   ├── diff.ts      # Check for updates
-            │   └── doctor.ts    # Verify installation
-            ├── codegen/         # Code generation
-            ├── billing/         # Stripe operations
-            ├── db/              # Database queries
-            └── release/         # Version management
-```
-
-### Main CLI (`unisane`)
-
-The main CLI is lightweight and delegates heavy operations to devtools:
+**Key Files:**
 
 ```typescript
-// packages/tooling/unisane/src/cli.ts
-#!/usr/bin/env node
-import { Command } from 'commander';
-import { log } from '@unisane/cli-core';
+// packages/tooling/test-utils/src/db.ts
 
-const program = new Command();
-
-program
-  .name('unisane')
-  .description('Unisane CLI')
-  .version('0.1.0');
-
-// UI commands - delegate to devtools
-const ui = program.command('ui').description('UI component management');
-
-ui.command('init')
-  .description('Initialize Unisane UI in your project')
-  .option('-f, --force', 'Overwrite existing files')
-  .action(async (options) => {
-    // Check if devtools is installed, run uiInit if available
-    // Otherwise provide installation instructions
-  });
-
-ui.command('add [components...]')
-  .description('Add UI components')
-  .option('-a, --all', 'Add all components')
-  .option('-o, --overwrite', 'Overwrite existing files')
-  .option('-y, --yes', 'Skip confirmation')
-  .action(async (components, options) => {
-    // Delegate to devtools
-  });
-
-// Package manager detection
-function detectPackageManager(): 'pnpm' | 'npm' | 'yarn' | 'bun' {
-  // Checks lockfiles and env vars
-}
-
-// Devtools availability check
-function isDevtoolsInstalled(): boolean {
-  // Checks node_modules/@unisane/devtools
-}
-```
-
-### UI Commands (in devtools)
-
-UI commands provide shadcn-style component management:
-
-```typescript
-// packages/tooling/devtools/src/commands/ui/init.ts
-export async function uiInit(options: UiInitOptions): Promise<number> {
-  // 1. Verify Next.js project
-  // 2. Create src/styles/unisane.css (from @unisane/tokens)
-  // 3. Create src/lib/utils.ts (cn function with tailwind-merge)
-  // 4. Update app/globals.css with imports
-  // 5. Create component directories
-}
-
-// packages/tooling/devtools/src/commands/ui/add.ts
-export async function uiAdd(options: UiAddOptions): Promise<number> {
-  // 1. Load registry from @unisane/ui/registry/registry.json
-  // 2. Resolve component dependencies (transitive)
-  // 3. Interactive selection if no components specified
-  // 4. Copy files from registry, transform imports
-  // 5. Report npm dependencies needed
-}
-
-// packages/tooling/devtools/src/commands/ui/diff.ts
-export async function uiDiff(options: UiDiffOptions): Promise<number> {
-  // Compare local components against registry versions
-  // Report files that differ
-}
-
-// packages/tooling/devtools/src/commands/ui/doctor.ts
-export async function uiDoctor(options: UiDoctorOptions): Promise<number> {
-  // Check: Next.js, Tailwind v4, @unisane/ui, tokens, imports, utils
-}
-```
-
-### Devtools CLI (Full Commands)
-
-```typescript
-// packages/tooling/devtools/src/cli.ts
-#!/usr/bin/env node
-import { Command } from 'commander';
-import { uiInit, uiAdd, uiDiff, uiDoctor } from './commands/ui/index.js';
-
-const program = new Command();
-
-program.name('unisane-devtools').description('Unisane developer tools');
-
-// UI Commands
-const ui = program.command('ui').description('UI component management');
-ui.command('init').action(uiInit);
-ui.command('add [components...]').action(uiAdd);
-ui.command('diff [component]').action(uiDiff);
-ui.command('doctor').action(uiDoctor);
-
-// Codegen Commands
-const codegen = program.command('codegen').description('Code generation');
-codegen.command('routes').action(/* ... */);
-codegen.command('sdk').action(/* ... */);
-codegen.command('crud <name>').action(/* ... */);
-
-// Database Commands
-const db = program.command('db').description('Database operations');
-db.command('query <collection>').action(/* ... */);
-db.command('indexes:apply').action(/* ... */);
-
-// Billing Commands
-const billing = program.command('billing').description('Stripe operations');
-billing.command('seed-stripe').action(/* ... */);
-billing.command('plans').action(/* ... */);
-
-// Release Commands
-const release = program.command('release').description('Version management');
-release.command('version').action(/* ... */);
-release.command('check').action(/* ... */);
-
-program.parse();
-```
-
----
-
-## Build Tools
-
-### Release Tool Structure
-
-```
-tools/release/
-├── src/
-│   ├── index.ts           # CLI entry
-│   ├── strip-pro.ts       # PRO code removal
-│   ├── generate.ts        # Source generation
-│   ├── bundle.ts          # Bundle creation
-│   └── verify.ts          # Verification
-├── package.json
-└── tsconfig.json
-```
-
-```json
-// tools/release/package.json
-{
-  "name": "@unisane/release-tools",
-  "version": "1.0.0",
-  "private": true,
-  "type": "module",
-  "bin": {
-    "unisane-release": "./dist/index.js"
-  },
-  "scripts": {
-    "build": "tsup src/index.ts --format esm",
-    "strip-pro": "tsx src/strip-pro.ts",
-    "generate": "tsx src/generate.ts",
-    "bundle": "tsx src/bundle.ts",
-    "verify": "tsx src/verify.ts"
-  },
-  "dependencies": {
-    "recast": "^0.23.0",
-    "ast-types": "^0.14.0",
-    "glob": "^10.0.0",
-    "fs-extra": "^11.0.0"
-  },
-  "devDependencies": {
-    "tsx": "^4.0.0",
-    "tsup": "^8.0.0",
-    "typescript": "^5.3.0"
-  }
-}
-```
-
----
-
-## Testing Infrastructure
-
-### Test Utils Package
-
-```
-packages/test-utils/
-├── src/
-│   ├── index.ts
-│   ├── db.ts              # Database test helpers
-│   ├── fixtures.ts        # Fixture factories
-│   ├── mocks.ts           # Common mocks
-│   ├── context.ts         # Test context setup
-│   └── assertions.ts      # Custom assertions
-├── package.json
-└── tsconfig.json
-```
-
-```typescript
-// packages/test-utils/src/db.ts
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import { MongoClient } from 'mongodb';
-import { setClient } from '@unisane/kernel';
 
-let mongod: MongoMemoryServer | null = null;
-let client: MongoClient | null = null;
-
-export async function setupTestDb() {
-  mongod = await MongoMemoryServer.create();
-  const uri = mongod.getUri();
-  client = await MongoClient.connect(uri);
-  setClient(client);
-  return client;
-}
-
-export async function teardownTestDb() {
-  if (client) {
-    await client.close();
-    client = null;
-  }
-  if (mongod) {
-    await mongod.stop();
-    mongod = null;
-  }
-}
-
-export async function clearCollections() {
-  if (!client) return;
-  const db = client.db();
-  const collections = await db.listCollections().toArray();
-  await Promise.all(
-    collections.map(({ name }) => db.collection(name).deleteMany({}))
-  );
-}
+export async function setupTestDb(): Promise<void>;
+export async function teardownTestDb(): Promise<void>;
+export async function clearCollections(): Promise<void>;
 ```
 
 ```typescript
-// packages/test-utils/src/context.ts
-import { ctx } from '@unisane/kernel';
+// packages/tooling/test-utils/src/context.ts
+
 import type { RequestContext } from '@unisane/kernel';
 
-export function createTestContext(overrides: Partial<RequestContext> = {}): RequestContext {
-  return {
-    requestId: 'test-request-id',
-    startTime: Date.now(),
-    isAuthenticated: true,
-    userId: 'test-user-id',
-    tenantId: 'test-tenant-id',
-    role: 'admin',
-    permissions: ['*'],
-    ...overrides,
-  };
-}
+export function createTestContext(overrides?: Partial<RequestContext>): RequestContext;
 
 export async function runWithTestContext<T>(
   fn: () => Promise<T>,
-  overrides: Partial<RequestContext> = {}
-): Promise<T> {
-  const context = createTestContext(overrides);
-  return ctx.run(context, fn);
-}
+  overrides?: Partial<RequestContext>
+): Promise<T>;
 ```
 
 ```typescript
-// packages/test-utils/src/fixtures.ts
-import { faker } from '@faker-js/faker';
+// packages/tooling/test-utils/src/fixtures.ts
 
 export const fixtures = {
-  user: (overrides = {}) => ({
-    id: faker.string.uuid(),
-    email: faker.internet.email(),
-    name: faker.person.fullName(),
-    createdAt: faker.date.past(),
-    ...overrides,
-  }),
+  user: (overrides?: Partial<User>) => User;
+  tenant: (overrides?: Partial<Tenant>) => Tenant;
+  subscription: (overrides?: Partial<Subscription>) => Subscription;
+  // ... more fixture factories
+};
+```
 
-  tenant: (overrides = {}) => ({
-    id: faker.string.uuid(),
-    name: faker.company.name(),
-    slug: faker.helpers.slugify(faker.company.name()).toLowerCase(),
-    createdAt: faker.date.past(),
-    ...overrides,
-  }),
+**Usage in Tests:**
+```typescript
+import { describe, it, beforeAll, afterAll, beforeEach } from 'vitest';
+import { setupTestDb, teardownTestDb, clearCollections } from '@unisane/test-utils';
+import { runWithTestContext, fixtures } from '@unisane/test-utils';
 
-  subscription: (overrides = {}) => ({
-    id: faker.string.uuid(),
-    tenantId: faker.string.uuid(),
-    planId: 'pro',
-    status: 'active',
-    currentPeriodStart: faker.date.recent(),
-    currentPeriodEnd: faker.date.future(),
-    ...overrides,
-  }),
+describe('user service', () => {
+  beforeAll(async () => {
+    await setupTestDb();
+  });
+
+  afterAll(async () => {
+    await teardownTestDb();
+  });
+
+  beforeEach(async () => {
+    await clearCollections();
+  });
+
+  it('creates a user', async () => {
+    await runWithTestContext(async () => {
+      const user = fixtures.user({ email: 'test@example.com' });
+      // Test logic...
+    });
+  });
+});
+```
+
+---
+
+### @unisane/eslint-config
+
+**Status:** ✅ Complete
+
+**Location:** `packages/tooling/eslint-config/`
+
+**Exports:**
+- `base.js` - Base rules for all packages
+- `next.js` - Next.js specific rules
+- `react-internal.js` - React library rules
+
+**Usage:**
+```javascript
+// eslint.config.js
+import base from '@unisane/eslint-config/base';
+
+export default [...base];
+```
+
+---
+
+### @unisane/typescript-config
+
+**Status:** ✅ Complete
+
+**Location:** `packages/tooling/typescript-config/`
+
+**Exports:**
+- `base.json` - Base TypeScript config
+- `nextjs.json` - Next.js apps
+- `react-library.json` - React packages
+- `node-library.json` - Node.js packages
+
+**Usage:**
+```json
+// tsconfig.json
+{
+  "extends": "@unisane/typescript-config/nextjs.json",
+  "compilerOptions": {
+    "outDir": "dist"
+  }
+}
+```
+
+---
+
+### @unisane/tailwind-config
+
+**Status:** ✅ Complete
+
+**Location:** `packages/tooling/tailwind-config/`
+
+**Usage:**
+```javascript
+// tailwind.config.js
+import baseConfig from '@unisane/tailwind-config';
+
+export default {
+  ...baseConfig,
+  content: ['./src/**/*.{ts,tsx}'],
 };
 ```
 
 ---
 
-## Dependency Management
+## Command Reference
 
-### Changesets Configuration
+### Project Setup Commands
 
-```json
-// .changeset/config.json
-{
-  "$schema": "https://unpkg.com/@changesets/config@3.0.0/schema.json",
-  "changelog": [
-    "@changesets/changelog-github",
-    { "repo": "unisane/unisane" }
-  ],
-  "commit": false,
-  "fixed": [],
-  "linked": [
-    ["@unisane/kernel", "@unisane/gateway"],
-    ["@unisane/ui", "@unisane/data-table", "@unisane/tokens"]
-  ],
-  "access": "public",
-  "baseBranch": "main",
-  "updateInternalDependencies": "patch",
-  "ignore": [
-    "@unisane/eslint-config",
-    "@unisane/typescript-config",
-    "@unisane/prettier-config"
-  ]
-}
+#### ✅ `unisane create [name]`
+
+Create a new Unisane project from templates.
+
+**Status:** Implemented
+
+```bash
+unisane create my-app
+unisane create my-app --template saaskit
+unisane create my-app --use-pnpm
+unisane create my-app --skip-git --skip-install
 ```
 
-### Renovate Configuration
+**Options:**
+- `-t, --template <template>` - Template: saaskit, minimal, api-only (default: saaskit)
+- `--use-npm` - Use npm as package manager
+- `--use-yarn` - Use yarn
+- `--use-pnpm` - Use pnpm
+- `--use-bun` - Use bun
+- `--skip-git` - Skip git initialization
+- `--skip-install` - Skip dependency installation
+- `--typescript` - Use TypeScript strict mode
+- `--example` - Include example code
 
-```json
-// renovate.json
-{
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:recommended",
-    ":preserveSemverRanges",
-    "group:allNonMajor"
-  ],
-  "labels": ["dependencies"],
-  "schedule": ["before 6am on monday"],
-  "packageRules": [
-    {
-      "groupName": "TypeScript",
-      "matchPackagePatterns": ["typescript", "@types/*"]
-    },
-    {
-      "groupName": "Testing",
-      "matchPackagePatterns": ["vitest", "@testing-library/*"]
-    },
-    {
-      "groupName": "ESLint",
-      "matchPackagePatterns": ["eslint", "eslint-*", "@typescript-eslint/*"]
-    },
-    {
-      "groupName": "Next.js",
-      "matchPackagePatterns": ["next", "@next/*"]
-    }
-  ],
-  "ignoreDeps": []
-}
+**Implementation:** [packages/tooling/devtools/src/commands/create/index.ts](../../packages/tooling/devtools/src/commands/create/index.ts)
+
+---
+
+#### ⚠️ `unisane init`
+
+Initialize Unisane in an existing project.
+
+**Status:** Not implemented (shows warning message)
+
+```bash
+unisane init
+# Output: init command is not yet implemented
+# Use: unisane create <name> instead
 ```
 
 ---
 
-## SaasKit DevTools (Migration)
+### UI Component Commands
 
-> **CRITICAL:** These are the existing SaasKit developer tools that MUST be preserved and enhanced during migration. They form the backbone of the DX and productivity story.
+#### ✅ `unisane ui init`
 
-### DevTools Overview
+Initialize Unisane UI in your project (shadcn-style).
 
-The existing SaasKit has a comprehensive `devtools/` directory with CLI commands for:
-
-```
-saaskit/devtools/
-├── index.ts                    # Main devtools entry
-├── env.ts                      # Environment loader
-├── utils.ts                    # Shared utilities
-└── commands/
-    ├── billing-plans.ts        # Print billing plans
-    ├── billing-stripe-seed.ts  # Seed Stripe products/prices
-    ├── billing-configure-stripe-portal.ts  # Configure Stripe portal
-    ├── crud.ts                 # CRUD module scaffolding
-    ├── db-query.ts             # Database queries
-    ├── diagrams.generate.ts    # Generate architecture diagrams
-    ├── doctor.ts               # Code health checks
-    ├── indexes.apply.ts        # Apply database indexes
-    ├── openapi.serve.ts        # Serve OpenAPI docs
-    ├── rbac-cache.ts           # Invalidate RBAC cache
-    ├── routes.graph.ts         # Route dependency graph
-    ├── tenant-info.ts          # Get tenant information
-    ├── tenant-reset.ts         # Reset tenant billing
-    └── watch.ts                # Watch mode for devtools
-```
-
-### Command Reference
-
-#### Code Generation Commands
-
-##### `routes:gen` - Route Handler Generation
-
-Generates Next.js route handlers from ts-rest contracts with metadata.
+**Status:** Implemented
 
 ```bash
-npm run devtools routes:gen
-npm run devtools routes:gen --rewrite    # Force rewrite all
-npm run devtools routes:gen --no-scaffold # Skip missing wrappers
+unisane ui init
+unisane ui init --force  # Overwrite existing files
 ```
+
+**What it does:**
+1. Verifies Next.js project structure
+2. Creates `src/styles/unisane.css` (from @unisane/tokens)
+3. Creates `src/lib/utils.ts` (cn function with tailwind-merge)
+4. Updates `app/globals.css` with imports
+5. Creates component directories
+
+**Implementation:** [packages/tooling/devtools/src/commands/ui/init.ts](../../packages/tooling/devtools/src/commands/ui/init.ts)
+
+---
+
+#### ✅ `unisane ui add [components...]`
+
+Add UI components to your project.
+
+**Status:** Implemented
+
+```bash
+unisane ui add                    # Interactive selection
+unisane ui add button card        # Add specific components
+unisane ui add --all              # Add all components
+unisane ui add button --overwrite # Overwrite existing
+```
+
+**Options:**
+- `-y, --yes` - Skip confirmation prompts
+- `-o, --overwrite` - Overwrite existing files
+- `-a, --all` - Add all components
+
+**How it works:**
+1. Loads registry from `@unisane/ui/registry/registry.json`
+2. Resolves component dependencies (transitive)
+3. Interactive selection if no components specified
+4. Copies files from registry, transforms imports
+5. Reports npm dependencies needed
+
+**Implementation:** [packages/tooling/devtools/src/commands/ui/add.ts](../../packages/tooling/devtools/src/commands/ui/add.ts)
+
+---
+
+#### ✅ `unisane ui diff [component]`
+
+Check for component updates.
+
+**Status:** Implemented
+
+```bash
+unisane ui diff           # Check all components
+unisane ui diff button    # Check specific component
+```
+
+**Implementation:** [packages/tooling/devtools/src/commands/ui/diff.ts](../../packages/tooling/devtools/src/commands/ui/diff.ts)
+
+---
+
+#### ✅ `unisane ui doctor`
+
+Check UI installation health.
+
+**Status:** Implemented
+
+```bash
+unisane ui doctor
+```
+
+**Checks:**
+- Next.js installation
+- Tailwind v4 configuration
+- @unisane/ui package
+- Tokens package
+- CSS imports
+- Utils file
+
+**Implementation:** [packages/tooling/devtools/src/commands/ui/doctor.ts](../../packages/tooling/devtools/src/commands/ui/doctor.ts)
+
+---
+
+### Code Generation Commands
+
+#### ✅ `unisane generate routes`
+
+Generate Next.js API route handlers from ts-rest contracts.
+
+**Status:** Implemented
+
+```bash
+unisane generate routes
+unisane generate routes --dry-run      # Preview changes
+unisane generate routes --rewrite      # Force rewrite all
+unisane generate routes --no-scaffold  # Skip wrapper files
+```
+
+**Options:**
+- `--dry-run` - Preview changes without writing files
+- `--rewrite` - Force rewrite all routes
+- `--no-scaffold` - Skip creating wrapper files
 
 **What it does:**
 1. Scans all `*.contract.ts` files in `src/contracts/`
@@ -1528,35 +594,46 @@ npm run devtools routes:gen --no-scaffold # Skip missing wrappers
 
 **Generated Output Example:**
 ```typescript
-/* AUTO-GENERATED by 'npm run routes:gen' — DO NOT EDIT */
+/* AUTO-GENERATED by 'unisane generate routes' — DO NOT EDIT */
 import { NextResponse } from 'next/server';
 import { listUsers } from '@/src/modules/users/service/crud';
-import { createUser } from '@/src/modules/users/service/crud';
 
 export const runtime = 'nodejs';
 
 export async function GET(request: Request) {
   // Auto-generated handler with validation, auth, rate limiting
 }
-
-export async function POST(request: Request) {
-  // Auto-generated handler
-}
 ```
 
-##### `sdk:gen` - SDK Generation
+**Implementation:** [packages/tooling/devtools/src/commands/routes/gen.ts](../../packages/tooling/devtools/src/commands/routes/gen.ts)
 
-Generates typed API clients and React Query hooks from contracts.
+---
+
+#### ✅ `unisane generate sdk`
+
+Generate SDK clients, React Query hooks, and TypeScript types from contracts.
+
+**Status:** Implemented
 
 ```bash
-npm run devtools sdk:gen
+unisane generate sdk                    # Generate all
+unisane generate sdk --clients          # Clients only
+unisane generate sdk --hooks            # React hooks only
+unisane generate sdk --vue              # Vue composables only
+unisane generate sdk --zod              # Zod schemas only
+unisane generate sdk --types            # TypeScript types only
+unisane generate sdk --admin-hooks      # Admin list params hooks
+unisane generate sdk --dry-run          # Preview changes
 ```
 
-**Sub-generators:**
-1. **`gen-clients.ts`** — Generates browser + server API clients
-2. **`gen-hooks.ts`** — Generates React Query hooks (useQuery, useMutation)
-3. **`gen-invalidate.ts`** — Generates cache invalidation utilities
-4. **`gen-types.ts`** — Generates request/response types
+**Options:**
+- `--clients` - Generate API clients only
+- `--hooks` - Generate React hooks only
+- `--vue` - Generate Vue composables only
+- `--zod` - Generate Zod schemas only
+- `--types` - Generate TypeScript types only
+- `--admin-hooks` - Generate admin list params hooks
+- `--dry-run` - Preview changes without writing files
 
 **Generated Files:**
 ```
@@ -1568,6 +645,10 @@ src/sdk/clients/generated/
 src/sdk/hooks/generated/
 ├── users.hooks.ts      # useUsersList, useUserCreate, etc.
 ├── tenants.hooks.ts
+└── index.ts
+
+src/sdk/types/generated/
+├── users.types.ts      # Request/response types
 └── index.ts
 ```
 
@@ -1584,27 +665,73 @@ const api = await serverApi();
 const user = await api.users.read('user-123');
 ```
 
-##### `crud` - CRUD Module Scaffolding
+**Hook Usage:**
+```typescript
+import { useUsersList, useUserCreate } from '@/src/sdk/hooks/generated';
 
-Scaffolds a complete CRUD module with types, schemas, repo, service, and contract.
+function UsersPage() {
+  const { data: users, isLoading } = useUsersList({ limit: 20 });
+  const createUser = useUserCreate();
 
-```bash
-npm run devtools crud <module-name> [options]
+  const handleCreate = () => {
+    createUser.mutate({ email: 'new@example.com' });
+  };
 
-# Options:
-#   --tenant         # Tenant-scoped module
-#   --slug           # Add slug field
-#   --unique=<field> # Add unique constraint
-#   --ui             # Generate list page
-#   --ui=form        # Generate list + form pages
+  // ...
+}
 ```
 
-**Example:**
+**Implementation:** [packages/tooling/devtools/src/commands/sdk/gen.ts](../../packages/tooling/devtools/src/commands/sdk/gen.ts)
+
+---
+
+#### ✅ `unisane generate types`
+
+Generate TypeScript types from contracts (shorthand for `generate sdk --types`).
+
+**Status:** Implemented
+
 ```bash
-npm run devtools crud products --tenant --slug --ui=form
+unisane generate types
+unisane generate types --dry-run
 ```
 
-**Generated Structure:**
+---
+
+#### ❌ `unisane generate openapi`
+
+Generate OpenAPI JSON specification from contracts.
+
+**Status:** Not implemented
+
+```bash
+unisane generate openapi
+unisane generate openapi -o ./openapi.json
+```
+
+**Planned Implementation:** Parse ts-rest contracts and generate OpenAPI 3.0 spec.
+
+---
+
+#### ❌ `unisane generate crud <name>`
+
+Scaffold a new CRUD module with types, schemas, repo, service, and contract.
+
+**Status:** Not implemented
+
+```bash
+unisane generate crud products --tenant --slug
+unisane generate crud tasks --soft-delete --audit
+```
+
+**Planned Options:**
+- `--tenant` - Add tenant scoping
+- `--slug` - Add slug field
+- `--soft-delete` - Add soft delete support
+- `--audit` - Add audit logging
+- `--unique <fields>` - Comma-separated unique fields
+
+**Planned Output:**
 ```
 src/modules/products/
 ├── domain/
@@ -1617,443 +744,897 @@ src/modules/products/
 └── index.ts            # Barrel export
 
 src/contracts/products.contract.ts  # ts-rest contract
-
-src/app/(tenant)/w/[slug]/products/ # UI pages (if --ui)
-├── page.tsx            # List page
-├── new/page.tsx        # Create form
-├── [id]/edit/page.tsx  # Edit form
-└── [id]/delete/page.tsx # Delete confirmation
-```
-
-**Auto-patches:**
-- `src/contracts/app.router.ts` — Adds contract import
-- `scripts/indexes/apply.ts` — Adds DB indexes
-- `src/shared/constants/rateLimits.ts` — Adds rate-limit policies
-
-##### `sync` - Full Sync Command
-
-Regenerates all routes and SDK, runs doctor with fixes.
-
-```bash
-npm run devtools sync
-```
-
-**What it does:**
-1. `routes:gen --rewrite`
-2. `fixRouteWrappers()`
-3. `gen-clients`
-4. `gen-hooks`
-5. `gen-invalidate`
-6. `gen-types`
-7. `doctor --fix`
-
----
-
-#### Billing Commands
-
-##### `billing:plans` - Print Billing Plans
-
-Displays all configured billing plans and their metadata.
-
-```bash
-npm run devtools billing:plans
-```
-
-##### `billing:seed-stripe` - Seed Stripe Products
-
-Creates Stripe products and prices from `PLAN_META` configuration.
-
-```bash
-npm run devtools billing:seed-stripe
-```
-
-**What it does:**
-1. Reads plans from `PLANS` and `PLAN_META` constants
-2. Checks for existing active prices by lookup key
-3. Creates Stripe product + recurring price if not found
-4. Configures Stripe Billing Portal for plan switching
-5. Seeds top-up credit packs from `TOPUP_OPTIONS`
-6. Outputs `BILLING_PLAN_MAP_JSON` and `BILLING_TOPUP_MAP_JSON` env vars
-
-**Output Example:**
-```
-=== Plan 'pro' (Professional) ===
-Created product for 'pro': prod_xxx
-Created price for 'pro': price_xxx
-
-Add this to your env as BILLING_PLAN_MAP_JSON:
-BILLING_PLAN_MAP_JSON='{"stripe":{"pro":"price_xxx"}}'
-```
-
-##### `billing:configure-stripe-portal` - Configure Stripe Portal
-
-Updates Stripe Billing Portal configuration from existing plans.
-
-```bash
-npm run devtools billing:configure-stripe-portal
 ```
 
 ---
 
-#### Database Commands
+### Database Commands
 
-##### `db:query` - Database Query
+#### ✅ `unisane db query <collection> [filter]`
 
-Quick database query utility for debugging.
+Query a MongoDB collection.
 
-```bash
-npm run devtools db:query <collection> [filterJson]
-
-# Examples:
-npm run devtools db:query tenants
-npm run devtools db:query users '{"email":"admin@example.com"}'
-npm run devtools db:query subscriptions '{"status":"active"}'
-```
-
-**Returns:** First 50 documents matching the filter as JSON.
-
-##### `indexes:apply` - Apply Database Indexes
-
-Ensures all defined indexes exist on MongoDB collections.
+**Status:** Implemented
 
 ```bash
-npm run devtools indexes:apply
+unisane db query tenants
+unisane db query users '{"email":"admin@example.com"}'
+unisane db query subscriptions '{"status":"active"}' --limit 100
 ```
 
-**Index Configuration:**
-```typescript
-// scripts/indexes/apply.ts
-await ensureIndexesFor('users', [
-  { name: 'email_unique', keys: { email: 1 }, options: { unique: true } },
-  { name: 'tenantId_asc', keys: { tenantId: 1 } },
-]);
+**Options:**
+- `-l, --limit <n>` - Limit results (default: 50)
 
-await ensureIndexesFor('tenants', [
-  { name: 'slug_unique', keys: { slug: 1 }, options: { unique: true } },
-]);
+**Returns:** First N documents matching the filter as JSON.
+
+**Implementation:** [packages/tooling/devtools/src/commands/db/query.ts](../../packages/tooling/devtools/src/commands/db/query.ts)
+
+---
+
+#### ✅ `unisane db collections`
+
+List all collections in the database.
+
+**Status:** Implemented
+
+```bash
+unisane db collections
+unisane db ls  # Alias
+```
+
+**Implementation:** [packages/tooling/devtools/src/commands/db/index.ts](../../packages/tooling/devtools/src/commands/db/index.ts)
+
+---
+
+#### ✅ `unisane db rename [from] [to]`
+
+Rename a MongoDB collection.
+
+**Status:** Implemented
+
+```bash
+unisane db rename old_name new_name
+unisane db rename old_name new_name --dry-run
+unisane db rename --apply-migrations      # Apply all known renames
+```
+
+**Options:**
+- `--apply-migrations` - Apply all known collection renames
+- `--dry-run` - Preview changes without applying
+
+**Implementation:** [packages/tooling/devtools/src/commands/db/rename.ts](../../packages/tooling/devtools/src/commands/db/rename.ts)
+
+---
+
+#### ✅ `unisane db seed`
+
+Seed database with demo data.
+
+**Status:** Implemented
+
+```bash
+unisane db seed                           # Run all seeders
+unisane db seed --config ./seed.config.js # Use specific config
+unisane db seed --reset                   # Reset DB before seeding
+unisane db seed --only tenants,users      # Only run specific seeders
+unisane db seed --generate                # Generate default config
+unisane db seed --dry-run                 # Preview changes
+```
+
+**Options:**
+- `--config <path>` - Path to seed configuration file
+- `--reset` - Reset database before seeding
+- `--dry-run` - Preview changes without applying
+- `--generate` - Generate default config file
+- `--only <types>` - Only run specific seeders (comma-separated)
+
+**Implementation:** [packages/tooling/devtools/src/commands/db/seed.ts](../../packages/tooling/devtools/src/commands/db/seed.ts)
+
+---
+
+#### ✅ `unisane db migrate`
+
+Run database migrations.
+
+**Status:** Implemented
+
+```bash
+unisane db migrate                    # Run pending migrations
+unisane db migrate --status           # Show migration status
+unisane db migrate --down             # Rollback migrations
+unisane db migrate --target 001       # Run up to specific migration
+unisane db migrate --reset            # Reset migration history
+unisane db migrate --force            # Force re-run applied migrations
+unisane db migrate --path ./migrations # Custom migrations directory
+unisane db migrate --dry-run          # Preview migrations
+```
+
+**Options:**
+- `--dry-run` - Preview migrations without applying
+- `--status` - Show migration status
+- `--down` - Rollback migrations
+- `--target <id>` - Run up to specific migration
+- `--reset` - Reset migration history
+- `--force` - Force re-run applied migrations
+- `--path <path>` - Path to migrations directory
+
+**Implementation:** [packages/tooling/devtools/src/commands/db/migrate.ts](../../packages/tooling/devtools/src/commands/db/migrate.ts)
+
+---
+
+#### ✅ `unisane db indexes`
+
+Create or list database indexes.
+
+**Status:** Implemented
+
+```bash
+unisane db indexes --apply                 # Apply indexes to database
+unisane db indexes --list                  # List existing indexes
+unisane db indexes --apply --collection users  # Only process specific collection
+unisane db indexes --dry-run               # Preview changes
+```
+
+**Options:**
+- `--apply` - Apply indexes to database
+- `--list` - List existing indexes from database
+- `--collection <name>` - Only process specific collection
+- `--dry-run` - Preview changes without applying
+
+**Implementation:** [packages/tooling/devtools/src/commands/db/indexes.ts](../../packages/tooling/devtools/src/commands/db/indexes.ts)
+
+---
+
+#### ❌ `unisane db push`
+
+Push schema changes to database.
+
+**Status:** Not implemented
+
+```bash
+unisane db push
+unisane db push --force
 ```
 
 ---
 
-#### Tenant Commands
+#### ❌ `unisane db pull`
 
-##### `tenant:info` - Get Tenant Information
+Pull schema from database.
 
-Displays tenant details, subscription, members.
-
-```bash
-npm run devtools tenant:info <slug-or-id>
-
-# Example:
-npm run devtools tenant:info acme
-npm run devtools tenant:info 507f1f77bcf86cd799439011
-```
-
-##### `tenant:reset-billing` - Reset Tenant Billing
-
-Resets a tenant's billing state (for testing/debugging).
+**Status:** Not implemented
 
 ```bash
-npm run devtools tenant:reset-billing <slug-or-id>
+unisane db pull
 ```
 
 ---
 
-#### Code Quality Commands
+#### ❌ `unisane db studio`
 
-##### `doctor` - Health Check
+Open database studio GUI.
 
-Comprehensive code health checker with auto-fix capability.
+**Status:** Not implemented
 
 ```bash
-npm run devtools doctor
-npm run devtools doctor --fix    # Auto-fix issues
+unisane db studio
+# Recommendation: Use mongosh or MongoDB Compass
 ```
+
+---
+
+### Environment Commands
+
+#### ✅ `unisane env check`
+
+Validate environment variables against schema.
+
+**Status:** Implemented
+
+```bash
+unisane env check
+unisane env check --file .env.production
+unisane env check --show-values     # Show values (masked for sensitive)
+```
+
+**Options:**
+- `-f, --file <path>` - Environment file to check (default: .env.local)
+- `--show-values` - Show values (masked for sensitive)
+
+**Implementation:** [packages/tooling/devtools/src/commands/env/index.ts](../../packages/tooling/devtools/src/commands/env/index.ts)
+
+---
+
+#### ✅ `unisane env init`
+
+Create .env.local from template.
+
+**Status:** Implemented
+
+```bash
+unisane env init
+unisane env init --force                           # Overwrite existing
+unisane env init --source .env.example --target .env.local
+```
+
+**Options:**
+- `-f, --force` - Overwrite existing file
+- `-s, --source <path>` - Source file (default: .env.example)
+- `-t, --target <path>` - Target file (default: .env.local)
+
+**Implementation:** [packages/tooling/devtools/src/commands/env/index.ts](../../packages/tooling/devtools/src/commands/env/index.ts)
+
+---
+
+#### ⚠️ `unisane env pull`
+
+Pull environment variables from remote provider.
+
+**Status:** Defined but not functional
+
+```bash
+unisane env pull
+unisane env pull --provider vercel
+```
+
+**Options:**
+- `--provider <name>` - Provider (vercel, doppler, railway)
+
+---
+
+#### ⚠️ `unisane env push`
+
+Push environment variables to remote provider.
+
+**Status:** Defined but not functional
+
+```bash
+unisane env push
+unisane env push --provider vercel
+```
+
+---
+
+#### ⚠️ `unisane env generate`
+
+Generate .env.example from schema.
+
+**Status:** Defined but not functional
+
+```bash
+unisane env generate
+```
+
+---
+
+### Development Commands
+
+#### ⚠️ `unisane dev`
+
+Start development server (passthrough to package scripts).
+
+**Status:** Passthrough only
+
+```bash
+unisane dev
+# Output: dev command is a passthrough to your project scripts
+# Use: pnpm dev
+```
+
+---
+
+#### ⚠️ `unisane build`
+
+Build for production (passthrough to package scripts).
+
+**Status:** Passthrough only
+
+```bash
+unisane build
+# Output: build command is a passthrough to your project scripts
+# Use: pnpm build
+```
+
+---
+
+#### ✅ `unisane doctor`
+
+Run health checks on your project.
+
+**Status:** Implemented
+
+```bash
+unisane doctor
+unisane doctor --fix    # Attempt to auto-fix issues
+```
+
+**Options:**
+- `--fix` - Attempt to auto-fix issues
 
 **Checks Performed:**
+- Sidecar verification
+- Runtime export consistency
+- Factory audit
+- Service purity (no Request/URL references)
+- UI boundaries (SDK-only imports)
+- Inline types in UI
+- Config cleanup
+- Contract metadata
+- Environment variables
+- Import hygiene
 
-| Check | Description |
-|-------|-------------|
-| Sidecar verification | Wrappers re-exporting `./route.gen` have matching sidecars |
-| Runtime export | All route wrappers have `export const runtime = 'nodejs'` |
-| Factory audit | Only auth/jobs/export factories allowed (prefer sidecars) |
-| Service purity | Services don't reference `Request` or `new URL()` |
-| UI boundaries | UI imports from SDK only, not contracts/modules/gateway |
-| Inline types | Discourages inline type aliases in UI (use generated types) |
-| Config cleanup | `ROUTE_GEN_CONFIG` should be empty (meta is SSOT) |
-| Contract meta | All `defineOpMeta` have service mapping and rate-limit keys |
-| Stripe env | Validates billing env vars when Stripe is enabled |
-| Import hygiene | Splits combined value+type import specifiers |
+**Implementation:** [packages/tooling/devtools/src/commands/dev/doctor.ts](../../packages/tooling/devtools/src/commands/dev/doctor.ts)
 
-**Output Example:**
-```
-[WARN] src/app/(tenant)/dashboard/page.tsx — UI should use generated SDK only
-[WARN] contracts:users — Op key 'users.export' not found in rate-limits
-[ERROR] src/app/api/users/route.ts — Wrapper re-exports ./route.gen but sidecar is missing
-```
+---
 
-##### `rbac:invalidate-cache` - Invalidate RBAC Cache
+#### ✅ `unisane upgrade`
 
-Clears the Redis RBAC permission cache.
+Upgrade Unisane packages to latest versions.
+
+**Status:** Implemented
 
 ```bash
-npm run devtools rbac:invalidate-cache
+unisane upgrade
+unisane upgrade --target latest
+unisane upgrade --target next
+unisane upgrade --target 1.2.3
+unisane upgrade --dry-run
+unisane upgrade --yes          # Skip confirmation
+unisane upgrade --codemods     # Run codemods after upgrade
+```
+
+**Options:**
+- `--target <version>` - Target version (latest, next, or specific) (default: latest)
+- `--dry-run` - Preview changes without applying
+- `-y, --yes` - Skip confirmation prompts
+- `--codemods` - Run codemods after upgrade
+
+**Implementation:** [packages/tooling/devtools/src/commands/upgrade/index.ts](../../packages/tooling/devtools/src/commands/upgrade/index.ts)
+
+---
+
+#### ✅ `unisane info`
+
+Show project information and package versions.
+
+**Status:** Implemented
+
+```bash
+unisane info
+```
+
+**Output:**
+- CLI version
+- Installed Unisane package versions
+- Project information
+
+**Implementation:** Built-in (cli.ts)
+
+---
+
+#### ❌ `unisane sync`
+
+Run all generators and doctor --fix.
+
+**Status:** Not implemented
+
+```bash
+unisane sync
+# Should run:
+#   unisane generate routes
+#   unisane generate sdk
+#   unisane doctor --fix
 ```
 
 ---
 
-#### Documentation Commands
+#### ❌ `unisane watch`
 
-##### `openapi:json` - Dump OpenAPI Spec
+Watch contracts and regenerate on changes.
 
-Generates OpenAPI JSON specification from contracts.
+**Status:** Not implemented
 
 ```bash
-npm run devtools openapi:json
+unisane watch
 ```
 
-##### `openapi:serve` - Serve OpenAPI Docs
+**Planned:** Watch `src/contracts/**/*.ts` and auto-run generators on changes.
 
-Starts a local Swagger UI server.
+---
 
-```bash
-npm run devtools openapi:serve
-```
+### Tenant Management Commands
 
-##### `routes:graph` - Route Dependency Graph
+#### ❌ `unisane tenant info <identifier>`
 
-Generates route dependency visualization.
+Display tenant details and aggregates.
 
-```bash
-npm run devtools routes:graph
-npm run devtools routes:graph --json    # JSON output
-npm run devtools routes:graph --dot     # Graphviz DOT format
-```
-
-##### `diagrams:generate` - Generate Diagrams
-
-Generates architecture diagrams from code.
+**Status:** Not implemented
 
 ```bash
-npm run devtools diagrams:generate [format]
-# format: svg (default), png, pdf
+unisane tenant info acme
+unisane tenant info 507f1f77bcf86cd799439011
 ```
 
 ---
 
-### Code Generation System
+#### ❌ `unisane tenant list`
 
-#### Route Generation Architecture
+List all tenants.
 
+**Status:** Not implemented
+
+```bash
+unisane tenant list
+unisane tenant list --limit 100
 ```
-┌─────────────────┐     ┌──────────────────┐     ┌────────────────┐
-│ *.contract.ts   │────▶│ gen-routes.ts    │────▶│ route.ts       │
-│ (defineOpMeta)  │     │ (discover+render)│     │ (auto-gen)     │
-└─────────────────┘     └──────────────────┘     └────────────────┘
-                               │
-                        ┌──────┴──────┐
-                        │             │
-                   ┌────▼────┐   ┌────▼────┐
-                   │discover │   │render   │
-                   │   .ts   │   │  .ts    │
-                   └─────────┘   └─────────┘
-```
-
-**Key Files:**
-- `scripts/codegen/routes/discover.ts` — Scans contracts, collects operations
-- `scripts/codegen/routes/meta.ts` — Reads `defineOpMeta` from contract AST
-- `scripts/codegen/routes/render.ts` — Renders route handler code
-- `scripts/codegen/routes/gen-routes.config.ts` — Legacy config (should be empty)
-
-#### SDK Generation Architecture
-
-```
-┌─────────────────┐     ┌──────────────────┐     ┌────────────────┐
-│ app.router.ts   │────▶│ gen-clients.ts   │────▶│ browser.ts     │
-│ (all contracts) │     │                  │     │ server.ts      │
-└─────────────────┘     └──────────────────┘     └────────────────┘
-        │
-        │               ┌──────────────────┐     ┌────────────────┐
-        └──────────────▶│ gen-hooks.ts     │────▶│ *.hooks.ts     │
-                        │ (React Query)    │     │                │
-                        └──────────────────┘     └────────────────┘
-```
-
-**Hooks Generation:**
-- Parses contract routes for HTTP method
-- Generates `useQuery` for GET, `useMutation` for POST/PATCH/DELETE
-- Creates invalidation helpers for cache management
-- Supports optimistic updates
 
 ---
 
-### Migration to Monorepo
+#### ❌ `unisane tenant create`
 
-#### DevTools Package Structure
+Create a new tenant.
 
-```
-unisane-monorepo/
-└── packages/
-    └── devtools/                    # @unisane/devtools
-        ├── src/
-        │   ├── index.ts             # Main CLI entry
-        │   ├── env.ts
-        │   ├── utils.ts
-        │   ├── commands/
-        │   │   ├── codegen/
-        │   │   │   ├── routes.ts    # routes:gen
-        │   │   │   ├── sdk.ts       # sdk:gen
-        │   │   │   ├── crud.ts      # crud scaffold
-        │   │   │   └── sync.ts      # sync all
-        │   │   ├── billing/
-        │   │   │   ├── plans.ts
-        │   │   │   ├── stripe-seed.ts
-        │   │   │   └── portal.ts
-        │   │   ├── db/
-        │   │   │   ├── query.ts
-        │   │   │   ├── indexes.ts
-        │   │   │   └── seed.ts
-        │   │   ├── tenant/
-        │   │   │   ├── info.ts
-        │   │   │   └── reset.ts
-        │   │   ├── doctor/
-        │   │   │   ├── index.ts
-        │   │   │   └── checks/      # Modular checks
-        │   │   ├── docs/
-        │   │   │   ├── openapi.ts
-        │   │   │   ├── diagrams.ts
-        │   │   │   └── graph.ts
-        │   │   └── cache/
-        │   │       └── rbac.ts
-        │   └── generators/          # Code templates
-        │       ├── route.template.ts
-        │       ├── client.template.ts
-        │       ├── hook.template.ts
-        │       └── crud/
-        │           ├── types.template.ts
-        │           ├── schema.template.ts
-        │           ├── repo.template.ts
-        │           ├── service.template.ts
-        │           └── contract.template.ts
-        └── package.json
+**Status:** Not implemented
+
+```bash
+unisane tenant create --name "Acme Corp" --slug acme
 ```
 
-#### Package Configuration
+---
 
+#### ❌ `unisane tenant delete <identifier>`
+
+Delete a tenant (soft delete).
+
+**Status:** Not implemented
+
+```bash
+unisane tenant delete acme
+unisane tenant delete <id> --hard  # Hard delete (irreversible)
+```
+
+---
+
+### Billing Commands
+
+#### ❌ `unisane billing plans`
+
+Display plan configuration.
+
+**Status:** Not implemented
+
+```bash
+unisane billing plans
+```
+
+---
+
+#### ❌ `unisane billing sync-stripe`
+
+Sync plans with Stripe products and prices.
+
+**Status:** Not implemented
+
+```bash
+unisane billing sync-stripe
+unisane billing sync-stripe --dry-run
+```
+
+**Planned:** Create Stripe products/prices from plan configuration.
+
+---
+
+#### ❌ `unisane billing portal-config`
+
+Configure Stripe customer portal.
+
+**Status:** Not implemented
+
+```bash
+unisane billing portal-config
+```
+
+---
+
+### Cache Commands
+
+#### ❌ `unisane cache clear`
+
+Clear all caches (Redis/KV).
+
+**Status:** Not implemented
+
+```bash
+unisane cache clear
+```
+
+---
+
+#### ❌ `unisane cache clear-rbac`
+
+Clear RBAC permission cache.
+
+**Status:** Not implemented
+
+```bash
+unisane cache clear-rbac
+```
+
+---
+
+### Release Commands (Internal)
+
+#### ✅ `unisane release build`
+
+Build a starter for distribution.
+
+**Status:** Implemented
+
+```bash
+unisane release build
+unisane release build --starter saaskit
+unisane release build --oss             # Strip PRO code
+unisane release build --dry-run
+unisane release build --verbose
+```
+
+**Options:**
+- `-s, --starter <name>` - Starter to build (default: saaskit)
+- `--oss` - Build OSS variant (strip PRO code)
+- `--dry-run` - Preview changes without writing files
+- `-v, --verbose` - Detailed logging
+
+**Implementation:** [packages/tooling/devtools/src/commands/release/build-starter.ts](../../packages/tooling/devtools/src/commands/release/build-starter.ts)
+
+---
+
+#### ✅ `unisane release verify`
+
+Verify a built starter.
+
+**Status:** Implemented
+
+```bash
+unisane release verify
+unisane release verify --starter saaskit
+```
+
+**Options:**
+- `-s, --starter <name>` - Starter to verify (default: saaskit)
+
+**Implementation:** [packages/tooling/devtools/src/commands/release/verify.ts](../../packages/tooling/devtools/src/commands/release/verify.ts)
+
+---
+
+#### ✅ `unisane release versions`
+
+List all package versions in the monorepo.
+
+**Status:** Implemented
+
+```bash
+unisane release versions
+```
+
+**Implementation:** [packages/tooling/devtools/src/commands/release/version.ts](../../packages/tooling/devtools/src/commands/release/version.ts)
+
+---
+
+#### ✅ `unisane release publishable`
+
+Show packages that can be published to npm.
+
+**Status:** Implemented
+
+```bash
+unisane release publishable
+```
+
+**Implementation:** [packages/tooling/devtools/src/commands/release/version.ts](../../packages/tooling/devtools/src/commands/release/version.ts)
+
+---
+
+### List Commands
+
+#### ✅ `unisane list ui`
+
+List available UI components.
+
+**Status:** Implemented (redirects to `ui add`)
+
+```bash
+unisane list ui
+unisane list components  # Alias
+# Output: Use: unisane ui add (interactive component selection)
+```
+
+---
+
+#### ⚠️ `unisane list modules`
+
+List available modules.
+
+**Status:** Partially implemented
+
+```bash
+unisane list modules
+```
+
+**Implementation:** [packages/tooling/devtools/src/commands/add/index.ts](../../packages/tooling/devtools/src/commands/add/index.ts)
+
+---
+
+#### ⚠️ `unisane list integrations`
+
+List available integrations.
+
+**Status:** Partially implemented
+
+```bash
+unisane list integrations
+```
+
+**Implementation:** [packages/tooling/devtools/src/commands/add/index.ts](../../packages/tooling/devtools/src/commands/add/index.ts)
+
+---
+
+### Add Commands
+
+#### ⚠️ `unisane add module <name>`
+
+Add a business module to your project.
+
+**Status:** Partially implemented
+
+```bash
+unisane add module billing
+unisane add module credits --skip-install
+unisane add module storage --dry-run
+```
+
+**Options:**
+- `--skip-install` - Skip dependency installation
+- `--dry-run` - Preview changes without writing files
+
+**Implementation:** [packages/tooling/devtools/src/commands/add/index.ts](../../packages/tooling/devtools/src/commands/add/index.ts)
+
+---
+
+#### ⚠️ `unisane add integration <name>`
+
+Add a third-party integration.
+
+**Status:** Not implemented
+
+```bash
+unisane add integration stripe
+unisane add integration sendgrid --skip-config
+```
+
+**Options:**
+- `--skip-config` - Skip configuration prompts
+
+---
+
+## Shared Configurations
+
+### ESLint Config
+
+**Package:** `@unisane/eslint-config`
+
+**Configs:**
+- `base` - Base rules for all packages
+- `next` - Next.js specific rules
+- `react-internal` - React library rules
+
+**Usage:**
+```javascript
+// eslint.config.js
+import base from '@unisane/eslint-config/base';
+import next from '@unisane/eslint-config/next';
+
+export default [...base, ...next];
+```
+
+---
+
+### TypeScript Config
+
+**Package:** `@unisane/typescript-config`
+
+**Configs:**
+- `base.json` - Base config
+- `nextjs.json` - Next.js apps
+- `react-library.json` - React packages
+- `node-library.json` - Node.js packages
+
+**Usage:**
 ```json
-// packages/devtools/package.json
 {
-  "name": "@unisane/devtools",
-  "version": "1.0.0",
-  "type": "module",
-  "bin": {
-    "unisane-devtools": "./dist/index.js"
-  },
-  "scripts": {
-    "build": "tsup src/index.ts --format esm",
-    "dev": "tsup src/index.ts --format esm --watch"
-  },
-  "dependencies": {
-    "commander": "^11.0.0",
-    "chalk": "^5.3.0",
-    "ora": "^7.0.0",
-    "prompts": "^2.4.2",
-    "fs-extra": "^11.0.0"
-  },
-  "peerDependencies": {
-    "@unisane/kernel": "workspace:*",
-    "@unisane/billing": "workspace:*"
+  "extends": "@unisane/typescript-config/nextjs.json",
+  "compilerOptions": {
+    "outDir": "dist"
   }
 }
 ```
 
-#### Starter Integration
+---
 
-```json
-// starters/saaskit/package.json
-{
-  "scripts": {
-    "devtools": "unisane-devtools",
-    "routes:gen": "unisane-devtools routes:gen",
-    "sdk:gen": "unisane-devtools sdk:gen",
-    "doctor": "unisane-devtools doctor"
-  },
-  "devDependencies": {
-    "@unisane/devtools": "workspace:*"
-  }
-}
+### Tailwind Config
+
+**Package:** `@unisane/tailwind-config`
+
+**Usage:**
+```javascript
+import baseConfig from '@unisane/tailwind-config';
+
+export default {
+  ...baseConfig,
+  content: ['./src/**/*.{ts,tsx}'],
+};
 ```
 
 ---
 
-### Enhancements for Unisane
+## Implementation Status
 
-#### New Commands to Add
+### ✅ Fully Implemented
 
-| Command | Description | Priority |
-|---------|-------------|----------|
-| `devtools module:add <name>` | Interactive module generator | P0 |
-| `devtools module:remove <name>` | Safe module removal | P1 |
-| `devtools seed` | Database seeding with fixtures | P0 |
-| `devtools seed:demo` | Demo data for showcase | P1 |
-| `devtools migrate` | Run database migrations | P0 |
-| `devtools migrate:create <name>` | Create migration file | P0 |
-| `devtools test:gen` | Generate test stubs | P2 |
-| `devtools audit` | Security audit | P1 |
-| `devtools upgrade` | Upgrade Unisane packages | P0 |
-| `devtools info` | Project info and health | P0 |
+| Category | Commands | Status |
+|----------|----------|--------|
+| **UI Components** | init, add, diff, doctor | ✅ Complete |
+| **Code Generation** | routes, sdk, types | ✅ Working |
+| **Database** | query, collections, rename, seed, migrate, indexes | ✅ Functional |
+| **Environment** | check, init | ✅ Working |
+| **Development** | doctor, upgrade, info | ✅ Complete |
+| **Release** | build, verify, versions, publishable | ✅ Working |
+| **Project Setup** | create | ✅ Working |
 
-#### Enhanced Doctor Checks
+### ⚠️ Partially Implemented
 
-```typescript
-// Additional checks for monorepo
-const additionalChecks = [
-  'module-layer-violations',     // Layer dependency rules
-  'circular-imports',            // Cross-module cycles
-  'transaction-boundaries',      // Proper withTransaction usage
-  'event-type-coverage',         // All events have types
-  'api-versioning',              // Contracts have version
-  'test-coverage',               // Minimum test coverage
-  'security-patterns',           // OWASP checks
-  'performance-antipatterns',    // N+1, unbounded queries
-];
+| Command | Status | Notes |
+|---------|--------|-------|
+| `add module` | ⚠️ Partial | Command exists, registry incomplete |
+| `list modules` | ⚠️ Partial | Command exists, registry incomplete |
+| `list integrations` | ⚠️ Partial | Command exists, registry incomplete |
+| `env pull/push` | ⚠️ Defined | Commands defined but not functional |
+| `env generate` | ⚠️ Defined | Command defined but not functional |
+| `dev` | ⚠️ Passthrough | Delegates to `pnpm dev` |
+| `build` | ⚠️ Passthrough | Delegates to `pnpm build` |
+
+### ❌ Not Implemented
+
+| Command | Status | Priority |
+|---------|--------|----------|
+| `init` | ❌ Not implemented | P1 |
+| `generate openapi` | ❌ Not implemented | P2 |
+| `generate crud` | ❌ Not implemented | P0 |
+| `sync` | ❌ Not implemented | P1 |
+| `watch` | ❌ Not implemented | P2 |
+| `db push` | ❌ Not implemented | P2 |
+| `db pull` | ❌ Not implemented | P2 |
+| `db studio` | ❌ Not implemented | P3 |
+| `tenant *` | ❌ Not implemented | P1 |
+| `billing *` | ❌ Not implemented | P0 |
+| `cache *` | ❌ Not implemented | P2 |
+| `add integration` | ❌ Not implemented | P1 |
+
+### Missing Tooling
+
+| Tool | Status | Priority |
+|------|--------|----------|
+| `@unisane/prettier-config` | ❌ Not created | P0 |
+| `@unisane/vitest-config` | ❌ Not created | P0 |
+| `@unisane/tsup-config` | ❌ Not created | P1 |
+| Git hooks (.husky/) | ❌ Not configured | P0 |
+| CI/CD workflows | ❌ Not created | P0 |
+| commitlint.config.js | ❌ Not created | P1 |
+| lint-staged.config.js | ❌ Not created | P1 |
+| vitest.workspace.ts | ❌ Not created | P0 |
+
+---
+
+## Migration Guide
+
+### From Old DevTools Structure
+
+**Old Location (SaasKit):**
 ```
+saaskit/devtools/
+└── commands/
+    ├── billing-plans.ts
+    ├── billing-stripe-seed.ts
+    ├── db-query.ts
+    └── ...
+```
+
+**New Location (Monorepo):**
+```
+packages/tooling/devtools/
+└── src/
+    └── commands/
+        ├── billing/     # ❌ Not yet implemented
+        ├── db/          # ✅ Implemented
+        └── ...
+```
+
+**Migration Status:**
+- ✅ db:query → `unisane db query`
+- ✅ routes:gen → `unisane generate routes`
+- ✅ sdk:gen → `unisane generate sdk`
+- ❌ billing:plans → Not yet migrated
+- ❌ billing:seed-stripe → Not yet migrated
+- ❌ tenant:info → Not yet migrated
+
+---
+
+## Roadmap
+
+### P0 - Critical (Q1 2026)
+
+- [ ] Implement `generate crud` command
+- [ ] Implement `billing` commands (sync-stripe, portal-config)
+- [ ] Create `@unisane/prettier-config`
+- [ ] Create `@unisane/vitest-config`
+- [ ] Set up Git hooks with Husky
+- [ ] Create CI workflow (.github/workflows/ci.yml)
+- [ ] Create vitest.workspace.ts
+
+### P1 - High Priority (Q2 2026)
+
+- [ ] Implement `init` command
+- [ ] Implement `sync` command
+- [ ] Implement `tenant` commands
+- [ ] Complete `add module` registry
+- [ ] Complete `add integration` command
+- [ ] Create `@unisane/tsup-config`
+- [ ] Set up commitlint and lint-staged
+
+### P2 - Medium Priority (Q3 2026)
+
+- [ ] Implement `generate openapi` command
+- [ ] Implement `watch` command
+- [ ] Implement `db push/pull` commands
+- [ ] Implement `cache` commands
+- [ ] Functional `env pull/push/generate` commands
+- [ ] Create preview deployment workflow
+
+### P3 - Nice to Have (Q4 2026)
+
+- [ ] Implement `db studio` command (or recommend external tools)
+- [ ] Advanced doctor checks (circular imports, performance antipatterns)
+- [ ] Codemods system for upgrades
+- [ ] Automated migration generation
 
 ---
 
 ## Summary
 
-### Dev Tools Checklist
+The Unisane devtools ecosystem is **actively developed** with a strong foundation in place:
 
-| Category | Tool | Status | Priority |
-|----------|------|--------|----------|
-| **Configs** | eslint-config | Exists | - |
-| | typescript-config | Exists | - |
-| | tailwind-config | Exists | - |
-| | prettier-config | **NEW** | P0 |
-| | vitest-config | **NEW** | P0 |
-| | tsup-config | **NEW** | P1 |
-| **Git Hooks** | Husky | **NEW** | P0 |
-| | lint-staged | **NEW** | P0 |
-| | commitlint | **NEW** | P1 |
-| **CI/CD** | GitHub Actions CI | **NEW** | P0 |
-| | GitHub Actions Release | **NEW** | P0 |
-| | Preview deployments | **NEW** | P1 |
-| **CLI** | UI commands | Exists | - |
-| | Platform commands | **NEW** | P0 |
-| **Build** | Release tools | **NEW** | P1 |
-| **Testing** | test-utils | **NEW** | P0 |
-| **Deps** | Changesets | **NEW** | P0 |
-| | Renovate | **NEW** | P2 |
+**What Works (January 2026):**
+- ✅ Complete UI component system (shadcn-style)
+- ✅ Contract-first code generation (routes, SDK, types)
+- ✅ Database operations (query, seed, migrate, indexes)
+- ✅ Project creation and setup
+- ✅ Health checks with auto-fix
+- ✅ Package upgrades
+- ✅ Release tooling
 
-### Implementation Order
+**What's Missing:**
+- ❌ Billing management commands (critical for SaaS)
+- ❌ CRUD scaffolding
+- ❌ Git hooks and CI/CD setup
+- ❌ Shared config packages (prettier, vitest, tsup)
+- ❌ Tenant management commands
+- ❌ OpenAPI generation
 
-1. **Phase 1** (Foundation): prettier-config, vitest-config, test-utils
-2. **Phase 2** (Automation): husky, lint-staged, changesets
-3. **Phase 3** (CI/CD): GitHub Actions CI, Release workflow
-4. **Phase 4** (Extended): Platform CLI commands, tsup-config
-5. **Phase 5** (Polish): Preview deployments, Renovate, release tools
+**Current State:** The CLI has a solid architecture (797 lines) with well-organized commands, but several important features are still in development. The core code generation and UI workflows are production-ready.
 
 ---
 
-**Document Status:** Ready for implementation
+**Related Documentation:**
+- [ARCHITECTURE.md](./ARCHITECTURE.md) - System architecture overview
+- [contracts-guide.md](./contracts-guide.md) - Contract-first development
+- [sdk-architecture.md](./sdk-architecture.md) - SDK generation
+- [module-development.md](./module-development.md) - Module patterns

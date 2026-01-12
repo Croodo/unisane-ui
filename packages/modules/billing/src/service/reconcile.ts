@@ -183,14 +183,10 @@ export async function reconcileStripe(
     }
   }
   const elapsed = Date.now() - t0;
-  metrics.inc("billing_reconcile_runs", {
-    provider: "stripe",
-    customers,
-    subs,
-    invoices,
-    payments,
+  metrics.increment("billing_reconcile_runs", {
+    labels: { provider: "stripe", customers: String(customers), subs: String(subs), invoices: String(invoices), payments: String(payments) },
   });
-  metrics.observe("billing_reconcile_ms", elapsed, { provider: "stripe" });
+  metrics.histogram("billing_reconcile_ms", elapsed, { labels: { provider: "stripe" } });
   return { customers, subs, invoices, payments };
 }
 
@@ -284,11 +280,9 @@ export async function reconcileRazorpay(
     logger.warn("reconcile: razorpay payment sweep failed", { err, provider: "razorpay", retryable: isProviderError ? err.retryable : undefined });
   }
   const elapsed = Date.now() - t0;
-  metrics.inc("billing_reconcile_runs", {
-    provider: "razorpay",
-    subs,
-    payments,
+  metrics.increment("billing_reconcile_runs", {
+    labels: { provider: "razorpay", subs: String(subs), payments: String(payments) },
   });
-  metrics.observe("billing_reconcile_ms", elapsed, { provider: "razorpay" });
+  metrics.histogram("billing_reconcile_ms", elapsed, { labels: { provider: "razorpay" } });
   return { subs, payments };
 }

@@ -1,9 +1,34 @@
 import { z } from 'zod';
 import type { FieldDef, Op } from '../registry/types';
-import { base64UrlDecodeUtf8 } from '@unisane/kernel';
+import { base64UrlDecodeUtf8, BadRequestError } from '@unisane/kernel';
 
 // Maximum allowed size for filters parameter (prevents DoS via large payloads)
 const MAX_FILTERS_SIZE = 10_000; // 10KB
+
+/**
+ * Truncate a string for error messages (don't expose entire payload).
+ */
+function truncate(str: string, maxLen = 50): string {
+  if (str.length <= maxLen) return str;
+  return str.slice(0, maxLen) + '...';
+}
+
+/**
+ * Query parsing error with developer-friendly context.
+ *
+ * Error Message Style Guide:
+ * 1. State what went wrong clearly
+ * 2. Include the problematic value (truncated if too long)
+ * 3. State what was expected
+ * 4. Suggest how to fix (when possible)
+ *
+ * @example
+ * // Bad: "filters must be valid JSON"
+ * // Good: "filters parameter is not valid JSON. Received: '{invalid...'. Expected: JSON array like [{field, op, value}]."
+ */
+function queryError(message: string): BadRequestError {
+  return new BadRequestError(message);
+}
 
 // Maximum date range allowed (in days)
 const MAX_DATE_RANGE_DAYS = 90;
@@ -52,7 +77,10 @@ export function parseFilters(filtersRaw: string | undefined, registry: Record<st
 
   // Size limit check to prevent DoS
   if (filtersRaw.length > MAX_FILTERS_SIZE) {
-    throw new Error(`filters parameter too large (max ${MAX_FILTERS_SIZE} characters)`);
+    throw queryError(
+      `filters parameter exceeds maximum size. ` +
+      `Received: ${filtersRaw.length} characters. Maximum: ${MAX_FILTERS_SIZE} characters.`
+    );
   }
 
   let input: unknown;
@@ -64,25 +92,41 @@ export function parseFilters(filtersRaw: string | undefined, registry: Record<st
       const decoded = base64UrlDecodeUtf8(filtersRaw);
       if (!decoded) throw new Error('decode failed');
       input = JSON.parse(decoded);
-    } catch (e) {
-      throw new Error('filters must be valid JSON (or base64url JSON)');
+    } catch {
+      throw queryError(
+        `filters parameter is not valid JSON or base64url-encoded JSON. ` +
+        `Received: '${truncate(filtersRaw)}'. ` +
+        `Expected: JSON array like [{"field":"status","op":"eq","value":"active"}] ` +
+        `or base64url-encoded equivalent.`
+      );
     }
   }
 
   // Validate parsed data is an array
   if (!Array.isArray(input)) {
-    throw new Error('filters must be an array');
+    throw queryError(
+      `filters must be an array. ` +
+      `Received: ${typeof input}. ` +
+      `Expected: array of filter objects like [{"field":"status","op":"eq","value":"active"}].`
+    );
   }
 
   // Limit number of filters to prevent abuse
   if (input.length > 50) {
-    throw new Error('too many filters (max 50)');
+    throw queryError(
+      `Too many filters. Received: ${input.length} filters. Maximum: 50 filters.`
+    );
   }
 
   const parsed = z.array(ZFilterItem).safeParse(input);
   if (!parsed.success) {
     const firstError = parsed.error.errors[0];
-    throw new Error(`filters validation failed: ${firstError?.message ?? 'invalid format'}`);
+    const path = firstError?.path.join('.') || 'unknown';
+    throw queryError(
+      `Invalid filter at index ${path}. ` +
+      `Error: ${firstError?.message ?? 'invalid format'}. ` +
+      `Expected each filter to have: {field: string, op: "eq"|"contains"|"in"|"gte"|"lte", value: any}.`
+    );
   }
 
   const out: Filter[] = [];
@@ -91,8 +135,19 @@ export function parseFilters(filtersRaw: string | undefined, registry: Record<st
     const op = f.op as Op;
     const value = f.value as unknown;
     const def = registry[field];
-    if (!def) throw new Error(`Unknown field: ${field}`);
-    if (!def.ops.includes(op)) throw new Error(`Unsupported op '${op}' for ${field}`);
+    if (!def) {
+      const validFields = Object.keys(registry).slice(0, 10).join(', ');
+      throw queryError(
+        `Unknown filter field: '${field}'. ` +
+        `Valid fields include: ${validFields}${Object.keys(registry).length > 10 ? '...' : ''}.`
+      );
+    }
+    if (!def.ops.includes(op)) {
+      throw queryError(
+        `Unsupported operator '${op}' for field '${field}'. ` +
+        `Supported operators: ${def.ops.join(', ')}.`
+      );
+    }
 
     // Validate value type matches field type
     if (value !== undefined && value !== null) {
@@ -107,34 +162,57 @@ export function parseFilters(filtersRaw: string | undefined, registry: Record<st
 function validateValueType(field: string, def: FieldDef, op: Op, value: unknown): void {
   if (op === 'in') {
     if (!Array.isArray(value)) {
-      throw new Error(`'in' operator requires array value for field ${field}`);
+      throw queryError(
+        `'in' operator requires an array value for field '${field}'. ` +
+        `Received: ${typeof value}. ` +
+        `Example: {"field":"${field}","op":"in","value":["a","b","c"]}.`
+      );
     }
     // Limit array size
     if (value.length > 100) {
-      throw new Error(`'in' operator array too large for field ${field} (max 100 items)`);
+      throw queryError(
+        `'in' operator array too large for field '${field}'. ` +
+        `Received: ${value.length} items. Maximum: 100 items.`
+      );
     }
     return;
   }
 
   if (def.type === 'date' && (op === 'gte' || op === 'lte')) {
     if (typeof value !== 'string') {
-      throw new Error(`Date field ${field} requires string value`);
+      throw queryError(
+        `Date field '${field}' requires a string value. ` +
+        `Received: ${typeof value}. ` +
+        `Expected: ISO 8601 format like "2024-01-15T00:00:00Z".`
+      );
     }
     const parsed = Date.parse(value);
     if (isNaN(parsed)) {
-      throw new Error(`Invalid date format for field ${field}`);
+      throw queryError(
+        `Invalid date format for field '${field}'. ` +
+        `Received: '${truncate(value)}'. ` +
+        `Expected: ISO 8601 format like "2024-01-15T00:00:00Z".`
+      );
     }
   }
 
   if (def.type === 'number' && (op === 'gte' || op === 'lte' || op === 'eq')) {
     const num = typeof value === 'number' ? value : Number(value);
     if (!Number.isFinite(num)) {
-      throw new Error(`Invalid number value for field ${field}`);
+      throw queryError(
+        `Invalid number value for field '${field}'. ` +
+        `Received: '${truncate(String(value))}'. ` +
+        `Expected: a valid number.`
+      );
     }
   }
 
   if (op === 'contains' && typeof value !== 'string') {
-    throw new Error(`'contains' operator requires string value for field ${field}`);
+    throw queryError(
+      `'contains' operator requires a string value for field '${field}'. ` +
+      `Received: ${typeof value}. ` +
+      `Example: {"field":"${field}","op":"contains","value":"search term"}.`
+    );
   }
 }
 
@@ -227,7 +305,10 @@ export function validateRange(
   // Both empty is allowed by default
   if (!from && !to) {
     if (!allowEmpty) {
-      throw new Error('Date range is required');
+      throw queryError(
+        `Date range is required. ` +
+        `Provide 'from' and/or 'to' parameters in ISO 8601 format like "2024-01-15T00:00:00Z".`
+      );
     }
     return;
   }
@@ -239,22 +320,38 @@ export function validateRange(
   if (from) {
     const parseResult = ZRFC3339.safeParse(from);
     if (!parseResult.success) {
-      throw new Error(`Invalid 'from' date format: ${from}. Expected ISO 8601 format.`);
+      throw queryError(
+        `Invalid 'from' date format. ` +
+        `Received: '${truncate(from)}'. ` +
+        `Expected: ISO 8601 format like "2024-01-15T00:00:00Z".`
+      );
     }
     fromMs = Date.parse(from);
     if (isNaN(fromMs)) {
-      throw new Error(`Invalid 'from' date: ${from}`);
+      throw queryError(
+        `Cannot parse 'from' date. ` +
+        `Received: '${truncate(from)}'. ` +
+        `Expected: valid ISO 8601 date.`
+      );
     }
   }
 
   if (to) {
     const parseResult = ZRFC3339.safeParse(to);
     if (!parseResult.success) {
-      throw new Error(`Invalid 'to' date format: ${to}. Expected ISO 8601 format.`);
+      throw queryError(
+        `Invalid 'to' date format. ` +
+        `Received: '${truncate(to)}'. ` +
+        `Expected: ISO 8601 format like "2024-01-15T00:00:00Z".`
+      );
     }
     toMs = Date.parse(to);
     if (isNaN(toMs)) {
-      throw new Error(`Invalid 'to' date: ${to}`);
+      throw queryError(
+        `Cannot parse 'to' date. ` +
+        `Received: '${truncate(to)}'. ` +
+        `Expected: valid ISO 8601 date.`
+      );
     }
   }
 
@@ -262,14 +359,21 @@ export function validateRange(
   if (fromMs !== null && toMs !== null) {
     // Check for reversed range
     if (toMs < fromMs) {
-      throw new Error(`'to' date (${to}) must be after 'from' date (${from})`);
+      throw queryError(
+        `Invalid date range: 'to' date must be after 'from' date. ` +
+        `Received: from=${from}, to=${to}.`
+      );
     }
 
     // Check for max range
     const maxMs = maxDays * 24 * 60 * 60 * 1000;
     const rangeMs = toMs - fromMs;
     if (rangeMs > maxMs) {
-      throw new Error(`Date range exceeds maximum of ${maxDays} days`);
+      const actualDays = Math.ceil(rangeMs / (24 * 60 * 60 * 1000));
+      throw queryError(
+        `Date range too large. ` +
+        `Received: ${actualDays} days. Maximum: ${maxDays} days.`
+      );
     }
   }
 }

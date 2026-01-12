@@ -7,7 +7,7 @@ import {
 import type { FeaturePolicyMap } from "@/src/shared/constants/metering";
 import { getWindow, increment } from "@unisane/usage";
 import { consume as consumeCredits } from "@unisane/credits";
-import { metrics } from "@unisane/kernel";
+import { metrics } from "@/src/platform/telemetry";
 
 export type UsagePort = {
   getWindow(args: {
@@ -64,7 +64,7 @@ export function createGuard(deps: { usage: UsagePort; credits: CreditsPort }) {
         idempotencyKey: args.idem,
       });
       try {
-        metrics.inc("quota_used_total", { feature: args.feature, units });
+        metrics.inc("quota_used_total", 1, { feature: args.feature, units });
       } catch {}
       if (payable > 0) {
         await deps.credits.consume({
@@ -74,7 +74,7 @@ export function createGuard(deps: { usage: UsagePort; credits: CreditsPort }) {
           idem: `idem:${args.idem}`,
         });
         try {
-          metrics.inc("credits_spent_total", {
+          metrics.inc("credits_spent_total", 1, {
             feature: args.feature,
             tokens: payable,
           });

@@ -69,6 +69,7 @@ import {
 import { envCheck, envInit, envGenerate, envPull, envPush } from './commands/env/index.js';
 import { upgrade, listVersions } from './commands/upgrade/index.js';
 import { uiInit, uiAdd, uiDiff, uiDoctor } from './commands/ui/index.js';
+import { dbQuery, dbRename, dbListCollections, dbIndexes, dbMigrate, dbSeed } from './commands/db/index.js';
 
 const VERSION = '0.1.0';
 
@@ -346,6 +347,40 @@ generate
 
 const db = program.command('db').description('Database commands');
 
+db.command('query <collection> [filter]')
+  .description('Query a collection (returns first 50 documents)')
+  .option('-l, --limit <n>', 'Limit results', '50')
+  .action(async (collection, filter, options) => {
+    log.banner('Unisane');
+    loadEnvLocal();
+    const code = await dbQuery(collection, filter, { limit: parseInt(options.limit, 10) });
+    process.exit(code);
+  });
+
+db.command('collections')
+  .alias('ls')
+  .description('List all collections in the database')
+  .action(async () => {
+    log.banner('Unisane');
+    loadEnvLocal();
+    const code = await dbListCollections();
+    process.exit(code);
+  });
+
+db.command('rename [from] [to]')
+  .description('Rename a collection')
+  .option('--apply-migrations', 'Apply all known collection renames')
+  .option('--dry-run', 'Preview changes without applying')
+  .action(async (from, to, options) => {
+    log.banner('Unisane');
+    loadEnvLocal();
+    const code = await dbRename(from, to, {
+      applyMigrations: options.applyMigrations,
+      dryRun: options.dryRun,
+    });
+    process.exit(code);
+  });
+
 db.command('push')
   .description('Push schema changes to database')
   .option('--force', 'Force push without confirmation')
@@ -367,19 +402,45 @@ db.command('seed')
   .description('Seed database with demo data')
   .option('--config <path>', 'Path to seed configuration file')
   .option('--reset', 'Reset database before seeding')
-  .action(async () => {
+  .option('--dry-run', 'Preview changes without applying')
+  .option('--generate', 'Generate default config file')
+  .option('--only <types>', 'Only run specific seeders (comma-separated)')
+  .action(async (options) => {
     log.banner('Unisane');
     loadEnvLocal();
-    log.warn('db seed is not yet implemented');
+    const only = options.only ? options.only.split(',') : undefined;
+    const code = await dbSeed({
+      config: options.config,
+      reset: options.reset,
+      dryRun: options.dryRun,
+      generate: options.generate,
+      only,
+    });
+    process.exit(code);
   });
 
 db.command('migrate')
   .description('Run database migrations')
   .option('--dry-run', 'Preview migrations without applying')
-  .action(async () => {
+  .option('--status', 'Show migration status')
+  .option('--down', 'Rollback migrations')
+  .option('--target <id>', 'Run up to specific migration')
+  .option('--reset', 'Reset migration history')
+  .option('--force', 'Force re-run applied migrations')
+  .option('--path <path>', 'Path to migrations directory')
+  .action(async (options) => {
     log.banner('Unisane');
     loadEnvLocal();
-    log.warn('db migrate is not yet implemented');
+    const code = await dbMigrate({
+      dryRun: options.dryRun,
+      status: options.status,
+      down: options.down,
+      target: options.target,
+      reset: options.reset,
+      force: options.force,
+      migrationsPath: options.path,
+    });
+    process.exit(code);
   });
 
 db.command('studio')
@@ -392,12 +453,21 @@ db.command('studio')
   });
 
 db.command('indexes')
-  .description('Create or update database indexes')
-  .option('--dry-run', 'Preview index changes')
-  .action(async () => {
+  .description('Create or list database indexes')
+  .option('--apply', 'Apply indexes to database')
+  .option('--list', 'List existing indexes from database')
+  .option('--collection <name>', 'Only process specific collection')
+  .option('--dry-run', 'Preview changes without applying')
+  .action(async (options) => {
     log.banner('Unisane');
     loadEnvLocal();
-    log.warn('db indexes is not yet implemented');
+    const code = await dbIndexes({
+      apply: options.apply,
+      list: options.list,
+      collection: options.collection,
+      dryRun: options.dryRun,
+    });
+    process.exit(code);
   });
 
 // ════════════════════════════════════════════════════════════════════════════

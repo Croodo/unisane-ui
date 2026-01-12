@@ -8,8 +8,7 @@ import {
   reconcileStripe,
   reconcileRazorpay,
 } from "@unisane/billing";
-import { metrics } from "@unisane/kernel";
-import { metrics as telemetry } from "@/src/platform/telemetry";
+import { metrics } from "@/src/platform/telemetry";
 import { getEnv } from "@/src/shared/env";
 import { JobsService } from "@unisane/import-export";
 import { connectDb } from "@unisane/kernel";
@@ -191,14 +190,14 @@ export const registry: Record<
     void _ctx;
     const result = await cleanupOrphanedUploads();
     if (result.cleaned > 0) {
-      telemetry.inc("storage.orphaned_cleaned", 1, { cleaned: result.cleaned });
+      metrics.inc("storage.orphaned_cleaned", 1, { cleaned: result.cleaned });
     }
   },
   "storage.cleanupDeleted": async (_ctx) => {
     void _ctx;
     const result = await cleanupDeletedFiles();
     if (result.cleaned > 0) {
-      telemetry.inc("storage.deleted_cleaned", 1, { cleaned: result.cleaned });
+      metrics.inc("storage.deleted_cleaned", 1, { cleaned: result.cleaned });
     }
   },
   "flags.cleanupOverrides": async (_ctx) => {
@@ -244,13 +243,13 @@ function wrapWithMetrics(name: string, fn: JobFn): JobFn {
     const t0 = Date.now();
     try {
       await fn(ctx);
-      telemetry.inc("jobs.processed_total", 1, { task: name });
+      metrics.inc("jobs.processed_total", 1, { task: name });
     } catch (err) {
-      telemetry.inc("jobs.failed_total", 1, { task: name });
+      metrics.inc("jobs.failed_total", 1, { task: name });
       throw err;
     } finally {
       const dt = Date.now() - t0;
-      telemetry.timing("jobs.duration_ms", dt, { task: name });
+      metrics.timing("jobs.duration_ms", dt, { task: name });
     }
   };
 }
@@ -273,7 +272,7 @@ export function registerProJobs(target: typeof registry) {
       const { customers, subs, invoices, payments } = await reconcileStripe(
         _ctx.deadlineMs
       );
-      metrics.inc("billing_reconcile_summary", {
+      metrics.inc("billing_reconcile_summary", 1, {
         provider: "stripe",
         customers,
         subs,
@@ -288,7 +287,7 @@ export function registerProJobs(target: typeof registry) {
     void _ctx;
     try {
       const { subs, payments } = await reconcileRazorpay(_ctx.deadlineMs);
-      metrics.inc("billing_reconcile_summary", {
+      metrics.inc("billing_reconcile_summary", 1, {
         provider: "razorpay",
         subs,
         payments,
@@ -330,7 +329,7 @@ export function registerProJobs(target: typeof registry) {
       });
       queued++;
     }
-    if (queued > 0) metrics.inc("billing_dunning_queued", { count: queued });
+    if (queued > 0) metrics.inc("billing_dunning_queued", queued);
   };
 }
 

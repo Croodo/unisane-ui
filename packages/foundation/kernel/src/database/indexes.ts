@@ -9,108 +9,161 @@
 import type { IndexDescription } from "mongodb";
 import { db } from "./connection";
 import { logger } from "../observability/logger";
+import { COLLECTIONS } from "./collections";
 
 /**
- * Index definitions by collection
+ * Index definitions by collection.
+ * Uses COLLECTIONS constants for consistency with repository code.
  */
 export const INDEX_DEFINITIONS: Record<string, IndexDescription[]> = {
-  // Users collection
-  users: [
+  // ─────────────────────────────────────────────────────────────────────────
+  // Auth Module
+  // ─────────────────────────────────────────────────────────────────────────
+  [COLLECTIONS.AUTH_CREDENTIALS]: [
+    { key: { emailNorm: 1 }, unique: true, name: "authcred_email_unique" },
+    { key: { userId: 1 }, name: "authcred_user" },
+  ],
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Identity Module
+  // ─────────────────────────────────────────────────────────────────────────
+  [COLLECTIONS.USERS]: [
     { key: { email: 1 }, unique: true, sparse: true, name: "users_email_unique" },
     { key: { authUserId: 1 }, name: "users_authUserId" },
     { key: { username: 1 }, sparse: true, name: "users_username" },
     { key: { phone: 1 }, sparse: true, name: "users_phone" },
   ],
 
-  // Memberships collection
-  memberships: [
+  [COLLECTIONS.MEMBERSHIPS]: [
     { key: { tenantId: 1, userId: 1, deletedAt: 1 }, name: "memberships_tenant_user_deleted" },
     { key: { userId: 1, deletedAt: 1 }, name: "memberships_user_deleted" },
   ],
 
-  // Tenants collection
-  tenants: [
+  [COLLECTIONS.API_KEYS]: [
+    { key: { tenantId: 1, deletedAt: 1 }, name: "apikeys_tenant_deleted" },
+    { key: { keyHash: 1 }, unique: true, sparse: true, name: "apikeys_hash_unique" },
+  ],
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Tenants Module
+  // ─────────────────────────────────────────────────────────────────────────
+  [COLLECTIONS.TENANTS]: [
     { key: { slug: 1 }, unique: true, name: "tenants_slug_unique" },
     { key: { ownerId: 1 }, name: "tenants_owner" },
     { key: { deletedAt: 1 }, name: "tenants_deleted" },
   ],
 
-  // Audit logs collection
-  audit_logs: [
+  // ─────────────────────────────────────────────────────────────────────────
+  // Billing Module
+  // ─────────────────────────────────────────────────────────────────────────
+  [COLLECTIONS.SUBSCRIPTIONS]: [
+    { key: { tenantId: 1 }, name: "subs_tenant" },
+    { key: { status: 1 }, name: "subs_status" },
+    { key: { stripeSubscriptionId: 1 }, sparse: true, name: "subs_stripe_id" },
+  ],
+
+  [COLLECTIONS.PAYMENTS]: [
+    { key: { tenantId: 1, createdAt: -1 }, name: "payments_tenant_created" },
+    { key: { stripePaymentIntentId: 1 }, sparse: true, name: "payments_stripe_id" },
+  ],
+
+  [COLLECTIONS.INVOICES]: [
+    { key: { tenantId: 1, createdAt: -1 }, name: "invoices_tenant_created" },
+    { key: { stripeInvoiceId: 1 }, sparse: true, name: "invoices_stripe_id" },
+  ],
+
+  [COLLECTIONS.ORDERS]: [
+    { key: { tenantId: 1, createdAt: -1 }, name: "orders_tenant_created" },
+    { key: { status: 1 }, name: "orders_status" },
+  ],
+
+  [COLLECTIONS.TENANT_INTEGRATIONS]: [
+    { key: { tenantId: 1, provider: 1 }, unique: true, name: "ti_tenant_provider_unique" },
+    { key: { provider: 1, customerId: 1 }, name: "ti_provider_customer" },
+  ],
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Audit Module
+  // ─────────────────────────────────────────────────────────────────────────
+  [COLLECTIONS.AUDIT_LOGS]: [
     { key: { tenantId: 1, createdAt: -1 }, name: "audit_tenant_created" },
     { key: { actorId: 1, createdAt: -1 }, name: "audit_actor_created" },
     { key: { action: 1, createdAt: -1 }, name: "audit_action_created" },
   ],
 
-  // Credit ledger collection
-  credit_ledger: [
+  // ─────────────────────────────────────────────────────────────────────────
+  // Credits Module
+  // ─────────────────────────────────────────────────────────────────────────
+  [COLLECTIONS.CREDIT_LEDGER]: [
     { key: { tenantId: 1, kind: 1, expiresAt: 1 }, name: "credits_tenant_kind_expires" },
     { key: { tenantId: 1, createdAt: -1 }, name: "credits_tenant_created" },
     { key: { tenantId: 1, idemKey: 1 }, unique: true, sparse: true, name: "credits_idem_unique" },
   ],
 
-  // In-app notifications collection
-  inapp_notifications: [
+  // ─────────────────────────────────────────────────────────────────────────
+  // Notify Module
+  // ─────────────────────────────────────────────────────────────────────────
+  [COLLECTIONS.INAPP_NOTIFICATIONS]: [
     { key: { tenantId: 1, userId: 1, createdAt: -1 }, name: "inapp_tenant_user_created" },
     { key: { tenantId: 1, userId: 1, deletedAt: 1 }, name: "inapp_tenant_user_deleted" },
   ],
 
-  // In-app receipts collection
-  inapp_receipts: [
+  [COLLECTIONS.INAPP_RECEIPTS]: [
     { key: { tenantId: 1, userId: 1, notificationId: 1 }, unique: true, name: "receipts_tenant_user_notif_unique" },
     { key: { tenantId: 1, userId: 1, readAt: 1 }, name: "receipts_tenant_user_read" },
   ],
 
-  // API keys collection
-  api_keys: [
-    { key: { tenantId: 1, deletedAt: 1 }, name: "apikeys_tenant_deleted" },
-    { key: { keyHash: 1 }, unique: true, name: "apikeys_hash_unique" },
-  ],
-
-  // Webhooks collection
-  webhooks: [
+  // ─────────────────────────────────────────────────────────────────────────
+  // Webhooks Module
+  // ─────────────────────────────────────────────────────────────────────────
+  [COLLECTIONS.WEBHOOKS]: [
     { key: { tenantId: 1, deletedAt: 1 }, name: "webhooks_tenant_deleted" },
     { key: { tenantId: 1, events: 1 }, name: "webhooks_tenant_events" },
   ],
 
-  // Webhook events collection
-  webhook_events: [
+  [COLLECTIONS.WEBHOOK_EVENTS]: [
     { key: { webhookId: 1, createdAt: -1 }, name: "whevents_webhook_created" },
     { key: { status: 1, nextRetryAt: 1 }, name: "whevents_status_retry" },
   ],
 
-  // Settings collection
-  settings: [
+  // ─────────────────────────────────────────────────────────────────────────
+  // Settings Module
+  // ─────────────────────────────────────────────────────────────────────────
+  [COLLECTIONS.SETTINGS]: [
     { key: { tenantId: 1, key: 1 }, unique: true, name: "settings_tenant_key_unique" },
   ],
 
-  // Feature flags collection
-  feature_flags: [
+  // ─────────────────────────────────────────────────────────────────────────
+  // Flags Module
+  // ─────────────────────────────────────────────────────────────────────────
+  [COLLECTIONS.FEATURE_FLAGS]: [
     { key: { key: 1 }, unique: true, name: "flags_key_unique" },
   ],
 
-  // Flag overrides collection
-  flag_overrides: [
+  [COLLECTIONS.FLAG_OVERRIDES]: [
     { key: { flagKey: 1, tenantId: 1 }, name: "overrides_flag_tenant" },
     { key: { flagKey: 1, userId: 1 }, name: "overrides_flag_user" },
   ],
 
-  // Outbox collection (event sourcing)
-  _outbox: [
+  // ─────────────────────────────────────────────────────────────────────────
+  // Storage Module
+  // ─────────────────────────────────────────────────────────────────────────
+  [COLLECTIONS.FILES]: [
+    { key: { tenantId: 1, path: 1 }, name: "files_tenant_path" },
+    { key: { tenantId: 1, createdAt: -1 }, name: "files_tenant_created" },
+  ],
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // System / Kernel
+  // ─────────────────────────────────────────────────────────────────────────
+  [COLLECTIONS.OUTBOX]: [
     { key: { status: 1, createdAt: 1 }, name: "outbox_status_created" },
     { key: { status: 1, retryCount: 1, nextRetryAt: 1 }, name: "outbox_retry" },
   ],
 
-  // Dead letter queue
-  _dead_letter: [
+  [COLLECTIONS.DEAD_LETTER]: [
     { key: { createdAt: -1 }, name: "dlq_created" },
     { key: { originalEvent: 1 }, name: "dlq_event" },
-  ],
-
-  // Files/Storage collection
-  files: [
-    { key: { tenantId: 1, path: 1 }, name: "files_tenant_path" },
-    { key: { tenantId: 1, createdAt: -1 }, name: "files_tenant_created" },
   ],
 };
 

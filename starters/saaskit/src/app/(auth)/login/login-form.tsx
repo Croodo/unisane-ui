@@ -3,8 +3,10 @@
 import { useState } from 'react';
 import type { FormEvent, ChangeEvent } from 'react';
 import { useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@unisane/ui/components/button';
+import { Typography } from '@unisane/ui/components/typography';
 import { Label } from '@unisane/ui/primitives/label';
 import { Input } from '@unisane/ui/primitives/input';
 import { Alert } from '@unisane/ui/components/alert';
@@ -111,7 +113,7 @@ export function LoginForm({ socialProviders = [] }: LoginFormProps) {
     ) : id === 'facebook' ? (
       <Icon symbol="group" size="sm" />
     ) : (
-      <FcGoogle className="h-4 w-4" />
+      <FcGoogle className="h-5 w-5" />
     );
 
   return (
@@ -145,9 +147,9 @@ export function LoginForm({ socialProviders = [] }: LoginFormProps) {
             <Label htmlFor="password" className="text-label-small text-on-surface-variant">
               Password
             </Label>
-            <a href="/forgot-password" className="text-label-small text-primary hover:underline">
+            <Link href="/forgot-password" className="text-label-small text-primary hover:underline">
               Forgot password?
-            </a>
+            </Link>
           </div>
           <div className="relative">
             <Icon
@@ -194,41 +196,41 @@ export function LoginForm({ socialProviders = [] }: LoginFormProps) {
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t border-outline-variant" />
             </div>
-            <div className="relative flex justify-center text-label-small uppercase">
-              <span className="bg-surface px-2 text-on-surface-variant">Or continue with</span>
+            <div className="relative flex justify-center">
+              <Typography variant="labelSmall" className="bg-surface px-3 text-on-surface-variant uppercase">
+                Or continue with
+              </Typography>
             </div>
           </div>
-          <div className="grid gap-3">
+          <div className="flex flex-col gap-3">
             {socialProviders.map((provider) => (
               <Button
                 key={provider.id}
                 variant="outlined"
                 type="button"
-                className="w-full justify-center"
+                className="w-full"
+                icon={providerIcon(provider.id)}
                 disabled={Boolean(socialSubmitting) && socialSubmitting !== provider.id}
                 onClick={() => startSocialSignIn(provider)}
               >
-                {providerIcon(provider.id)}
-                <span className="ml-2">
-                  {socialSubmitting === provider.id
-                    ? `Redirecting to ${provider.label}…`
-                    : `Continue with ${provider.label}`}
-                </span>
+                {socialSubmitting === provider.id
+                  ? `Redirecting to ${provider.label}…`
+                  : `Continue with ${provider.label}`}
               </Button>
             ))}
           </div>
         </>
       )}
 
-      <div className="text-center text-body-small text-on-surface-variant">
+      <Typography variant="bodySmall" className="text-center text-on-surface-variant">
         Don&apos;t have an account?{' '}
-        <a
+        <Link
           href="/signup"
           className="font-medium text-primary underline underline-offset-4 hover:text-primary/80"
         >
           Sign up
-        </a>
-      </div>
+        </Link>
+      </Typography>
     </div>
   );
 }
