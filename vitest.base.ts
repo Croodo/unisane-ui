@@ -10,7 +10,8 @@ export default defineConfig({
   test: {
     name: "unisane",
     globals: true,
-    environment: "node",
+    // Don't set environment here - let each package specify its own
+    // Most packages use 'node', but UI packages like data-table need 'happy-dom'
     passWithNoTests: true,
     reporters: ["default"],
     coverage: {

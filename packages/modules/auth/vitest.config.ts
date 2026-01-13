@@ -8,6 +8,7 @@ export default mergeConfig(
     test: {
       name: "auth",
       root: __dirname,
+      environment: "node",
       include: ["src/**/*.{test,spec}.ts", "__tests__/**/*.{test,spec}.ts"],
       coverage: {
         provider: "v8",

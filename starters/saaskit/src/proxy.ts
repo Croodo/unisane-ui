@@ -36,12 +36,56 @@ export async function proxy(req: NextRequest) {
 
   // ─── SECURITY HEADERS ────────────────────────────────────────────────────────
   res.headers.set(HEADER_NAMES.REQUEST_ID, requestId);
+
+  // Content Security Policy (CSP) - Primary XSS defense
+  const isDev = process.env.NODE_ENV === 'development';
+  const cspDirectives = [
+    "default-src 'self'",
+    isDev
+      ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com"
+      : "script-src 'self' 'unsafe-inline' https://js.stripe.com",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: https: blob:",
+    "font-src 'self' data:",
+    "connect-src 'self' https://api.stripe.com",
+    "frame-src https://js.stripe.com https://hooks.stripe.com",
+    "worker-src 'self' blob:",
+    "object-src 'none'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    isDev ? '' : 'upgrade-insecure-requests',
+  ].filter(Boolean).join('; ');
+  res.headers.set('Content-Security-Policy', cspDirectives);
+
+  // Additional security headers
   res.headers.set('X-Frame-Options', 'DENY');
   res.headers.set('X-Content-Type-Options', 'nosniff');
   res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.headers.set('X-XSS-Protection', '1; mode=block');
-  res.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
-  res.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+
+  if (process.env.NODE_ENV === 'production') {
+    res.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  }
+
+  // Permissions Policy
+  const permissionsPolicy = [
+    'geolocation=()',
+    'microphone=()',
+    'camera=()',
+    'payment=(self)',
+    'usb=()',
+    'magnetometer=()',
+    'gyroscope=()',
+    'accelerometer=()',
+  ].join(', ');
+  res.headers.set('Permissions-Policy', permissionsPolicy);
+
+  // Cross-Origin Policies
+  res.headers.set('Cross-Origin-Embedder-Policy', 'unsafe-none');
+  res.headers.set('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+  res.headers.set('Cross-Origin-Resource-Policy', 'same-site');
+  res.headers.set('X-DNS-Prefetch-Control', 'on');
 
   // ─── CORS ────────────────────────────────────────────────────────────────────
   const origin = req.headers.get('origin') ?? '';

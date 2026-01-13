@@ -69,3 +69,17 @@ const localStorageMock = {
 Object.defineProperty(window, "localStorage", {
   value: localStorageMock,
 });
+
+// Mock URL.createObjectURL and URL.revokeObjectURL
+if (typeof global.URL.createObjectURL === "undefined") {
+  global.URL.createObjectURL = vi.fn(() => "blob:mock-url");
+}
+if (typeof global.URL.revokeObjectURL === "undefined") {
+  global.URL.revokeObjectURL = vi.fn();
+}
+
+// Ensure document is available (should be provided by happy-dom)
+// Add a safety check for debugging
+if (typeof document === "undefined") {
+  console.error("ERROR: document is not defined - check vitest environment is set to 'happy-dom'");
+}

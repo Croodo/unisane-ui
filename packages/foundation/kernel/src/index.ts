@@ -65,6 +65,7 @@ export type { Env } from './env';
 
 // Utilities
 export * from './utils/crypto';
+export * from './utils/redact';
 export * from './utils/ids';
 export * from './utils/money';
 export * from './utils/currency';

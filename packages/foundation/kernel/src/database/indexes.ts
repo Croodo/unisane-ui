@@ -29,9 +29,11 @@ export const INDEX_DEFINITIONS: Record<string, IndexDescription[]> = {
   // ─────────────────────────────────────────────────────────────────────────
   [COLLECTIONS.USERS]: [
     { key: { email: 1 }, unique: true, sparse: true, name: "users_email_unique" },
+    { key: { emailSearchToken: 1 }, unique: true, sparse: true, name: "users_email_token_unique" },
     { key: { authUserId: 1 }, name: "users_authUserId" },
     { key: { username: 1 }, sparse: true, name: "users_username" },
     { key: { phone: 1 }, sparse: true, name: "users_phone" },
+    { key: { phoneSearchToken: 1 }, sparse: true, name: "users_phone_token" },
   ],
 
   [COLLECTIONS.MEMBERSHIPS]: [

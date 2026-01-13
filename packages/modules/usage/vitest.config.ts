@@ -8,6 +8,7 @@ export default mergeConfig(
     test: {
       name: "usage",
       root: __dirname,
+      environment: "node",
       include: ["src/**/*.{test,spec}.ts"],
     },
     resolve: {

@@ -1,8 +1,8 @@
 # Hexagonal Architecture Implementation Guide
 
 **Decision Date:** January 2026
-**Status:** APPROVED - To be implemented after ISSUES-ROADMAP completion
-**Timeline:** 8 weeks implementation
+**Status:** APPROVED - Ready for implementation
+**Timeline:** 7.5 weeks implementation (Phase 4b deferred)
 **Goal:** Build a system that never breaks, enables building ANY platform in days, scales limitlessly
 
 ---
@@ -464,14 +464,19 @@ DATABASE_PROVIDER=mongodb            # or postgres
 
 ### Overview
 
-| Phase | Duration | Files Changed | Description |
-|-------|----------|---------------|-------------|
-| **Phase 1** | 2 weeks | ~25 files | Universal Scope System |
-| **Phase 2** | 2 weeks | ~15 files | Event-Driven Decoupling |
-| **Phase 3** | 1.5 weeks | ~10 files | Storage Abstraction |
-| **Phase 4** | 1 week | ~8 files | Database Abstraction |
-| **Phase 5** | 1.5 weeks | ~5 files | Resilience Patterns |
-| **Total** | **8 weeks** | **~63 files** | **Full Hexagonal** |
+| Phase | Duration | Files Changed | Description | Status |
+|-------|----------|---------------|-------------|--------|
+| **Phase 1** | 2 weeks | ~25 files | Universal Scope System | REQUIRED |
+| **Phase 2** | 2 weeks | ~15 files | Event-Driven Decoupling | REQUIRED |
+| **Phase 3** | 1.5 weeks | ~10 files | Storage Abstraction | REQUIRED |
+| **Phase 4a** | 3-4 days | ~5 files | Database Port Interfaces + MongoDB Adapter | REQUIRED |
+| **Phase 4b** | - | ~3 files | Additional Database Adapters (PostgreSQL, etc.) | **DEFERRED** |
+| **Phase 5** | 1.5 weeks | ~5 files | Resilience Patterns | REQUIRED |
+| **Total** | **7.5 weeks** | **~60 files** | **Full Hexagonal** | |
+
+> **Note:** Phase 4 is split into two parts:
+> - **Phase 4a (REQUIRED)**: Create pluggable database architecture with port interfaces and wrap existing MongoDB as an adapter. This ensures the system is capable of easily adding new databases in the future.
+> - **Phase 4b (DEFERRED)**: Actual PostgreSQL/MySQL adapter implementations. Only implement when customer requests or business requires it.
 
 ---
 
@@ -1295,106 +1300,305 @@ describe('Storage Abstraction', () => {
 
 ---
 
-### Phase 4: Database Abstraction (1 week)
+### Phase 4a: Database Port Interfaces + MongoDB Adapter (3-4 days) - REQUIRED
 
-**Goal:** Abstract database layer so MongoDB, PostgreSQL can be swapped.
+**Status:** ✅ **REQUIRED** - Creates pluggable database architecture
 
-**Note:** This is LOWER priority than storage. Consider doing AFTER Phase 5 if time is constrained.
+**Goal:** Create the port interfaces and wrap existing MongoDB code as an adapter, enabling future database additions without architectural changes.
 
-#### Files to Create:
+---
 
-1. **`packages/foundation/kernel/src/platform/database/ports.ts`**
+#### Why Phase 4a Is Required
+
+| Reason | Benefit |
+|--------|---------|
+| **Future-Proofing** | System becomes capable of adding any database |
+| **Clean Architecture** | Enforces hexagonal principles for data layer |
+| **Easy Extension** | Adding PostgreSQL later = just create adapter, no rewrites |
+| **Minimal Effort** | Only 3-4 days to wrap existing code |
+
+---
+
+#### Files to Create
+
+**1. `packages/foundation/kernel/src/platform/database/ports.ts`** - Database Port Interfaces
+
 ```typescript
-export interface DatabasePort<T = unknown> {
-  insertOne(data: T): Promise<{ id: string }>;
-  insertMany(data: T[]): Promise<{ ids: string[] }>;
-  findOne(filter: Record<string, unknown>): Promise<T | null>;
-  findMany(filter: Record<string, unknown>): Promise<T[]>;
-  updateOne(filter: Record<string, unknown>, update: Partial<T>): Promise<void>;
-  updateMany(filter: Record<string, unknown>, update: Partial<T>): Promise<{ count: number }>;
-  deleteOne(filter: Record<string, unknown>): Promise<void>;
-  deleteMany(filter: Record<string, unknown>): Promise<{ count: number }>;
+import type { Filter, UpdateFilter, Document } from 'mongodb';
+
+export interface DatabasePort {
+  collection<T extends Document>(name: string): CollectionPort<T>;
+  transaction<T>(fn: () => Promise<T>): Promise<T>;
+  healthCheck(): Promise<{ status: 'up' | 'down'; latencyMs: number }>;
+  close(): Promise<void>;
 }
 
-export interface DatabaseProviderAdapter {
-  collection<T = unknown>(name: string): DatabasePort<T>;
-  transaction<R>(fn: () => Promise<R>): Promise<R>;
+export interface CollectionPort<T extends Document> {
+  // Read operations
+  findOne(filter: Filter<T>): Promise<T | null>;
+  findMany(filter: Filter<T>, opts?: QueryOptions): Promise<T[]>;
+  findById(id: string): Promise<T | null>;
+  count(filter: Filter<T>): Promise<number>;
+
+  // Write operations
+  insertOne(doc: Omit<T, '_id'>): Promise<{ insertedId: string }>;
+  insertMany(docs: Omit<T, '_id'>[]): Promise<{ insertedIds: string[] }>;
+  updateOne(filter: Filter<T>, update: UpdateFilter<T>): Promise<{ modifiedCount: number }>;
+  updateById(id: string, update: UpdateFilter<T>): Promise<{ modifiedCount: number }>;
+  deleteOne(filter: Filter<T>): Promise<{ deletedCount: number }>;
+  deleteById(id: string): Promise<{ deletedCount: number }>;
+
+  // Advanced operations
+  aggregate<R>(pipeline: Document[]): Promise<R[]>;
+  bulkWrite(operations: BulkOperation<T>[]): Promise<BulkWriteResult>;
+}
+
+export interface QueryOptions {
+  limit?: number;
+  skip?: number;
+  sort?: Record<string, 1 | -1>;
+  projection?: Record<string, 0 | 1>;
+}
+
+export type BulkOperation<T> =
+  | { insertOne: { document: Omit<T, '_id'> } }
+  | { updateOne: { filter: Filter<T>; update: UpdateFilter<T> } }
+  | { deleteOne: { filter: Filter<T> } };
+
+export interface BulkWriteResult {
+  insertedCount: number;
+  modifiedCount: number;
+  deletedCount: number;
 }
 ```
 
-2. **`packages/adapters/database-mongodb/src/index.ts`**
-```typescript
-import { MongoClient, Collection } from 'mongodb';
-import type { DatabaseProviderAdapter, DatabasePort } from '@unisane/kernel';
+**2. `packages/foundation/kernel/src/platform/database/provider.ts`** - Provider Registration
 
-export class MongoDBAdapter implements DatabaseProviderAdapter {
+```typescript
+import type { DatabasePort } from './ports';
+
+let currentProvider: DatabasePort | null = null;
+
+export function registerDatabaseProvider(provider: DatabasePort): void {
+  currentProvider = provider;
+}
+
+export function getDatabaseProvider(): DatabasePort {
+  if (!currentProvider) {
+    throw new Error('No database provider registered. Call registerDatabaseProvider() first.');
+  }
+  return currentProvider;
+}
+
+export function hasDatabaseProvider(): boolean {
+  return currentProvider !== null;
+}
+```
+
+**3. `packages/adapters/database-mongodb/src/index.ts`** - MongoDB Adapter
+
+```typescript
+import type { DatabasePort, CollectionPort, QueryOptions, BulkOperation, BulkWriteResult } from '@unisane/kernel/platform/database';
+import { MongoClient, Collection, Document, Filter, UpdateFilter } from 'mongodb';
+
+export class MongoDBAdapter implements DatabasePort {
   constructor(private client: MongoClient, private dbName: string) {}
 
-  collection<T = unknown>(name: string): DatabasePort<T> {
+  collection<T extends Document>(name: string): CollectionPort<T> {
     const col = this.client.db(this.dbName).collection<T>(name);
-
-    return {
-      async insertOne(data: T) {
-        const result = await col.insertOne(data as any);
-        return { id: result.insertedId.toString() };
-      },
-
-      async findOne(filter: Record<string, unknown>) {
-        return col.findOne(filter as any);
-      },
-
-      // ... implement other methods
-    };
+    return new MongoCollectionAdapter(col);
   }
 
-  async transaction<R>(fn: () => Promise<R>): Promise<R> {
+  async transaction<T>(fn: () => Promise<T>): Promise<T> {
     const session = this.client.startSession();
     try {
-      return await session.withTransaction(fn);
+      session.startTransaction();
+      const result = await fn();
+      await session.commitTransaction();
+      return result;
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
     } finally {
       await session.endSession();
     }
   }
+
+  async healthCheck(): Promise<{ status: 'up' | 'down'; latencyMs: number }> {
+    const start = Date.now();
+    try {
+      await this.client.db(this.dbName).command({ ping: 1 });
+      return { status: 'up', latencyMs: Date.now() - start };
+    } catch {
+      return { status: 'down', latencyMs: Date.now() - start };
+    }
+  }
+
+  async close(): Promise<void> {
+    await this.client.close();
+  }
+}
+
+class MongoCollectionAdapter<T extends Document> implements CollectionPort<T> {
+  constructor(private col: Collection<T>) {}
+
+  async findOne(filter: Filter<T>): Promise<T | null> {
+    return this.col.findOne(filter) as Promise<T | null>;
+  }
+
+  async findMany(filter: Filter<T>, opts?: QueryOptions): Promise<T[]> {
+    let cursor = this.col.find(filter);
+    if (opts?.sort) cursor = cursor.sort(opts.sort);
+    if (opts?.skip) cursor = cursor.skip(opts.skip);
+    if (opts?.limit) cursor = cursor.limit(opts.limit);
+    if (opts?.projection) cursor = cursor.project(opts.projection);
+    return cursor.toArray() as Promise<T[]>;
+  }
+
+  async findById(id: string): Promise<T | null> {
+    return this.findOne({ _id: new ObjectId(id) } as Filter<T>);
+  }
+
+  async count(filter: Filter<T>): Promise<number> {
+    return this.col.countDocuments(filter);
+  }
+
+  async insertOne(doc: Omit<T, '_id'>): Promise<{ insertedId: string }> {
+    const result = await this.col.insertOne(doc as T);
+    return { insertedId: result.insertedId.toString() };
+  }
+
+  async insertMany(docs: Omit<T, '_id'>[]): Promise<{ insertedIds: string[] }> {
+    const result = await this.col.insertMany(docs as T[]);
+    return { insertedIds: Object.values(result.insertedIds).map(id => id.toString()) };
+  }
+
+  async updateOne(filter: Filter<T>, update: UpdateFilter<T>): Promise<{ modifiedCount: number }> {
+    const result = await this.col.updateOne(filter, update);
+    return { modifiedCount: result.modifiedCount };
+  }
+
+  async updateById(id: string, update: UpdateFilter<T>): Promise<{ modifiedCount: number }> {
+    return this.updateOne({ _id: new ObjectId(id) } as Filter<T>, update);
+  }
+
+  async deleteOne(filter: Filter<T>): Promise<{ deletedCount: number }> {
+    const result = await this.col.deleteOne(filter);
+    return { deletedCount: result.deletedCount };
+  }
+
+  async deleteById(id: string): Promise<{ deletedCount: number }> {
+    return this.deleteOne({ _id: new ObjectId(id) } as Filter<T>);
+  }
+
+  async aggregate<R>(pipeline: Document[]): Promise<R[]> {
+    return this.col.aggregate<R>(pipeline).toArray();
+  }
+
+  async bulkWrite(operations: BulkOperation<T>[]): Promise<BulkWriteResult> {
+    const result = await this.col.bulkWrite(operations as any);
+    return {
+      insertedCount: result.insertedCount,
+      modifiedCount: result.modifiedCount,
+      deletedCount: result.deletedCount,
+    };
+  }
 }
 ```
 
-3. **`packages/adapters/database-postgres/src/index.ts`**
-```typescript
-import { Pool } from 'pg';
-import type { DatabaseProviderAdapter, DatabasePort } from '@unisane/kernel';
+**4. `packages/foundation/kernel/src/platform/database/index.ts`** - Public Exports
 
-export class PostgreSQLAdapter implements DatabaseProviderAdapter {
+```typescript
+export * from './ports';
+export * from './provider';
+```
+
+---
+
+#### Migration Steps
+
+1. **Create port interfaces** (Day 1)
+   - Define `DatabasePort` and `CollectionPort` interfaces
+   - Create provider registration system
+
+2. **Create MongoDB adapter package** (Day 2)
+   - New package: `packages/adapters/database-mongodb/`
+   - Wrap existing MongoDB client as adapter
+   - Implement all port interface methods
+
+3. **Update kernel initialization** (Day 3)
+   - Register MongoDB adapter on app startup
+   - Update existing `col()` helper to use adapter internally
+   - Maintain backward compatibility
+
+4. **Test & verify** (Day 4)
+   - Run all existing tests (should pass unchanged)
+   - Add adapter-specific tests
+   - Verify no breaking changes
+
+---
+
+#### Backward Compatibility
+
+The existing `col()` function continues to work:
+
+```typescript
+// kernel/src/database/mongo.ts - Updated internally
+import { getDatabaseProvider } from '../platform/database';
+
+export function col<T extends Document>(name: string): CollectionPort<T> {
+  return getDatabaseProvider().collection<T>(name);
+}
+
+// All existing code continues to work unchanged:
+await col('users').findOne({ email });
+```
+
+---
+
+### Phase 4b: Additional Database Adapters (DEFERRED)
+
+**Status:** ⏸️ **DEFERRED** - Implement only when needed
+
+**Goal:** Create PostgreSQL, MySQL, or other database adapters.
+
+---
+
+#### When To Implement Phase 4b
+
+Trigger this phase ONLY when one of these occurs:
+
+1. **Customer Request** - Enterprise customer requires PostgreSQL
+2. **Scale Limitation** - MongoDB hits performance/cost ceiling
+3. **Compliance Requirement** - Regulation mandates specific database
+4. **Technical Blocker** - Feature impossible with MongoDB
+
+---
+
+#### Implementation Path (When Needed)
+
+**Estimated Duration:** 2-3 weeks per adapter
+
+**Files to Create:**
+
+1. `packages/adapters/database-postgres/` - PostgreSQL adapter
+2. `packages/adapters/database-mysql/` - MySQL adapter (if needed)
+
+**PostgreSQL Adapter Example:**
+
+```typescript
+// packages/adapters/database-postgres/src/index.ts
+import type { DatabasePort, CollectionPort } from '@unisane/kernel/platform/database';
+import { Pool } from 'pg';
+
+export class PostgreSQLAdapter implements DatabasePort {
   constructor(private pool: Pool) {}
 
-  collection<T = unknown>(name: string): DatabasePort<T> {
-    return {
-      async insertOne(data: T) {
-        const keys = Object.keys(data as any);
-        const values = Object.values(data as any);
-        const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
-
-        const query = `INSERT INTO ${name} (${keys.join(', ')}) VALUES (${placeholders}) RETURNING id`;
-        const result = await this.pool.query(query, values);
-
-        return { id: result.rows[0].id };
-      },
-
-      async findOne(filter: Record<string, unknown>) {
-        const keys = Object.keys(filter);
-        const values = Object.values(filter);
-        const where = keys.map((key, i) => `${key} = $${i + 1}`).join(' AND ');
-
-        const query = `SELECT * FROM ${name} WHERE ${where} LIMIT 1`;
-        const result = await this.pool.query(query, values);
-
-        return result.rows[0] ?? null;
-      },
-
-      // ... implement other methods
-    };
+  collection<T>(name: string): CollectionPort<T> {
+    return new PostgresCollectionAdapter<T>(this.pool, name);
   }
 
-  async transaction<R>(fn: () => Promise<R>): Promise<R> {
+  async transaction<T>(fn: () => Promise<T>): Promise<T> {
     const client = await this.pool.connect();
     try {
       await client.query('BEGIN');
@@ -1408,28 +1612,34 @@ export class PostgreSQLAdapter implements DatabaseProviderAdapter {
       client.release();
     }
   }
+
+  // ... implement other methods
 }
 ```
 
-**Migration Strategy:**
+**Switching Databases:**
 
-Unlike storage (which is straightforward), database migration is complex because:
-- Schema differences (MongoDB = schemaless, PostgreSQL = schema-required)
-- Query differences (MongoDB = nested objects, PostgreSQL = joins)
-- Transaction differences
+```typescript
+// Environment-based selection
+const provider = process.env.DATABASE_PROVIDER; // 'mongodb' | 'postgres'
 
-**Recommended Approach:**
-1. Start with MongoDB adapter (wraps existing code)
-2. Add PostgreSQL adapter ONLY when needed
-3. Use repository pattern to hide database-specific queries
-4. Keep direct MongoDB usage for now, migrate gradually
+if (provider === 'postgres') {
+  registerDatabaseProvider(new PostgreSQLAdapter(pgPool));
+} else {
+  registerDatabaseProvider(new MongoDBAdapter(mongoClient, dbName));
+}
+```
 
-**Checklist:**
-- [ ] Create database port interfaces
-- [ ] Implement MongoDB adapter (wrap existing)
-- [ ] Update kernel to use adapter
-- [ ] Test with MongoDB
-- [ ] (Future) Implement PostgreSQL adapter
+---
+
+#### Complexity Notes (For Future Reference)
+
+| Challenge | MongoDB | PostgreSQL | Solution |
+|-----------|---------|------------|----------|
+| Schema | Schemaless | Schema-required | Migrations for Postgres |
+| Queries | Nested objects | JOINs | Adapter translates |
+| Transactions | Sessions | BEGIN/COMMIT | Adapter handles |
+| Aggregations | Pipeline | SQL | Adapter translates |
 
 ---
 
@@ -1900,16 +2110,28 @@ export function initializeHealthMonitoring() {
 - [ ] Deploy to production
 - [ ] Monitor for 1 week
 
-### Phase 4: Database Abstraction (1 week)
+### Phase 4a: Database Port Interfaces + MongoDB Adapter (3-4 days) - REQUIRED
 
-**Note:** Lower priority, can be done later.
-
-- [ ] Create database port interfaces
-- [ ] Create MongoDB adapter (wrap existing)
-- [ ] Update kernel to use adapter
-- [ ] Test with MongoDB
+- [ ] Create `DatabasePort` and `CollectionPort` interfaces
+- [ ] Create provider registration system (`registerDatabaseProvider`, `getDatabaseProvider`)
+- [ ] Create `packages/adapters/database-mongodb/` package
+- [ ] Implement `MongoDBAdapter` wrapping existing MongoDB client
+- [ ] Implement `MongoCollectionAdapter` with all port methods
+- [ ] Update kernel `col()` to use adapter internally (backward compatible)
+- [ ] Run all existing tests (should pass unchanged)
+- [ ] Add adapter-specific tests
 - [ ] Deploy to staging
-- [ ] (Future) Create PostgreSQL adapter
+- [ ] Verify no breaking changes
+
+### Phase 4b: Additional Database Adapters (DEFERRED)
+
+**Status:** ⏸️ Deferred - implement only when triggered (see Phase 4b section above for criteria)
+
+- [ ] Create `packages/adapters/database-postgres/` package
+- [ ] Implement `PostgreSQLAdapter`
+- [ ] Create migration tooling for Postgres schemas
+- [ ] Test with PostgreSQL
+- [ ] Document database switching process
 
 ### Phase 5: Resilience Patterns (1.5 weeks)
 

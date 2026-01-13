@@ -8,6 +8,7 @@ export default mergeConfig(
     test: {
       name: "kernel",
       root: __dirname,
+      environment: "node",
       include: ["src/**/*.{test,spec}.ts"],
       coverage: {
         provider: "v8",

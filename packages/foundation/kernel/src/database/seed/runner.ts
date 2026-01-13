@@ -425,7 +425,9 @@ export async function runSeed(
         });
 
         result.apiKeysCreated++;
-        log.success(`Created API key: ${apiKey.name} (key: ${key})`);
+        // Log key prefix only (not the full key for security)
+        const keyPrefix = key.substring(0, 12);
+        log.success(`Created API key: ${apiKey.name} (prefix: ${keyPrefix}***)`);
       } catch (error) {
         result.errors.push({
           type: "apiKey",

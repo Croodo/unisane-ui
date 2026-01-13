@@ -13,6 +13,10 @@ import {
   COLLECTIONS,
   softDeleteFilter,
   maybeObjectId,
+  encryptField,
+  decryptField,
+  createSearchToken,
+  parseEncryptionKey,
 } from "@unisane/kernel";
 import type { Collection } from "mongodb";
 import { ObjectId } from "mongodb";
@@ -31,12 +35,16 @@ import { usersEnrichmentsMongo } from "./users.enrichments.mongo";
 type UserDoc = {
   _id: string | ObjectId;
   email: string;
+  emailEncrypted?: string | null; // AES-256-GCM encrypted email
+  emailSearchToken?: string | null; // HMAC-SHA256 token for lookups
   displayName?: string | null;
   imageUrl?: string | null;
   username?: string | null;
   firstName?: string | null;
   lastName?: string | null;
   phone?: string | null;
+  phoneEncrypted?: string | null; // AES-256-GCM encrypted phone
+  phoneSearchToken?: string | null; // HMAC-SHA256 token for lookups
   emailVerified?: boolean | null;
   phoneVerified?: boolean | null;
   locale?: string | null;
@@ -55,21 +63,39 @@ function usersCol(): Collection<UserDoc> {
   return col<UserDoc>(COLLECTIONS.USERS);
 }
 
+/**
+ * Get the encryption key from environment
+ * Returns null if DATA_ENCRYPTION_KEY is not configured (migration mode)
+ */
+function getEncryptionKey(): Buffer | null {
+  const keyBase64 = process.env.DATA_ENCRYPTION_KEY;
+  if (!keyBase64) {
+    return null; // Encryption not yet enabled (migration phase)
+  }
+  return parseEncryptionKey(keyBase64);
+}
+
 // =============================================================================
 // Core CRUD Operations
 // =============================================================================
 
 async function create(payload: UserCreateInput) {
   const now = new Date();
+  const encryptionKey = getEncryptionKey();
+
   const doc: UserDoc = {
     _id: new ObjectId(),
     email: payload.email,
+    emailEncrypted: encryptionKey ? encryptField(payload.email, encryptionKey) : null,
+    emailSearchToken: encryptionKey ? createSearchToken(payload.email.toLowerCase(), encryptionKey) : null,
     displayName: payload.displayName ?? null,
     imageUrl: payload.imageUrl ?? null,
     username: payload.username ?? null,
     firstName: payload.firstName ?? null,
     lastName: payload.lastName ?? null,
     phone: payload.phone ?? null,
+    phoneEncrypted: encryptionKey && payload.phone ? encryptField(payload.phone, encryptionKey) : null,
+    phoneSearchToken: encryptionKey && payload.phone ? createSearchToken(payload.phone, encryptionKey) : null,
     emailVerified: null,
     phoneVerified: null,
     locale: payload.locale ?? null,
@@ -89,15 +115,32 @@ function mapDocToRow(doc: UserDoc): UserRowMapped;
 function mapDocToRow(doc: UserDoc | null): UserRowMapped | null;
 function mapDocToRow(doc: UserDoc | null): UserRowMapped | null {
   if (!doc) return null;
+
+  const encryptionKey = getEncryptionKey();
+
+  // Decrypt PII fields if encryption is enabled
+  let email = doc.email;
+  let phone = doc.phone;
+
+  if (encryptionKey) {
+    // Prefer encrypted fields if available (post-migration)
+    if (doc.emailEncrypted) {
+      email = decryptField(doc.emailEncrypted, encryptionKey);
+    }
+    if (doc.phoneEncrypted) {
+      phone = decryptField(doc.phoneEncrypted, encryptionKey);
+    }
+  }
+
   return {
     id: String(doc._id),
-    email: doc.email,
+    email,
     displayName: doc.displayName,
     imageUrl: doc.imageUrl,
     username: doc.username,
     firstName: doc.firstName,
     lastName: doc.lastName,
-    phone: doc.phone,
+    phone,
     emailVerified: doc.emailVerified,
     phoneVerified: doc.phoneVerified,
     locale: doc.locale,
@@ -135,10 +178,21 @@ type UserRowMapped = {
 };
 
 async function findByEmail(email: string) {
-  const doc = await usersCol().findOne({
-    email,
-    ...softDeleteFilter(),
-  });
+  const encryptionKey = getEncryptionKey();
+
+  const query = encryptionKey
+    ? {
+        // Use searchToken for encrypted lookups (post-migration)
+        emailSearchToken: createSearchToken(email.toLowerCase(), encryptionKey),
+        ...softDeleteFilter(),
+      }
+    : {
+        // Fall back to plaintext search (pre-migration)
+        email,
+        ...softDeleteFilter(),
+      };
+
+  const doc = await usersCol().findOne(query);
   return mapDocToRow(doc);
 }
 
@@ -159,10 +213,21 @@ async function findByUsername(username: string) {
 }
 
 async function findByPhone(phone: string) {
-  const doc = await usersCol().findOne({
-    phone,
-    ...softDeleteFilter(),
-  });
+  const encryptionKey = getEncryptionKey();
+
+  const query = encryptionKey
+    ? {
+        // Use searchToken for encrypted lookups (post-migration)
+        phoneSearchToken: createSearchToken(phone, encryptionKey),
+        ...softDeleteFilter(),
+      }
+    : {
+        // Fall back to plaintext search (pre-migration)
+        phone,
+        ...softDeleteFilter(),
+      };
+
+  const doc = await usersCol().findOne(query);
   return mapDocToRow(doc);
 }
 
@@ -213,16 +278,35 @@ async function findByIds(ids: string[]) {
 
 async function updateById(id: string, update: UserUpdateInput) {
   const $set: Record<string, unknown> = { updatedAt: new Date() };
+  const encryptionKey = getEncryptionKey();
 
   // Standard fields
-  if ("email" in (update ?? {})) $set.email = update!.email;
+  if ("email" in (update ?? {})) {
+    $set.email = update!.email;
+    // Also update encrypted fields if encryption is enabled
+    if (encryptionKey && update!.email) {
+      $set.emailEncrypted = encryptField(update!.email, encryptionKey);
+      $set.emailSearchToken = createSearchToken(update!.email.toLowerCase(), encryptionKey);
+    }
+  }
   if ("displayName" in (update ?? {}))
     $set.displayName = update!.displayName ?? null;
   if ("imageUrl" in (update ?? {})) $set.imageUrl = update!.imageUrl ?? null;
   if ("username" in (update ?? {})) $set.username = update!.username ?? null;
   if ("firstName" in (update ?? {})) $set.firstName = update!.firstName ?? null;
   if ("lastName" in (update ?? {})) $set.lastName = update!.lastName ?? null;
-  if ("phone" in (update ?? {})) $set.phone = update!.phone ?? null;
+  if ("phone" in (update ?? {})) {
+    $set.phone = update!.phone ?? null;
+    // Also update encrypted fields if encryption is enabled
+    if (encryptionKey && update!.phone) {
+      $set.phoneEncrypted = encryptField(update!.phone, encryptionKey);
+      $set.phoneSearchToken = createSearchToken(update!.phone, encryptionKey);
+    } else if (encryptionKey && !update!.phone) {
+      // Clear encrypted fields if phone is removed
+      $set.phoneEncrypted = null;
+      $set.phoneSearchToken = null;
+    }
+  }
   if ("locale" in (update ?? {})) $set.locale = update!.locale ?? null;
   if ("timezone" in (update ?? {})) $set.timezone = update!.timezone ?? null;
   if ("globalRole" in (update ?? {}))
