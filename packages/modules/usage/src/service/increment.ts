@@ -1,5 +1,5 @@
-import { getTenantId, kv, events } from "@unisane/kernel";
-import { usageIdemKey, usageMinuteKey } from "../domain/keys";
+import { getScopeId, kv, events } from "@unisane/kernel";
+import { usageKeys } from "../domain/keys";
 import { USAGE_EVENTS } from "../domain/constants";
 
 export type IncrementUsageArgs = {
@@ -10,15 +10,15 @@ export type IncrementUsageArgs = {
 };
 
 export async function increment(args: IncrementUsageArgs) {
-  const tenantId = getTenantId();
+  const scopeId = getScopeId();
   const n = args.n ?? 1;
   if (args.idem) {
-    const idemKey = usageIdemKey(args.idem);
+    const idemKey = usageKeys.idem(args.idem);
     const ok = await kv.set(idemKey, "1", { NX: true, PX: 10 * 60 * 1000 });
     if (!ok) return { ok: true as const, deduped: true as const };
   }
   const now = args.at ?? new Date();
-  const key = usageMinuteKey(tenantId, args.feature, now);
+  const key = usageKeys.minute(scopeId, args.feature, now);
   const windowEnd = Date.UTC(
     now.getUTCFullYear(),
     now.getUTCMonth(),
@@ -33,10 +33,9 @@ export async function increment(args: IncrementUsageArgs) {
 
   // Emit usage incremented event
   await events.emit(USAGE_EVENTS.INCREMENTED, {
-    tenantId,
+    scopeId,
     feature: args.feature,
     amount: n,
-    timestamp: now.toISOString(),
   });
 
   return { ok: true as const };

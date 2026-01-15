@@ -3,12 +3,16 @@
  * Complex read operations that don't modify data.
  */
 
-import { col } from "@unisane/kernel";
-import type { Collection, WithId } from "mongodb";
-import { ObjectId } from "mongodb";
-import { seekPageMongoCollection } from "@unisane/kernel";
-import type { SortField } from "@unisane/kernel";
-import { runStatsAggregation } from "@unisane/kernel";
+import {
+  col,
+  COLLECTIONS,
+  seekPageMongoCollection,
+  runStatsAggregation,
+  ObjectId,
+  type Collection,
+  type WithId,
+  type SortField,
+} from "@unisane/kernel";
 import { UserSchema } from "../domain/entity";
 import { buildUserFilter, type UserFilterArgs } from "./users.filters";
 
@@ -37,7 +41,7 @@ type UserDoc = {
 };
 
 function usersCol(): Collection<UserDoc> {
-  return col<UserDoc>("users");
+  return col<UserDoc>(COLLECTIONS.USERS);
 }
 
 // Row type for list results

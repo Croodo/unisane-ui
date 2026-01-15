@@ -1,9 +1,12 @@
-import { col } from "@unisane/kernel";
+import {
+  col,
+  COLLECTIONS,
+  softDeleteFilter,
+  clampInt,
+  type Document,
+  type FlagOverrideScope,
+} from "@unisane/kernel";
 import type { FlagOverridesRepoPort } from "../domain/ports";
-import type { FlagOverrideScope } from "@unisane/kernel";
-import type { Document } from "mongodb";
-import { softDeleteFilter } from "@unisane/kernel";
-import { clampInt } from "@unisane/kernel";
 
 type FeatureFlagOverrideDoc = {
   _id?: unknown;
@@ -18,7 +21,7 @@ type FeatureFlagOverrideDoc = {
   updatedAt?: Date;
 };
 
-const ovCol = () => col<FeatureFlagOverrideDoc>("feature_flag_overrides");
+const ovCol = () => col<FeatureFlagOverrideDoc>(COLLECTIONS.FLAG_OVERRIDES);
 
 export const FlagOverridesRepoMongo: FlagOverridesRepoPort = {
   async get(env, key, scopeType, scopeId) {
@@ -67,14 +70,14 @@ export const FlagOverridesRepoMongo: FlagOverridesRepoPort = {
       { $set: { deletedAt: new Date() } } as Document
     );
   },
-  async countActiveTenantOverrides(tenantIds: string[], now = new Date()) {
-    if (!tenantIds?.length) return new Map<string, number>();
+  async countActiveScopeOverrides(scopeIds: string[], now = new Date()) {
+    if (!scopeIds?.length) return new Map<string, number>();
     const rows = (await ovCol()
       .aggregate([
         {
           $match: {
             scopeType: "tenant",
-            scopeId: { $in: tenantIds },
+            scopeId: { $in: scopeIds },
             $and: [
               softDeleteFilter(),
               {

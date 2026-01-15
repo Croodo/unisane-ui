@@ -19,8 +19,8 @@ Webhook delivery with retries and event logging.
 | Pattern | Status | Notes |
 |---------|--------|-------|
 | `selectRepo()` | ✅ | Used in repository facade |
-| `getTenantId()` | ✅ | Used in listEvents, replay |
-| `tenantFilter()` | 🔒 | N/A - explicit tenantId (inbound global, outbound from outbox) |
+| `getScopeId()` | ✅ | Used in listEvents, replay |
+| `scopeFilter()` | 🔒 | N/A - explicit scopeId (inbound global, outbound from outbox) |
 | Keys builder | ✅ | `webhooksKeys` in domain/keys.ts |
 
 ## Usage
@@ -31,7 +31,7 @@ import {
   recordOutbound,
   listEvents,
   replayEvent,
-  getTenantFailureCounts,
+  getScopeFailureCounts,
 } from "@unisane/webhooks";
 
 // Record inbound webhook (provider webhooks are global)
@@ -44,7 +44,7 @@ await recordInboundEvent({
 
 // Record outbound webhook delivery
 await recordOutbound({
-  tenantId,
+  scopeId,
   target: "https://example.com/webhook",
   status: "delivered",
   httpStatus: 200,
@@ -52,7 +52,7 @@ await recordOutbound({
   payload: eventData,
 });
 
-// List webhook events (uses context tenantId)
+// List webhook events (uses context scopeId)
 const { items, nextCursor } = await listEvents({
   limit: 50,
   direction: "out",
@@ -62,8 +62,8 @@ const { items, nextCursor } = await listEvents({
 // Replay a failed outbound event
 await replayEvent({ id: eventId });
 
-// Admin: get failure counts per tenant
-const failureMap = await getTenantFailureCounts(tenantIds, since);
+// Admin: get failure counts per scope
+const failureMap = await getScopeFailureCounts(scopeIds, since);
 ```
 
 ## Supported Providers
@@ -81,7 +81,7 @@ const failureMap = await getTenantFailureCounts(tenantIds, since);
 - `recordOutbound` - Record outbound webhook delivery
 - `listEvents` - List webhook events with pagination
 - `replayEvent` - Replay a failed outbound event
-- `getTenantFailureCounts` - Admin: count failures per tenant
+- `getScopeFailureCounts` - Admin: count failures per scope
 - `handleStripeEvent` - Internal Stripe event handler
 - `handleRazorpayEvent` - Internal Razorpay event handler
 - `webhooksKeys` - Cache key builder

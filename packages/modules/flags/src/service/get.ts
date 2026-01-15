@@ -5,7 +5,7 @@ import type { FlagRow } from '../domain/types';
 import { subscribe } from '@unisane/kernel';
 import { kv } from '@unisane/kernel';
 import { flagsKeys } from '../domain/keys';
-import type { FlagOverrideScope } from '@unisane/kernel';
+import { FLAG_OVERRIDE_SCOPE, type FlagOverrideScope } from '@unisane/kernel';
 
 import type { GetFlagArgs } from "../domain/types";
 export type { GetFlagArgs };
@@ -57,7 +57,7 @@ export function initFlagsSubscriber() {
     if (
       typeof evt.env === 'string' &&
       typeof evt.key === 'string' &&
-      (evt.scopeType === 'tenant' || evt.scopeType === 'user') &&
+      FLAG_OVERRIDE_SCOPE.includes(evt.scopeType as FlagOverrideScope) &&
       typeof evt.scopeId === 'string'
     ) {
       const ck = flagsKeys.overrideByScope(
@@ -75,7 +75,7 @@ export function initFlagsSubscriber() {
     if (
       typeof evt.env === 'string' &&
       typeof evt.key === 'string' &&
-      (evt.scopeType === 'tenant' || evt.scopeType === 'user') &&
+      FLAG_OVERRIDE_SCOPE.includes(evt.scopeType as FlagOverrideScope) &&
       typeof evt.scopeId === 'string'
     ) {
       const ck = flagsKeys.overrideByScope(

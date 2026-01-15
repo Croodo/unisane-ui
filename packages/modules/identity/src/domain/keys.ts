@@ -42,14 +42,14 @@ export const identityKeys = {
   userMemberships: (userId: string) => `user:memberships:${userId}` as const,
 
   /** Cache key for specific membership */
-  membership: (tenantId: string, userId: string) =>
-    `membership:${tenantId}:${userId}` as const,
+  membership: (scopeId: string, userId: string) =>
+    `membership:${scopeId}:${userId}` as const,
 
-  /** Cache key for tenant's member list */
-  tenantMembers: (tenantId: string) => `tenant:members:${tenantId}` as const,
+  /** Cache key for scope's member list */
+  scopeMembers: (scopeId: string) => `scope:members:${scopeId}` as const,
 
-  /** Cache key for tenant's member count */
-  tenantMemberCount: (tenantId: string) => `tenant:member_count:${tenantId}` as const,
+  /** Cache key for scope's member count */
+  scopeMemberCount: (scopeId: string) => `scope:member_count:${scopeId}` as const,
 
   // ════════════════════════════════════════════════════════════════════════════
   // API Key Keys
@@ -61,9 +61,9 @@ export const identityKeys = {
   /** Cache key for API key lookup by ID */
   apiKeyById: (keyId: string) => `api_key:id:${keyId}` as const,
 
-  /** Cache key for user's API keys in a tenant */
-  userApiKeys: (tenantId: string, userId: string) =>
-    `api_keys:${tenantId}:${userId}` as const,
+  /** Cache key for user's API keys in a scope */
+  userApiKeys: (scopeId: string, userId: string) =>
+    `api_keys:${scopeId}:${userId}` as const,
 
   // ════════════════════════════════════════════════════════════════════════════
   // Session Keys

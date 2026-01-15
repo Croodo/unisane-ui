@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useSession } from "@/src/hooks/useSession";
+import { useSession } from "@/src/hooks/use-session";
 import { PageLayout } from "@/src/context/usePageLayout";
 import { TextField } from "@unisane/ui/components/text-field";
 import { Typography } from "@unisane/ui/components/typography";
@@ -14,7 +14,7 @@ import { toast } from "@unisane/ui/components/toast";
 import { hooks } from "@/src/sdk/hooks";
 import type { SettingsGetResponse as SettingsGet } from "@/src/sdk/types";
 import { normalizeError } from "@/src/sdk/errors";
-import { useFormCard } from "@/src/hooks/useFormCard";
+import { useFormCard } from "@/src/hooks/use-form-card";
 
 interface WorkspaceSettings extends Record<string, unknown> {
   name: string;
@@ -54,7 +54,7 @@ function normalizeSettings(
  */
 export function SettingsClient() {
   const { me } = useSession();
-  const tenantId = me?.tenantId ?? undefined;
+  const tenantId = me?.scopeId ?? undefined;
   const pathname = usePathname();
   const slug = pathname.split("/")[2] ?? "";
   const base = `/w/${slug}`;

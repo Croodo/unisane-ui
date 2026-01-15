@@ -192,6 +192,7 @@ async function generateRouteFile(args: {
       opKey,
       method: op.method,
       cfg: op.meta,
+      sourcePath: op.meta.sourceFile,
     });
 
     // Split into import section + method block

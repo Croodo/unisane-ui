@@ -9,7 +9,7 @@ import { toast } from "@unisane/ui/components/toast";
 import { hooks } from "@/src/sdk/hooks";
 import type { SettingsGetResponse as SettingsGet } from "@/src/sdk/types";
 import { normalizeError } from "@/src/sdk/errors";
-import { useFormCard } from "@/src/hooks/useFormCard";
+import { useFormCard } from "@/src/hooks/use-form-card";
 
 interface WorkspaceProfileCardProps {
   tenantId?: string | undefined;

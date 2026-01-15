@@ -1,14 +1,21 @@
-import { col } from "@unisane/kernel";
-import type { Collection, Filter, FindCursor, Document, WithId } from "mongodb";
-import type { PaymentStatus } from '@unisane/kernel';
-import type { BillingProvider } from '@unisane/kernel';
+import {
+  col,
+  COLLECTIONS,
+  seekPageMongoCollection,
+  type Collection,
+  type Filter,
+  type FindCursor,
+  type Document,
+  type WithId,
+  type PaymentStatus,
+  type BillingProvider,
+} from "@unisane/kernel";
 import type { PaymentsRepo } from "../domain/ports/payments";
 import type { PaymentListPage, PaymentView, PaymentDetail } from "../domain/types";
-import { seekPageMongoCollection } from '@unisane/kernel';
 
 type PaymentDoc = {
   _id: unknown;
-  tenantId: string;
+  scopeId: string;
   providerPaymentId?: string | null;
   provider?: BillingProvider | null;
   amount?: number | null;
@@ -19,18 +26,18 @@ type PaymentDoc = {
   updatedAt?: Date;
 } & Document;
 
-const paymentsCol = (): Collection<PaymentDoc> => col<PaymentDoc>("payments");
+const paymentsCol = (): Collection<PaymentDoc> => col<PaymentDoc>(COLLECTIONS.PAYMENTS);
 
 export const mongoPaymentsRepo: PaymentsRepo = {
   async listPage(args: {
-    tenantId: string;
+    scopeId: string;
     cursor?: string;
     limit: number;
   }): Promise<PaymentListPage> {
     const sortVec = [{ key: "capturedAt", order: -1 as const }, { key: "_id", order: -1 as const }];
     const { items, nextCursor, prevCursor } = await seekPageMongoCollection<PaymentDoc, PaymentView>({
       collection: paymentsCol(),
-      baseFilter: { tenantId: args.tenantId },
+      baseFilter: { scopeId: args.scopeId },
       limit: args.limit,
       cursor: args.cursor ?? null,
       sortVec,
@@ -50,10 +57,10 @@ export const mongoPaymentsRepo: PaymentsRepo = {
     } as PaymentListPage;
   },
   async findByProviderPaymentId(args: {
-    tenantId: string;
+    scopeId: string;
     providerPaymentId: string;
   }): Promise<PaymentDetail | null> {
-    const p = await paymentsCol().findOne({ tenantId: args.tenantId, providerPaymentId: args.providerPaymentId });
+    const p = await paymentsCol().findOne({ scopeId: args.scopeId, providerPaymentId: args.providerPaymentId });
     if (!p) return null;
     return {
       id: String(p._id),
@@ -70,7 +77,7 @@ export const mongoPaymentsRepo: PaymentsRepo = {
     await paymentsCol().updateOne(filter, { $set: { status: "refunded", updatedAt: new Date() } });
   },
   async upsertByProviderId(args: {
-    tenantId: string;
+    scopeId: string;
     provider: BillingProvider;
     providerPaymentId: string;
     amount?: number;
@@ -85,7 +92,7 @@ export const mongoPaymentsRepo: PaymentsRepo = {
     const now = new Date();
     await paymentsCol().updateOne(
       {
-        tenantId: args.tenantId,
+        scopeId: args.scopeId,
         provider: args.provider,
         providerPaymentId: args.providerPaymentId,
       },
@@ -95,15 +102,15 @@ export const mongoPaymentsRepo: PaymentsRepo = {
   },
   async listByProviderId(
     provider: BillingProvider
-  ): Promise<Array<{ tenantId: string; providerPaymentId: string }>> {
-    const cursor: FindCursor<Pick<PaymentDoc, 'tenantId' | 'providerPaymentId'>> = paymentsCol()
-      .find({ provider, providerPaymentId: { $ne: null } }, { projection: { tenantId: 1, providerPaymentId: 1 } });
+  ): Promise<Array<{ scopeId: string; providerPaymentId: string }>> {
+    const cursor: FindCursor<Pick<PaymentDoc, 'scopeId' | 'providerPaymentId'>> = paymentsCol()
+      .find({ provider, providerPaymentId: { $ne: null } }, { projection: { scopeId: 1, providerPaymentId: 1 } });
     const rows = await cursor.toArray();
     return rows
       .map((r) => ({
-        tenantId: String(r.tenantId ?? ""),
+        scopeId: String(r.scopeId ?? ""),
         providerPaymentId: String(r.providerPaymentId ?? ""),
       }))
-      .filter((r) => r.tenantId && r.providerPaymentId);
+      .filter((r) => r.scopeId && r.providerPaymentId);
   },
 };

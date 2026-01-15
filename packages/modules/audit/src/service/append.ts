@@ -1,8 +1,8 @@
-import { getTenantId, ctx } from '@unisane/kernel';
+import { getScopeId, tryGetScopeContext } from '@unisane/kernel';
 import { append as appendRepo } from '../data/audit.repository';
 
 export type AppendAuditArgs = {
-  tenantId?: string; // Optional: uses context if not provided
+  scopeId?: string; // Optional: uses context if not provided
   actorId?: string;
   action: string;
   resourceType: string;
@@ -15,16 +15,17 @@ export type AppendAuditArgs = {
 };
 
 export async function appendAudit(args: AppendAuditArgs) {
-  // Use provided tenantId or get from context
-  const tenantId = args.tenantId ?? getTenantId();
+  // Use provided scopeId or get from context
+  const scopeId = args.scopeId ?? getScopeId();
   // Use provided actorId or try to get userId from context
-  const actorId = args.actorId ?? ctx.tryGet()?.userId;
+  const scopeCtx = tryGetScopeContext();
+  const actorId = args.actorId ?? scopeCtx?.userId;
   // Use provided requestId or get from context
-  const requestId = args.requestId ?? ctx.tryGet()?.requestId ?? null;
+  const requestId = args.requestId ?? scopeCtx?.requestId ?? null;
 
   await appendRepo({
     ...args,
-    tenantId,
+    scopeId,
     ...(actorId ? { actorId } : {}),
     requestId,
   });

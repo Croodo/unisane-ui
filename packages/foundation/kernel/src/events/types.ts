@@ -20,8 +20,10 @@ export interface EventMeta {
   source: string;
   /** Request ID for tracing (from context) */
   correlationId?: string;
-  /** Tenant ID (from context) */
-  tenantId?: string;
+  /** Scope type (tenant, user, merchant, etc.) */
+  scopeType?: string;
+  /** Scope ID (from context) - universal identifier for the scope */
+  scopeId?: string;
 }
 
 /**

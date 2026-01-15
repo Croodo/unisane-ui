@@ -13,7 +13,7 @@
  *
  * // Type-safe emission
  * await emitTyped('tenant.created', {
- *   tenantId: 'tenant_123',
+ *   scopeId: 'tenant_123',
  *   slug: 'my-company',
  *   name: 'My Company',
  *   ownerId: 'user_456',
@@ -22,19 +22,21 @@
  */
 
 import { z } from 'zod';
+import { BillingEventSchemas } from './billing-events';
 
 // ============================================================================
 // Base Schemas (common patterns)
 // ============================================================================
 
-/** Standard tenant-scoped event payload */
-export const TenantEventSchema = z.object({
-  tenantId: z.string(),
+/** Universal scoped event payload - works with any scope type */
+export const ScopedEventSchema = z.object({
+  scopeId: z.string(),
+  scopeType: z.enum(['tenant', 'user', 'merchant', 'organization']).optional(),
 });
 
 /** Standard user action event payload */
 export const UserActionEventSchema = z.object({
-  tenantId: z.string(),
+  scopeId: z.string(),
   userId: z.string(),
 });
 
@@ -43,19 +45,19 @@ export const UserActionEventSchema = z.object({
 // ============================================================================
 
 export const TenantCreatedSchema = z.object({
-  tenantId: z.string(),
+  scopeId: z.string(),
   slug: z.string(),
   name: z.string(),
   ownerId: z.string(),
 });
 
 export const TenantUpdatedSchema = z.object({
-  tenantId: z.string(),
+  scopeId: z.string(),
   changes: z.record(z.unknown()).optional(),
 });
 
 export const TenantDeletedSchema = z.object({
-  tenantId: z.string(),
+  scopeId: z.string(),
   actorId: z.string(),
   cascade: z.object({
     memberships: z.number(),
@@ -66,20 +68,20 @@ export const TenantDeletedSchema = z.object({
 });
 
 export const TenantMemberAddedSchema = z.object({
-  tenantId: z.string(),
+  scopeId: z.string(),
   userId: z.string(),
   roleId: z.string(),
   invitedBy: z.string().optional(),
 });
 
 export const TenantMemberRemovedSchema = z.object({
-  tenantId: z.string(),
+  scopeId: z.string(),
   userId: z.string(),
   removedBy: z.string().optional(),
 });
 
 export const TenantMemberRoleChangedSchema = z.object({
-  tenantId: z.string(),
+  scopeId: z.string(),
   userId: z.string(),
   oldRoleId: z.string().optional(),
   newRoleId: z.string(),
@@ -87,7 +89,7 @@ export const TenantMemberRoleChangedSchema = z.object({
 });
 
 export const TenantInvitationCreatedSchema = z.object({
-  tenantId: z.string(),
+  scopeId: z.string(),
   email: z.string(),
   roleId: z.string(),
   invitedBy: z.string(),
@@ -95,13 +97,13 @@ export const TenantInvitationCreatedSchema = z.object({
 });
 
 export const TenantInvitationAcceptedSchema = z.object({
-  tenantId: z.string(),
+  scopeId: z.string(),
   userId: z.string(),
   email: z.string(),
 });
 
 export const TenantInvitationRevokedSchema = z.object({
-  tenantId: z.string(),
+  scopeId: z.string(),
   email: z.string(),
   revokedBy: z.string(),
 });
@@ -111,21 +113,21 @@ export const TenantInvitationRevokedSchema = z.object({
 // ============================================================================
 
 export const MembershipRoleChangedSchema = z.object({
-  tenantId: z.string(),
+  scopeId: z.string(),
   userId: z.string(),
   roleId: z.string(),
   changedBy: z.string().optional(),
 });
 
 export const ApiKeyCreatedSchema = z.object({
-  tenantId: z.string(),
+  scopeId: z.string(),
   keyId: z.string(),
   scopes: z.array(z.string()),
   createdBy: z.string().optional(),
 });
 
 export const ApiKeyRevokedSchema = z.object({
-  tenantId: z.string(),
+  scopeId: z.string(),
   keyId: z.string(),
   revokedBy: z.string().optional(),
 });
@@ -135,7 +137,7 @@ export const ApiKeyRevokedSchema = z.object({
 // ============================================================================
 
 export const StorageUploadRequestedSchema = z.object({
-  tenantId: z.string(),
+  scopeId: z.string(),
   fileId: z.string(),
   key: z.string(),
   filename: z.string(),
@@ -144,20 +146,20 @@ export const StorageUploadRequestedSchema = z.object({
 });
 
 export const StorageUploadConfirmedSchema = z.object({
-  tenantId: z.string(),
+  scopeId: z.string(),
   fileId: z.string(),
   key: z.string(),
   size: z.number(),
 });
 
 export const StorageFileDeletedSchema = z.object({
-  tenantId: z.string(),
+  scopeId: z.string(),
   fileId: z.string(),
   key: z.string(),
 });
 
 export const StorageFilePurgedSchema = z.object({
-  tenantId: z.string(),
+  scopeId: z.string(),
   fileId: z.string(),
   key: z.string(),
 });
@@ -177,31 +179,31 @@ export const StorageCleanupDeletedSchema = z.object({
 // ============================================================================
 
 export const SubscriptionCreatedSchema = z.object({
-  tenantId: z.string(),
+  scopeId: z.string(),
   planId: z.string(),
   providerSubId: z.string().optional(),
 });
 
 export const SubscriptionCancelledSchema = z.object({
-  tenantId: z.string(),
+  scopeId: z.string(),
   atPeriodEnd: z.boolean(),
 });
 
 export const SubscriptionUpdatedSchema = z.object({
-  tenantId: z.string(),
+  scopeId: z.string(),
   planId: z.string(),
   previousPlanId: z.string().optional(),
 });
 
 export const PaymentSucceededSchema = z.object({
-  tenantId: z.string(),
+  scopeId: z.string(),
   amount: z.number(),
   currency: z.string(),
   invoiceId: z.string().optional(),
 });
 
 export const PaymentFailedSchema = z.object({
-  tenantId: z.string(),
+  scopeId: z.string(),
   amount: z.number(),
   currency: z.string(),
   reason: z.string().optional(),
@@ -212,7 +214,7 @@ export const PaymentFailedSchema = z.object({
 // ============================================================================
 
 export const CreditsGrantedSchema = z.object({
-  tenantId: z.string(),
+  scopeId: z.string(),
   amount: z.number(),
   reason: z.string(),
   source: z.enum(['subscription', 'topup', 'promo', 'manual']).optional(),
@@ -220,7 +222,7 @@ export const CreditsGrantedSchema = z.object({
 });
 
 export const CreditsConsumedSchema = z.object({
-  tenantId: z.string(),
+  scopeId: z.string(),
   amount: z.number(),
   reason: z.string(),
   feature: z.string().optional(),
@@ -228,7 +230,7 @@ export const CreditsConsumedSchema = z.object({
 });
 
 export const CreditsExpiredSchema = z.object({
-  tenantId: z.string(),
+  scopeId: z.string(),
   amount: z.number(),
   expiredAt: z.string(),
 });
@@ -238,14 +240,14 @@ export const CreditsExpiredSchema = z.object({
 // ============================================================================
 
 export const UsageIncrementedSchema = z.object({
-  tenantId: z.string(),
+  scopeId: z.string(),
   feature: z.string(),
   amount: z.number(),
   total: z.number().optional(),
 });
 
 export const UsageLimitReachedSchema = z.object({
-  tenantId: z.string(),
+  scopeId: z.string(),
   feature: z.string(),
   limit: z.number(),
   current: z.number(),
@@ -256,7 +258,7 @@ export const UsageLimitReachedSchema = z.object({
 // ============================================================================
 
 export const NotificationSentSchema = z.object({
-  tenantId: z.string(),
+  scopeId: z.string(),
   userId: z.string(),
   notificationId: z.string(),
   type: z.string(),
@@ -264,15 +266,22 @@ export const NotificationSentSchema = z.object({
 });
 
 export const NotificationReadSchema = z.object({
-  tenantId: z.string(),
+  scopeId: z.string(),
   userId: z.string(),
   notificationId: z.string(),
 });
 
 export const NotificationPrefsUpdatedSchema = z.object({
-  tenantId: z.string(),
+  scopeId: z.string(),
   userId: z.string(),
   categories: z.record(z.boolean()),
+});
+
+export const EmailSuppressionRequestedSchema = z.object({
+  email: z.string(),
+  reason: z.string(),
+  provider: z.string(),
+  scopeId: z.string().nullable(),
 });
 
 // ============================================================================
@@ -280,20 +289,20 @@ export const NotificationPrefsUpdatedSchema = z.object({
 // ============================================================================
 
 export const SettingCreatedSchema = z.object({
-  tenantId: z.string(),
+  scopeId: z.string(),
   key: z.string(),
   scope: z.enum(['tenant', 'user', 'global']).optional(),
 });
 
 export const SettingUpdatedSchema = z.object({
-  tenantId: z.string(),
+  scopeId: z.string(),
   key: z.string(),
   oldValue: z.unknown().optional(),
   newValue: z.unknown(),
 });
 
 export const SettingDeletedSchema = z.object({
-  tenantId: z.string(),
+  scopeId: z.string(),
   key: z.string(),
 });
 
@@ -302,20 +311,20 @@ export const SettingDeletedSchema = z.object({
 // ============================================================================
 
 export const WebhookReplayedSchema = z.object({
-  tenantId: z.string(),
+  scopeId: z.string(),
   eventId: z.string(),
   target: z.string(),
 });
 
 export const WebhookDeliveredSchema = z.object({
-  tenantId: z.string(),
+  scopeId: z.string(),
   webhookId: z.string(),
   eventType: z.string(),
   statusCode: z.number(),
 });
 
 export const WebhookFailedSchema = z.object({
-  tenantId: z.string(),
+  scopeId: z.string(),
   webhookId: z.string(),
   eventType: z.string(),
   error: z.string(),
@@ -375,6 +384,7 @@ export const EventSchemas = {
   'notify.sent': NotificationSentSchema,
   'notify.read': NotificationReadSchema,
   'notify.prefs_updated': NotificationPrefsUpdatedSchema,
+  'notify.email_suppression_requested': EmailSuppressionRequestedSchema,
 
   // Settings events
   'settings.created': SettingCreatedSchema,
@@ -385,6 +395,9 @@ export const EventSchemas = {
   'webhooks.replayed': WebhookReplayedSchema,
   'webhooks.delivered': WebhookDeliveredSchema,
   'webhooks.failed': WebhookFailedSchema,
+
+  // Billing integration events (for event-driven decoupling)
+  ...BillingEventSchemas,
 } as const;
 
 // ============================================================================
@@ -425,12 +438,12 @@ export type AnyEventPayload = EventPayload<EventType>;
  * import { registerAllEventSchemas } from '@unisane/kernel';
  *
  * // In bootstrap.ts
- * registerAllEventSchemas();
+ * await registerAllEventSchemas();
  * ```
  */
-export function registerAllEventSchemas(): void {
-  // Lazy import to avoid circular dependencies
-  const { registerEvents } = require('./registry');
+export async function registerAllEventSchemas(): Promise<void> {
+  // Dynamic import to avoid circular dependencies (ESM-compatible)
+  const { registerEvents } = await import('./registry');
   registerEvents(EventSchemas);
 }
 

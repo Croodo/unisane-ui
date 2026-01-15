@@ -19,7 +19,7 @@ export function collectOps(appRouter: unknown): Op[] {
 
     for (const name of Object.keys(g)) {
       const opVal = (g as Record<string, unknown>)[name] as
-        | { method?: unknown; path?: unknown }
+        | { method?: unknown; path?: unknown; metadata?: { op?: string } }
         | undefined;
       if (!opVal || typeof opVal !== 'object') continue;
 
@@ -29,7 +29,10 @@ export function collectOps(appRouter: unknown): Op[] {
       // Only include API routes
       if (!p.startsWith('/api/')) continue;
 
-      ops.push({ group, name, method, path: p });
+      // Use the op from runtime metadata if available, otherwise fallback to group.name
+      const opKey = opVal.metadata?.op ?? `${group}.${name}`;
+
+      ops.push({ group, name, method, path: p, opKey });
     }
   }
 
@@ -44,8 +47,9 @@ export function mergeOpsWithMeta(
   meta: Map<string, RouteGenEntry>
 ): OpWithMeta[] {
   return ops.map((op) => {
-    const opKey = `${op.group}.${op.name}`;
-    const entry = meta.get(opKey);
+    // Use opKey from runtime metadata if available, otherwise fallback to group.name
+    const key = op.opKey ?? `${op.group}.${op.name}`;
+    const entry = meta.get(key);
     return {
       ...op,
       ...(entry ? { meta: entry } : {}),

@@ -26,17 +26,11 @@ export const IDENTITY_EVENTS = {
   MEMBERSHIP_ROLE_CHANGED: 'identity.membership.role_changed',
 } as const;
 
-/**
- * User status values.
- */
-export const USER_STATUS = {
-  ACTIVE: 'active',
-  SUSPENDED: 'suspended',
-  PENDING_VERIFICATION: 'pending_verification',
-  DELETED: 'deleted',
-} as const;
-
-export type UserStatus = (typeof USER_STATUS)[keyof typeof USER_STATUS];
+// NOTE: User status is defined in @unisane/kernel as USER_STATUS.
+// Import from kernel: import { USER_STATUS, UserStatus } from '@unisane/kernel';
+// This module re-exports them for backward compatibility.
+// Values: 'invited', 'active', 'suspended'
+// See: packages/foundation/kernel/src/constants/index.ts
 
 /**
  * API key status values.
@@ -49,16 +43,11 @@ export const API_KEY_STATUS = {
 
 export type ApiKeyStatus = (typeof API_KEY_STATUS)[keyof typeof API_KEY_STATUS];
 
-/**
- * Global roles (platform-level, not tenant-scoped).
- */
-export const GLOBAL_ROLES = {
-  SUPERADMIN: 'superadmin',
-  SUPPORT: 'support',
-  USER: 'user',
-} as const;
-
-export type GlobalRole = (typeof GLOBAL_ROLES)[keyof typeof GLOBAL_ROLES];
+// NOTE: Global roles are defined in @unisane/kernel as GLOBAL_ROLES.
+// Import from kernel: import { GLOBAL_ROLES, GlobalRole } from '@unisane/kernel';
+// This module re-exports them for backward compatibility.
+// Values: 'super_admin', 'support_admin'
+// See: packages/foundation/kernel/src/constants/identity.ts
 
 /**
  * Default values for identity operations.

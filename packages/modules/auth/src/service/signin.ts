@@ -1,11 +1,10 @@
-import { connectDb, scryptVerifyPassword } from '@unisane/kernel';
+import { connectDb, scryptVerifyPassword, Email } from '@unisane/kernel';
 import { AuthCredentialRepo } from '../data/auth.repository';
-import { normalizeEmail } from '@unisane/identity';
 import { ERR } from '@unisane/gateway';
 
 export async function signin(input: { email: string; password: string }): Promise<{ userId: string }> {
   await connectDb();
-  const emailNorm = normalizeEmail(input.email);
+  const emailNorm = Email.create(input.email).toString();
   const cred = await AuthCredentialRepo.findByEmailNorm(emailNorm);
   if (!cred) throw ERR.loginRequired();
   if (cred.lockedUntil && cred.lockedUntil.getTime() > Date.now()) {

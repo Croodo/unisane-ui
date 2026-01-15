@@ -7,13 +7,14 @@
 import { describe, it, expect } from 'vitest';
 import {
   TENANT_EVENTS,
-  TENANT_ROLES,
   INVITATION_STATUS,
   TENANT_DEFAULTS,
   TENANT_COLLECTIONS,
-  type TenantRole,
   type InvitationStatus,
 } from '../domain/constants';
+// TENANT_ROLES is now sourced from @unisane/kernel (as ROLE)
+// Import directly from kernel to avoid pulling in entire module (which requires DB config)
+import { ROLE as TENANT_ROLES, type RoleId as TenantRole } from '@unisane/kernel';
 
 describe('TENANT_EVENTS', () => {
   it('should have all expected event names', () => {
@@ -47,11 +48,13 @@ describe('TENANT_EVENTS', () => {
 });
 
 describe('TENANT_ROLES', () => {
-  it('should have all expected roles', () => {
+  // NOTE: TENANT_ROLES is now re-exported from @unisane/kernel's ROLE
+  // Kernel roles: owner, admin, member, billing
+  it('should have all expected roles from kernel', () => {
     expect(TENANT_ROLES.OWNER).toBe('owner');
     expect(TENANT_ROLES.ADMIN).toBe('admin');
     expect(TENANT_ROLES.MEMBER).toBe('member');
-    expect(TENANT_ROLES.VIEWER).toBe('viewer');
+    expect(TENANT_ROLES.BILLING).toBe('billing');
   });
 
   it('should have exactly 4 roles', () => {
@@ -62,7 +65,7 @@ describe('TENANT_ROLES', () => {
     const roleValues = Object.values(TENANT_ROLES);
 
     for (const role of roleValues) {
-      expect(role).toMatch(/^[a-z]+$/);
+      expect(role).toMatch(/^[a-z_]+$/);
     }
   });
 

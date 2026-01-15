@@ -13,8 +13,8 @@ export class SettingNotFoundError extends DomainError {
   readonly code = ErrorCode.NOT_FOUND;
   readonly status = 404;
 
-  constructor(namespace: string, key: string, tenantId: string | null = null) {
-    const scope = tenantId ? `tenant ${tenantId}` : 'platform';
+  constructor(namespace: string, key: string, scopeId: string | null = null) {
+    const scope = scopeId ? `tenant ${scopeId}` : 'platform';
     super(`Setting not found: ${namespace}.${key} in ${scope}`);
     this.name = 'SettingNotFoundError';
   }

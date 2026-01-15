@@ -4,17 +4,10 @@ export { PERM, ROLE_PERMS };
 export type { Permission };
 import { ERR } from "../errors/errors";
 
-// Request-scoped auth context produced by gateway/auth.ts
-export type AuthCtx = {
-  isAuthed: boolean;
-  userId?: string;
-  tenantId?: string;
-  apiKeyId?: string;
-  role?: string;
-  plan?: string;
-  perms?: Permission[]; // effective permissions (precomputed)
-  isSuperAdmin?: boolean;
-};
+// Import and re-export AuthCtx from auth.ts (single source of truth)
+// Type-only import avoids circular dependency at runtime
+import type { AuthCtx } from '../auth/auth';
+export type { AuthCtx };
 
 export function hasPerm(ctx: AuthCtx, perm: Permission): boolean {
   return Boolean(ctx.perms?.includes(perm));

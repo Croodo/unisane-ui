@@ -84,7 +84,7 @@ export type ListFilesInput = z.infer<typeof ZListFiles>;
 // ---------------------------------------------------------------------------
 export const ZStorageFileResponse = z.object({
   id: z.string().min(1),
-  tenantId: z.string().min(1),
+  scopeId: z.string().min(1),
   uploaderId: z.string().min(1),
   key: z.string().min(1),
   folder: ZStorageFolder,

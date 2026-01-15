@@ -2,8 +2,8 @@
 
 import { hooks } from "@/src/sdk/hooks";
 import { StatsCards, type StatItem } from "@/src/components/dashboard/StatsCards";
-import { PLAN_META } from "@/src/shared/constants/plan";
-import type { PlanId } from "@/src/shared/constants/plan";
+import { PLAN_META } from "@unisane/kernel/client";
+import type { PlanId } from "@unisane/kernel/client";
 
 interface BillingOverviewStatsProps {
   tenantId: string | undefined;

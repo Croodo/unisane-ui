@@ -4,7 +4,7 @@
 
 export const webhooksKeys = {
   webhook: (webhookId: string) => `webhooks:${webhookId}` as const,
-  tenantWebhooks: (tenantId: string) => `webhooks:tenant:${tenantId}` as const,
+  tenantWebhooks: (scopeId: string) => `webhooks:tenant:${scopeId}` as const,
   delivery: (deliveryId: string) => `webhooks:delivery:${deliveryId}` as const,
 } as const;
 

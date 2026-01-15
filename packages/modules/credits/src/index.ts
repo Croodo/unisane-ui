@@ -43,4 +43,10 @@ export * from './service/ledger';
 // Services - Admin
 // ════════════════════════════════════════════════════════════════════════════
 
-export { getTenantCreditBalances } from './service/admin/stats';
+export { getScopeCreditBalances } from './service/admin/stats';
+
+// ════════════════════════════════════════════════════════════════════════════
+// Event Handlers (for event-driven decoupling)
+// ════════════════════════════════════════════════════════════════════════════
+
+export { registerCreditEventHandlers } from './event-handlers';

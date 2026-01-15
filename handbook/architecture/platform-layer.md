@@ -521,7 +521,7 @@ import { deliverWebhook } from "@/src/platform/webhooks/outbound";
 import { sendEmail } from "@unisane/notify";
 import { reconcileStripe, reconcileRazorpay } from "@unisane/billing";
 import { cleanupOrphanedUploads, cleanupDeletedFiles } from "@unisane/storage";
-import { listExpiredOverridesForCleanup, clearTenantOverride, clearUserOverride } from "@unisane/flags";
+import { listExpiredOverridesForCleanup, clearScopeOverride } from "@unisane/flags";
 
 export const registry: Record<string, (ctx: { deadlineMs: number }) => Promise<void>> = {
   // Email delivery
@@ -578,11 +578,11 @@ export const registry: Record<string, (ctx: { deadlineMs: number }) => Promise<v
     await connectDb();
     const expired = await listExpiredOverridesForCleanup();
     for (const override of expired) {
-      if (override.scope === "tenant") {
-        await clearTenantOverride({ tenantId: override.scopeId, flag: override.flag });
-      } else if (override.scope === "user") {
-        await clearUserOverride({ userId: override.scopeId, flag: override.flag });
-      }
+      await clearScopeOverride({
+        key: override.flag,
+        scopeType: override.scope as "tenant" | "user",
+        scopeId: override.scopeId,
+      });
     }
   },
 

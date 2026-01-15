@@ -5,7 +5,7 @@ import type { AdminUsersListItem } from "@/src/sdk/types";
 import { DataTable } from "@unisane/data-table";
 import type { Column, BulkAction } from "@unisane/data-table";
 import { PageLayout } from "@/src/context/usePageLayout";
-import { useServerTable } from "@/src/hooks/useServerTable";
+import { useServerTable } from "@/src/hooks/use-server-table";
 
 interface UsersTableProps {
   data: AdminUsersListItem[];

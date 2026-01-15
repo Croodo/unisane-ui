@@ -4,17 +4,26 @@ import { getEnv } from "@unisane/kernel";
 import { subscribe } from "@unisane/kernel";
 import { kv } from "@unisane/kernel";
 import { settingsKeys } from "../domain/keys";
+import { z } from "zod";
 
 import type { GetSettingArgs } from "../domain/types";
 export type { GetSettingArgs };
 
+/** Schema for setting.updated pub/sub message validation */
+const SettingUpdatedEventSchema = z.object({
+  env: z.string(),
+  ns: z.string(),
+  key: z.string(),
+  scopeId: z.string().nullable().optional(),
+});
+
 export async function getSetting(args: GetSettingArgs) {
   const env = args.env ?? getEnv().APP_ENV;
   // ensureSubscriber() removed; called via initModules()
-  const ck = settingsKeys.setting(env, args.ns, args.key, args.tenantId);
+  const ck = settingsKeys.setting(env, args.ns, args.key, args.scopeId);
   const cached = await cacheGet<{ value: unknown; version: number } | null>(ck);
   if (cached) return { value: cached.value, version: cached.version };
-  const row = await SettingsRepo.findOne(env, args.tenantId, args.ns, args.key);
+  const row = await SettingsRepo.findOne(env, args.scopeId, args.ns, args.key);
   if (row)
     await cacheSet(
       ck,
@@ -28,19 +37,11 @@ let wired = false;
 export function initSettingsSubscriber() {
   if (wired) return;
   wired = true;
-  subscribe<Record<string, unknown>>("setting.updated", (evt) => {
-    if (!evt || typeof evt !== "object") return;
-    const e = evt as Record<string, unknown>;
-    if (
-      typeof e.env === "string" &&
-      typeof e.ns === "string" &&
-      typeof e.key === "string"
-    ) {
-      const tenantId = (typeof e.tenantId === "string" ? e.tenantId : null) as
-        | string
-        | null;
-      const ck = settingsKeys.setting(e.env, e.ns, e.key, tenantId);
-      void kv.del(ck);
-    }
+  subscribe<unknown>("setting.updated", (evt) => {
+    const parsed = SettingUpdatedEventSchema.safeParse(evt);
+    if (!parsed.success) return;
+    const { env, ns, key, scopeId } = parsed.data;
+    const ck = settingsKeys.setting(env, ns, key, scopeId ?? null);
+    void kv.del(ck);
   });
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useSession } from "@/src/hooks/useSession";
+import { useSession } from "@/src/hooks/use-session";
 import { hooks } from "@/src/sdk/hooks";
 import { PageLayout } from "@/src/context/usePageLayout";
 import { Card } from "@unisane/ui/components/card";
@@ -87,7 +87,7 @@ interface DashboardClientProps {
 
 export function DashboardClient({ slug }: DashboardClientProps) {
   const { me } = useSession();
-  const tenantId = me?.tenantId ?? undefined;
+  const tenantId = me?.scopeId ?? undefined;
   const base = `/w/${slug}`;
 
   // Fetch stats

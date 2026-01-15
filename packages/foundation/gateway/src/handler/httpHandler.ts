@@ -2,14 +2,15 @@ import type { ZodTypeAny } from "zod";
 import { z } from "zod";
 import type { Permission, AuthCtx } from "../middleware/rbac";
 import { withIdem } from "../middleware/idempotency";
-import { toHttp } from "../errors/errors";
+import { toHttp, ERR } from "../errors/errors";
 import { HEADER_NAMES } from "../headers";
 import { withRequest } from "../logger";
 import { guard } from '../middleware/guard';
 import type { GuardOpts as GuardOptsInternal } from '../middleware/guard';
 import { observeHttp } from "../telemetry";
 import type { OpKey } from "../rate-limits";
-import { ctx, createContext } from "@unisane/kernel";
+import { runWithScopeContext, type ScopeType } from "@unisane/kernel";
+import { sanitizeRequestId } from "../middleware/validate";
 
 type HandlerOpts = {
   op?: OpKey;
@@ -22,6 +23,8 @@ type HandlerOpts = {
   requireUser?: boolean;
   allowUnauthed?: boolean;
   successStatus?: number;
+  /** Scope type for this handler. Defaults to 'tenant' for backward compatibility. */
+  scopeType?: ScopeType;
 };
 
 // Overload: zod provided → infer Body from schema output
@@ -75,8 +78,7 @@ export function makeHandler<
       typeof (route.params as unknown as Promise<unknown>).then === "function"
         ? await (route.params as unknown as Promise<Params>)
         : route.params;
-    const requestId =
-      req.headers.get(HEADER_NAMES.REQUEST_ID) ?? crypto.randomUUID();
+    const requestId = sanitizeRequestId(req.headers.get(HEADER_NAMES.REQUEST_ID));
     const startedAt = Date.now();
     let path = "";
     try {
@@ -85,30 +87,34 @@ export function makeHandler<
     try {
       const { ctx: authCtx, body, params, rl } = await guard<Body, Params>(req, routeParams, opts as unknown as GuardOptsInternal<Body, Params>);
 
-      // Create kernel context from auth context
+      // Create scope context from auth context
       // Prefer URL path tenantId over session tenantId for routes like /tenants/[tenantId]/...
       const routeTenantId = (params as { tenantId?: string } | undefined)?.tenantId;
-      const effectiveTenantId = routeTenantId || authCtx.tenantId;
+      const effectiveScopeId = routeTenantId || authCtx.tenantId;
 
-      const kernelContext = createContext({
+      // Validate scope ID is present for protected routes
+      // Super admins can access platform-wide routes without a tenant scope
+      if (!effectiveScopeId && !opts.allowUnauthed && !authCtx.isSuperAdmin) {
+        throw ERR.forbidden('Scope context required');
+      }
+
+      // Run handler within scope context - all downstream code has access to getScope()
+      return await runWithScopeContext({
+        scope: { type: opts.scopeType ?? 'tenant', id: effectiveScopeId || '__anonymous__' },
         requestId,
-        tenantId: effectiveTenantId,
         userId: authCtx.userId,
         metadata: {
           method: req.method,
           path,
           op: opts.op,
         },
-      });
-
-      // Run handler within kernel context - all downstream code has access to ctx.get()
-      return await ctx.run(kernelContext, async () => {
+      }, async () => {
         const log = withRequest({
           requestId,
           method: req.method,
           path,
           op: opts.op ?? null,
-          tenantId: effectiveTenantId ?? null,
+          tenantId: effectiveScopeId ?? null,
           userId: authCtx.userId ?? null,
         });
         const exec = async () =>
@@ -222,8 +228,7 @@ export function makeHandlerRaw<
       typeof (route.params as unknown as Promise<unknown>).then === "function"
         ? await (route.params as unknown as Promise<Params>)
         : route.params;
-    const requestId =
-      req.headers.get(HEADER_NAMES.REQUEST_ID) ?? crypto.randomUUID();
+    const requestId = sanitizeRequestId(req.headers.get(HEADER_NAMES.REQUEST_ID));
     const startedAt = Date.now();
     let path = "";
     try {
@@ -232,30 +237,34 @@ export function makeHandlerRaw<
     try {
       const { ctx: authCtx, body, params, rl } = await guard<Body, Params>(req, routeParams, opts as unknown as GuardOptsInternal<Body, Params>);
 
-      // Create kernel context from auth context
+      // Create scope context from auth context
       // Prefer URL path tenantId over session tenantId for routes like /tenants/[tenantId]/...
       const routeTenantId = (params as { tenantId?: string } | undefined)?.tenantId;
-      const effectiveTenantId = routeTenantId || authCtx.tenantId;
+      const effectiveScopeId = routeTenantId || authCtx.tenantId;
 
-      const kernelContext = createContext({
+      // Validate scope ID is present for protected routes
+      // Super admins can access platform-wide routes without a tenant scope
+      if (!effectiveScopeId && !opts.allowUnauthed && !authCtx.isSuperAdmin) {
+        throw ERR.forbidden('Scope context required');
+      }
+
+      // Run handler within scope context - all downstream code has access to getScope()
+      return await runWithScopeContext({
+        scope: { type: opts.scopeType ?? 'tenant', id: effectiveScopeId || '__anonymous__' },
         requestId,
-        tenantId: effectiveTenantId,
         userId: authCtx.userId,
         metadata: {
           method: req.method,
           path,
           op: opts.op,
         },
-      });
-
-      // Run handler within kernel context - all downstream code has access to ctx.get()
-      return await ctx.run(kernelContext, async () => {
+      }, async () => {
         const log = withRequest({
           requestId,
           method: req.method,
           path,
           op: opts.op ?? null,
-          tenantId: effectiveTenantId ?? null,
+          tenantId: effectiveScopeId ?? null,
           userId: authCtx.userId ?? null,
         });
         const exec = async () =>

@@ -5,7 +5,7 @@ import type { ListFilesInput } from "../domain/schemas";
 export async function listFiles(input: ListFilesInput) {
   await connectDb();
 
-  // tenantId is automatically applied via tenantFilter() in repository
+  // Scope is automatically applied via scopedFilter() in repository
   const { items, nextCursor } = await StorageRepo.list({
     ...(input.folder ? { folder: input.folder } : {}),
     ...(input.status ? { status: input.status } : {}),

@@ -26,9 +26,9 @@ export async function renderEmail(input: RenderInput): Promise<RenderOutput> {
   return r({ ...input, brand });
 }
 
-async function getBrand(tenantId: string | null): Promise<{ name: string }> {
+async function getBrand(scopeId: string | null): Promise<{ name: string }> {
   try {
-    const s = await getSetting({ tenantId, ns: 'branding', key: 'name' });
+    const s = await getSetting({ scopeId, ns: 'branding', key: 'name' });
     if (s && typeof s.value === 'string' && s.value.trim()) return { name: String(s.value) };
   } catch {}
   return { name: 'Your App' };

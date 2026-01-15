@@ -12,14 +12,15 @@ import type { EventSchema, InferEventPayload } from './types';
  * Base event schemas for common patterns.
  */
 export const BaseSchemas = {
-  /** Standard tenant-scoped event */
-  tenantEvent: z.object({
-    tenantId: z.string(),
+  /** Universal scoped event - use for all scope types (tenant, user, merchant, etc.) */
+  scopedEvent: z.object({
+    scopeId: z.string(),
+    scopeType: z.enum(['tenant', 'user', 'merchant', 'organization']).optional(),
   }),
 
-  /** Standard user action event */
+  /** Standard user action event within a scope */
   userActionEvent: z.object({
-    tenantId: z.string(),
+    scopeId: z.string(),
     userId: z.string(),
   }),
 } as const;
@@ -38,7 +39,7 @@ const eventSchemas = new Map<string, EventSchema>();
  * ```typescript
  * // In billing module bootstrap
  * registerEvent('billing.subscription.created', z.object({
- *   tenantId: z.string(),
+ *   scopeId: z.string(),
  *   planId: z.string(),
  *   providerSubId: z.string(),
  * }));
@@ -114,13 +115,13 @@ export type RegisteredEventType = string;
  * export const SubscriptionCreatedEvent = defineEvent(
  *   'billing.subscription.created',
  *   z.object({
- *     tenantId: z.string(),
+ *     scopeId: z.string(),
  *     planId: z.string(),
  *   })
  * );
  *
  * // Usage:
- * events.emit(SubscriptionCreatedEvent.type, { tenantId, planId });
+ * events.emit(SubscriptionCreatedEvent.type, { scopeId, planId });
  * ```
  */
 export function defineEvent<T extends EventSchema>(type: string, schema: T) {

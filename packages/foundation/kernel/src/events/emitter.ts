@@ -6,7 +6,7 @@
  */
 
 import { generateId } from '../utils/ids';
-import { ctx } from '../context';
+import { tryGetScopeContext } from '../scope/context';
 import { getEventSchema } from './registry';
 import type { DomainEvent, EventHandler, EventMeta, OutboxEntry } from './types';
 
@@ -15,7 +15,11 @@ import type { DomainEvent, EventHandler, EventMeta, OutboxEntry } from './types'
  */
 export class UnregisteredEventError extends Error {
   constructor(type: string) {
-    super(`Event type '${type}' is not registered. Register it first with registerEvent().`);
+    super(
+      `Event type '${type}' is not registered. ` +
+      `Did you call registerAllEventSchemas() at bootstrap? ` +
+      `Or use registerEvent() for custom events.`
+    );
     this.name = 'UnregisteredEventError';
   }
 }
@@ -44,6 +48,8 @@ interface EventEmitterState {
   registrationCount: number;
   // Max handlers per event type (protection against memory leaks)
   maxHandlersPerType: number;
+  // If true, throw error when max handlers reached instead of just warning
+  strictMode: boolean;
 }
 
 const globalForEvents = global as unknown as { __eventEmitterState?: EventEmitterState };
@@ -55,6 +61,7 @@ if (!globalForEvents.__eventEmitterState) {
     outboxAccessor: null,
     registrationCount: 0,
     maxHandlersPerType: 100, // Reasonable default, can be configured
+    strictMode: false, // Default to warning only, enable in production for safety
   };
 }
 
@@ -81,6 +88,15 @@ export function setOutboxAccessor(accessor: () => OutboxCollection): void {
  */
 export function setMaxHandlersPerType(max: number): void {
   state.maxHandlersPerType = max;
+}
+
+/**
+ * Enable or disable strict mode.
+ * In strict mode, throws an error when max handlers is reached instead of just warning.
+ * Enable this in production to fail fast on handler leaks.
+ */
+export function setStrictMode(strict: boolean): void {
+  state.strictMode = strict;
 }
 
 /**
@@ -130,17 +146,20 @@ export function hasHandlerLeakRisk(): boolean {
 }
 
 /**
- * Create event metadata from current context.
+ * Create event metadata from current scope context.
  */
 function createEventMeta(source: string): EventMeta {
-  const context = ctx.tryGet();
+  const context = tryGetScopeContext();
+  const scopeId = context?.scope?.id;
+  const scopeType = context?.scope?.type;
   return {
     eventId: generateId('evt'),
     timestamp: new Date().toISOString(),
     version: 1,
     source,
     correlationId: context?.requestId,
-    tenantId: context?.tenantId,
+    scopeType,
+    scopeId,
   };
 }
 
@@ -295,10 +314,14 @@ export const events = {
 
     // Check for handler limit (memory leak protection)
     if (typeHandlers.size >= state.maxHandlersPerType) {
-      console.warn(
+      const message =
         `[events] Max handlers (${state.maxHandlersPerType}) reached for '${type}'. ` +
-        `This may indicate a memory leak. Consider calling unsubscribe() when handlers are no longer needed.`
-      );
+        `This may indicate a memory leak. Consider calling unsubscribe() when handlers are no longer needed.`;
+
+      if (state.strictMode) {
+        throw new Error(message);
+      }
+      console.warn(message);
     }
 
     typeHandlers.add(handler as EventHandler);
@@ -343,10 +366,14 @@ export const events = {
   onAll(handler: EventHandler): () => void {
     // Check for global handler limit
     if (state.globalHandlers.size >= state.maxHandlersPerType) {
-      console.warn(
+      const message =
         `[events] Max global handlers (${state.maxHandlersPerType}) reached. ` +
-        `This may indicate a memory leak.`
-      );
+        `This may indicate a memory leak.`;
+
+      if (state.strictMode) {
+        throw new Error(message);
+      }
+      console.warn(message);
     }
 
     state.globalHandlers.add(handler);

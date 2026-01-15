@@ -1,12 +1,10 @@
-import { kv } from '@unisane/kernel';
-import { connectDb } from '@unisane/kernel';
+import { kv, connectDb, scryptHashPassword, Email } from '@unisane/kernel';
 import { AuthCredentialRepo } from '../data/auth.repository';
-import { scryptHashPassword } from '@unisane/kernel';
 import { ERR } from '@unisane/gateway';
 
 export async function resetVerify(input: { email: string; token: string; password: string }): Promise<{ userId: string }> {
   await connectDb();
-  const emailNorm = input.email.toLowerCase();
+  const emailNorm = Email.create(input.email).toString();
   const { resetTokenKey } = await import('../domain/keys');
   const key = resetTokenKey(emailNorm, input.token);
   const userId = await kv.get(key);

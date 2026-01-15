@@ -8,6 +8,8 @@
  * Usage:
  * 1. Import from '@unisane/kernel/platform'
  * 2. In your application bootstrap, call the set* functions to inject implementations
+ *
+ * Note: Database port is available from '@unisane/kernel/database' or '@unisane/kernel'
  */
 
 export * from './config';

@@ -72,20 +72,20 @@ export class FileSizeExceededError extends DomainError {
 }
 
 /**
- * Thrown when storage quota is exceeded for a tenant.
+ * Thrown when storage quota is exceeded for a scope.
  */
 export class StorageQuotaExceededError extends DomainError {
   readonly code = ErrorCode.STORAGE_QUOTA_EXCEEDED;
   readonly status = 403;
 
-  constructor(tenantId: string, usedBytes: number, limitBytes: number) {
-    super(`Storage quota exceeded for tenant ${tenantId}: ${usedBytes}/${limitBytes} bytes`);
+  constructor(scopeId: string, usedBytes: number, limitBytes: number) {
+    super(`Storage quota exceeded for scope ${scopeId}: ${usedBytes}/${limitBytes} bytes`);
     this.name = 'StorageQuotaExceededError';
   }
 }
 
 /**
- * Thrown when file access is denied (wrong tenant).
+ * Thrown when file access is denied (wrong scope).
  */
 export class FileAccessDeniedError extends DomainError {
   readonly code = ErrorCode.FORBIDDEN;

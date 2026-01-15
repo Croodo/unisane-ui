@@ -26,15 +26,15 @@ export const storageKeys = {
   fileByKey: (key: string) => `storage:file:key:${key}` as const,
 
   // ════════════════════════════════════════════════════════════════════════════
-  // Tenant Keys
+  // Scope Keys
   // ════════════════════════════════════════════════════════════════════════════
 
-  /** Cache key for tenant's file list in a folder */
-  tenantFiles: (tenantId: string, folder?: string) =>
-    `storage:tenant:${tenantId}:files${folder ? `:${folder}` : ''}` as const,
+  /** Cache key for scope's file list in a folder */
+  scopeFiles: (scopeId: string, folder?: string) =>
+    `storage:scope:${scopeId}:files${folder ? `:${folder}` : ''}` as const,
 
-  /** Cache key for tenant's storage usage */
-  tenantUsage: (tenantId: string) => `storage:tenant:${tenantId}:usage` as const,
+  /** Cache key for scope's storage usage */
+  scopeUsage: (scopeId: string) => `storage:scope:${scopeId}:usage` as const,
 
   // ════════════════════════════════════════════════════════════════════════════
   // Presigned URL Keys (short-lived cache)

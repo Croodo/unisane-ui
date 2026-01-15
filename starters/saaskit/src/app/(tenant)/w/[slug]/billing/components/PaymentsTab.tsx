@@ -11,7 +11,7 @@ import { Dialog } from "@unisane/ui/components/dialog";
 import { Input } from "@unisane/ui/primitives/input";
 import { Label } from "@unisane/ui/primitives/label";
 import { toast } from "@unisane/ui/components/toast";
-import { formatCurrency } from "@/src/shared/currency";
+import { formatCurrency } from "@unisane/kernel/client";
 import { StatusBadge } from "@/src/components/ui/status-badge";
 import { Typography } from "@unisane/ui/components/typography";
 

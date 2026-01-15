@@ -1,10 +1,10 @@
 import { InvoicesRepository } from "../../data/invoices.repository";
 import { SubscriptionsRepository } from "../../data/subscriptions.repository";
 
-export async function getTenantOpenInvoiceCounts(tenantIds: string[]) {
-  return InvoicesRepository.countOpenByTenantIds(tenantIds);
+export async function getScopeOpenInvoiceCounts(scopeIds: string[]) {
+  return InvoicesRepository.countOpenByScopeIds(scopeIds);
 }
 
-export async function getTenantLatestSubscriptions(tenantIds: string[]) {
-  return await SubscriptionsRepository.getLatestByTenantIds(tenantIds);
+export async function getScopeLatestSubscriptions(scopeIds: string[]) {
+  return await SubscriptionsRepository.getLatestByScopeIds(scopeIds);
 }

@@ -1,4 +1,4 @@
-import { getTenantId } from '@unisane/kernel';
+import { getScopeId } from '@unisane/kernel';
 import type { ListPageArgs, WebhookDirection, WebhookEventStatus } from '@unisane/kernel';
 import { WebhooksRepo } from '../data/webhooks.repository';
 
@@ -12,9 +12,9 @@ export type ListEventsArgs = ListPageArgs & {
 };
 
 export async function listEvents(args: ListEventsArgs) {
-  const tenantId = getTenantId();
+  const scopeId = getScopeId();
   const casted = {
-    tenantId,
+    scopeId,
     limit: args.limit,
     ...(args.cursor ? { cursor: args.cursor } : {}),
     ...(args.status ? { status: args.status as WebhookEventStatus } : {}),

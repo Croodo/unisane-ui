@@ -594,7 +594,7 @@ import type {
 } from "@tanstack/react-query";
 // Types extracted at code-gen time (browser-safe, no contract imports)
 ${typeImports}
-import { browserApi } from "@/src/sdk/clients/generated/browser";${hasTenantRoutes ? '\nimport { useActiveTenant } from "@/src/hooks/useActiveTenant";' : ''}
+import { browserApi } from "@/src/sdk/clients/generated/browser";${hasTenantRoutes ? '\nimport { useActiveTenant } from "@/src/hooks/use-active-tenant";' : ''}
 import { keys } from "../keys";
 import type { ListOut } from "../shared/types";
 import { unwrapResponse, toListOut, is404 } from "../shared/unwrap";

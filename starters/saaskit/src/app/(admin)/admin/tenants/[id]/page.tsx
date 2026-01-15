@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { createApi } from "@/src/sdk/server";
 import type { AuditListItem, WebhooksListEventsItem } from "@/src/sdk/types";
-import { getEnv } from "@/src/shared/env";
+import { getEnv } from "@unisane/kernel";
 import { TenantDetailClient } from "./TenantDetailClient";
 
 export default async function AdminTenantDetailPage({

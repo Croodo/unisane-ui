@@ -8,6 +8,9 @@ export const BILLING_PROVIDERS = ['stripe', 'razorpay'] as const;
 export type BillingProvider = (typeof BILLING_PROVIDERS)[number];
 export const ZBillingProvider = z.enum(BILLING_PROVIDERS);
 
+/** Internal billing provider type that includes 'noop' for fallback */
+export type BillingProviderInternal = BillingProvider | 'noop';
+
 // OAuth/social providers supported by the kit
 export const OAUTH_PROVIDERS = ['google', 'github'] as const;
 export type OAuthProvider = (typeof OAUTH_PROVIDERS)[number];

@@ -6,34 +6,34 @@ import type {
   CreditsBreakdown,
   CreditsBucket,
 } from "../domain/types";
-import { getTenantId, logger, KV, cacheGet, cacheSet, cacheDelete } from "@unisane/kernel";
+import { getScopeId, logger, KV, cacheGet, cacheSet, cacheDelete } from "@unisane/kernel";
 
 /** Cache TTL for balance: 60 seconds */
 const BALANCE_CACHE_TTL_MS = 60_000;
 
-function balanceCacheKey(tenantId: string): string {
-  return `${KV.CREDITS}balance:${tenantId}`;
+function balanceCacheKey(scopeId: string): string {
+  return `${KV.CREDITS}balance:${scopeId}`;
 }
 
 export async function balance() {
-  const tenantId = getTenantId();
-  const cacheKey = balanceCacheKey(tenantId);
+  const scopeId = getScopeId();
+  const cacheKey = balanceCacheKey(scopeId);
 
   // Check cache first
   const cached = await cacheGet<{ amount: number }>(cacheKey);
   if (cached !== null) {
-    logger.debug("credits.balance cache hit", { tenantId, amount: cached.amount });
+    logger.debug("credits.balance cache hit", { scopeId, amount: cached.amount });
     return cached;
   }
 
   // Compute from ledger
-  const { available } = await totalsAvailable(tenantId, new Date());
+  const { available } = await totalsAvailable(scopeId, new Date());
   const result = { amount: available };
 
   // Cache the result
   await cacheSet(cacheKey, result, BALANCE_CACHE_TTL_MS);
 
-  logger.info("credits.balance computed", { tenantId, available });
+  logger.info("credits.balance computed", { scopeId, available });
   return result;
 }
 
@@ -41,14 +41,14 @@ export async function balance() {
  * Invalidate the cached balance for a tenant.
  * Call this after grant/burn operations.
  */
-export async function invalidateBalanceCache(tenantId: string): Promise<void> {
-  const cacheKey = balanceCacheKey(tenantId);
+export async function invalidateBalanceCache(scopeId: string): Promise<void> {
+  const cacheKey = balanceCacheKey(scopeId);
   await cacheDelete(cacheKey);
-  logger.debug("credits.balance cache invalidated", { tenantId });
+  logger.debug("credits.balance cache invalidated", { scopeId });
 }
 
 export async function breakdown(): Promise<CreditsBreakdown> {
-  const tenantId = getTenantId();
+  const scopeId = getScopeId();
   const now = new Date();
 
   // Single aggregation query using $facet - avoids two separate collection scans
@@ -59,7 +59,7 @@ export async function breakdown(): Promise<CreditsBreakdown> {
     subscriptionGrants,
     topupGrants: rawTopupGrants,
     otherGrants: rawOtherGrants,
-  } = await totalsWithBreakdown(tenantId, now);
+  } = await totalsWithBreakdown(scopeId, now);
 
   const norm = (n: number) => (Number.isFinite(n) && n > 0 ? n : 0);
 

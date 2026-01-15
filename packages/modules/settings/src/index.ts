@@ -8,14 +8,14 @@
  * import { getSetting, patchSetting, settingsKeys } from '@unisane/settings';
  *
  * // Read a setting
- * const theme = await getSetting({ ns: 'app', key: 'theme', tenantId });
+ * const theme = await getSetting({ ns: 'app', key: 'theme', scopeId });
  *
  * // Update with optimistic locking
  * const result = await patchSetting({
  *   namespace: 'app',
  *   key: 'theme',
  *   value: 'dark',
- *   tenantId,
+ *   scopeId,
  *   expectedVersion: theme?.version,
  * });
  * ```
@@ -57,7 +57,7 @@ export type { SettingVisibility, SettingNamespace } from "./domain/constants";
 // Domain - Cache Keys
 // ════════════════════════════════════════════════════════════════════════════
 
-export { settingsKeys, settingCacheKey } from "./domain/keys";
+export { settingsKeys } from "./domain/keys";
 export type { SettingsKeyBuilder } from "./domain/keys";
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -73,3 +73,15 @@ export { getTypedSetting } from "./service/readTyped";
 
 export { patchSetting } from "./service/patch";
 export { patchSettingWithPolicy } from "./service/patchWithPolicy";
+
+// ════════════════════════════════════════════════════════════════════════════
+// Event Handlers (for event-driven decoupling)
+// ════════════════════════════════════════════════════════════════════════════
+
+export { registerSettingsEventHandlers } from "./event-handlers";
+
+// ════════════════════════════════════════════════════════════════════════════
+// Adapters (Port Implementations for Hexagonal Architecture)
+// ════════════════════════════════════════════════════════════════════════════
+
+export { settingsAdapter } from "./adapters";

@@ -2,7 +2,7 @@
  * @unisane/kernel
  *
  * Core infrastructure layer providing:
- * - Context system (AsyncLocalStorage-based request scoping)
+ * - Universal Scope system (AsyncLocalStorage-based request scoping for any platform)
  * - Event system (typed domain events with Zod validation)
  * - Error classes (domain error hierarchy with error catalog)
  * - Observability (pino logger, tracer, metrics)
@@ -15,8 +15,8 @@
  * - Constants
  */
 
-// Context (request-scoped data via AsyncLocalStorage)
-export * from './context';
+// Scope (universal scope system for multi-tenant/user/merchant applications)
+export * from './scope';
 
 // Events (typed domain event system)
 export * from './events';
@@ -60,8 +60,12 @@ export * from './encoding/base64url';
 export * from './encoding/base64urlJson';
 
 // Environment
-export { getEnv } from './env';
+export { getEnv, EnvSchema, validateCriticalEnv, assertCriticalEnv } from './env';
 export type { Env } from './env';
+export { createEnvJsonCache } from './envJson';
+
+// Value Objects (domain primitives)
+export * from './value-objects';
 
 // Utilities
 export * from './utils/crypto';
@@ -70,23 +74,22 @@ export * from './utils/ids';
 export * from './utils/money';
 export * from './utils/currency';
 export * from './utils/time';
-export * from './utils/slug';
-export * from './utils/normalize';
 export * from './utils/dto';
 export * from './utils/csv';
 export * from './utils/ratelimit';
 export * from './utils/jobs';
-export * from './utils/storage';
+
+// Storage provider abstraction
+export * from './storage';
 
 // Metrics - re-export observabilityMetrics as 'metrics' for convenience
-// The full metrics API is available as 'observabilityMetrics' from './observability'
 export { observabilityMetrics as metrics } from './observability';
-
-// Inngest
-export * from './inngest';
 
 // Platform (injectable implementations)
 export * from './platform';
+
+// Ports (hexagonal architecture interfaces)
+export * from './ports';
 
 // Contracts (API schemas)
 export * from './contracts';

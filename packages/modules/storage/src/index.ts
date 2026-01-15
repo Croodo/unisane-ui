@@ -71,3 +71,9 @@ export { cleanupOrphanedUploads, cleanupDeletedFiles } from "./service/cleanup";
 // ════════════════════════════════════════════════════════════════════════════
 
 export { StorageRepo } from "./data/storage.repository";
+
+// ════════════════════════════════════════════════════════════════════════════
+// Event Handlers
+// ════════════════════════════════════════════════════════════════════════════
+
+export { registerStorageEventHandlers } from "./event-handlers";

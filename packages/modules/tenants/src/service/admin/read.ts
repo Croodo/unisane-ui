@@ -2,7 +2,7 @@ import { TenantsRepo } from "../../data/tenants.repository";
 import { getEnrichmentProviders } from "./list";
 
 export type ReadAdminTenantArgs = {
-  tenantId: string;
+  scopeId: string;
 };
 
 // Returns contract DTO shape expected by tenantsContract.adminRead
@@ -21,7 +21,7 @@ export async function readAdminTenant(args: ReadAdminTenantArgs): Promise<{
   lastActivityAt?: string | null;
   subscription?: { status: string | null; quantity: number | null; currentPeriodEnd: string | null } | null;
 } | null> {
-  const t = await TenantsRepo.findById(args.tenantId);
+  const t = await TenantsRepo.findById(args.scopeId);
   if (!t) return null;
 
   const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -30,17 +30,17 @@ export async function readAdminTenant(args: ReadAdminTenantArgs): Promise<{
   const providers = getEnrichmentProviders();
   const [mMap, apiMap, ovMap, invMap, latestSubMap, actMap, whMap, crMap] =
     await Promise.all([
-      providers.getTenantMembershipCounts?.([args.tenantId]) ?? Promise.resolve(new Map()),
-      providers.getTenantApiKeyCounts?.([args.tenantId]) ?? Promise.resolve(new Map()),
-      providers.getTenantOverrideCounts?.([args.tenantId]) ?? Promise.resolve(new Map()),
-      providers.getTenantOpenInvoiceCounts?.([args.tenantId]) ?? Promise.resolve(new Map()),
-      providers.getTenantLatestSubscriptions?.([args.tenantId]) ?? Promise.resolve(new Map()),
-      providers.getTenantLastActivity?.([args.tenantId]) ?? Promise.resolve(new Map()),
-      providers.getTenantFailureCounts?.([args.tenantId], since24h) ?? Promise.resolve(new Map()),
-      providers.getTenantCreditBalances?.([args.tenantId]) ?? Promise.resolve(new Map()),
+      providers.getScopeMembershipCounts?.([args.scopeId]) ?? Promise.resolve(new Map()),
+      providers.getScopeApiKeyCounts?.([args.scopeId]) ?? Promise.resolve(new Map()),
+      providers.getScopeOverrideCounts?.([args.scopeId]) ?? Promise.resolve(new Map()),
+      providers.getScopeOpenInvoiceCounts?.([args.scopeId]) ?? Promise.resolve(new Map()),
+      providers.getScopeLatestSubscriptions?.([args.scopeId]) ?? Promise.resolve(new Map()),
+      providers.getScopeLastActivity?.([args.scopeId]) ?? Promise.resolve(new Map()),
+      providers.getScopeFailureCounts?.([args.scopeId], since24h) ?? Promise.resolve(new Map()),
+      providers.getScopeCreditBalances?.([args.scopeId]) ?? Promise.resolve(new Map()),
     ]);
 
-  const sub = latestSubMap.get(args.tenantId) ?? null;
+  const sub = latestSubMap.get(args.scopeId) ?? null;
   const planId = (sub?.planId as string | null | undefined) || (t.planId as string | null | undefined) || "free";
 
   return {
@@ -48,15 +48,15 @@ export async function readAdminTenant(args: ReadAdminTenantArgs): Promise<{
     slug: String((t as { slug?: string }).slug ?? ""),
     name: String((t as { name?: string }).name ?? ""),
     planId: planId,
-    membersCount: mMap.get(args.tenantId)?.membersCount ?? 0,
-    adminsCount: mMap.get(args.tenantId)?.adminsCount ?? 0,
-    apiKeysCount: apiMap.get(args.tenantId) ?? 0,
-    flagOverridesCount: ovMap.get(args.tenantId) ?? 0,
-    invoicesOpenCount: invMap.get(args.tenantId) ?? 0,
-    webhooksFailed24h: whMap.get(args.tenantId) ?? 0,
-    creditsAvailable: crMap.get(args.tenantId) ?? 0,
-    lastActivityAt: (actMap.get(args.tenantId) ?? null)
-      ? new Date(actMap.get(args.tenantId) as Date).toISOString()
+    membersCount: mMap.get(args.scopeId)?.membersCount ?? 0,
+    adminsCount: mMap.get(args.scopeId)?.adminsCount ?? 0,
+    apiKeysCount: apiMap.get(args.scopeId) ?? 0,
+    flagOverridesCount: ovMap.get(args.scopeId) ?? 0,
+    invoicesOpenCount: invMap.get(args.scopeId) ?? 0,
+    webhooksFailed24h: whMap.get(args.scopeId) ?? 0,
+    creditsAvailable: crMap.get(args.scopeId) ?? 0,
+    lastActivityAt: (actMap.get(args.scopeId) ?? null)
+      ? new Date(actMap.get(args.scopeId) as Date).toISOString()
       : null,
     subscription: sub
       ? {

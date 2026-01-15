@@ -1,10 +1,6 @@
-import { kv } from '@unisane/kernel';
-import { KV } from '@unisane/kernel';
+import { kv, KV, isWebhookProvider, logger, emitTyped } from '@unisane/kernel';
 import { WebhooksRepo } from '../data/webhooks.repository';
 import { handleStripeEvent, handleRazorpayEvent } from '../inbound';
-import { isWebhookProvider } from '@unisane/kernel';
-import { addSuppression } from '@unisane/notify';
-import { logger } from '@unisane/kernel';
 
 export async function recordInboundEvent(args: {
   provider: string;
@@ -39,7 +35,7 @@ export async function recordInboundEvent(args: {
       throw new Error(`Unknown webhook provider: ${args.provider}`);
     }
     await WebhooksRepo.recordInbound({
-      tenantId: null,
+      scopeId: null,
       provider: args.provider,
       eventId,
       status: (args.verified ? 'verified' : 'received'),
@@ -62,7 +58,14 @@ export async function recordInboundEvent(args: {
         if (/bounced|complained/i.test(type)) {
           const data = (p.data ?? {}) as Record<string, unknown>;
           const email = (typeof data.email === 'string' ? data.email : typeof data.to === 'string' ? data.to : null);
-          if (email) await addSuppression({ email, reason: type, provider: 'resend', tenantId: null });
+          if (email) {
+            await emitTyped('notify.email_suppression_requested', {
+              email,
+              reason: type,
+              provider: 'resend',
+              scopeId: null,
+            }, 'webhooks');
+          }
         }
       }
     } else if (args.provider === 'ses') {
@@ -83,7 +86,12 @@ export async function recordInboundEvent(args: {
             const recipientsArr: SesRecipient[] = m.bounce?.bouncedRecipients ?? m.complaint?.complainedRecipients ?? [];
             const recipients = recipientsArr.map((r) => r.emailAddress).filter((e): e is string => typeof e === 'string');
             for (const email of recipients) {
-              await addSuppression({ email, reason: nt, provider: 'ses', tenantId: null });
+              await emitTyped('notify.email_suppression_requested', {
+                email,
+                reason: nt,
+                provider: 'ses',
+                scopeId: null,
+              }, 'webhooks');
             }
           }
         } catch (err) {

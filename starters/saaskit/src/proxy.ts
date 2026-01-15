@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { HEADER_NAMES } from '@/src/shared/constants/headers';
-import { getEnv } from '@/src/shared/env';
-import { checkRateLimit } from '@unisane/kernel';
+import { HEADER_NAMES, getEnv, checkRateLimit } from '@unisane/kernel';
 
 /**
  * Next.js 16+ proxy handler (replaces middleware.ts).

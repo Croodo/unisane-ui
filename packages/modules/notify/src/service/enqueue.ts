@@ -11,6 +11,6 @@ export async function enqueueEmail(args: EnqueueEmailArgs) {
     props: args.body.props ?? {},
     ...(args.body.locale ? { locale: args.body.locale } : {}),
   };
-  const res = await OutboxService.enqueue({ tenantId: args.tenantId, kind: 'email', payload });
+  const res = await OutboxService.enqueue({ scopeId: args.scopeId, kind: 'email', payload });
   return { id: res.id } as const;
 }

@@ -4,6 +4,6 @@ import { WebhooksRepoMongo } from './webhooks.repository.mongo';
 
 export const WebhooksRepo = selectRepo<WebhooksRepoPort>({ mongo: WebhooksRepoMongo });
 
-export async function countOutboundFailuresSince(tenantIds: string[], since: Date): Promise<Map<string, number>> {
-  return WebhooksRepo.countOutboundFailuresSince(tenantIds, since);
+export async function countOutboundFailuresSince(scopeIds: string[], since: Date): Promise<Map<string, number>> {
+  return WebhooksRepo.countOutboundFailuresSince(scopeIds, since);
 }

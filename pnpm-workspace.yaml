@@ -5,6 +5,9 @@ packages:
   # Core infrastructure
   - "packages/foundation/*"
 
+  # Adapters (pluggable implementations)
+  - "packages/adapters/*"
+
   # Shared business modules
   - "packages/modules/*"
 

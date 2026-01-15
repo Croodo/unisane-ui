@@ -30,6 +30,11 @@
  */
 
 import { logger } from '../observability/logger';
+import {
+  recordCircuitState,
+  recordResilienceFailure,
+  recordResilienceSuccess,
+} from './metrics';
 
 /**
  * Circuit breaker states.
@@ -127,11 +132,12 @@ export class CircuitBreaker {
    * Execute a function through the circuit breaker.
    *
    * @param fn - Async function to execute
+   * @param operation - Optional operation name for metrics (default: 'execute')
    * @returns The function result if successful
    * @throws CircuitOpenError if circuit is open
    * @throws Original error if function fails
    */
-  async execute<T>(fn: () => Promise<T>): Promise<T> {
+  async execute<T>(fn: () => Promise<T>, operation = 'execute'): Promise<T> {
     // Check if circuit is open
     if (this.state === 'OPEN') {
       throw new CircuitOpenError(
@@ -140,13 +146,15 @@ export class CircuitBreaker {
       );
     }
 
+    const startTime = Date.now();
     try {
       // Execute with timeout
       const result = await this.executeWithTimeout(fn);
-      this.onSuccess();
+      const durationMs = Date.now() - startTime;
+      this.onSuccess(operation, durationMs);
       return result;
     } catch (error) {
-      this.onFailure(error);
+      this.onFailure(error, operation);
       throw error;
     }
   }
@@ -169,9 +177,12 @@ export class CircuitBreaker {
   /**
    * Handle successful execution.
    */
-  private onSuccess(): void {
+  private onSuccess(operation: string, durationMs: number): void {
     this.lastSuccess = new Date();
     this.successes++;
+
+    // Record success metrics
+    recordResilienceSuccess(this.name, operation, durationMs);
 
     if (this.state === 'HALF_OPEN') {
       if (this.successes >= this.successThreshold) {
@@ -186,9 +197,12 @@ export class CircuitBreaker {
   /**
    * Handle failed execution.
    */
-  private onFailure(error: unknown): void {
+  private onFailure(error: unknown, operation: string): void {
     this.lastFailure = new Date();
     this.failures++;
+
+    // Record failure metrics
+    recordResilienceFailure(this.name, operation);
 
     logger.warn(`Circuit '${this.name}' failure #${this.failures}`, {
       circuit: this.name,
@@ -215,6 +229,9 @@ export class CircuitBreaker {
     this.openedAt = new Date();
     this.successes = 0;
 
+    // Record state change metrics
+    recordCircuitState(this.name, 'OPEN');
+
     logger.warn(`Circuit '${this.name}' opened`, {
       circuit: this.name,
       failures: this.failures,
@@ -237,6 +254,9 @@ export class CircuitBreaker {
     this.closedAt = new Date();
     this.failures = 0;
     this.successes = 0;
+
+    // Record state change metrics
+    recordCircuitState(this.name, 'CLOSED');
 
     logger.info(`Circuit '${this.name}' closed`, { circuit: this.name });
 
@@ -269,6 +289,9 @@ export class CircuitBreaker {
 
     this.state = 'HALF_OPEN';
     this.successes = 0;
+
+    // Record state change metrics
+    recordCircuitState(this.name, 'HALF_OPEN');
 
     logger.info(`Circuit '${this.name}' half-open`, { circuit: this.name });
 
@@ -303,6 +326,11 @@ export class CircuitBreaker {
    * Use with caution - for testing or manual recovery.
    */
   reset(): void {
+    // Clear any pending timer first (defensive - close() also clears, but be explicit)
+    if (this.resetTimer) {
+      clearTimeout(this.resetTimer);
+      this.resetTimer = undefined;
+    }
     this.close();
     this.failures = 0;
     this.successes = 0;
@@ -329,6 +357,12 @@ const circuits = new Map<string, CircuitBreaker>();
 
 /**
  * Get or create a circuit breaker by name.
+ *
+ * Circuit breakers are stored in a global registry by name, which means the same
+ * circuit breaker instance is returned for the same name. This is intentional for
+ * tracking failures across multiple calls.
+ *
+ * @note In tests, call `resetAllCircuitBreakers()` in `beforeEach` to ensure test isolation.
  *
  * @example
  * ```typescript

@@ -6,7 +6,7 @@ import type {
 export interface InappRepoPort {
   /** List notifications with cursor-based pagination */
   listInappPage(args: {
-    tenantId: string;
+    scopeId: string;
     userId: string;
     limit: number;
     cursor?: string;
@@ -14,30 +14,30 @@ export interface InappRepoPort {
 
   /** Get receipts for multiple notifications */
   listReceiptsMap(
-    tenantId: string,
+    scopeId: string,
     userId: string,
     notificationIds: string[]
   ): Promise<Map<string, InappReceiptView>>;
 
   /** Mark notification as read */
-  upsertRead(tenantId: string, userId: string, id: string): Promise<void>;
+  upsertRead(scopeId: string, userId: string, id: string): Promise<void>;
 
   /** Get latest notification ID for user */
   latestNotificationId(
-    tenantId: string,
+    scopeId: string,
     userId: string
   ): Promise<string | null>;
 
   /** Mark all notifications up to cutoff as seen */
   upsertSeenUntil(
-    tenantId: string,
+    scopeId: string,
     userId: string,
     cutoffId: string
   ): Promise<void>;
 
   /** Create a new in-app notification */
   createInapp(args: {
-    tenantId: string;
+    scopeId: string;
     userId: string;
     category?: string | null;
     title: string;
@@ -52,24 +52,24 @@ export interface InappRepoPort {
 
   /** Ensure receipt exists for notification */
   ensureReceipt(
-    tenantId: string,
+    scopeId: string,
     userId: string,
     notificationId: string
   ): Promise<void>;
 
   /** Count unread notifications for user */
-  countUnread(tenantId: string, userId: string): Promise<number>;
+  countUnread(scopeId: string, userId: string): Promise<number>;
 
   /** Delete a notification */
   deleteNotification(
-    tenantId: string,
+    scopeId: string,
     userId: string,
     notificationId: string
   ): Promise<{ deleted: boolean }>;
 
   /** Delete all notifications for user */
   deleteAllNotifications(
-    tenantId: string,
+    scopeId: string,
     userId: string
   ): Promise<{ count: number }>;
 }
@@ -79,7 +79,7 @@ export interface EmailSuppressionRepoPort {
     email: string;
     reason: string;
     provider?: string | null;
-    tenantId?: string | null;
+    scopeId?: string | null;
   }): Promise<void>;
-  isSuppressed(email: string, tenantId?: string | null): Promise<boolean>;
+  isSuppressed(email: string, scopeId?: string | null): Promise<boolean>;
 }

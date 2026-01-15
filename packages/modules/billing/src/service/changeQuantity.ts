@@ -4,7 +4,7 @@ import { getBillingMode } from "./mode";
 import { ERR } from "@unisane/gateway";
 
 export async function changeQuantity(args: {
-  tenantId: string;
+  scopeId: string;
   quantity: number;
 }) {
   const mode = await getBillingMode();
@@ -15,10 +15,10 @@ export async function changeQuantity(args: {
     throw ERR.validation("Subscription quantity changes are disabled for this deployment.");
   }
   const q = Math.max(1, Math.trunc(args.quantity));
-  const providerSubId = await SubscriptionsRepository.getLatestProviderSubId(args.tenantId);
+  const providerSubId = await SubscriptionsRepository.getLatestProviderSubId(args.scopeId);
   if (!providerSubId) return { ok: false as const, error: 'NO_SUBSCRIPTION' };
   const provider = getBillingProvider();
-  await provider.updateSubscriptionQuantity({ tenantId: args.tenantId, providerSubId, quantity: q });
-  await SubscriptionsRepository.setQuantity(args.tenantId, q);
+  await provider.updateSubscriptionQuantity({ scopeId: args.scopeId, providerSubId, quantity: q });
+  await SubscriptionsRepository.setQuantity(args.scopeId, q);
   return { ok: true as const };
 }

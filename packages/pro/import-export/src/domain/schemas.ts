@@ -23,3 +23,6 @@ export const ZExportStart = z.object({
   format: ZExportFormat.default('json'),
   filter: z.record(z.string(), z.unknown()).optional(),
 });
+export const ZExportStatusQuery = z.object({
+  jobId: z.string().min(1),
+});

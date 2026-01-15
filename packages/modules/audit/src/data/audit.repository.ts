@@ -6,7 +6,7 @@ import type { AuditLogView } from "../domain/types";
 const repo = selectRepo<AuditRepoPort>({ mongo: AuditRepoMongo });
 
 export async function listPage(args: {
-  tenantId: string;
+  scopeId: string;
   limit: number;
   cursor?: string;
 }) {
@@ -17,15 +17,15 @@ export async function listPage(args: {
   }>;
 }
 
-export async function getTenantLastActivity(tenantIds: string[]) {
-  return repo.getTenantLastActivity(tenantIds);
+export async function getScopeLastActivity(scopeIds: string[]) {
+  return repo.getScopeLastActivity(scopeIds);
 }
 
-/** Admin list - all audit logs, optionally filtered by tenantId */
+/** Admin list - all audit logs, optionally filtered by scopeId */
 export async function listPageAdmin(args: {
   limit: number;
   cursor?: string;
-  tenantId?: string;
+  scopeId?: string;
 }) {
   return repo.listPageAdmin(args) as Promise<{
     rows: AuditLogView[];
@@ -35,7 +35,7 @@ export async function listPageAdmin(args: {
 }
 
 export async function append(args: {
-  tenantId: string;
+  scopeId: string;
   actorId?: string;
   action: string;
   resourceType: string;

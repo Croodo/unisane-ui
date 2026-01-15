@@ -11,7 +11,7 @@ import { sha256Hex } from '@unisane/kernel';
 import { readApiKeyToken, readBearerToken, tenantIdFromUrl, readBearerFromCookie } from '../request';
 import { logger, withRequest } from '../logger';
 import { HEADER_NAMES } from '../headers';
-import { kv, getEnv, ALL_PERMISSIONS } from '@unisane/kernel';
+import { kv, getEnv, ALL_PERMISSIONS, KV } from '@unisane/kernel';
 import { ERR } from '../errors/errors';
 
 // --- Auth Context Types ---
@@ -31,7 +31,7 @@ export interface AuthCtx {
 
 export interface ApiKeyRecord {
   id: string;
-  tenantId: string;
+  scopeId: string;
   scopes: string[];
   // Optional: include revocation timestamp for cache validation
   revokedAt?: Date | null;
@@ -101,7 +101,7 @@ function logAuthEvent(
 
 interface CachedApiKey {
   id: string;
-  tenantId: string;
+  scopeId: string;
   scopes: string[];
   cachedAt: number;
   // null means "key not found" - we cache negative lookups too
@@ -120,7 +120,7 @@ function isValidCachedApiKey(value: unknown): value is CachedApiKey {
   // Valid key must have required fields
   return (
     typeof obj.id === 'string' &&
-    typeof obj.tenantId === 'string' &&
+    typeof obj.scopeId === 'string' &&
     Array.isArray(obj.scopes) &&
     obj.scopes.every((s: unknown) => typeof s === 'string') &&
     typeof obj.cachedAt === 'number'
@@ -227,7 +227,7 @@ const API_KEY_NOT_FOUND_CACHE_TTL_MS = 30_000;
 
 async function cacheApiKeyLookup(hash: string): Promise<ApiKeyRecord | null> {
   const repos = getRepos();
-  const cacheKey = `ak:${hash}`;
+  const cacheKey = `${KV.AK}${hash}`;
 
   // Try to get from cache
   const cached = await kv.get(cacheKey);
@@ -244,7 +244,7 @@ async function cacheApiKeyLookup(hash: string): Promise<ApiKeyRecord | null> {
       if (age < API_KEY_CACHE_TTL_MS * 2) {
         return {
           id: parsed.id,
-          tenantId: parsed.tenantId,
+          scopeId: parsed.scopeId,
           scopes: parsed.scopes,
         };
       }
@@ -260,13 +260,13 @@ async function cacheApiKeyLookup(hash: string): Promise<ApiKeyRecord | null> {
   const cacheEntry: CachedApiKey = row
     ? {
         id: row.id,
-        tenantId: row.tenantId,
+        scopeId: row.scopeId,
         scopes: row.scopes,
         cachedAt: Date.now(),
       }
     : {
         id: '',
-        tenantId: '',
+        scopeId: '',
         scopes: [],
         cachedAt: Date.now(),
         notFound: true,
@@ -280,7 +280,7 @@ async function cacheApiKeyLookup(hash: string): Promise<ApiKeyRecord | null> {
 
 // Invalidate API key cache (call when key is revoked/deleted)
 export async function invalidateApiKeyCache(hash: string): Promise<void> {
-  const cacheKey = `ak:${hash}`;
+  const cacheKey = `${KV.AK}${hash}`;
   await kv.del(cacheKey);
 }
 
@@ -310,13 +310,13 @@ export async function getAuthCtx(req: Request): Promise<AuthCtx> {
       if (key) {
         logAuthEvent('info', 'api key auth success', {
           auth_strategy: 'api_key',
-          tenantId: key.tenantId,
+          scopeId: key.scopeId,
           apiKeyId: key.id
         });
         return {
           isAuthed: true,
           apiKeyId: String(key.id),
-          tenantId: key.tenantId,
+          tenantId: key.scopeId, // Map scopeId to tenantId for AuthCtx compatibility
           perms: (key.scopes ?? []) as Permission[],
         };
       }
@@ -340,8 +340,11 @@ export async function getAuthCtx(req: Request): Promise<AuthCtx> {
   if (cookieCtx) return cookieCtx;
 
   // 4) Dev-only fallback
+  // Only allow dev auth headers in explicit development environments (dev, test)
+  // This prevents accidental dev auth in staging or production environments
   const { APP_ENV } = getEnv();
-  if (APP_ENV === 'prod') {
+  const allowDevAuth = APP_ENV === 'dev' || APP_ENV === 'test';
+  if (!allowDevAuth) {
     return { isAuthed: false };
   }
 
@@ -372,6 +375,18 @@ export async function getAuthCtx(req: Request): Promise<AuthCtx> {
     .split(',')
     .map((p) => p.trim())
     .filter(Boolean) as Permission[];
+
+  // Log warning when dev auth headers are used
+  const hasDevHeaders = tenantId || userIdHeader || role || platformOwnerHeader || perms.length > 0;
+  if (hasDevHeaders) {
+    logAuthEvent('warn', 'dev auth headers used - not for production', {
+      tenantId,
+      userId: userIdHeader,
+      role,
+      hasPlatformOwner: !!platformOwnerHeader,
+      permCount: perms.length,
+    });
+  }
 
   const isAuthed = Boolean(readBearerToken(req.headers) || readApiKeyToken(req.headers));
   const ctx: AuthCtx = {

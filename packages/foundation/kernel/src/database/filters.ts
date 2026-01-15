@@ -65,9 +65,3 @@ export function softDeleteFilter(): {
   };
 }
 
-/**
- * @deprecated Use softDeleteFilter() function instead for MongoDB compatibility
- */
-export const SOFT_DELETE_FILTER = {
-  $or: [{ deletedAt: null }, { deletedAt: { $exists: false } }],
-} as const;

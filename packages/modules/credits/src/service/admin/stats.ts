@@ -1,5 +1,5 @@
-import { getBalancesByTenantIds } from "../../data/credits.repository";
+import { getBalancesByScopeIds } from "../../data/credits.repository";
 
-export async function getTenantCreditBalances(tenantIds: string[]) {
-  return getBalancesByTenantIds(tenantIds);
+export async function getScopeCreditBalances(scopeIds: string[]) {
+  return getBalancesByScopeIds(scopeIds);
 }

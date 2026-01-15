@@ -86,7 +86,7 @@ export const importExportContract = c.router({
     service: {
       importPath: '@unisane/import-export',
       fn: 'getExportStatus',
-      zodQuery: { importPath: 'zod', name: "z.object({ jobId: z.string().min(1) })" },
+      zodQuery: { importPath: '@unisane/import-export', name: 'ZExportStatusQuery' },
       invoke: 'object',
       callArgs: [ { name: 'tenantId', from: 'params', key: 'tenantId' }, { name: 'jobId', from: 'query', key: 'jobId' } ],
       requireTenantMatch: true,

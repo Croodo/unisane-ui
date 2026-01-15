@@ -30,12 +30,12 @@ export function hourLabel(d: Date) {
 // ════════════════════════════════════════════════════════════════════════════
 
 export const usageKeys = {
-  metric: (tenantId: string, metric: string, window: string) =>
-    `usage:${tenantId}:${metric}:${window}` as const,
-  tenantUsage: (tenantId: string) => `usage:tenant:${tenantId}` as const,
+  metric: (scopeId: string, metric: string, window: string) =>
+    `usage:${scopeId}:${metric}:${window}` as const,
+  scopeUsage: (scopeId: string) => `usage:scope:${scopeId}` as const,
   /** Minute-level usage counter key */
-  minute: (tenantId: string, feature: string, d: Date) =>
-    `${KV.USAGE}${tenantId}:${feature}:${minuteLabel(d)}` as const,
+  minute: (scopeId: string, feature: string, d: Date) =>
+    `${KV.USAGE}${scopeId}:${feature}:${minuteLabel(d)}` as const,
   /** Idempotency key for usage deduplication */
   idem: (idem: string) => `u_idem:${idem}` as const,
   /** Pattern for scanning all minutes in an hour */
@@ -44,22 +44,3 @@ export const usageKeys = {
 } as const;
 
 export type UsageKeyBuilder = typeof usageKeys;
-
-// ════════════════════════════════════════════════════════════════════════════
-// Legacy Exports (for backwards compatibility)
-// ════════════════════════════════════════════════════════════════════════════
-
-/** @deprecated Use usageKeys.minute() instead */
-export function usageMinuteKey(tenantId: string, feature: string, d: Date) {
-  return usageKeys.minute(tenantId, feature, d);
-}
-
-/** @deprecated Use usageKeys.idem() instead */
-export function usageIdemKey(idem: string) {
-  return usageKeys.idem(idem);
-}
-
-/** @deprecated Use usageKeys.hourScanPattern() instead */
-export function usageHourScanPattern(label: string) {
-  return usageKeys.hourScanPattern(label);
-}

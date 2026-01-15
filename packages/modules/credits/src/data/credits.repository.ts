@@ -5,31 +5,31 @@ import type { LedgerEntry } from '../domain/types';
 
 const repo = selectRepo<CreditsRepoPort>({ mongo: CreditsRepoMongo });
 
-export async function findByIdem(tenantId: string, idemKey: string): Promise<LedgerEntry | null> {
-  return repo.findByIdem(tenantId, idemKey);
+export async function findByIdem(scopeId: string, idemKey: string): Promise<LedgerEntry | null> {
+  return repo.findByIdem(scopeId, idemKey);
 }
 
-export async function insertGrant(args: { tenantId: string; amount: number; reason: string; idemKey: string; expiresAt?: Date | null }): Promise<{ id: string }> {
+export async function insertGrant(args: { scopeId: string; amount: number; reason: string; idemKey: string; expiresAt?: Date | null }): Promise<{ id: string }> {
   return repo.insertGrant(args);
 }
 
-export async function insertBurn(args: { tenantId: string; amount: number; feature: string; reason?: string; idemKey: string }): Promise<{ id: string }> {
+export async function insertBurn(args: { scopeId: string; amount: number; feature: string; reason?: string; idemKey: string }): Promise<{ id: string }> {
   return repo.insertBurn(args);
 }
 
-export async function totalsAvailable(tenantId: string, now = new Date()): Promise<{ grants: number; burns: number; available: number }> {
-  return repo.totalsAvailable(tenantId, now);
+export async function totalsAvailable(scopeId: string, now = new Date()): Promise<{ grants: number; burns: number; available: number }> {
+  return repo.totalsAvailable(scopeId, now);
 }
 
-export async function getBalancesByTenantIds(tenantIds: string[], now = new Date()): Promise<Map<string, number>> {
-  return repo.getBalancesByTenantIds(tenantIds, now);
+export async function getBalancesByScopeIds(scopeIds: string[], now = new Date()): Promise<Map<string, number>> {
+  return repo.getBalancesByScopeIds(scopeIds, now);
 }
 
 export async function totalsGrantsByReason(
-  tenantId: string,
+  scopeId: string,
   now = new Date()
 ): Promise<{ subscriptionGrants: number; topupGrants: number; otherGrants: number }> {
-  return repo.totalsGrantsByReason(tenantId, now);
+  return repo.totalsGrantsByReason(scopeId, now);
 }
 
 /**
@@ -37,7 +37,7 @@ export async function totalsGrantsByReason(
  * Uses $facet to avoid two separate collection scans.
  */
 export async function totalsWithBreakdown(
-  tenantId: string,
+  scopeId: string,
   now = new Date()
 ): Promise<{
   grants: number;
@@ -47,9 +47,9 @@ export async function totalsWithBreakdown(
   topupGrants: number;
   otherGrants: number;
 }> {
-  return repo.totalsWithBreakdown(tenantId, now);
+  return repo.totalsWithBreakdown(scopeId, now);
 }
 
-export async function listLedgerPage(args: { tenantId: string; limit: number; cursor?: string }): Promise<{ rows: LedgerEntry[]; nextCursor?: string }>{
+export async function listLedgerPage(args: { scopeId: string; limit: number; cursor?: string }): Promise<{ rows: LedgerEntry[]; nextCursor?: string }>{
   return repo.listLedgerPage(args);
 }

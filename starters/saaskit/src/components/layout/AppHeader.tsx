@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useSession } from '@/src/hooks/useSession';
+import { useSession } from '@/src/hooks/use-session';
 import { Avatar } from '@unisane/ui/components/avatar';
 import {
   DropdownMenu,
@@ -63,7 +63,7 @@ export function AppHeader() {
               <DropdownMenuContent align="end">
                 <div className="px-2 py-1.5 text-sm font-semibold">Account</div>
                 <DropdownMenuItem asChild>
-                  <Link href={me.tenantSlug ? `/w/${me.tenantSlug}/dashboard` : me.tenantId ? '/workspaces' : '/welcome'}>Open workspace</Link>
+                  <Link href={me.tenantSlug ? `/w/${me.tenantSlug}/dashboard` : me.scopeId ? '/workspaces' : '/welcome'}>Open workspace</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/workspaces">Switch workspace</Link>

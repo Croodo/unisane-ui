@@ -1,15 +1,20 @@
-import { col } from "@unisane/kernel";
+import {
+  col,
+  COLLECTIONS,
+  seekPageMongoCollection,
+  softDeleteFilter,
+  type Document,
+  type Filter,
+  type WithId,
+} from "@unisane/kernel";
 import type { InappRepoPort } from "../domain/ports";
 import type {
   InappNotificationView,
   InappReceiptView,
 } from "../domain/types";
-import type { Document, Filter, WithId } from "mongodb";
-import { seekPageMongoCollection } from "@unisane/kernel";
-import { softDeleteFilter } from "@unisane/kernel";
 
 type InappNotificationDoc = {
-  tenantId: string;
+  scopeId: string;
   userId: string;
   category?: string | null;
   title: string;
@@ -21,7 +26,7 @@ type InappNotificationDoc = {
 
 type InappReceiptDoc = {
   _id?: unknown;
-  tenantId: string;
+  scopeId: string;
   userId: string;
   notificationId: string;
   readAt?: Date | null;
@@ -31,8 +36,8 @@ type InappReceiptDoc = {
   updatedAt?: Date;
 };
 
-const notifCol = () => col<InappNotificationDoc>("inapp_notifications");
-const recCol = () => col<InappReceiptDoc>("inapp_receipts");
+const notifCol = () => col<InappNotificationDoc>(COLLECTIONS.INAPP_NOTIFICATIONS);
+const recCol = () => col<InappReceiptDoc>(COLLECTIONS.INAPP_RECEIPTS);
 
 export const InappRepoMongo: InappRepoPort = {
   async listInappPage(args) {
@@ -54,7 +59,7 @@ export const InappRepoMongo: InappRepoPort = {
     >({
       collection: notifCol(),
       baseFilter: {
-        tenantId: args.tenantId,
+        scopeId: args.scopeId,
         userId: args.userId,
         ...softDeleteFilter(),
       } as Filter<InappNotificationDoc>,
@@ -85,11 +90,11 @@ export const InappRepoMongo: InappRepoPort = {
       ...(prevCursor ? { prevCursor } : {}),
     };
   },
-  async listReceiptsMap(tenantId, userId, notificationIds) {
+  async listReceiptsMap(scopeId, userId, notificationIds) {
     if (!notificationIds.length) return new Map<string, InappReceiptView>();
     const receipts = (await recCol()
       .find({
-        tenantId,
+        scopeId,
         userId,
         notificationId: { $in: notificationIds },
         ...softDeleteFilter(),
@@ -103,9 +108,9 @@ export const InappRepoMongo: InappRepoPort = {
     }
     return out;
   },
-  async upsertRead(tenantId, userId, id) {
+  async upsertRead(scopeId, userId, id) {
     await recCol().updateOne(
-      { tenantId, userId, notificationId: id } as Document,
+      { scopeId, userId, notificationId: id } as Document,
       {
         $set: { readAt: new Date(), seenAt: new Date(), updatedAt: new Date() },
         $setOnInsert: { createdAt: new Date() },
@@ -113,10 +118,10 @@ export const InappRepoMongo: InappRepoPort = {
       { upsert: true }
     );
   },
-  async latestNotificationId(tenantId, userId) {
+  async latestNotificationId(scopeId, userId) {
     const latest = await notifCol()
       .find({
-        tenantId,
+        scopeId,
         userId,
         ...softDeleteFilter(),
       } as Document)
@@ -127,11 +132,11 @@ export const InappRepoMongo: InappRepoPort = {
       ? String((latest[0] as { _id?: unknown })._id ?? "")
       : null;
   },
-  async upsertSeenUntil(tenantId, userId, cutoffId) {
+  async upsertSeenUntil(scopeId, userId, cutoffId) {
     // Fetch all notification IDs in a single query
     const notifIds = await notifCol()
       .find({
-        tenantId,
+        scopeId,
         userId,
         _id: { $lte: cutoffId },
         ...softDeleteFilter(),
@@ -146,7 +151,7 @@ export const InappRepoMongo: InappRepoPort = {
     const now = new Date();
     const bulkOps = notifIds.map((notificationId) => ({
       updateOne: {
-        filter: { tenantId, userId, notificationId },
+        filter: { scopeId, userId, notificationId },
         update: {
           $setOnInsert: { seenAt: now, createdAt: now },
         },
@@ -159,7 +164,7 @@ export const InappRepoMongo: InappRepoPort = {
   async createInapp(args) {
     const now = new Date();
     const n: InappNotificationDoc = {
-      tenantId: args.tenantId,
+      scopeId: args.scopeId,
       userId: args.userId,
       category: args.category ?? "system",
       title: args.title,
@@ -175,12 +180,12 @@ export const InappRepoMongo: InappRepoPort = {
       body: n.body,
     };
   },
-  async ensureReceipt(tenantId, userId, notificationId) {
+  async ensureReceipt(scopeId, userId, notificationId) {
     await recCol().updateOne(
-      { tenantId, userId, notificationId } as Document,
+      { scopeId, userId, notificationId } as Document,
       {
         $setOnInsert: {
-          tenantId,
+          scopeId,
           userId,
           notificationId,
           createdAt: new Date(),
@@ -190,11 +195,11 @@ export const InappRepoMongo: InappRepoPort = {
     );
   },
 
-  async countUnread(tenantId, userId) {
+  async countUnread(scopeId, userId) {
     // Get all notification IDs for user
     const notifs = await notifCol()
       .find({
-        tenantId,
+        scopeId,
         userId,
         ...softDeleteFilter(),
       } as Document)
@@ -208,7 +213,7 @@ export const InappRepoMongo: InappRepoPort = {
     // Get receipts where readAt is set
     const readReceipts = await recCol()
       .find({
-        tenantId,
+        scopeId,
         userId,
         notificationId: { $in: notifIds },
         readAt: { $ne: null },
@@ -222,12 +227,12 @@ export const InappRepoMongo: InappRepoPort = {
     return unreadCount;
   },
 
-  async deleteNotification(tenantId, userId, notificationId) {
+  async deleteNotification(scopeId, userId, notificationId) {
     // Soft delete - set deletedAt
     const result = await notifCol().updateOne(
       {
         _id: notificationId,
-        tenantId,
+        scopeId,
         userId,
         ...softDeleteFilter(),
       } as Document,
@@ -236,11 +241,11 @@ export const InappRepoMongo: InappRepoPort = {
     return { deleted: result.modifiedCount > 0 };
   },
 
-  async deleteAllNotifications(tenantId, userId) {
+  async deleteAllNotifications(scopeId, userId) {
     // Soft delete all - set deletedAt
     const result = await notifCol().updateMany(
       {
-        tenantId,
+        scopeId,
         userId,
         ...softDeleteFilter(),
       } as Document,

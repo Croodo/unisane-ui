@@ -351,3 +351,17 @@ export function createHttpHealthCheck(
     }
   };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Health Monitoring
+// ─────────────────────────────────────────────────────────────────────────────
+
+export {
+  HealthMonitor,
+  getHealthMonitor,
+  startHealthMonitor,
+  stopHealthMonitor,
+  type HealthMonitorOptions,
+  type HealthHistoryEntry,
+  type HealthStats,
+} from './monitoring';

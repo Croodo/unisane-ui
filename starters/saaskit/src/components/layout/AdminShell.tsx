@@ -22,7 +22,7 @@ import { IconButton } from "@unisane/ui/components/icon-button";
 import { RailUserMenu } from "@/src/components/layout/RailUserMenu";
 import { PageHeader } from "@/src/components/layout/PageHeader";
 import { NavigationProgress } from "@/src/context/useNavigationProgress";
-import { useSession } from "@/src/hooks/useSession";
+import { useSession } from "@/src/hooks/use-session";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types

@@ -5,7 +5,7 @@ import { getBillingMode } from "./mode";
 import { ERR } from "@unisane/gateway";
 
 export async function subscribe(args: {
-  tenantId: string;
+  scopeId: string;
   planId: string;
   quantity?: number;
   successUrl: string;

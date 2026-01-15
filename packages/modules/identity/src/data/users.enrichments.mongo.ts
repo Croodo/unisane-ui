@@ -8,11 +8,11 @@ import { col, COLLECTIONS, softDeleteFilter } from "@unisane/kernel";
 
 /**
  * Get membership counts for a single user.
- * Returns total tenants count and admin tenants count.
+ * Returns total scopes count and admin scopes count.
  */
 export async function getMembershipsCount(
   userId: string
-): Promise<{ tenantsCount: number; adminTenantsCount: number }> {
+): Promise<{ scopesCount: number; adminScopesCount: number }> {
   const rows = (await col(COLLECTIONS.MEMBERSHIPS)
     .aggregate([
       {
@@ -23,7 +23,7 @@ export async function getMembershipsCount(
       },
       {
         $project: {
-          tenantId: 1,
+          scopeId: "$tenantId",
           isAdmin: {
             $gt: [
               {
@@ -43,17 +43,17 @@ export async function getMembershipsCount(
       {
         $group: {
           _id: null,
-          tenantsCount: { $sum: 1 },
-          adminTenantsCount: { $sum: { $cond: ["$isAdmin", 1, 0] } },
+          scopesCount: { $sum: 1 },
+          adminScopesCount: { $sum: { $cond: ["$isAdmin", 1, 0] } },
         },
       },
     ])
-    .toArray()) as Array<{ tenantsCount: number; adminTenantsCount: number }>;
+    .toArray()) as Array<{ scopesCount: number; adminScopesCount: number }>;
 
   const first = rows[0];
   return {
-    tenantsCount: first?.tenantsCount ?? 0,
-    adminTenantsCount: first?.adminTenantsCount ?? 0,
+    scopesCount: first?.scopesCount ?? 0,
+    adminScopesCount: first?.adminScopesCount ?? 0,
   };
 }
 
@@ -91,23 +91,23 @@ export async function getLastActivity(userId: string): Promise<Date | null> {
 }
 
 /**
- * Get membership counts for multiple tenants in a single query.
- * Used for admin tenant list enrichment.
+ * Get membership counts for multiple scopes in a single query.
+ * Used for admin scope list enrichment.
  */
-export async function getTenantMembershipCounts(
-  tenantIds: string[]
+export async function getScopeMembershipCounts(
+  scopeIds: string[]
 ): Promise<Map<string, { membersCount: number; adminsCount: number }>> {
   const rows = (await col(COLLECTIONS.MEMBERSHIPS)
     .aggregate([
       {
         $match: {
-          tenantId: { $in: tenantIds },
+          scopeId: { $in: scopeIds },
           ...softDeleteFilter(),
         },
       },
       {
         $project: {
-          tenantId: 1,
+          scopeId: "$scopeId",
           isAdmin: {
             $gt: [
               {
@@ -126,7 +126,7 @@ export async function getTenantMembershipCounts(
       },
       {
         $group: {
-          _id: "$tenantId",
+          _id: "$scopeId",
           membersCount: { $sum: 1 },
           adminsCount: { $sum: { $cond: ["$isAdmin", 1, 0] } },
         },
@@ -149,21 +149,22 @@ export async function getTenantMembershipCounts(
 }
 
 /**
- * Get API key counts for multiple tenants in a single query.
- * Used for admin tenant list enrichment.
+ * Get API key counts for multiple scopes in a single query.
+ * Used for admin scope list enrichment.
  */
-export async function getTenantApiKeyCounts(
-  tenantIds: string[]
+export async function getScopeApiKeyCounts(
+  scopeIds: string[]
 ): Promise<Map<string, number>> {
   const rows = (await col(COLLECTIONS.API_KEYS)
     .aggregate([
       {
         $match: {
-          tenantId: { $in: tenantIds },
+          scopeId: { $in: scopeIds },
           $or: [{ revokedAt: null }, { revokedAt: { $exists: false } }],
         },
       },
-      { $group: { _id: "$tenantId", apiKeysCount: { $sum: 1 } } },
+      { $project: { scopeId: "$scopeId" } },
+      { $group: { _id: "$scopeId", apiKeysCount: { $sum: 1 } } },
     ])
     .toArray()) as Array<{ _id: string; apiKeysCount: number }>;
 
@@ -182,6 +183,6 @@ export const usersEnrichmentsMongo = {
   getMembershipsCount,
   getApiKeysCreatedCount,
   getLastActivity,
-  getTenantMembershipCounts,
-  getTenantApiKeyCounts,
+  getScopeMembershipCounts,
+  getScopeApiKeyCounts,
 };

@@ -33,6 +33,7 @@ Complete architecture documentation for the Unisane platform.
 | [module-development.md](./module-development.md) | Creating new modules | Building new features |
 | [contracts-guide.md](./contracts-guide.md) | ts-rest, defineOpMeta, SDK | API contracts & codegen |
 | [sdk-architecture.md](./sdk-architecture.md) | Multi-platform SDK, hooks, OpenAPI | SDK development & integration |
+| [adapters-guide.md](./adapters-guide.md) | Creating & using adapters | Implementing port interfaces |
 | [platform-layer.md](./platform-layer.md) | Hexagonal architecture in saaskit | Understanding platform adapters |
 | [providers.md](./providers.md) | AI, storage, email, payments | Integrating services |
 | [advanced-features.md](./advanced-features.md) | Auth, media, AI, analytics | Advanced implementations |

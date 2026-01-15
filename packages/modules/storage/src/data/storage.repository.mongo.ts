@@ -1,21 +1,30 @@
-import { ObjectId } from "mongodb";
-import { col, tenantFilter, getTenantId } from "@unisane/kernel";
-import { FILE_STATUS } from "@unisane/kernel";
+import {
+  col,
+  COLLECTIONS,
+  scopedFilter,
+  getScopeId,
+  withScope,
+  getScope,
+  FILE_STATUS,
+  ObjectId,
+  type Filter,
+  type StorageFolder,
+  type FileStatus,
+  type AllowedContentType,
+  type ScopeType,
+} from "@unisane/kernel";
 import type { StorageFile, CreateFileInput } from "../domain/types";
 import type { StorageRepository } from "../domain/ports";
-import type {
-  StorageFolder,
-  FileStatus,
-  AllowedContentType,
-} from "@unisane/kernel";
 
 /**
  * MongoDB document type - internal to this adapter.
  * Not exported to domain layer.
+ * Uses universal scope system for multi-scope support.
  */
 interface StorageFileDoc {
   _id: ObjectId;
-  tenantId: string;
+  scopeType: ScopeType;
+  scopeId: string;
   uploaderId: string;
   key: string;
   folder: StorageFolder;
@@ -30,12 +39,13 @@ interface StorageFileDoc {
   deletedAt?: Date;
 }
 
-const storageCol = () => col<StorageFileDoc>("storage_files");
+const storageCol = () => col<StorageFileDoc>(COLLECTIONS.FILES);
 
 function toDto(doc: StorageFileDoc): StorageFile {
   return {
     id: doc._id.toHexString(),
-    tenantId: doc.tenantId,
+    scopeType: doc.scopeType,
+    scopeId: doc.scopeId,
     uploaderId: doc.uploaderId,
     key: doc.key,
     folder: doc.folder,
@@ -53,8 +63,10 @@ function toDto(doc: StorageFileDoc): StorageFile {
 
 async function create(input: CreateFileInput): Promise<StorageFile> {
   const now = new Date();
+  const scope = getScope();
   const doc: Omit<StorageFileDoc, "_id"> = {
-    tenantId: input.tenantId,
+    scopeType: scope.type,
+    scopeId: input.scopeId,
     uploaderId: input.uploaderId,
     key: input.key,
     folder: input.folder,
@@ -72,22 +84,22 @@ async function create(input: CreateFileInput): Promise<StorageFile> {
 
 async function findById(id: string): Promise<StorageFile | null> {
   if (!ObjectId.isValid(id)) return null;
-  // Use tenantFilter for automatic tenant scoping
-  const doc = await storageCol().findOne(tenantFilter({ _id: new ObjectId(id) }));
+  // Use scopedFilter for automatic tenant scoping
+  const doc = await storageCol().findOne(scopedFilter({ _id: new ObjectId(id) }));
   return doc ? toDto(doc) : null;
 }
 
 async function findByKey(key: string): Promise<StorageFile | null> {
-  // Use tenantFilter for automatic tenant scoping
-  const doc = await storageCol().findOne(tenantFilter({ key }));
+  // Use scopedFilter for automatic tenant scoping
+  const doc = await storageCol().findOne(scopedFilter({ key }));
   return doc ? toDto(doc) : null;
 }
 
 async function confirmUpload(id: string): Promise<StorageFile | null> {
   if (!ObjectId.isValid(id)) return null;
-  // Use tenantFilter for automatic tenant scoping
+  // Use scopedFilter for automatic tenant scoping
   const result = await storageCol().findOneAndUpdate(
-    tenantFilter({ _id: new ObjectId(id), status: FILE_STATUS.PENDING }),
+    scopedFilter({ _id: new ObjectId(id), status: FILE_STATUS.PENDING }),
     { $set: { status: FILE_STATUS.ACTIVE, updatedAt: new Date() } },
     { returnDocument: "after" }
   );
@@ -97,9 +109,9 @@ async function confirmUpload(id: string): Promise<StorageFile | null> {
 async function softDelete(id: string): Promise<StorageFile | null> {
   if (!ObjectId.isValid(id)) return null;
   const now = new Date();
-  // Use tenantFilter for automatic tenant scoping
+  // Use scopedFilter for automatic tenant scoping
   const result = await storageCol().findOneAndUpdate(
-    tenantFilter({ _id: new ObjectId(id), status: { $ne: FILE_STATUS.DELETED } }),
+    scopedFilter({ _id: new ObjectId(id), status: { $ne: FILE_STATUS.DELETED } }),
     { $set: { status: FILE_STATUS.DELETED, deletedAt: now, updatedAt: now } },
     { returnDocument: "after" }
   );
@@ -108,8 +120,8 @@ async function softDelete(id: string): Promise<StorageFile | null> {
 
 async function hardDelete(id: string): Promise<boolean> {
   if (!ObjectId.isValid(id)) return false;
-  // Use tenantFilter for automatic tenant scoping
-  const result = await storageCol().deleteOne(tenantFilter({ _id: new ObjectId(id) }));
+  // Use scopedFilter for automatic tenant scoping
+  const result = await storageCol().deleteOne(scopedFilter({ _id: new ObjectId(id) }));
   return result.deletedCount > 0;
 }
 
@@ -121,16 +133,16 @@ async function list(
     limit: number;
   }
 ): Promise<{ items: StorageFile[]; nextCursor: string | null }> {
-  // Build base filter, tenantFilter will add tenantId from context
+  // Build base filter, scopedFilter will add scopeId from context
   const baseFilter: Record<string, unknown> = {};
   if (opts.folder) baseFilter.folder = opts.folder;
   if (opts.status) baseFilter.status = opts.status;
   if (opts.cursor && ObjectId.isValid(opts.cursor)) {
     baseFilter._id = { $gt: new ObjectId(opts.cursor) };
   }
-  // Use tenantFilter for automatic tenant scoping
+  // Use scopedFilter for automatic tenant scoping
   const docs = await storageCol()
-    .find(tenantFilter(baseFilter))
+    .find(scopedFilter(baseFilter))
     .sort({ _id: 1 })
     .limit(opts.limit + 1)
     .toArray();

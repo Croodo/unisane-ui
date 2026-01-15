@@ -1,5 +1,5 @@
-import { getTenantLastActivity as getTenantLastActivityRepo } from "../../data/audit.repository";
+import { getScopeLastActivity as getScopeLastActivityRepo } from "../../data/audit.repository";
 
-export async function getTenantLastActivity(tenantIds: string[]) {
-  return getTenantLastActivityRepo(tenantIds);
+export async function getScopeLastActivity(scopeIds: string[]) {
+  return getScopeLastActivityRepo(scopeIds);
 }

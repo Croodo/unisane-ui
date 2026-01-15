@@ -1,6 +1,5 @@
 import { SubscriptionsRepository } from "../data/subscriptions.repository";
-import { TenantsRepo } from "@unisane/tenants";
-import { getBillingProvider } from "@unisane/kernel";
+import { getBillingProvider, getTenantsProvider, hasTenantsProvider } from "@unisane/kernel";
 import { mapPlanIdForProvider } from "@unisane/kernel";
 import { getBillingMode } from "./mode";
 import type { PlanId } from "@unisane/kernel";
@@ -9,7 +8,7 @@ import { getEnv } from "@unisane/kernel";
 import { ERR } from "@unisane/gateway";
 
 export async function changePlan(args: {
-  tenantId: string;
+  scopeId: string;
   planId: PlanId;
 }) {
   const mode = await getBillingMode();
@@ -18,9 +17,11 @@ export async function changePlan(args: {
   }
 
   const [currentSub, providerSubId, tenant] = await Promise.all([
-    SubscriptionsRepository.getLatest(args.tenantId).catch(() => null),
-    SubscriptionsRepository.getLatestProviderSubId(args.tenantId),
-    TenantsRepo.findById(args.tenantId).catch(() => null),
+    SubscriptionsRepository.getLatest(args.scopeId).catch(() => null),
+    SubscriptionsRepository.getLatestProviderSubId(args.scopeId),
+    hasTenantsProvider()
+      ? getTenantsProvider().findById(args.scopeId).catch(() => null)
+      : Promise.resolve(null),
   ]);
 
   if (!providerSubId || !currentSub) {
@@ -59,7 +60,7 @@ export async function changePlan(args: {
     BILLING_PROVIDER ?? 'stripe'
   );
   await provider.updateSubscriptionPlan({
-    tenantId: args.tenantId,
+    scopeId: args.scopeId,
     providerSubId,
     planId: providerPlanId,
   });

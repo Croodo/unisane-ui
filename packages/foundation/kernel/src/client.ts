@@ -19,6 +19,9 @@ export * from './rbac';
 // DTO utilities (Zod schemas for pagination, etc.)
 export * from './utils/dto';
 
+// Value Objects (Money, Email, Phone, etc.)
+export * from './value-objects';
+
 // Encoding utilities (browser-safe base64)
 export * from './encoding/base64url';
 export * from './encoding/base64urlJson';
@@ -29,3 +32,6 @@ export * from './schema/utils';
 
 // Error classes (browser-safe)
 export * from './errors';
+
+// Currency utilities (browser-safe)
+export * from './utils/currency';

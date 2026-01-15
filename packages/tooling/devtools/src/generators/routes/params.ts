@@ -122,7 +122,7 @@ export function applyTransform(expr: string, transform?: CallArg['transform']): 
 export function applyFallback(
   expr: string,
   fallback?: CallArg['fallback'],
-  envImportPath: string = '@/src/shared/env'
+  envImportPath: string = '@unisane/kernel'
 ): string {
   if (!fallback) return expr;
 

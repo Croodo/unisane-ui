@@ -12,6 +12,10 @@ export { parseFiltersParam, encodeFiltersParam } from './query/filterParams.clie
 export { adminListConfigs } from './registry/admin.lists';
 export type { AdminListConfig } from './registry/admin.lists';
 
+// Rate limit policies (plain object, no Node.js dependencies)
+export { RATE_LIMIT_POLICIES } from './rate-limits';
+export type { OpKey } from './rate-limits';
+
 // Header names (inlined to avoid kernel dependency)
 export const HEADER_NAMES = {
   AUTHORIZATION: 'authorization',

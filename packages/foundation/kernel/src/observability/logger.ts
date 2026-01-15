@@ -14,7 +14,7 @@
 import { createRequire } from 'module';
 import pino from 'pino';
 import type { DestinationStream, Logger as PinoLogger } from 'pino';
-import { ctx } from '../context';
+import { tryGetScopeContext } from '../scope/context';
 
 // Create require for ESM compatibility (pino-pretty needs require())
 const esmRequire = createRequire(import.meta.url);
@@ -114,13 +114,14 @@ function getPinoLoggerInstance(): PinoLogger {
 }
 
 /**
- * Add context fields to log data.
+ * Add scope context fields to log data.
  */
 function withContext(data?: Record<string, unknown>): Record<string, unknown> {
-  const context = ctx.tryGet();
+  const context = tryGetScopeContext();
   return {
     ...(context?.requestId && { requestId: context.requestId }),
-    ...(context?.tenantId && { tenantId: context.tenantId }),
+    ...(context?.scope?.id && { scopeId: context.scope.id }),
+    ...(context?.scope?.type && { scopeType: context.scope.type }),
     ...(context?.userId && { userId: context.userId }),
     ...data,
   };

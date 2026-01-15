@@ -1,6 +1,6 @@
 "use client";
 
-import { useSession } from "@/src/hooks/useSession";
+import { useSession } from "@/src/hooks/use-session";
 
 type PermissionGateProps = {
   perm: string | string[];

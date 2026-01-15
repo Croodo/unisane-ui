@@ -96,7 +96,7 @@ export * from './service/tenants';
 
 export * from './service/admin/read';
 export * from './service/admin/export';
-export { getAdminUsersStats, getTenantMembershipCounts, getTenantApiKeyCounts } from './service/admin/stats';
+export { getAdminUsersStats, getScopeMembershipCounts, getScopeApiKeyCounts } from './service/admin/stats';
 export { usersFacets } from './service/admin/facets';
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -148,18 +148,17 @@ export { isDuplicateKeyError } from '@unisane/kernel';
 
 export {
   IDENTITY_EVENTS,
-  USER_STATUS,
   API_KEY_STATUS,
-  GLOBAL_ROLES,
   IDENTITY_DEFAULTS,
   IDENTITY_COLLECTIONS,
 } from './domain/constants';
 
-export type {
-  UserStatus,
-  ApiKeyStatus,
-  GlobalRole,
-} from './domain/constants';
+export type { ApiKeyStatus } from './domain/constants';
+
+// Re-export kernel constants for backward compatibility
+// Consumers should prefer importing directly from @unisane/kernel
+export { USER_STATUS, type UserStatus } from '@unisane/kernel';
+export { GLOBAL_ROLES, type GlobalRole } from '@unisane/kernel';
 
 // ════════════════════════════════════════════════════════════════════════════
 // Domain - Cache Keys
@@ -185,10 +184,10 @@ export {
 } from './data/repo';
 
 // ════════════════════════════════════════════════════════════════════════════
-// Utilities (re-exported from kernel)
+// Value Objects (re-exported from kernel)
 // ════════════════════════════════════════════════════════════════════════════
 
-export { normalizeEmail, normalizeUsername, normalizePhoneE164 } from '@unisane/kernel';
+export { Email, Username, PhoneE164 } from '@unisane/kernel';
 
 // ════════════════════════════════════════════════════════════════════════════
 // Services - Permissions (for gateway auth)
@@ -202,3 +201,9 @@ export { getEffectivePerms, applyGlobalOverlays } from './service/perms';
 
 export { configureIdentityProviders } from './providers';
 export type { IdentityProviders, TenantsRepoLike } from './providers';
+
+// ════════════════════════════════════════════════════════════════════════════
+// Adapters (Port Implementations for Hexagonal Architecture)
+// ════════════════════════════════════════════════════════════════════════════
+
+export { authIdentityAdapter } from './adapters';

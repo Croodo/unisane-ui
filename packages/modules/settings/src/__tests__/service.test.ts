@@ -45,7 +45,7 @@ describe("Settings Service Layer", () => {
       vi.mocked(kernel.cacheGet).mockResolvedValueOnce(mockCached);
 
       const result = await getSetting({
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         ns: "app",
         key: "theme",
       });
@@ -60,7 +60,7 @@ describe("Settings Service Layer", () => {
     it("should fetch from repository when cache misses", async () => {
       const mockRow = {
         env: "test",
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         namespace: "app",
         key: "theme",
         value: "light",
@@ -71,7 +71,7 @@ describe("Settings Service Layer", () => {
       vi.mocked(SettingsRepo.findOne).mockResolvedValueOnce(mockRow);
 
       const result = await getSetting({
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         ns: "app",
         key: "theme",
       });
@@ -95,7 +95,7 @@ describe("Settings Service Layer", () => {
       vi.mocked(SettingsRepo.findOne).mockResolvedValueOnce(null);
 
       const result = await getSetting({
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         ns: "app",
         key: "nonexistent",
       });
@@ -109,7 +109,7 @@ describe("Settings Service Layer", () => {
       vi.mocked(SettingsRepo.findOne).mockResolvedValueOnce(null);
 
       await getSetting({
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         ns: "app",
         key: "theme",
         env: "production",
@@ -123,11 +123,11 @@ describe("Settings Service Layer", () => {
       );
     });
 
-    it("should handle null tenantId for platform settings", async () => {
+    it("should handle null scopeId for platform settings", async () => {
       vi.mocked(kernel.cacheGet).mockResolvedValueOnce(null);
       vi.mocked(SettingsRepo.findOne).mockResolvedValueOnce({
         env: "test",
-        tenantId: null,
+        scopeId: null,
         namespace: "platform",
         key: "feature_flags",
         value: { enabled: true },
@@ -135,7 +135,7 @@ describe("Settings Service Layer", () => {
       });
 
       const result = await getSetting({
-        tenantId: null,
+        scopeId: null,
         ns: "platform",
         key: "feature_flags",
       });
@@ -153,7 +153,7 @@ describe("Settings Service Layer", () => {
       vi.mocked(kernel.cacheGet).mockResolvedValueOnce(null);
       vi.mocked(SettingsRepo.findOne).mockResolvedValueOnce({
         env: "test",
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         namespace: "app",
         key: "unset_setting",
         value: null,
@@ -161,7 +161,7 @@ describe("Settings Service Layer", () => {
       });
 
       const result = await getSetting({
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         ns: "app",
         key: "unset_setting",
       });
@@ -199,7 +199,7 @@ describe("Settings Service Layer", () => {
         env: "test",
         ns: "app",
         key: "theme",
-        tenantId: "tenant1",
+        scopeId: "tenant1",
       };
 
       // Verify that with valid event structure, cache would be invalidated
@@ -208,7 +208,7 @@ describe("Settings Service Layer", () => {
       expect(event.key).toBe("theme");
     });
 
-    it("should handle events without tenantId", async () => {
+    it("should handle events without scopeId", async () => {
       let subscribedCallback: ((evt: unknown) => void) | undefined;
       vi.mocked(kernel.subscribe).mockImplementation((topic, cb) => {
         if (topic === "setting.updated") {
@@ -233,7 +233,7 @@ describe("Settings Service Layer", () => {
           env: "test",
           ns: "platform",
           key: "global_setting",
-          tenantId: null,
+          scopeId: null,
         });
 
         expect(kernel.kv.del).toHaveBeenCalledWith(
@@ -292,7 +292,7 @@ describe("Settings Service Layer", () => {
       });
 
       const result = await getTypedSetting({
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         ns: "app",
         key: "max_sessions",
       });
@@ -306,7 +306,7 @@ describe("Settings Service Layer", () => {
 
       await expect(
         getTypedSetting({
-          tenantId: "tenant1",
+          scopeId: "tenant1",
           ns: "unknown",
           key: "key",
         })
@@ -330,7 +330,7 @@ describe("Settings Service Layer", () => {
       vi.mocked(SettingsRepo.findOne).mockResolvedValueOnce(null);
 
       const result = await getTypedSetting({
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         ns: "app",
         key: "timeout",
       });
@@ -355,7 +355,7 @@ describe("Settings Service Layer", () => {
       vi.mocked(SettingsRepo.findOne).mockResolvedValueOnce(null);
 
       const result = await getTypedSetting({
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         ns: "app",
         key: "feature_enabled",
       });
@@ -384,7 +384,7 @@ describe("Settings Service Layer", () => {
       );
 
       const result = await patchSetting({
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         namespace: "app",
         key: "theme",
         value: "dark",
@@ -393,7 +393,7 @@ describe("Settings Service Layer", () => {
       expect(result).toEqual(mockResult);
       expect(SettingsRepo.upsertPatch).toHaveBeenCalledWith({
         env: "test",
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         ns: "app",
         key: "theme",
         value: "dark",
@@ -413,7 +413,7 @@ describe("Settings Service Layer", () => {
       );
 
       const result = await patchSetting({
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         namespace: "app",
         key: "theme",
         value: "dark",
@@ -442,7 +442,7 @@ describe("Settings Service Layer", () => {
       );
 
       const result = await patchSetting({
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         namespace: "app",
         key: "optional_setting",
         unset: true,
@@ -451,7 +451,7 @@ describe("Settings Service Layer", () => {
       expect(result).toEqual(mockResult);
       expect(SettingsRepo.upsertPatch).toHaveBeenCalledWith({
         env: "test",
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         ns: "app",
         key: "optional_setting",
         unset: true,
@@ -475,7 +475,7 @@ describe("Settings Service Layer", () => {
       );
 
       await patchSetting({
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         namespace: "billing",
         key: "plan",
         value: "premium",
@@ -506,7 +506,7 @@ describe("Settings Service Layer", () => {
       );
 
       await patchSetting({
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         namespace: "app",
         key: "debug",
         value: true,
@@ -537,7 +537,7 @@ describe("Settings Service Layer", () => {
       );
 
       await patchSetting({
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         namespace: "notify",
         key: "email_enabled",
         value: true,
@@ -591,7 +591,7 @@ describe("Settings Service Layer", () => {
       );
 
       await patchTypedSetting({
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         namespace: "app",
         key: "max_users",
         value: 100,
@@ -601,7 +601,7 @@ describe("Settings Service Layer", () => {
       expect(SettingsRepo.upsertPatch).toHaveBeenCalled();
     });
 
-    it("should reject platform-scoped settings with tenantId", async () => {
+    it("should reject platform-scoped settings with scopeId", async () => {
       const mockDefinition = {
         namespace: "platform",
         key: "global_feature",
@@ -615,7 +615,7 @@ describe("Settings Service Layer", () => {
 
       await expect(
         patchTypedSetting({
-          tenantId: "tenant1",
+          scopeId: "tenant1",
           namespace: "platform",
           key: "global_feature",
           value: true,
@@ -623,7 +623,7 @@ describe("Settings Service Layer", () => {
       ).rejects.toThrow("Platform settings cannot be patched at tenant scope");
     });
 
-    it("should allow platform-scoped settings with null tenantId", async () => {
+    it("should allow platform-scoped settings with null scopeId", async () => {
       const mockDefinition = {
         namespace: "platform",
         key: "maintenance_mode",
@@ -652,7 +652,7 @@ describe("Settings Service Layer", () => {
       );
 
       await patchTypedSetting({
-        tenantId: null,
+        scopeId: null,
         namespace: "platform",
         key: "maintenance_mode",
         value: true,
@@ -681,7 +681,7 @@ describe("Settings Service Layer", () => {
       );
 
       const result = await patchTypedSetting({
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         namespace: "custom",
         key: "unknown_key",
         value: "anything",
@@ -720,7 +720,7 @@ describe("Settings Service Layer", () => {
       );
 
       await patchTypedSetting({
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         namespace: "app",
         key: "optional",
         unset: true,
@@ -749,7 +749,7 @@ describe("Settings Service Layer", () => {
 
       await expect(
         patchSettingWithPolicy({
-          tenantId: null,
+          scopeId: null,
           namespace: "platform",
           key: "secret_key",
           value: "newkey",
@@ -788,7 +788,7 @@ describe("Settings Service Layer", () => {
       );
 
       const result = await patchSettingWithPolicy({
-        tenantId: null,
+        scopeId: null,
         namespace: "platform",
         key: "api_secret",
         value: "newsecret",
@@ -828,7 +828,7 @@ describe("Settings Service Layer", () => {
       );
 
       const result = await patchSettingWithPolicy({
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         namespace: "app",
         key: "theme",
         value: "dark",
@@ -868,7 +868,7 @@ describe("Settings Service Layer", () => {
       );
 
       await patchSettingWithPolicy({
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         namespace: "app",
         key: "setting",
         value: "value",
@@ -900,7 +900,7 @@ describe("Settings Service Layer", () => {
       );
 
       const result = await patchSettingWithPolicy({
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         namespace: "custom",
         key: "unknown",
         value: "val",

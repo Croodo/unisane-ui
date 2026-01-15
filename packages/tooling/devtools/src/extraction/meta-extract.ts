@@ -3,8 +3,7 @@
  * from contract files. This avoids brittle regex parsing by using
  * proper AST analysis.
  */
-import * as path from 'node:path';
-import { promises as fs } from 'node:fs';
+import { glob as globFn } from 'glob';
 import { Project, SyntaxKind } from 'ts-morph';
 import type { RouteGenEntry } from './types.js';
 import { getStringProp } from './ast-helpers.js';
@@ -15,6 +14,8 @@ export interface ExtractOptions {
   contractsDir: string;
   /** Glob pattern for contract files (default: *.contract.ts) */
   glob?: string;
+  /** Enable verbose logging for debugging extraction errors */
+  verbose?: boolean;
 }
 
 /**
@@ -26,14 +27,16 @@ export interface ExtractOptions {
 export async function extractRouteMeta(
   options: ExtractOptions
 ): Promise<Map<string, RouteGenEntry>> {
-  const { contractsDir, glob = '*.contract.ts' } = options;
+  const { contractsDir, glob = '*.contract.ts', verbose = false } = options;
 
-  // Find all contract files
-  const entries = await fs.readdir(contractsDir).catch(() => [] as string[]);
-  const pattern = globToRegex(glob);
-  const tsFiles = entries
-    .filter((f) => pattern.test(f))
-    .map((f) => path.join(contractsDir, f));
+  const log = verbose
+    ? (msg: string, ...args: unknown[]) => console.log(`[meta-extract] ${msg}`, ...args)
+    : () => {};
+
+  // Find all contract files using glob (supports ** patterns)
+  const tsFiles = await globFn(glob, { cwd: contractsDir, absolute: true }).catch(() => [] as string[]);
+
+  log('Found contract files:', tsFiles.length);
 
   if (tsFiles.length === 0) {
     return new Map();
@@ -49,8 +52,9 @@ export async function extractRouteMeta(
   for (const filePath of tsFiles) {
     try {
       project.addSourceFileAtPath(filePath);
-    } catch {
-      // Skip files that can't be parsed
+      log('Added source file:', filePath);
+    } catch (err) {
+      log('Failed to parse file:', filePath, err);
     }
   }
 
@@ -75,6 +79,9 @@ export async function extractRouteMeta(
 
         const entry = parseServiceEntry(arg, opKey);
         if (!entry) continue;
+
+        // Record source file for error context
+        entry.sourceFile = sf.getFilePath();
 
         // Try to capture HTTP path/method from surrounding withMeta call
         try {
@@ -105,29 +112,19 @@ export async function extractRouteMeta(
             if (apiPath) entry.apiPath = apiPath;
             if (method) entry.method = method;
           }
-        } catch {
-          // Ignore errors capturing path/method
+        } catch (err) {
+          log('Error capturing path/method for op:', opKey, err);
         }
 
         out.set(opKey, entry);
+        log('Extracted op:', opKey);
       }
-    } catch {
-      // Skip source files that fail to process
+    } catch (err) {
+      log('Failed to process source file:', sf.getFilePath(), err);
     }
   }
 
   return out;
-}
-
-/**
- * Convert a simple glob pattern to a regex
- */
-function globToRegex(glob: string): RegExp {
-  const escaped = glob
-    .replace(/[.+^${}()|[\]\\]/g, '\\$&')
-    .replace(/\*/g, '.*')
-    .replace(/\?/g, '.');
-  return new RegExp(`^${escaped}$`);
 }
 
 /**

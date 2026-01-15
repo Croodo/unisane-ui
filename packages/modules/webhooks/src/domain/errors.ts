@@ -52,8 +52,8 @@ export class WebhookLimitExceededError extends DomainError {
   readonly code = ErrorCode.WEBHOOK_LIMIT_EXCEEDED;
   readonly status = 403;
 
-  constructor(tenantId: string, limit: number) {
-    super(`Webhook limit ${limit} exceeded for tenant ${tenantId}`);
+  constructor(scopeId: string, limit: number) {
+    super(`Webhook limit ${limit} exceeded for tenant ${scopeId}`);
     this.name = 'WebhookLimitExceededError';
   }
 }

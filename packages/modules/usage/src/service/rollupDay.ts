@@ -7,16 +7,16 @@ export async function rollupDay(now = new Date()) {
   const rows = await UsageRepo.listHoursInRange(dayStart, nextDay);
   const agg = new Map<string, number>();
   for (const doc of rows as UsageHourRow[]) {
-    const tenant = String((doc as { tenantId?: string }).tenantId ?? '');
-    const feat = String((doc as { feature?: string }).feature ?? '');
-    const k = `${tenant}::${feat}`;
+    const scope = String(doc.scopeId ?? '');
+    const feat = String(doc.feature ?? '');
+    const k = `${scope}::${feat}`;
     agg.set(k, (agg.get(k) ?? 0) + (doc.count ?? 0));
   }
   for (const [k, count] of agg.entries()) {
     const parts = k.split('::');
-    const tenantId = parts[0] ?? '';
+    const scopeId = parts[0] ?? '';
     const feature = parts[1] ?? '';
-    await UsageRepo.upsertIncrement('day', dayStart, tenantId as string, feature as string, count);
+    await UsageRepo.upsertIncrement('day', dayStart, scopeId as string, feature as string, count);
   }
   return { ok: true as const, groups: agg.size };
 }

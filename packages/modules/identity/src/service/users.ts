@@ -8,11 +8,7 @@ import type { GlobalRole } from "@unisane/kernel";
 import { ERR } from "@unisane/gateway";
 import { logger } from "@unisane/gateway";
 import type { SortField } from "@unisane/kernel";
-import {
-  normalizeEmail,
-  normalizePhoneE164,
-  normalizeUsername,
-} from "../domain/lib";
+import { Email, PhoneE164, Username } from "@unisane/kernel";
 import { DEFAULT_LOCALE } from "@unisane/kernel";
 import { toUserDto } from "../domain/mappers";
 import type { MinimalUserRow } from "../domain/types";
@@ -49,7 +45,7 @@ export async function createUser(args: {
   locale?: string | null;
   timezone?: string | null;
 }) {
-  const normEmail = normalizeEmail(args.email);
+  const normEmail = Email.create(args.email).toString();
   // Fast existence check to provide stable conflict behavior in tests and before unique index build
   const already = await usersRepository.findByEmail(normEmail);
   if (already) throw ERR.versionMismatch();
@@ -57,10 +53,10 @@ export async function createUser(args: {
   if (args.displayName !== undefined)
     payload.displayName = args.displayName ?? null;
   if (args.imageUrl !== undefined) payload.imageUrl = args.imageUrl ?? null;
-  if (args.username) payload.username = normalizeUsername(args.username);
+  if (args.username) payload.username = Username.create(args.username).toString();
   if (args.firstName !== undefined) payload.firstName = args.firstName ?? null;
   if (args.lastName !== undefined) payload.lastName = args.lastName ?? null;
-  if (args.phone) payload.phone = normalizePhoneE164(args.phone);
+  if (args.phone) payload.phone = PhoneE164.create(args.phone).toString();
   if (args.locale !== undefined) payload.locale = args.locale ?? null;
   if (payload.locale === undefined || payload.locale === null)
     payload.locale = DEFAULT_LOCALE;
@@ -99,7 +95,7 @@ export async function updateUser(args: UpdateUserArgs) {
     update.imageUrl = patch.imageUrl ?? null;
   }
   if (Object.prototype.hasOwnProperty.call(patch, "username")) {
-    update.username = patch.username ? normalizeUsername(patch.username) : null;
+    update.username = patch.username ? Username.create(patch.username).toString() : null;
   }
   if (Object.prototype.hasOwnProperty.call(patch, "firstName")) {
     update.firstName = patch.firstName ?? null;
@@ -108,7 +104,7 @@ export async function updateUser(args: UpdateUserArgs) {
     update.lastName = patch.lastName ?? null;
   }
   if (Object.prototype.hasOwnProperty.call(patch, "phone")) {
-    update.phone = patch.phone ? normalizePhoneE164(patch.phone) : null;
+    update.phone = patch.phone ? PhoneE164.create(patch.phone).toString() : null;
   }
   if (Object.prototype.hasOwnProperty.call(patch, "locale")) {
     update.locale = patch.locale ?? null;
@@ -128,7 +124,7 @@ export async function ensureUserByEmail(
   displayName?: string,
   authUserId?: string
 ): Promise<string> {
-  const norm = normalizeEmail(email);
+  const norm = Email.create(email).toString();
   // Prefer a stable linkage when available
   if (authUserId) {
     const byAuth = await usersRepository.findByAuthUserId(authUserId);
@@ -211,22 +207,19 @@ export async function getUser(userId: string) {
 export async function isUsernameAvailable(
   args: UsernameAvailableArgs
 ): Promise<{ available: boolean }> {
-  const u = normalizeUsername(args.value);
-  if (!u) return { available: false };
-  const existing = await usersRepository.findByUsername(u);
+  const username = Username.tryCreate(args.value);
+  if (!username) return { available: false };
+  const existing = await usersRepository.findByUsername(username.toString());
   return { available: !Boolean(existing) };
 }
 
 export async function isPhoneAvailable(
   args: PhoneAvailableArgs
 ): Promise<{ available: boolean }> {
-  try {
-    const p = normalizePhoneE164(args.value);
-    const existing = await usersRepository.findByPhone(p);
-    return { available: !Boolean(existing) };
-  } catch {
-    return { available: false };
-  }
+  const phone = PhoneE164.tryCreate(args.value);
+  if (!phone) return { available: false };
+  const existing = await usersRepository.findByPhone(phone.toString());
+  return { available: !Boolean(existing) };
 }
 
 export async function getUserGlobalRole(
@@ -281,7 +274,7 @@ export async function revokeSessions(args: RevokeSessionsArgs) {
  * Returns the user row or null if not found.
  */
 export async function findUserByEmail(email: string) {
-  const norm = normalizeEmail(email);
+  const norm = Email.create(email).toString();
   const user = await usersRepository.findByEmail(norm);
   if (!user || user.deletedAt) return null;
   return user;
@@ -292,9 +285,9 @@ export async function findUserByEmail(email: string) {
  * Returns the user row or null if not found.
  */
 export async function findUserByUsername(username: string) {
-  const norm = normalizeUsername(username);
+  const norm = Username.tryCreate(username);
   if (!norm) return null;
-  const user = await usersRepository.findByUsername(norm);
+  const user = await usersRepository.findByUsername(norm.toString());
   if (!user || user.deletedAt) return null;
   return user;
 }
@@ -304,14 +297,11 @@ export async function findUserByUsername(username: string) {
  * Returns the user row or null if not found.
  */
 export async function findUserByPhone(phone: string) {
-  try {
-    const norm = normalizePhoneE164(phone);
-    const user = await usersRepository.findByPhone(norm);
-    if (!user || user.deletedAt) return null;
-    return user;
-  } catch {
-    return null;
-  }
+  const norm = PhoneE164.tryCreate(phone);
+  if (!norm) return null;
+  const user = await usersRepository.findByPhone(norm.toString());
+  if (!user || user.deletedAt) return null;
+  return user;
 }
 
 /**

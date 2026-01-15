@@ -12,7 +12,7 @@ export async function patchSetting(args: PatchSettingArgs) {
   const env = args.env ?? getEnv().APP_ENV;
   const res: PatchResult = await SettingsRepo.upsertPatch({
     env,
-    tenantId: args.tenantId,
+    scopeId: args.scopeId,
     ns: args.namespace,
     key: args.key,
     ...(args.value !== undefined ? { value: args.value } : {}),
@@ -22,7 +22,7 @@ export async function patchSetting(args: PatchSettingArgs) {
   });
   if ('conflict' in res) return res;
   // Invalidate cache and publish cfg-bus event
-  await redis.del(settingsKeys.setting(env, args.namespace, args.key, args.tenantId));
-  await redis.publish(KV.PUBSUB, JSON.stringify({ kind: 'setting.updated', env, ns: args.namespace, key: args.key, tenantId: args.tenantId }));
+  await redis.del(settingsKeys.setting(env, args.namespace, args.key, args.scopeId));
+  await redis.publish(KV.PUBSUB, JSON.stringify({ kind: 'setting.updated', env, ns: args.namespace, key: args.key, scopeId: args.scopeId }));
   return res;
 }

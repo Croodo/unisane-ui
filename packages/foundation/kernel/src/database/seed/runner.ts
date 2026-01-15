@@ -204,7 +204,7 @@ export async function runSeed(
   }
 
   // Maps for lookups
-  const tenantIdBySlug = new Map<string, string>();
+  const scopeIdBySlug = new Map<string, string>();
   const userIdByEmail = new Map<string, string>();
 
   // Seed tenants
@@ -222,15 +222,15 @@ export async function runSeed(
 
         const existingTenant = await tenantsCol.findOne({ slug: tenant.slug });
         if (existingTenant) {
-          tenantIdBySlug.set(tenant.slug, existingTenant._id.toString());
+          scopeIdBySlug.set(tenant.slug, existingTenant._id.toString());
           log.info(`Tenant ${tenant.slug} already exists, skipping`);
           continue;
         }
 
         const now = new Date();
-        const tenantId = new ObjectId();
+        const scopeId = new ObjectId();
         await tenantsCol.insertOne({
-          _id: tenantId,
+          _id: scopeId,
           slug: tenant.slug,
           name: tenant.name,
           planId: tenant.planId ?? "free",
@@ -240,7 +240,7 @@ export async function runSeed(
           deletedAt: null,
         });
 
-        tenantIdBySlug.set(tenant.slug, tenantId.toString());
+        scopeIdBySlug.set(tenant.slug, scopeId.toString());
         result.tenantsCreated++;
         log.success(`Created tenant: ${tenant.slug}`);
       } catch (error) {
@@ -323,10 +323,10 @@ export async function runSeed(
 
     for (const membership of config.memberships) {
       try {
-        const tenantId = tenantIdBySlug.get(membership.tenant);
+        const scopeId = scopeIdBySlug.get(membership.tenant);
         const userId = userIdByEmail.get(membership.email);
 
-        if (!tenantId) {
+        if (!scopeId) {
           log.warn(
             `Skipping membership: tenant ${membership.tenant} not found`
           );
@@ -346,7 +346,7 @@ export async function runSeed(
         }
 
         const existing = await membershipsCol.findOne({
-          tenantId,
+          scopeId,
           userId,
           deletedAt: null,
         });
@@ -360,7 +360,8 @@ export async function runSeed(
         const now = new Date();
         await membershipsCol.insertOne({
           _id: new ObjectId(),
-          tenantId,
+          scopeType: 'tenant',
+          scopeId,
           userId,
           roles: membership.roles,
           createdAt: now,
@@ -393,8 +394,8 @@ export async function runSeed(
 
     for (const apiKey of config.apiKeys) {
       try {
-        const tenantId = tenantIdBySlug.get(apiKey.tenant);
-        if (!tenantId) {
+        const scopeId = scopeIdBySlug.get(apiKey.tenant);
+        if (!scopeId) {
           log.warn(`Skipping API key: tenant ${apiKey.tenant} not found`);
           continue;
         }
@@ -410,7 +411,8 @@ export async function runSeed(
 
         await apiKeysCol.insertOne({
           _id: new ObjectId(),
-          tenantId,
+          scopeType: 'tenant',
+          scopeId,
           name: apiKey.name,
           keyHash: hash,
           scopes: apiKey.scopes ?? ["read", "write"],
@@ -445,8 +447,8 @@ export async function runSeed(
 
     for (const sub of config.subscriptions) {
       try {
-        const tenantId = tenantIdBySlug.get(sub.tenant);
-        if (!tenantId) {
+        const scopeId = scopeIdBySlug.get(sub.tenant);
+        if (!scopeId) {
           log.warn(`Skipping subscription: tenant ${sub.tenant} not found`);
           continue;
         }
@@ -459,7 +461,7 @@ export async function runSeed(
           continue;
         }
 
-        const existing = await subsCol.findOne({ tenantId });
+        const existing = await subsCol.findOne({ scopeId });
         if (existing) {
           log.info(
             `Subscription for ${sub.tenant} already exists, skipping`
@@ -470,7 +472,8 @@ export async function runSeed(
         const now = new Date();
         await subsCol.insertOne({
           _id: new ObjectId(),
-          tenantId,
+          scopeType: 'tenant',
+          scopeId,
           planId: sub.planId,
           status: sub.status ?? "active",
           quantity: sub.quantity ?? 1,
@@ -501,14 +504,14 @@ export async function runSeed(
 
     for (const override of config.flagOverrides) {
       try {
-        const tenantId = override.tenant
-          ? tenantIdBySlug.get(override.tenant)
+        const scopeId = override.tenant
+          ? scopeIdBySlug.get(override.tenant)
           : null;
         const userId = override.email
           ? userIdByEmail.get(override.email)
           : null;
 
-        if (override.tenant && !tenantId) {
+        if (override.tenant && !scopeId) {
           log.warn(
             `Skipping flag override: tenant ${override.tenant} not found`
           );
@@ -533,7 +536,7 @@ export async function runSeed(
         await overridesCol.insertOne({
           _id: new ObjectId(),
           flagKey: override.flagKey,
-          tenantId: tenantId ?? null,
+          ...(scopeId ? { scopeType: 'tenant' as const, scopeId } : { scopeId: null }),
           userId: userId ?? null,
           value: override.value,
           createdAt: now,

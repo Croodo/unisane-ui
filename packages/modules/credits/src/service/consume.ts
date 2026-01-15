@@ -1,4 +1,4 @@
-import { getTenantId, redis, events } from "@unisane/kernel";
+import { getScopeId, redis, events } from "@unisane/kernel";
 import { ERR } from "@unisane/gateway";
 import { creditsKeys } from "../domain/keys";
 import { CREDITS_EVENTS } from "../domain/constants";
@@ -15,28 +15,28 @@ export type ConsumeCreditsArgs = {
 };
 
 export async function consume(args: ConsumeCreditsArgs) {
-  const tenantId = getTenantId();
+  const scopeId = getScopeId();
   if (args.amount <= 0) return { ok: true as const, skipped: true as const };
   const idemKey = args.reason;
-  const lock = await redis.set(creditsKeys.idemLock(tenantId, idemKey), "1", {
+  const lock = await redis.set(creditsKeys.idemLock(scopeId, idemKey), "1", {
     NX: true,
     PX: 10_000,
   });
   if (!lock) return { ok: true as const, deduped: true as const };
   try {
-    const { available } = await totalsAvailable(tenantId, new Date());
+    const { available } = await totalsAvailable(scopeId, new Date());
     if (available < args.amount) throw ERR.insufficientCredits();
     await insertBurn({
-      tenantId,
+      scopeId,
       amount: args.amount,
       feature: args.feature ?? "usage",
       idemKey,
     });
     // Invalidate cached balance
-    await invalidateBalanceCache(tenantId);
+    await invalidateBalanceCache(scopeId);
 
     await events.emit(CREDITS_EVENTS.CONSUMED, {
-      tenantId,
+      scopeId,
       amount: args.amount,
       reason: args.reason,
       feature: args.feature ?? "usage",

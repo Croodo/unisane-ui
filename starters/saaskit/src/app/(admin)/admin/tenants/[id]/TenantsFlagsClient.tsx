@@ -5,9 +5,8 @@ import {
   FLAG,
   getFlagMeta,
   isPlatformOnlyFlag,
-} from "@/src/shared/constants/feature-flags";
-import type { FlagKey } from "@/src/shared/constants/feature-flags";
-import type { AppEnv } from "@/src/shared/constants/env";
+} from "@unisane/kernel/client";
+import type { FlagKey, AppEnv } from "@unisane/kernel/client";
 import { hooks } from "@/src/sdk/hooks";
 import { Button } from "@unisane/ui/components/button";
 import { Badge } from "@unisane/ui/components/badge";

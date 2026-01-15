@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Button } from "@unisane/ui/components/button";
 import { Badge } from "@unisane/ui/components/badge";
-import { useSession } from "@/src/hooks/useSession";
+import { useSession } from "@/src/hooks/use-session";
 import { toast } from "@unisane/ui/components/toast";
 import { normalizeError } from "@/src/sdk/errors";
 import { hooks } from "@/src/sdk/hooks";
@@ -38,7 +38,7 @@ function isAdmin(member: MembershipsListItem): boolean {
 
 export function TeamClient() {
   const { me } = useSession();
-  const tenantId = me?.tenantId ?? undefined;
+  const tenantId = me?.scopeId ?? undefined;
   const currentUserId = me?.userId;
 
   // State for remove admin confirmation dialog

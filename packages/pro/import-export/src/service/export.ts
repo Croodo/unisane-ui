@@ -1,12 +1,12 @@
 import type { ExportFormat } from "@unisane/kernel";
 import { JobsRepo } from "../data/export.repository";
-import { exportObjectKey, getSignedDownloadUrl, getTenantId } from "@unisane/kernel";
+import { exportObjectKey, getSignedDownloadUrl, getScopeId } from "@unisane/kernel";
 
 import type { StartExportArgs } from "../domain/types";
 export type { StartExportArgs };
 
 export async function startExport(args: StartExportArgs) {
-  const tenantId = getTenantId();
+  const tenantId = getScopeId();
   // Persist a job, compute storage key, and return a signed GET URL (file may appear when job completes)
   const ts = Date.now();
   const format: ExportFormat = args.format ?? "json";
@@ -22,7 +22,7 @@ export async function startExport(args: StartExportArgs) {
 }
 
 export async function getExportStatus(args: { jobId: string }) {
-  const tenantId = getTenantId();
+  const tenantId = getScopeId();
   const job = await JobsRepo.getExportById(tenantId, args.jobId);
   if (!job) return { status: "not_found" as const };
   const base = { id: job.id, status: job.status } as const;

@@ -3,8 +3,8 @@ import { Button } from "@unisane/ui/components/button";
 import { Badge } from "@unisane/ui/components/badge";
 import { Alert } from "@unisane/ui/components/alert";
 import { Card } from "@unisane/ui/components/card";
-import { PLAN_META } from "@/src/shared/constants/plan";
-import type { PlanId } from "@/src/shared/constants/plan";
+import { PLAN_META } from "@unisane/kernel/client";
+import type { PlanId } from "@unisane/kernel/client";
 import { ConfirmDialog } from "@unisane/ui/components/confirm-dialog";
 import { Icon } from "@unisane/ui/primitives/icon";
 

@@ -1,12 +1,12 @@
 import type { ImportFormat, ImportSource } from '@unisane/kernel';
-import { getTenantId } from '@unisane/kernel';
+import { getScopeId } from '@unisane/kernel';
 import { JobsRepo } from '../data/export.repository';
 
 import type { StartImportArgs } from "../domain/types";
 export type { StartImportArgs };
 
 export async function startImport(args: StartImportArgs) {
-  const tenantId = getTenantId();
+  const tenantId = getScopeId();
   // Persist a job row (placeholder repo) and enqueue via jobs in a full setup
   const job = await JobsRepo.createImport({
     tenantId,

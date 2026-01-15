@@ -10,14 +10,14 @@
  *
  * // TypeScript will enforce the correct payload shape
  * await emitTyped('tenant.created', {
- *   tenantId: 'tenant_123',
+ *   scopeId: 'tenant_123',
  *   slug: 'my-company',
  *   name: 'My Company',
  *   ownerId: 'user_456',
  * });
  *
  * // This would be a type error:
- * await emitTyped('tenant.created', { tenantId: 'x' }); // Missing slug, name, ownerId
+ * await emitTyped('tenant.created', { scopeId: 'x' }); // Missing slug, name, ownerId
  * ```
  */
 
@@ -76,7 +76,7 @@ export async function emitTypedReliable<T extends EventType>(
  * @example
  * ```typescript
  * const unsubscribe = onTyped('tenant.created', async (event) => {
- *   // event.payload is typed as { tenantId: string; slug: string; name: string; ownerId: string }
+ *   // event.payload is typed as { scopeId: string; slug: string; name: string; ownerId: string }
  *   console.log('New tenant:', event.payload.name);
  * });
  * ```

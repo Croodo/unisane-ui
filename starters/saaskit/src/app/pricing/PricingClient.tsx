@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Button } from "@unisane/ui/components/button";
-import { useSession } from "@/src/hooks/useSession";
+import { useSession } from "@/src/hooks/use-session";
 import { hooks } from "@/src/sdk/hooks";
 import { toast } from "@unisane/ui/components/toast";
 import { normalizeError } from "@/src/sdk/errors";
@@ -11,7 +11,7 @@ import type { BillingConfigResponse } from "@/src/sdk/types";
 
 export function PricingClient() {
   const { me, loading } = useSession();
-  const tenantId = me?.tenantId ?? null;
+  const tenantId = me?.scopeId ?? null;
   const tenantSlug = me?.tenantSlug ?? null;
   const currentPlanId = (me as { plan?: string | null } | null)?.plan ?? null;
 

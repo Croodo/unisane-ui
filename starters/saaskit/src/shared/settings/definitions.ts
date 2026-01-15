@@ -3,7 +3,7 @@ import {
   ZBillingMode,
   DEFAULT_BILLING_MODE,
   BILLING_MODES,
-} from "@/src/shared/constants/billing-mode";
+} from "@unisane/kernel/client";
 
 /**
  * Settings Module - Unified Configuration Source

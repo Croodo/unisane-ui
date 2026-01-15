@@ -2,14 +2,17 @@ import type {
   StorageFolder,
   FileStatus,
   AllowedContentType,
+  ScopeType,
 } from "@unisane/kernel";
 
 /**
  * Domain entity - DB-agnostic representation of a storage file.
+ * Uses universal scope system for multi-tenant/multi-scope support.
  */
 export interface StorageFile {
   id: string;
-  tenantId: string;
+  scopeType: ScopeType;
+  scopeId: string;
   uploaderId: string;
   key: string;
   folder: StorageFolder;
@@ -28,7 +31,7 @@ export interface StorageFile {
  * Input for creating a new file record.
  */
 export interface CreateFileInput {
-  tenantId: string;
+  scopeId: string;
   uploaderId: string;
   key: string;
   folder: StorageFolder;

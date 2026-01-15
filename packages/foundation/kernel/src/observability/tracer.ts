@@ -5,7 +5,7 @@
  * Integrates with context to correlate traces with requests.
  */
 
-import { ctx } from '../context';
+import { tryGetScopeContext } from '../scope/context';
 import { generateId } from '../utils/ids';
 import { logger } from './logger';
 
@@ -116,7 +116,7 @@ export const tracer = {
     fn: () => Promise<T>,
     options: TraceOptions = {}
   ): Promise<T> {
-    const context = ctx.tryGet();
+    const context = tryGetScopeContext();
     const spanId = generateId('span').slice(5); // Remove 'span_' prefix for shorter IDs
     const traceId = context?.requestId || generateId('trace');
     const startTime = performance.now();
@@ -130,7 +130,7 @@ export const tracer = {
       status: 'ok',
       attributes: {
         ...options.attributes,
-        ...(context?.tenantId && { tenantId: context.tenantId }),
+        ...(context?.scope?.id && { scopeId: context.scope.id }),
       },
     };
 
@@ -179,7 +179,7 @@ export const tracer = {
    * ```
    */
   traceSync<T>(name: string, fn: () => T, options: TraceOptions = {}): T {
-    const context = ctx.tryGet();
+    const context = tryGetScopeContext();
     const spanId = generateId('span').slice(5);
     const traceId = context?.requestId || generateId('trace');
     const startTime = performance.now();
@@ -193,7 +193,7 @@ export const tracer = {
       status: 'ok',
       attributes: {
         ...options.attributes,
-        ...(context?.tenantId && { tenantId: context.tenantId }),
+        ...(context?.scope?.id && { scopeId: context.scope.id }),
       },
     };
 
@@ -231,7 +231,7 @@ export const tracer = {
    * ```
    */
   startSpan(name: string, options: TraceOptions = {}) {
-    const context = ctx.tryGet();
+    const context = tryGetScopeContext();
     const spanId = generateId('span').slice(5);
     const traceId = context?.requestId || generateId('trace');
     const startTime = performance.now();
@@ -245,7 +245,7 @@ export const tracer = {
       status: 'ok',
       attributes: {
         ...options.attributes,
-        ...(context?.tenantId && { tenantId: context.tenantId }),
+        ...(context?.scope?.id && { scopeId: context.scope.id }),
       },
     };
 

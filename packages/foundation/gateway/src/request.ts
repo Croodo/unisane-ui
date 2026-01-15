@@ -6,8 +6,14 @@ export function tenantIdFromUrl(req?: Request): string | undefined {
     const pathname = new URL(req.url).pathname;
     const match = pathname.match(/\/tenants\/([^\/]+)/);
     const id = match ? match[1] : undefined;
-    // Ignore special non-tenant segment routes, e.g. /tenants/by-slug/:slug
-    if (id === 'by-slug') return undefined;
+    // Ignore special non-tenant segment routes
+    // by-slug: /tenants/by-slug/:slug
+    // stats, export: /admin/tenants/stats, /admin/tenants/export
+    const RESERVED_SEGMENTS = ['by-slug', 'stats', 'export'];
+    if (!id || RESERVED_SEGMENTS.includes(id)) return undefined;
+    // Only accept valid-looking tenant IDs (24-char hex MongoDB ObjectIds)
+    // This prevents paths like /admin/tenants from extracting random segments
+    if (!/^[a-f0-9]{24}$/i.test(id)) return undefined;
     return id;
   } catch {
     return undefined;

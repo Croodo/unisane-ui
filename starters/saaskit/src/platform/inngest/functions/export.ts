@@ -1,4 +1,4 @@
-import { inngest } from "@unisane/kernel";
+import { inngest } from "../client";
 import { JobsService } from "@unisane/import-export";
 import { getSignedUploadUrl } from "@unisane/kernel";
 

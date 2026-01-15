@@ -1,7 +1,7 @@
 import { randomBytes, createHash } from "node:crypto";
 import { invalidatePermsForApiKey } from "./perms";
 import { apiKeysRepository } from "../data/api-keys.repository";
-import { getTenantId, sha256Hex, clampInt, events } from "@unisane/kernel";
+import { getScopeId, sha256Hex, clampInt, events } from "@unisane/kernel";
 import { IDENTITY_EVENTS } from "../domain/constants";
 
 export type CreateApiKeyArgs = {
@@ -19,19 +19,19 @@ export type ListApiKeysArgs = {
 };
 
 export async function createApiKey(args: CreateApiKeyArgs) {
-  const tenantId = getTenantId(); // Throws if not set
+  const scopeId = getScopeId(); // Throws if not set
   const token = randomBytes(24).toString("base64url");
   const hash = createHash("sha256").update(token).digest("hex");
   const created = await apiKeysRepository.create({
-    tenantId,
+    scopeId,
     name: args.name ?? null,
     hash,
     scopes: args.scopes,
     createdBy: args.actorId ?? null,
   });
-  await invalidatePermsForApiKey(tenantId, created.id);
+  await invalidatePermsForApiKey(scopeId, created.id);
   await events.emit(IDENTITY_EVENTS.API_KEY_CREATED, {
-    tenantId,
+    scopeId,
     keyId: created.id,
     scopes: created.scopes,
     createdBy: args.actorId ?? null,
@@ -40,20 +40,20 @@ export async function createApiKey(args: CreateApiKeyArgs) {
 }
 
 export async function revokeApiKey(args: RevokeApiKeyArgs) {
-  const tenantId = getTenantId(); // Throws if not set
-  await apiKeysRepository.revoke(tenantId, args.keyId);
-  await invalidatePermsForApiKey(tenantId, args.keyId);
+  const scopeId = getScopeId(); // Throws if not set
+  await apiKeysRepository.revoke(scopeId, args.keyId);
+  await invalidatePermsForApiKey(scopeId, args.keyId);
   await events.emit(IDENTITY_EVENTS.API_KEY_REVOKED, {
-    tenantId,
+    scopeId,
     keyId: args.keyId,
   });
   return { ok: true as const };
 }
 
 export async function listApiKeys(args: ListApiKeysArgs = {}) {
-  const tenantId = getTenantId(); // Throws if not set
+  const scopeId = getScopeId(); // Throws if not set
   const limit = clampInt(args.limit ?? 100, 1, 500);
-  const rows = await apiKeysRepository.listByTenant(tenantId, limit);
+  const rows = await apiKeysRepository.listByScope(scopeId, limit);
   const items = rows.map((k) => ({
     id: k.id,
     name: k.name,
@@ -66,13 +66,13 @@ export async function listApiKeys(args: ListApiKeysArgs = {}) {
 
 export async function verifyApiKey(
   token: string
-): Promise<{ apiKeyId: string; tenantId: string; scopes: string[] } | null> {
+): Promise<{ apiKeyId: string; scopeId: string; scopes: string[] } | null> {
   const hash = sha256Hex(token);
   const row = await apiKeysRepository.findActiveByHash(hash);
   if (!row) return null;
   return {
     apiKeyId: row.id,
-    tenantId: row.tenantId,
+    scopeId: row.scopeId,
     scopes: row.scopes,
   } as const;
 }

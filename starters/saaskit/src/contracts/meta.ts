@@ -79,18 +79,18 @@ export function attachOpMeta(
   (op as { meta?: OpMeta }).meta = meta;
 }
 
-// Inline helper: attach OpMeta without altering the route type
+/**
+ * Attach OpMeta to a route definition using ts-rest's standard 'metadata' property.
+ *
+ * ts-rest natively supports a `metadata?: unknown` field on all route definitions.
+ * By using 'metadata' directly (not 'meta'), we ensure the value is preserved
+ * through ts-rest's router processing and accessible at runtime.
+ *
+ * The metadata is used during code generation to extract service configuration,
+ * authorization requirements, and other route-specific information.
+ */
 export function withMeta<T extends object>(def: T, meta: OpMeta): T {
-  try {
-    Object.defineProperty(def as object, "meta", {
-      value: meta,
-      enumerable: false,
-      configurable: true,
-      writable: true,
-    });
-  } catch {
-    // Fallback: assign directly if defineProperty fails (should be rare)
-    (def as Record<string, unknown>)["meta"] = meta;
-  }
+  // Use ts-rest's native metadata field directly
+  (def as Record<string, unknown>)["metadata"] = meta;
   return def as T;
 }

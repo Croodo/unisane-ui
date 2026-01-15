@@ -10,7 +10,7 @@ import {
   PlanBadge,
   CountBadge,
 } from "@/src/components/ui/status-badge";
-import { useServerTable } from "@/src/hooks/useServerTable";
+import { useServerTable } from "@/src/hooks/use-server-table";
 
 interface TenantsTableProps {
   data: TenantsAdminListItem[];

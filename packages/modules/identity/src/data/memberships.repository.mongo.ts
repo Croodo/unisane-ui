@@ -1,20 +1,25 @@
 import {
   col,
+  COLLECTIONS,
   softDeleteFilter,
-  explicitTenantFilter,
-  explicitTenantFilterActive,
+  explicitScopeFilter,
+  explicitScopeFilterActive,
   seekPageMongoCollection,
   clampInt,
+  type RoleId,
+  type Permission,
+  type GrantEffect,
+  type Document,
+  type Filter,
+  type WithId,
 } from "@unisane/kernel";
-import type { RoleId, Permission, GrantEffect } from "@unisane/kernel";
-import type { Document, Filter, WithId } from "mongodb";
 import type { MembershipsApi, Membership } from "../domain/types";
 import {
   mapMembershipDocToMembership,
   type MembershipDoc,
 } from "../domain/mappers";
 
-const mCol = () => col<MembershipDoc>("memberships");
+const mCol = () => col<MembershipDoc>(COLLECTIONS.MEMBERSHIPS);
 
 function extractMembership(r: unknown): MembershipDoc | null {
   const rUnknown = r as { value?: MembershipDoc | null };
@@ -24,24 +29,24 @@ function extractMembership(r: unknown): MembershipDoc | null {
 }
 
 export const mongoMembershipsRepository: MembershipsApi = {
-  async get(tenantId: string, userId: string): Promise<Membership | null> {
-    // Use explicit tenantId parameter - NOT from context
+  async get(scopeId: string, userId: string): Promise<Membership | null> {
+    // Use explicit scopeId parameter - NOT from context
     // This is important for auth-time lookups that happen before ctx.run()
     const doc = await mCol().findOne(
-      explicitTenantFilterActive(tenantId, { userId }) as Document
+      explicitScopeFilterActive('tenant', scopeId, { userId }) as Document
     );
     return mapMembershipDocToMembership(doc);
   },
 
   async addRole(
-    tenantId: string,
+    scopeId: string,
     userId: string,
     roleId: RoleId,
     expectedVersion?: number
   ) {
-    // Use explicit tenantId - NOT from context
+    // Use explicit scopeId - NOT from context
     const current = await mCol().findOne(
-      explicitTenantFilterActive(tenantId, { userId }) as Document
+      explicitScopeFilterActive('tenant', scopeId, { userId }) as Document
     );
     if (
       current &&
@@ -52,7 +57,7 @@ export const mongoMembershipsRepository: MembershipsApi = {
     }
     const now = new Date();
     const r = await mCol().findOneAndUpdate(
-      explicitTenantFilter(tenantId, { userId }) as Document,
+      explicitScopeFilter('tenant', scopeId, { userId }) as Document,
       {
         $addToSet: { roles: { roleId, grantedAt: now } },
         $inc: { version: 1 },
@@ -68,14 +73,14 @@ export const mongoMembershipsRepository: MembershipsApi = {
   },
 
   async removeRole(
-    tenantId: string,
+    scopeId: string,
     userId: string,
     roleId: RoleId,
     expectedVersion?: number
   ) {
-    // Use explicit tenantId - NOT from context
+    // Use explicit scopeId - NOT from context
     const current = await mCol().findOne(
-      explicitTenantFilterActive(tenantId, { userId }) as Document
+      explicitScopeFilterActive('tenant', scopeId, { userId }) as Document
     );
     if (
       current &&
@@ -86,7 +91,7 @@ export const mongoMembershipsRepository: MembershipsApi = {
     }
     const now = new Date();
     const r = await mCol().findOneAndUpdate(
-      explicitTenantFilter(tenantId, { userId }) as Document,
+      explicitScopeFilter('tenant', scopeId, { userId }) as Document,
       {
         $pull: { roles: { roleId } },
         $inc: { version: 1 },
@@ -101,15 +106,15 @@ export const mongoMembershipsRepository: MembershipsApi = {
   },
 
   async grantPerm(
-    tenantId: string,
+    scopeId: string,
     userId: string,
     perm: Permission,
     effect: GrantEffect,
     expectedVersion?: number
   ) {
-    // Use explicit tenantId - NOT from context
+    // Use explicit scopeId - NOT from context
     const current = await mCol().findOne(
-      explicitTenantFilterActive(tenantId, { userId }) as Document
+      explicitScopeFilterActive('tenant', scopeId, { userId }) as Document
     );
     if (
       current &&
@@ -120,7 +125,7 @@ export const mongoMembershipsRepository: MembershipsApi = {
     }
     const now = new Date();
     const r = await mCol().findOneAndUpdate(
-      explicitTenantFilter(tenantId, { userId }) as Document,
+      explicitScopeFilter('tenant', scopeId, { userId }) as Document,
       {
         $addToSet: { grants: { perm, effect } },
         $inc: { version: 1 },
@@ -136,14 +141,14 @@ export const mongoMembershipsRepository: MembershipsApi = {
   },
 
   async revokePerm(
-    tenantId: string,
+    scopeId: string,
     userId: string,
     perm: Permission,
     expectedVersion?: number
   ) {
-    // Use explicit tenantId - NOT from context
+    // Use explicit scopeId - NOT from context
     const current = await mCol().findOne(
-      explicitTenantFilterActive(tenantId, { userId }) as Document
+      explicitScopeFilterActive('tenant', scopeId, { userId }) as Document
     );
     if (
       current &&
@@ -154,7 +159,7 @@ export const mongoMembershipsRepository: MembershipsApi = {
     }
     const now = new Date();
     const r = await mCol().findOneAndUpdate(
-      explicitTenantFilter(tenantId, { userId }) as Document,
+      explicitScopeFilter('tenant', scopeId, { userId }) as Document,
       {
         $pull: { grants: { perm } },
         $inc: { version: 1 },
@@ -168,8 +173,8 @@ export const mongoMembershipsRepository: MembershipsApi = {
     };
   },
 
-  // NOTE: Cross-tenant operation - intentionally NOT using tenantFilter()
-  // This finds the user's latest membership across ALL tenants for session/context init
+  // NOTE: Cross-scope operation - intentionally NOT using scopeFilter()
+  // This finds the user's latest membership across ALL scopes for session/context init
   async findLatestForUser(userId: string): Promise<Membership | null> {
     const doc = await mCol()
       .find({
@@ -182,16 +187,16 @@ export const mongoMembershipsRepository: MembershipsApi = {
     return mapMembershipDocToMembership(doc);
   },
 
-  async listByTenant(
-    tenantId: string,
+  async listByScope(
+    scopeId: string,
     limit = 100,
     cursor?: string
   ): Promise<{ items: Membership[]; nextCursor?: string }> {
     const max = clampInt(limit, 1, 500);
-    // Use explicit tenantId - NOT from context
-    const baseFilter = explicitTenantFilterActive(tenantId, {}) as Filter<MembershipDoc>;
+    // Use explicit scopeId - NOT from context
+    const baseFilter = explicitScopeFilterActive('tenant', scopeId, {}) as Filter<MembershipDoc>;
     const projection: Record<string, 0 | 1> = {
-      tenantId: 1,
+      scopeId: 1,
       userId: 1,
       roles: 1,
       grants: 1,
@@ -211,7 +216,7 @@ export const mongoMembershipsRepository: MembershipsApi = {
       sortVec: [{ key: "_id", order: -1 }],
       projection,
       map: (m: WithId<MembershipDoc>): Membership => ({
-        tenantId: m.tenantId,
+        scopeId: m.scopeId,
         userId: m.userId,
         roles: m.roles ?? [],
         grants: m.grants ?? [],
@@ -223,8 +228,8 @@ export const mongoMembershipsRepository: MembershipsApi = {
     return { items, ...(next ? { nextCursor: next } : {}) };
   },
 
-  // NOTE: Cross-tenant operation - intentionally NOT using tenantFilter()
-  // This lists a user's memberships across ALL tenants (e.g., for workspace switcher)
+  // NOTE: Cross-scope operation - intentionally NOT using scopeFilter()
+  // This lists a user's memberships across ALL scopes (e.g., for workspace switcher)
   async listByUser(
     userId: string,
     limit = 100,
@@ -233,7 +238,7 @@ export const mongoMembershipsRepository: MembershipsApi = {
     const max = clampInt(limit, 1, 500);
     const baseFilter: Filter<MembershipDoc> = { userId, ...softDeleteFilter() };
     const projection: Record<string, 0 | 1> = {
-      tenantId: 1,
+      scopeId: 1,
       userId: 1,
       roles: 1,
       grants: 1,
@@ -253,7 +258,7 @@ export const mongoMembershipsRepository: MembershipsApi = {
       sortVec: [{ key: "_id", order: -1 }],
       projection,
       map: (m: WithId<MembershipDoc>): Membership => ({
-        tenantId: m.tenantId,
+        scopeId: m.scopeId,
         userId: m.userId,
         roles: m.roles ?? [],
         grants: m.grants ?? [],
@@ -265,10 +270,10 @@ export const mongoMembershipsRepository: MembershipsApi = {
     return { items, ...(next ? { nextCursor: next } : {}) };
   },
 
-  async delete(tenantId: string, userId: string, expectedVersion?: number) {
-    // Use explicit tenantId - NOT from context
+  async delete(scopeId: string, userId: string, expectedVersion?: number) {
+    // Use explicit scopeId - NOT from context
     const current = await mCol().findOne(
-      explicitTenantFilterActive(tenantId, { userId }) as Document
+      explicitScopeFilterActive('tenant', scopeId, { userId }) as Document
     );
     if (!current) {
       return { notFound: true as const };
@@ -281,7 +286,7 @@ export const mongoMembershipsRepository: MembershipsApi = {
     }
     const now = new Date();
     await mCol().updateOne(
-      explicitTenantFilter(tenantId, { userId }) as Document,
+      explicitScopeFilter('tenant', scopeId, { userId }) as Document,
       {
         $set: { deletedAt: now, updatedAt: now },
         $inc: { version: 1 },
@@ -293,8 +298,8 @@ export const mongoMembershipsRepository: MembershipsApi = {
     };
   },
 
-  // NOTE: Cross-tenant operation - intentionally NOT using tenantFilter()
-  // This deletes a user's memberships across ALL tenants (used during user deletion)
+  // NOTE: Cross-scope operation - intentionally NOT using scopeFilter()
+  // This deletes a user's memberships across ALL scopes (used during user deletion)
   async deleteAllForUser(userId: string): Promise<{ deletedCount: number }> {
     const res = await mCol().updateMany(
       {

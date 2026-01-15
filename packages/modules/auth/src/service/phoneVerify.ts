@@ -1,7 +1,6 @@
-import { kv } from "@unisane/kernel";
+import { kv, PhoneE164, getAuthIdentityProvider } from "@unisane/kernel";
 import { ERR } from "@unisane/gateway";
 import { phoneVerifyKey } from "../domain/keys";
-import { normalizePhoneE164, usersRepository, membershipsRepository } from "@unisane/identity";
 
 export async function phoneVerify(args: {
   userId: string;
@@ -10,7 +9,8 @@ export async function phoneVerify(args: {
 }): Promise<{ ok: true }> {
   const { userId } = args;
   if (!userId) throw ERR.loginRequired();
-  const phone = normalizePhoneE164(args.phone);
+  const identity = getAuthIdentityProvider();
+  const phone = PhoneE164.create(args.phone).toString();
   const key = phoneVerifyKey(userId);
   const saved = await kv.get(key);
   if (!saved) throw ERR.validation("Code expired or not found");
@@ -21,13 +21,12 @@ export async function phoneVerify(args: {
   if (!parsed || parsed.phone !== phone || parsed.code !== args.code)
     throw ERR.validation("Invalid code");
   // Ensure uniqueness again before persisting
-  const other = await usersRepository.findByPhone(phone);
+  const other = await identity.findUserByPhoneNorm(phone);
   if (other && other.id !== userId)
     throw ERR.versionMismatch();
-  await usersRepository.updateById(userId, {
+  await identity.updateUserById(userId, {
     phone,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- partial update type flexibility
-    phoneVerified: true as any,
+    phoneVerified: true,
   });
   await kv.del(key);
   return { ok: true } as const;

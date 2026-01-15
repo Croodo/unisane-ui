@@ -3,11 +3,11 @@ import type { BillingProvider } from '@unisane/kernel';
 import type { InvoiceStatus } from '@unisane/kernel';
 
 export interface InvoicesRepo {
-  listPage(args: { tenantId: string; cursor?: string; limit: number }): Promise<InvoiceListPage>;
-  // Admin/stats: count open invoices grouped by tenantId
-  countOpenByTenantIds(tenantIds: string[]): Promise<Map<string, number>>;
+  listPage(args: { scopeId: string; cursor?: string; limit: number }): Promise<InvoiceListPage>;
+  // Admin/stats: count open invoices grouped by scopeId
+  countOpenByScopeIds(scopeIds: string[]): Promise<Map<string, number>>;
   upsertByProviderId(args: {
-    tenantId: string;
+    scopeId: string;
     provider: BillingProvider;
     providerInvoiceId: string;
     amount: number;

@@ -4,7 +4,7 @@
 
 export const auditKeys = {
   log: (logId: string) => `audit:log:${logId}` as const,
-  tenantLogs: (tenantId: string) => `audit:tenant:${tenantId}` as const,
+  scopeLogs: (scopeId: string) => `audit:scope:${scopeId}` as const,
 } as const;
 
 export type AuditKeyBuilder = typeof auditKeys;

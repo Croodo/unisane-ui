@@ -1,15 +1,15 @@
-import { getTenantId, kv } from "@unisane/kernel";
+import { getScopeId, kv, type UsageWindow } from "@unisane/kernel";
 import { UsageRepo } from "../data/usage.repository";
-import { usageMinuteKey } from "../domain/keys";
+import { usageKeys } from "../domain/keys";
 
 export type GetWindowArgs = {
   feature: string;
-  window: "minute" | "hour" | "day";
+  window: UsageWindow;
   at?: Date;
 };
 
 export async function getWindow(args: GetWindowArgs) {
-  const tenantId = getTenantId();
+  const scopeId = getScopeId();
   const now = args.at ?? new Date();
   if (args.window === "day") {
     const start = new Date(
@@ -22,7 +22,7 @@ export async function getWindow(args: GetWindowArgs) {
         0
       )
     );
-    return UsageRepo.getDayCount(tenantId, args.feature, start);
+    return UsageRepo.getDayCount(scopeId, args.feature, start);
   }
   if (args.window === "hour") {
     const start = new Date(
@@ -35,8 +35,8 @@ export async function getWindow(args: GetWindowArgs) {
         0
       )
     );
-    return UsageRepo.getHourCount(tenantId, args.feature, start);
+    return UsageRepo.getHourCount(scopeId, args.feature, start);
   }
-  const v = await kv.get(usageMinuteKey(tenantId, args.feature, now));
+  const v = await kv.get(usageKeys.minute(scopeId, args.feature, now));
   return v ? Number(v) : 0;
 }

@@ -1,8 +1,14 @@
-import { col, COLLECTIONS, maybeObjectId } from '@unisane/kernel';
+import {
+  col,
+  COLLECTIONS,
+  maybeObjectId,
+  ObjectId,
+  type WithId,
+  type Filter,
+  type UpdateFilter,
+} from '@unisane/kernel';
 import type { AuthCredentialView } from '../domain/types';
 import type { AuthCredentialRepoPort } from '../domain/ports';
-import { ObjectId } from 'mongodb';
-import type { Document, Filter, UpdateFilter } from 'mongodb';
 
 type AuthCredentialDoc = {
   _id?: string | ObjectId;
@@ -20,25 +26,29 @@ type AuthCredentialDoc = {
 
 const credCol = () => col<AuthCredentialDoc>(COLLECTIONS.AUTH_CREDENTIALS);
 
+/**
+ * Map MongoDB document to AuthCredentialView.
+ * Centralizes the mapping logic and avoids repetitive type casting.
+ */
+function mapDocToView(doc: WithId<AuthCredentialDoc>): AuthCredentialView {
+  return {
+    id: String(doc._id),
+    userId: doc.userId,
+    emailNorm: doc.emailNorm,
+    algo: doc.algo,
+    salt: doc.salt,
+    hash: doc.hash,
+    passwordChangedAt: doc.passwordChangedAt,
+    failedLogins: doc.failedLogins,
+    lockedUntil: doc.lockedUntil ?? null,
+  };
+}
+
 export const AuthCredentialRepoMongo: AuthCredentialRepoPort = {
   async findByEmailNorm(emailNorm: string): Promise<AuthCredentialView | null> {
-    const row = await credCol().findOne({ emailNorm });
-    if (!row) return null;
-    const base: Record<string, unknown> = {
-      id: String((row as { _id?: unknown })._id ?? ''),
-      userId: String((row as { userId?: unknown }).userId ?? ''),
-      emailNorm: (row as { emailNorm?: string }).emailNorm ?? emailNorm,
-      algo: 'scrypt',
-      salt: (row as { salt?: string }).salt ?? '',
-      hash: (row as { hash?: string }).hash ?? '',
-    };
-    const pca = (row as { passwordChangedAt?: Date }).passwordChangedAt;
-    if (pca) base.passwordChangedAt = pca;
-    const fl = (row as { failedLogins?: number }).failedLogins;
-    if (typeof fl === 'number') base.failedLogins = fl;
-    const lu = (row as { lockedUntil?: Date | null }).lockedUntil;
-    if (lu != null) base.lockedUntil = lu;
-    return base as AuthCredentialView;
+    const doc = await credCol().findOne({ emailNorm });
+    if (!doc) return null;
+    return mapDocToView(doc);
   },
   async create(input) {
     const now = new Date();
@@ -68,28 +78,25 @@ export const AuthCredentialRepoMongo: AuthCredentialRepoPort = {
   },
   async updatePassword(emailNorm, input) {
     const now = new Date();
-    const r = await credCol().findOneAndUpdate(
+    const result = await credCol().findOneAndUpdate(
       { emailNorm } as Filter<AuthCredentialDoc>,
-      { $set: { algo: input.algo, salt: input.salt, hash: input.hash, passwordChangedAt: now, failedLogins: 0, lockedUntil: null, updatedAt: now } } as UpdateFilter<AuthCredentialDoc>,
+      {
+        $set: {
+          algo: input.algo,
+          salt: input.salt,
+          hash: input.hash,
+          passwordChangedAt: now,
+          failedLogins: 0,
+          lockedUntil: null,
+          updatedAt: now,
+        },
+      } as UpdateFilter<AuthCredentialDoc>,
       { returnDocument: 'after' }
     );
-    const doc = ((r as unknown as { value?: AuthCredentialDoc | null }).value ?? (r as unknown as AuthCredentialDoc | null)) ?? null;
+    // MongoDB driver returns the document directly or via .value depending on version
+    const doc = (result as WithId<AuthCredentialDoc> | null) ?? null;
     if (!doc) return null;
-    const base: Record<string, unknown> = {
-      id: String((doc as { _id?: unknown })._id ?? ''),
-      userId: String((doc as { userId?: unknown }).userId ?? ''),
-      emailNorm: (doc as { emailNorm?: string }).emailNorm ?? emailNorm,
-      algo: 'scrypt',
-      salt: (doc as { salt?: string }).salt ?? input.salt,
-      hash: (doc as { hash?: string }).hash ?? input.hash,
-    };
-    const pca = (doc as { passwordChangedAt?: Date }).passwordChangedAt;
-    if (pca) base.passwordChangedAt = pca;
-    const fl = (doc as { failedLogins?: number }).failedLogins;
-    if (typeof fl === 'number') base.failedLogins = fl;
-    const lu = (doc as { lockedUntil?: Date | null }).lockedUntil;
-    if (lu != null) base.lockedUntil = lu;
-    return base as AuthCredentialView;
+    return mapDocToView(doc);
   },
   async recordFailed(credId, opts = {}) {
     const lockOn = Math.max(1, Math.trunc(opts.lockOnCount ?? 5));
@@ -97,6 +104,7 @@ export const AuthCredentialRepoMongo: AuthCredentialRepoPort = {
 
     const current = await credCol().findOne({ _id: maybeObjectId(credId) });
     if (!current) return null;
+
     const nextFailed = (current.failedLogins ?? 0) + 1;
     const updates: Partial<AuthCredentialDoc> = {};
     if (nextFailed >= lockOn) {
@@ -106,23 +114,17 @@ export const AuthCredentialRepoMongo: AuthCredentialRepoPort = {
       updates.failedLogins = nextFailed;
     }
 
-    await credCol().updateOne({ _id: maybeObjectId(credId) }, { $set: updates as unknown as UpdateFilter<AuthCredentialDoc> });
-    const obj = { ...(current as unknown as Record<string, unknown>), ...(updates as unknown as Record<string, unknown>) } as Record<string, unknown>;
-    const base: Record<string, unknown> = {
-      id: String((obj._id as unknown) ?? ''),
-      userId: String((obj.userId as unknown) ?? ''),
-      emailNorm: String((obj.emailNorm as unknown) ?? ''),
-      algo: 'scrypt',
-      salt: String((obj.salt as unknown) ?? ''),
-      hash: String((obj.hash as unknown) ?? ''),
+    await credCol().updateOne(
+      { _id: maybeObjectId(credId) },
+      { $set: updates } as UpdateFilter<AuthCredentialDoc>
+    );
+
+    // Merge updates with current document for return value
+    const merged: WithId<AuthCredentialDoc> = {
+      ...current,
+      ...updates,
     };
-    const pca = obj.passwordChangedAt as Date | undefined;
-    if (pca) base.passwordChangedAt = pca;
-    const fl = obj.failedLogins as number | undefined;
-    if (typeof fl === 'number') base.failedLogins = fl;
-    const lu = obj.lockedUntil as Date | null | undefined;
-    if (lu != null) base.lockedUntil = lu;
-    return base as AuthCredentialView;
+    return mapDocToView(merged);
   },
   async clearFailures(credId: string) {
     await credCol().updateOne({ _id: maybeObjectId(credId) }, { $set: { failedLogins: 0, lockedUntil: null } } as UpdateFilter<AuthCredentialDoc>);

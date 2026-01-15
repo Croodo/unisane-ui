@@ -4,13 +4,13 @@
  * Centralized cache key builders for consistent key naming.
  */
 
-import { normalizeEmail } from '@unisane/identity';
+import { Email } from '@unisane/kernel';
 
 export const authKeys = {
-  otpCode: (email: string) => `otp:login:${normalizeEmail(email)}` as const,
+  otpCode: (email: string) => `otp:login:${Email.create(email).toString()}` as const,
 
   resetToken: (email: string, token: string) =>
-    `reset:pw:${normalizeEmail(email)}:${token}` as const,
+    `reset:pw:${Email.create(email).toString()}:${token}` as const,
 
   phoneVerify: (userId: string) => `phone:verify:${userId}` as const,
 

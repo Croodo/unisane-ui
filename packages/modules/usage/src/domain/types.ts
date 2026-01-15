@@ -1,5 +1,5 @@
 export type UsageHourRow = {
-  tenantId: string;
+  scopeId: string;
   feature: string;
   count: number;
 };

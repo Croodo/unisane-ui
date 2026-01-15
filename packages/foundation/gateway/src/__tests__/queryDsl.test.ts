@@ -274,7 +274,7 @@ describe('applyFilters()', () => {
     const result = applyFilters(items, filters, testRegistry);
 
     expect(result).toHaveLength(1);
-    expect(result[0].name).toBe('Test Gamma');
+    expect(result[0]?.name).toBe('Test Gamma');
   });
 
   it('should return all items when no filters', () => {

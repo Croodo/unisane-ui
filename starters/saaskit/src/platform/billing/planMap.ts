@@ -5,9 +5,8 @@
 //   "stripe": { "free": "price_...", "pro": "price_..." },
 //   "razorpay": { "free": "plan_...", "pro": "plan_..." }
 // }
-import { getEnv } from "@/src/shared/env";
-import type { BillingProvider } from "@/src/shared/constants/providers";
-import { createEnvJsonCache } from "@/src/shared/envJson";
+import { getEnv, createEnvJsonCache } from "@unisane/kernel";
+import type { BillingProvider } from "@unisane/kernel";
 
 type Provider = BillingProvider;
 type PlanMap = Partial<Record<BillingProvider, Record<string, string>>>;

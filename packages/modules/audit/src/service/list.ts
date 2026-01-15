@@ -1,16 +1,15 @@
-import { getTenantId } from "@unisane/kernel";
+import { getScopeId, getIdentityProvider, hasIdentityProvider } from "@unisane/kernel";
 import type { ListPageArgs } from "@unisane/kernel";
 import { listPage } from "../data/audit.repository";
-import { usersRepository } from "@unisane/identity";
 
 // ════════════════════════════════════════════════════════════════════════════
 // List Audit
 // ════════════════════════════════════════════════════════════════════════════
 
 export async function listAudit(args: ListPageArgs) {
-  const tenantId = getTenantId();
+  const scopeId = getScopeId();
   const { rows, nextCursor, prevCursor } = await listPage({
-    tenantId,
+    scopeId,
     limit: args.limit,
     ...(args.cursor ? { cursor: args.cursor } : {}),
   });
@@ -20,8 +19,10 @@ export async function listAudit(args: ListPageArgs) {
     ...new Set(rows.map((r) => r.actorId).filter((id): id is string => !!id)),
   ];
 
-  // Batch fetch actor info
-  const actorMap = await usersRepository.findByIds(actorIds);
+  // Batch fetch actor info via port (gracefully handles missing provider)
+  const actorMap = hasIdentityProvider()
+    ? await getIdentityProvider().findUsersByIds(actorIds)
+    : new Map<string, { id: string; email?: string; displayName?: string | null }>();
 
   // Map rows with actor info
   const items = rows.map((r) => {

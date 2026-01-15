@@ -13,7 +13,7 @@ import { KV } from '@unisane/kernel';
  * ```typescript
  * import { settingsKeys } from '@unisane/settings';
  *
- * const cached = await cacheGet(settingsKeys.setting('production', 'app', 'theme', tenantId));
+ * const cached = await cacheGet(settingsKeys.setting('production', 'app', 'theme', scopeId));
  * ```
  */
 export const settingsKeys = {
@@ -22,16 +22,16 @@ export const settingsKeys = {
   // ════════════════════════════════════════════════════════════════════════════
 
   /** Cache key for a specific setting lookup */
-  setting: (env: string, namespace: string, key: string, tenantId: string | null) =>
-    `${KV.SETTING}${env}:${namespace}:${key}:${tenantId ?? '__platform__'}` as const,
+  setting: (env: string, namespace: string, key: string, scopeId: string | null) =>
+    `${KV.SETTING}${env}:${namespace}:${key}:${scopeId ?? '__platform__'}` as const,
 
   /** Cache key for all settings in a namespace */
-  namespace: (env: string, namespace: string, tenantId: string | null) =>
-    `${KV.SETTING}${env}:${namespace}:*:${tenantId ?? '__platform__'}` as const,
+  namespace: (env: string, namespace: string, scopeId: string | null) =>
+    `${KV.SETTING}${env}:${namespace}:*:${scopeId ?? '__platform__'}` as const,
 
   /** Cache key for all tenant settings */
-  tenantSettings: (env: string, tenantId: string) =>
-    `${KV.SETTING}${env}:*:*:${tenantId}` as const,
+  tenantSettings: (env: string, scopeId: string) =>
+    `${KV.SETTING}${env}:*:*:${scopeId}` as const,
 
   /** Cache key for all platform settings */
   platformSettings: (env: string) =>
@@ -42,10 +42,3 @@ export const settingsKeys = {
  * Type for cache key functions.
  */
 export type SettingsKeyBuilder = typeof settingsKeys;
-
-/**
- * @deprecated Use settingsKeys.setting() instead. Will be removed in next major version.
- */
-export function settingCacheKey(env: string, ns: string, key: string, tenantId: string | null) {
-  return settingsKeys.setting(env, ns, key, tenantId);
-}

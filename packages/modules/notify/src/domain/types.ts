@@ -17,7 +17,7 @@ export type InappReceiptView = {
 };
 
 export type SendEmailInput = {
-  tenantId?: string | null;
+  scopeId?: string | null;
   to: { email: string; name?: string };
   template: string;
   props?: Record<string, unknown>;
@@ -36,7 +36,7 @@ export type SendEmailInput = {
 };
 
 export type EnqueueEmailArgs = {
-  tenantId: string;
+  scopeId: string;
   body: z.infer<
     typeof import("./schemas").ZEmailEnqueue
   >;
@@ -52,5 +52,9 @@ export type SetPrefsArgs = {
 };
 
 export type SendEmailResult =
-  | { sent: true }
-  | { sent: false; reason: "suppressed" | "opted_out" | "no_provider" };
+  | { sent: true; messageId?: string }
+  | {
+      sent: false;
+      reason: "suppressed" | "opted_out" | "no_provider" | "provider_error";
+      error?: string;
+    };

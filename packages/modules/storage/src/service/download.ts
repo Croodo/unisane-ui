@@ -1,4 +1,4 @@
-import { getTenantId, connectDb, getSignedDownloadUrl, assertTenantOwnership } from "@unisane/kernel";
+import { connectDb, getSignedDownloadUrl, assertScopeOwnership } from "@unisane/kernel";
 import { STORAGE_LIMITS, FILE_STATUS } from "@unisane/kernel";
 import { StorageRepo } from "../data/storage.repository";
 import { ERR } from "@unisane/gateway";
@@ -9,13 +9,12 @@ export type GetDownloadUrlArgs = {
 };
 
 export async function getDownloadUrl(args: GetDownloadUrlArgs) {
-  const tenantId = getTenantId();
   await connectDb();
 
   if (args.fileId) {
     const file = await StorageRepo.findById(args.fileId);
     if (!file) throw ERR.notFound("File not found");
-    assertTenantOwnership(file);
+    assertScopeOwnership(file);
     if (file.status !== FILE_STATUS.ACTIVE) {
       throw ERR.validation("File not available");
     }
@@ -29,7 +28,7 @@ export async function getDownloadUrl(args: GetDownloadUrlArgs) {
   if (args.key) {
     const file = await StorageRepo.findByKey(args.key);
     if (file) {
-      assertTenantOwnership(file);
+      assertScopeOwnership(file);
     }
     const signed = await getSignedDownloadUrl(
       args.key,

@@ -7,15 +7,13 @@
 import { describe, it, expect } from 'vitest';
 import {
   IDENTITY_EVENTS,
-  USER_STATUS,
   API_KEY_STATUS,
-  GLOBAL_ROLES,
   IDENTITY_DEFAULTS,
   IDENTITY_COLLECTIONS,
-  type UserStatus,
   type ApiKeyStatus,
-  type GlobalRole,
 } from '../domain/constants';
+// USER_STATUS and GLOBAL_ROLES are now sourced from @unisane/kernel
+import { USER_STATUS, type UserStatus, GLOBAL_ROLES, type GlobalRole } from '@unisane/kernel';
 
 describe('IDENTITY_EVENTS', () => {
   it('should have all expected event names', () => {
@@ -44,22 +42,21 @@ describe('IDENTITY_EVENTS', () => {
 });
 
 describe('USER_STATUS', () => {
-  it('should have all expected status values', () => {
-    expect(USER_STATUS.ACTIVE).toBe('active');
-    expect(USER_STATUS.SUSPENDED).toBe('suspended');
-    expect(USER_STATUS.PENDING_VERIFICATION).toBe('pending_verification');
-    expect(USER_STATUS.DELETED).toBe('deleted');
+  // NOTE: USER_STATUS is now sourced from @unisane/kernel
+  // Kernel defines it as an array: ['invited', 'active', 'suspended']
+  it('should have all expected status values from kernel', () => {
+    expect(USER_STATUS).toContain('invited');
+    expect(USER_STATUS).toContain('active');
+    expect(USER_STATUS).toContain('suspended');
   });
 
-  it('should have exactly 4 statuses', () => {
-    expect(Object.keys(USER_STATUS)).toHaveLength(4);
+  it('should have exactly 3 statuses', () => {
+    expect(USER_STATUS).toHaveLength(3);
   });
 
-  it('should use snake_case values', () => {
-    const statusValues = Object.values(USER_STATUS);
-
-    for (const status of statusValues) {
-      expect(status).toMatch(/^[a-z][a-z_]*$/);
+  it('should use lowercase values', () => {
+    for (const status of USER_STATUS) {
+      expect(status).toMatch(/^[a-z]+$/);
     }
   });
 });
@@ -77,21 +74,20 @@ describe('API_KEY_STATUS', () => {
 });
 
 describe('GLOBAL_ROLES', () => {
-  it('should have all expected roles', () => {
-    expect(GLOBAL_ROLES.SUPERADMIN).toBe('superadmin');
-    expect(GLOBAL_ROLES.SUPPORT).toBe('support');
-    expect(GLOBAL_ROLES.USER).toBe('user');
+  // NOTE: GLOBAL_ROLES is now sourced from @unisane/kernel
+  // Kernel defines it as an array: ['super_admin', 'support_admin']
+  it('should have all expected roles from kernel', () => {
+    expect(GLOBAL_ROLES).toContain('super_admin');
+    expect(GLOBAL_ROLES).toContain('support_admin');
   });
 
-  it('should have exactly 3 global roles', () => {
-    expect(Object.keys(GLOBAL_ROLES)).toHaveLength(3);
+  it('should have exactly 2 global roles', () => {
+    expect(GLOBAL_ROLES).toHaveLength(2);
   });
 
-  it('should use lowercase values', () => {
-    const roleValues = Object.values(GLOBAL_ROLES);
-
-    for (const role of roleValues) {
-      expect(role).toMatch(/^[a-z]+$/);
+  it('should use snake_case values', () => {
+    for (const role of GLOBAL_ROLES) {
+      expect(role).toMatch(/^[a-z_]+$/);
     }
   });
 });
@@ -192,10 +188,11 @@ describe('Type Safety', () => {
     // Type assertion tests
     const userStatus: UserStatus = 'active';
     const apiKeyStatus: ApiKeyStatus = 'revoked';
-    const globalRole: GlobalRole = 'superadmin';
+    // GlobalRole from kernel is 'super_admin' | 'support_admin'
+    const globalRole: GlobalRole = 'super_admin';
 
     expect(userStatus).toBe('active');
     expect(apiKeyStatus).toBe('revoked');
-    expect(globalRole).toBe('superadmin');
+    expect(globalRole).toBe('super_admin');
   });
 });

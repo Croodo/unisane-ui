@@ -1,4 +1,4 @@
-import { col } from "@unisane/kernel";
+import { col, COLLECTIONS } from "@unisane/kernel";
 import type { Exposure } from "../domain/exposure";
 
 type ExposureDoc = {
@@ -9,11 +9,11 @@ type ExposureDoc = {
   reason: string;
   ruleIndex?: number;
   userId?: string;
-  tenantId?: string;
+  scopeId?: string;
   timestamp: Date;
 };
 
-const exposuresCol = () => col<ExposureDoc>("feature_flag_exposures");
+const exposuresCol = () => col<ExposureDoc>(COLLECTIONS.FLAG_EXPOSURES);
 
 export const ExposuresRepoMongo = {
   async log(exposure: Exposure) {
@@ -29,7 +29,7 @@ export const ExposuresRepoMongo = {
         ? { ruleIndex: exposure.ruleIndex }
         : {}),
       ...(exposure.userId ? { userId: exposure.userId } : {}),
-      ...(exposure.tenantId ? { tenantId: exposure.tenantId } : {}),
+      ...(exposure.tenantId ? { scopeId: exposure.tenantId } : {}),
       timestamp: new Date(exposure.timestamp),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- MongoDB document casting
     } as any);

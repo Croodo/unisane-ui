@@ -12,7 +12,7 @@ export async function getMeSummary(args: GetMeSummaryArgs): Promise<MeSummary> {
   if (!userId) {
     return {
       userId: null,
-      tenantId: null,
+      scopeId: null,
       role: null,
       plan: null,
       perms: perms ?? [],
@@ -25,7 +25,7 @@ export async function getMeSummary(args: GetMeSummaryArgs): Promise<MeSummary> {
     const u = await usersRepository.findById(userId);
     return {
       userId,
-      tenantId: null,
+      scopeId: null,
       role: null,
       plan: null,
       displayName: (u?.displayName as string | undefined) ?? null,
@@ -36,7 +36,7 @@ export async function getMeSummary(args: GetMeSummaryArgs): Promise<MeSummary> {
     };
   }
   const tenantsRepo = getTenantsRepo();
-  const t = await tenantsRepo.findById(latest.tenantId);
+  const t = await tenantsRepo.findById(latest.scopeId);
   const plan = (t?.planId as string | undefined) ?? 'free';
   const role = Array.isArray(latest.roles) && latest.roles.length
     ? String((latest.roles[0] as { roleId?: string }).roleId ?? 'member')
@@ -45,7 +45,7 @@ export async function getMeSummary(args: GetMeSummaryArgs): Promise<MeSummary> {
   const u = await usersRepository.findById(userId);
   return {
     userId,
-    tenantId: t?.id ?? latest.tenantId,
+    scopeId: t?.id ?? latest.scopeId,
     tenantSlug: (t?.slug as string | undefined) ?? null,
     tenantName: (t?.name as string | undefined) ?? null,
     role,

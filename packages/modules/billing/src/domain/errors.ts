@@ -10,8 +10,8 @@ export class SubscriptionNotFoundError extends DomainError {
   readonly code = ErrorCode.SUBSCRIPTION_NOT_FOUND;
   readonly status = 404;
 
-  constructor(tenantId: string) {
-    super(`No subscription found for tenant: ${tenantId}`);
+  constructor(scopeId: string) {
+    super(`No subscription found for scope: ${scopeId}`);
     this.name = 'SubscriptionNotFoundError';
   }
 }
@@ -20,8 +20,8 @@ export class SubscriptionAlreadyExistsError extends DomainError {
   readonly code = ErrorCode.CONFLICT;
   readonly status = 409;
 
-  constructor(tenantId: string) {
-    super(`Tenant ${tenantId} already has an active subscription`);
+  constructor(scopeId: string) {
+    super(`Scope ${scopeId} already has an active subscription`);
     this.name = 'SubscriptionAlreadyExistsError';
   }
 }
@@ -30,8 +30,8 @@ export class SubscriptionCancelledError extends DomainError {
   readonly code = ErrorCode.SUBSCRIPTION_CANCELLED;
   readonly status = 403;
 
-  constructor(tenantId: string) {
-    super(`Subscription for tenant ${tenantId} has been cancelled`);
+  constructor(scopeId: string) {
+    super(`Subscription for scope ${scopeId} has been cancelled`);
     this.name = 'SubscriptionCancelledError';
   }
 }
@@ -120,8 +120,8 @@ export class CustomerNotFoundError extends DomainError {
   readonly code = ErrorCode.CUSTOMER_NOT_FOUND;
   readonly status = 404;
 
-  constructor(tenantId: string) {
-    super(`Billing customer not found for tenant: ${tenantId}`);
+  constructor(scopeId: string) {
+    super(`Billing customer not found for scope: ${scopeId}`);
     this.name = 'CustomerNotFoundError';
   }
 }

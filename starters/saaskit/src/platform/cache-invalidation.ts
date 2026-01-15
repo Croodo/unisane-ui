@@ -123,8 +123,8 @@ export function initCacheInvalidation(): void {
     await Promise.all([
       cacheDelete(identityKeys.membership(tenantId, userId)),
       cacheDelete(identityKeys.userMemberships(userId)),
-      cacheDelete(identityKeys.tenantMembers(tenantId)),
-      cacheDelete(identityKeys.tenantMemberCount(tenantId)),
+      cacheDelete(identityKeys.scopeMembers(tenantId)),
+      cacheDelete(identityKeys.scopeMemberCount(tenantId)),
     ]);
   });
 
@@ -144,12 +144,12 @@ export async function invalidateUserCache(userId: string): Promise<void> {
 }
 
 /**
- * Manually invalidate tenant member cache (for use in edge cases).
+ * Manually invalidate scope member cache (for use in edge cases).
  */
-export async function invalidateTenantMemberCache(tenantId: string): Promise<void> {
+export async function invalidateScopeMemberCache(scopeId: string): Promise<void> {
   await Promise.all([
-    cacheDelete(identityKeys.tenantMembers(tenantId)),
-    cacheDelete(identityKeys.tenantMemberCount(tenantId)),
+    cacheDelete(identityKeys.scopeMembers(scopeId)),
+    cacheDelete(identityKeys.scopeMemberCount(scopeId)),
   ]);
-  logger.debug('cache-invalidation: tenant member cache manually invalidated', { tenantId });
+  logger.debug('cache-invalidation: scope member cache manually invalidated', { scopeId });
 }

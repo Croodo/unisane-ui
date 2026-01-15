@@ -45,6 +45,8 @@ export interface FactoryRef {
  * Route generation entry extracted from defineOpMeta
  */
 export interface RouteGenEntry {
+  /** Source file where this entry was defined */
+  sourceFile?: string;
   /** Import path for the service function */
   importPath: string;
   /** Name of the service function */
@@ -107,6 +109,8 @@ export interface Op {
   method: string;
   /** API path */
   path: string;
+  /** Operation key from defineOpMeta (e.g., 'billing.topup') - used for metadata lookup */
+  opKey?: string;
 }
 
 /**

@@ -1,6 +1,5 @@
 import { rollupHour } from "@unisane/usage";
 import { rollupDay } from "@unisane/usage";
-import { OutboxService } from "@/src/platform/outbox/service";
 import { deliverWebhook } from "@/src/platform/webhooks/outbound";
 import type { OutboundWebhookPayload } from "@/src/platform/webhooks/outbound";
 import { sendEmail } from "@unisane/notify";
@@ -9,18 +8,13 @@ import {
   reconcileRazorpay,
 } from "@unisane/billing";
 import { metrics } from "@/src/platform/telemetry";
-import { getEnv } from "@/src/shared/env";
+import { getEnv, connectDb, getSignedUploadUrl, redis, getOutboxProvider, enqueueOutbox } from "@unisane/kernel";
 import { JobsService } from "@unisane/import-export";
-import { connectDb } from "@unisane/kernel";
-import { getSignedUploadUrl } from "@unisane/kernel";
-import { redis } from "@unisane/kernel";
-import { OutboxRepo } from "@/src/platform/outbox/data/repo";
 import { SubscriptionsService } from "@unisane/billing";
 import {
-  clearTenantOverride,
-  clearUserOverride,
+  clearScopeOverride,
+  listExpiredOverridesForCleanup,
 } from "@unisane/flags";
-import { listExpiredOverridesForCleanup } from "@unisane/flags";
 import {
   cleanupOrphanedUploads,
   cleanupDeletedFiles,
@@ -43,6 +37,47 @@ function isEmailPayload(payload: unknown): payload is EmailPayload {
     typeof to.email === "string" &&
     typeof p.template === "string"
   );
+}
+
+type Dispatchers = {
+  email?: (payload: unknown) => Promise<void>;
+  webhook?: (payload: unknown) => Promise<void>;
+};
+
+/**
+ * Deliver a batch of outbox items using the kernel's OutboxPort.
+ * Claims items, dispatches them via the provided handlers, and marks success/failure.
+ */
+async function deliverOutboxBatch(
+  now: Date,
+  limit: number,
+  dispatchers: Dispatchers
+): Promise<{ delivered: number; failed: number }> {
+  const outbox = getOutboxProvider();
+  const items = await outbox.claimBatch(now, limit);
+  let delivered = 0;
+  let failed = 0;
+
+  for (const it of items) {
+    try {
+      if (it.kind === "email") {
+        if (!dispatchers.email) throw new Error("no email dispatcher configured");
+        await dispatchers.email(it.payload);
+      } else if (it.kind === "webhook") {
+        if (!dispatchers.webhook) throw new Error("no webhook dispatcher configured");
+        await dispatchers.webhook(it.payload);
+      } else {
+        throw new Error(`unknown outbox kind: ${String(it.kind)}`);
+      }
+      await outbox.markSuccess(it.id);
+      delivered++;
+    } catch (e) {
+      failed++;
+      const msg = (e as Error)?.message ?? "dispatch error";
+      await outbox.markFailure(it.id, msg, (it.attempts ?? 0) + 1);
+    }
+  }
+  return { delivered, failed };
 }
 
 export const registry: Record<
@@ -81,12 +116,12 @@ export const registry: Record<
         });
       };
     }
-    await OutboxService.deliverBatch(new Date(), 50, dispatchers);
+    await deliverOutboxBatch(new Date(), 50, dispatchers);
   },
   "deliver-webhooks": async (_ctx) => {
     void _ctx;
-    await OutboxService.deliverBatch(new Date(), 50, {
-      webhook: async (payload) => {
+    await deliverOutboxBatch(new Date(), 50, {
+      webhook: async (payload: unknown) => {
         // Validate and forward to outbound sender
         const o = payload as Record<string, unknown>;
         const url = typeof o.url === "string" ? o.url : null;
@@ -112,10 +147,11 @@ export const registry: Record<
   "retry-dlq": async (_ctx) => {
     void _ctx;
     // Requeue a limited number of dead items for another attempt
+    const outbox = getOutboxProvider();
     const now = new Date();
-    const dead = await OutboxRepo.listDead(50);
+    const dead = await outbox.listDead(50);
     const ids = dead.map((d) => d.id);
-    if (ids.length) await OutboxRepo.requeue(ids, now);
+    if (ids.length) await outbox.requeue(ids, now);
   },
   "alert-dead-outbox": async (_ctx) => {
     void _ctx;
@@ -132,7 +168,8 @@ export const registry: Record<
       PX: OUTBOX_DLQ_ALERT_MIN_INTERVAL_MIN * 60 * 1000,
     });
     if (!acquired) return; // Recently alerted; skip
-    const deadCount = await OutboxRepo.countDead();
+    const outbox = getOutboxProvider();
+    const deadCount = await outbox.countDead();
     if (deadCount <= 0) return;
     // Send a simple alert email with default template renderer
     try {
@@ -209,26 +246,19 @@ export const registry: Record<
     for (const d of docs) {
       const env =
         typeof d.env === "string"
-          ? (d.env as import("@/src/shared/constants/env").AppEnv)
+          ? (d.env as import("@unisane/kernel").AppEnv)
           : undefined;
       const key = String(d.key);
       const scopeId = String(d.scopeId);
+      const scopeType = d.scopeType as "tenant" | "user";
       try {
-        if (d.scopeType === "tenant") {
-          await clearTenantOverride({
-            ...(env ? { env } : {}),
-            key,
-            tenantId: scopeId,
-            actorIsSuperAdmin: true,
-          });
-        } else if (d.scopeType === "user") {
-          await clearUserOverride({
-            ...(env ? { env } : {}),
-            key,
-            userId: scopeId,
-            actorIsSuperAdmin: true,
-          });
-        }
+        await clearScopeOverride({
+          ...(env ? { env } : {}),
+          key,
+          scopeType,
+          scopeId,
+          actorIsSuperAdmin: true,
+        });
       } catch {
         // best-effort cleanup; continue on failures
       }
@@ -311,7 +341,7 @@ export function registerProJobs(target: typeof registry) {
     for (const s of docs) {
       if (_ctx.deadlineMs && Date.now() > _ctx.deadlineMs) break;
       const tenantId = (s as { tenantId?: string }).tenantId ?? null;
-      await OutboxService.enqueue({
+      await enqueueOutbox({
         tenantId,
         kind: "email",
         payload: {

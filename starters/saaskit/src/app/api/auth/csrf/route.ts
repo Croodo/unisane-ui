@@ -6,8 +6,9 @@ import { getCsrf, csrfFactory } from '@unisane/auth';
 export const runtime = 'nodejs';
 
 export const GET = makeHandlerRaw<unknown>(
-  ({ op: "auth.csrf", allowUnauthed: true }),
-  async ({ req, params, body, ctx, requestId }) => {const result = await (csrfFactory({ req, ctx, ...(params ? { params: params as Record<string, unknown> } : {}), requestId } as Parameters<typeof csrfFactory>[0]));
+  ({ op: "auth.csrf", allowUnauthed: true, rateKey: ({ req, ctx, body, params }) => ((() => { const xfwd = req.headers.get('x-forwarded-for') ?? ''; const ip = xfwd.split(',')[0]?.trim() || (req.headers.get('x-real-ip') ?? '-'); return ['-', ip, 'auth.csrf'].join(':'); })()) }),
+  async ({ req, params, body, ctx, requestId }) => {
+    const result = await (csrfFactory({ req, ctx, ...(params ? { params: params as Record<string, unknown> } : {}), requestId } as Parameters<typeof csrfFactory>[0]));
     return result as Response;
   }
 );

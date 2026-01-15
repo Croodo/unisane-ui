@@ -20,10 +20,10 @@ export async function getAdminUsersStats(args: AdminStatsQuery) {
   };
 }
 
-export async function getTenantMembershipCounts(tenantIds: string[]) {
-  return usersRepository.getTenantMembershipCounts(tenantIds);
+export async function getScopeMembershipCounts(scopeIds: string[]) {
+  return usersRepository.getScopeMembershipCounts(scopeIds);
 }
 
-export async function getTenantApiKeyCounts(tenantIds: string[]) {
-  return usersRepository.getTenantApiKeyCounts(tenantIds);
+export async function getScopeApiKeyCounts(scopeIds: string[]) {
+  return usersRepository.getScopeApiKeyCounts(scopeIds);
 }

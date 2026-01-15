@@ -6,10 +6,10 @@ import { Input } from "@unisane/ui/primitives/input";
 import { Label } from "@unisane/ui/primitives/label";
 import { Badge } from "@unisane/ui/components/badge";
 import { toast } from "@unisane/ui/components/toast";
-import { useSession } from "@/src/hooks/useSession";
+import { useSession } from "@/src/hooks/use-session";
 import { hooks } from "@/src/sdk/hooks";
 import type { ApikeysListItem, ApikeysCreateResponse } from "@/src/sdk/types";
-import { useApiError } from "@/src/hooks/useApiError";
+import { useApiError } from "@/src/hooks/use-api-error";
 import { DataTable } from "@unisane/data-table";
 import type { Column } from "@unisane/data-table";
 import { PageLayout } from "@/src/context/usePageLayout";
@@ -35,7 +35,7 @@ function formatKeyId(id: string): string {
 
 export function ApiKeysClient() {
   const { me } = useSession();
-  const tenantId = me?.tenantId ?? undefined;
+  const tenantId = me?.scopeId ?? undefined;
   const [name, setName] = useState("");
   const [scopes, setScopes] = useState("");
   const [createOpen, setCreateOpen] = useState(false);

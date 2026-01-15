@@ -1,12 +1,12 @@
 import { JobsRepo } from '../data/export.repository';
 import type { ExportJob } from '../data/export.repository';
-import { inngest } from '@unisane/kernel';
+import { sendJob } from '@unisane/kernel';
 
 export const JobsService = {
   createImport: JobsRepo.createImport,
   createExport: async (input: Parameters<typeof JobsRepo.createExport>[0]) => {
     const job = await JobsRepo.createExport(input);
-    await inngest.send({
+    await sendJob({
       name: "app/export.requested",
       data: { jobId: job.id, tenantId: job.tenantId },
     });

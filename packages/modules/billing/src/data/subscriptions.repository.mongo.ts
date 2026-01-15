@@ -1,15 +1,19 @@
-import { col } from "@unisane/kernel";
-import type { Collection, Document } from "mongodb";
+import {
+  col,
+  COLLECTIONS,
+  clampInt,
+  type Collection,
+  type Document,
+  type SubscriptionStatus,
+  type BillingProvider,
+} from "@unisane/kernel";
 import type { SubscriptionsRepo } from "../domain/ports";
 import type { SubscriptionView } from "../domain/types";
-import type { SubscriptionStatus } from '@unisane/kernel';
-import type { BillingProvider } from '@unisane/kernel';
 import type { LatestSub } from "@unisane/tenants";
-import { clampInt } from "@unisane/kernel";
 
 type SubscriptionDoc = {
   _id: unknown;
-  tenantId: string;
+  scopeId: string;
   provider?: BillingProvider | null;
   providerSubId?: string | null;
   planId?: string | null;
@@ -22,12 +26,12 @@ type SubscriptionDoc = {
   updatedAt?: Date;
 } & Document;
 
-const subsCol = (): Collection<SubscriptionDoc> => col<SubscriptionDoc>("subscriptions");
+const subsCol = (): Collection<SubscriptionDoc> => col<SubscriptionDoc>(COLLECTIONS.SUBSCRIPTIONS);
 
 export const mongoSubscriptionsRepo: SubscriptionsRepo = {
-  async getLatest(tenantId: string): Promise<SubscriptionView | null> {
+  async getLatest(scopeId: string): Promise<SubscriptionView | null> {
     const doc = await subsCol()
-      .find({ tenantId })
+      .find({ scopeId })
       .project({ planId: 1, quantity: 1, status: 1, cancelAtPeriodEnd: 1, currentPeriodEnd: 1 })
       .sort({ createdAt: -1 })
       .limit(1)
@@ -42,15 +46,15 @@ export const mongoSubscriptionsRepo: SubscriptionsRepo = {
       currentPeriodEnd: (doc.currentPeriodEnd as Date | null | undefined) ?? null,
     };
   },
-  async getLatestByTenantIds(tenantIds: string[]) {
-    if (!tenantIds?.length) return new Map<string, LatestSub>();
+  async getLatestByScopeIds(scopeIds: string[]) {
+    if (!scopeIds?.length) return new Map<string, LatestSub>();
     const rows = (await subsCol()
       .aggregate([
-        { $match: { tenantId: { $in: tenantIds } } },
+        { $match: { scopeId: { $in: scopeIds } } },
         { $sort: { createdAt: -1 } },
         {
           $group: {
-            _id: "$tenantId",
+            _id: "$scopeId",
             planId: { $first: "$planId" },
             status: { $first: "$status" },
             quantity: { $first: "$quantity" },
@@ -70,35 +74,35 @@ export const mongoSubscriptionsRepo: SubscriptionsRepo = {
     }
     return m;
   },
-  async getLatestProviderSubId(tenantId: string): Promise<string | null> {
+  async getLatestProviderSubId(scopeId: string): Promise<string | null> {
     const doc = await subsCol()
-      .find({ tenantId })
+      .find({ scopeId })
       .project({ providerSubId: 1 })
       .sort({ createdAt: -1 })
       .limit(1)
       .next();
     return (doc?.providerSubId && String(doc.providerSubId)) || null;
   },
-  async setCancelAtPeriodEnd(tenantId: string): Promise<void> {
-    const latest = await subsCol().find({ tenantId }).project({ _id: 1 }).sort({ createdAt: -1 }).limit(1).next();
+  async setCancelAtPeriodEnd(scopeId: string): Promise<void> {
+    const latest = await subsCol().find({ scopeId }).project({ _id: 1 }).sort({ createdAt: -1 }).limit(1).next();
     if (!latest) return;
     await subsCol().updateOne({ _id: latest._id }, { $set: { cancelAtPeriodEnd: true, updatedAt: new Date() } });
   },
-  async setCanceledImmediate(tenantId: string): Promise<void> {
-    const latest = await subsCol().find({ tenantId }).project({ _id: 1 }).sort({ createdAt: -1 }).limit(1).next();
+  async setCanceledImmediate(scopeId: string): Promise<void> {
+    const latest = await subsCol().find({ scopeId }).project({ _id: 1 }).sort({ createdAt: -1 }).limit(1).next();
     if (!latest) return;
     await subsCol().updateOne(
       { _id: latest._id },
       { $set: { status: "canceled", cancelAtPeriodEnd: false, currentPeriodEnd: new Date(), updatedAt: new Date() } }
     );
   },
-  async setQuantity(tenantId: string, quantity: number): Promise<void> {
-    const latest = await subsCol().find({ tenantId }).project({ _id: 1 }).sort({ createdAt: -1 }).limit(1).next();
+  async setQuantity(scopeId: string, quantity: number): Promise<void> {
+    const latest = await subsCol().find({ scopeId }).project({ _id: 1 }).sort({ createdAt: -1 }).limit(1).next();
     if (!latest) return;
     await subsCol().updateOne({ _id: latest._id }, { $set: { quantity, updatedAt: new Date() } });
   },
   async upsertByProviderId(args: {
-    tenantId: string;
+    scopeId: string;
     provider: BillingProvider;
     providerSubId: string;
     planId: string;
@@ -110,7 +114,7 @@ export const mongoSubscriptionsRepo: SubscriptionsRepo = {
   }): Promise<void> {
     const now = new Date();
     await subsCol().updateOne(
-      { tenantId: args.tenantId, provider: args.provider, providerSubId: args.providerSubId },
+      { scopeId: args.scopeId, provider: args.provider, providerSubId: args.providerSubId },
       {
         $set: {
           planId: args.planId,
@@ -126,24 +130,24 @@ export const mongoSubscriptionsRepo: SubscriptionsRepo = {
       { upsert: true }
     );
   },
-  async listByProviderId(provider: BillingProvider): Promise<Array<{ tenantId: string; providerSubId: string }>> {
+  async listByProviderId(provider: BillingProvider): Promise<Array<{ scopeId: string; providerSubId: string }>> {
     const rows = await subsCol()
       .find({ provider, providerSubId: { $ne: null } })
-      .project({ tenantId: 1, providerSubId: 1 })
+      .project({ scopeId: 1, providerSubId: 1 })
       .toArray();
     return rows
-      .map((r) => ({ tenantId: String(r.tenantId ?? ""), providerSubId: String(r.providerSubId ?? "") }))
-      .filter((r) => r.tenantId && r.providerSubId);
+      .map((r) => ({ scopeId: String(r.scopeId ?? ""), providerSubId: String(r.providerSubId ?? "") }))
+      .filter((r) => r.scopeId && r.providerSubId);
   },
   async listByStatusAged(statuses: SubscriptionStatus[], updatedBefore: Date, limit: number) {
     const docs = await subsCol()
       .find({ status: { $in: statuses }, updatedAt: { $lte: updatedBefore } })
-      .project({ tenantId: 1, providerSubId: 1, status: 1, updatedAt: 1 })
+      .project({ scopeId: 1, providerSubId: 1, status: 1, updatedAt: 1 })
       .sort({ updatedAt: 1 })
       .limit(clampInt(limit, 1, 200))
       .toArray();
     return docs.map((d) => ({
-      tenantId: String(d.tenantId ?? ""),
+      scopeId: String(d.scopeId ?? ""),
       providerSubId: d.providerSubId ? String(d.providerSubId) : null,
       status: (d.status as SubscriptionStatus | null | undefined) ?? null,
       updatedAt: d.updatedAt ?? null,

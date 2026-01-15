@@ -30,21 +30,10 @@ export const TENANT_EVENTS = {
   INVITATION_REVOKED: 'tenant.invitation.revoked',
 } as const;
 
-/**
- * Member roles within a tenant.
- */
-export const TENANT_ROLES = {
-  /** Full access to tenant, can manage billing and delete tenant */
-  OWNER: 'owner',
-  /** Can manage team members and most settings */
-  ADMIN: 'admin',
-  /** Standard member with limited permissions */
-  MEMBER: 'member',
-  /** Read-only access */
-  VIEWER: 'viewer',
-} as const;
-
-export type TenantRole = (typeof TENANT_ROLES)[keyof typeof TENANT_ROLES];
+// NOTE: Tenant roles are now defined in @unisane/kernel as ROLE.
+// Import from kernel: import { ROLE, RoleId } from '@unisane/kernel';
+// This module re-exports them as TENANT_ROLES/TenantRole for backward compatibility.
+// See: packages/foundation/kernel/src/rbac/roles.ts
 
 /**
  * Invitation status values.

@@ -4,7 +4,7 @@
  */
 
 export interface OutboxMessage {
-  tenantId: string;
+  scopeId: string;
   kind: string;
   payload: Record<string, unknown>;
   scheduledFor?: Date;

@@ -1,40 +1,30 @@
-import { connectDb, DEFAULT_LOCALE, scryptHashPassword } from '@unisane/kernel';
+import { connectDb, DEFAULT_LOCALE, scryptHashPassword, Email, PhoneE164, Username, getAuthIdentityProvider } from '@unisane/kernel';
 import { AuthCredentialRepo } from '../data/auth.repository';
-import {
-  normalizeEmail,
-  normalizePhoneE164,
-  normalizeUsername,
-  findUserByEmail,
-  findUserByUsername,
-  findUserByPhone,
-  createUser,
-  updateUserById,
-  getUserId,
-} from '@unisane/identity';
 import { ERR } from '@unisane/gateway';
 
 export async function signup(input: { email: string; password: string; displayName?: string; username?: string; firstName?: string; lastName?: string; phone?: string; locale?: string; timezone?: string }): Promise<{ userId: string }> {
   await connectDb();
-  const emailNorm = normalizeEmail(input.email);
+  const identity = getAuthIdentityProvider();
+  const emailNorm = Email.create(input.email).toString();
   const existing = await AuthCredentialRepo.findByEmailNorm(emailNorm);
   if (existing) throw ERR.versionMismatch();
 
   // Reuse existing user if present (e.g., created via OTP flow), else create
-  let user = await findUserByEmail(emailNorm);
+  let user = await identity.findUserByEmail(emailNorm);
   if (!user) {
     // Normalize optional fields
-    const username = input.username ? normalizeUsername(input.username) : undefined;
-    const phone = input.phone ? normalizePhoneE164(input.phone) : undefined;
+    const username = input.username ? Username.create(input.username).toString() : undefined;
+    const phone = input.phone ? PhoneE164.create(input.phone).toString() : undefined;
     // Optionally check for uniqueness before insert to provide clearer errors
     if (username) {
-      const byU = await findUserByUsername(username);
+      const byU = await identity.findUserByUsername(username);
       if (byU) throw ERR.versionMismatch();
     }
     if (phone) {
-      const byP = await findUserByPhone(phone);
+      const byP = await identity.findUserByPhone(phone);
       if (byP) throw ERR.versionMismatch();
     }
-    const created = await createUser({
+    const created = await identity.createUser({
       email: emailNorm,
       ...(input.displayName ? { displayName: input.displayName } : {}),
       ...(username ? { username } : {}),
@@ -59,9 +49,9 @@ export async function signup(input: { email: string; password: string; displayNa
   }
 
   // User exists - update displayName if needed
-  const userId = getUserId(user);
-  if (input.displayName && !(user as { displayName?: string | null }).displayName) {
-    await updateUserById(userId, { displayName: input.displayName });
+  const userId = identity.getUserId(user);
+  if (input.displayName && !user.displayName) {
+    await identity.updateUserById(userId, { displayName: input.displayName });
   }
 
   // Hash password

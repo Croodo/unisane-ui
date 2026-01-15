@@ -1,4 +1,4 @@
-import { listByProviderCursor as tenantIntegrationsCursor } from "../data/tenant-integrations.repository";
+import { listByProviderCursor as scopeIntegrationsCursor } from "../data/scope-integrations.repository";
 import { SubscriptionsRepository } from "../data/subscriptions.repository";
 import { InvoicesRepository } from "../data/invoices.repository";
 import { PaymentsRepository } from "../data/payments.repository";
@@ -74,8 +74,8 @@ export async function reconcileStripe(
   payments: number;
 }> {
   const t0 = Date.now();
-  const cursor = tenantIntegrationsCursor("stripe") as AsyncIterable<{
-    tenantId: string;
+  const cursor = scopeIntegrationsCursor("stripe") as AsyncIterable<{
+    scopeId: string;
     customerId: string;
   }>;
   let customers = 0;
@@ -85,7 +85,7 @@ export async function reconcileStripe(
   for await (const row of cursor) {
     customers++;
     if (deadlineMs && Date.now() > deadlineMs) break;
-    const tenantId = row.tenantId;
+    const scopeId = row.scopeId;
     const customer = row.customerId;
 
     // Subscriptions
@@ -107,7 +107,7 @@ export async function reconcileStripe(
           getNumber(s, ["current_period_end"]) ??
           getNumber(s, ["items", "data", "0", "current_period_end"]);
         await SubscriptionsRepository.upsertByProviderId({
-          tenantId,
+          scopeId,
           provider: "stripe",
           providerSubId: id ?? "",
           planId: priceId ?? "unknown",
@@ -123,7 +123,7 @@ export async function reconcileStripe(
       }
     } catch (err) {
       const isProviderError = err instanceof ProviderError;
-      logger.warn("reconcile: stripe subscription fetch failed", { err, tenantId, customer, provider: "stripe", retryable: isProviderError ? err.retryable : undefined });
+      logger.warn("reconcile: stripe subscription fetch failed", { err, scopeId, customer, provider: "stripe", retryable: isProviderError ? err.retryable : undefined });
     }
 
     if (deadlineMs && Date.now() > deadlineMs) break;
@@ -149,7 +149,7 @@ export async function reconcileStripe(
             currency
           );
           await InvoicesRepository.upsertByProviderId({
-            tenantId,
+            scopeId,
             provider: "stripe",
             providerInvoiceId: id,
             amount: amountMajor,
@@ -166,7 +166,7 @@ export async function reconcileStripe(
             currency
           );
           await PaymentsRepository.upsertByProviderId({
-            tenantId,
+            scopeId,
             provider: "stripe",
             providerPaymentId: paymentIntent,
             amount: amountMajor,
@@ -179,7 +179,7 @@ export async function reconcileStripe(
       }
     } catch (err) {
       const isProviderError = err instanceof ProviderError;
-      logger.warn("reconcile: stripe invoice/payment fetch failed", { err, tenantId, customer, provider: "stripe", retryable: isProviderError ? err.retryable : undefined });
+      logger.warn("reconcile: stripe invoice/payment fetch failed", { err, scopeId, customer, provider: "stripe", retryable: isProviderError ? err.retryable : undefined });
     }
   }
   const elapsed = Date.now() - t0;
@@ -234,7 +234,7 @@ export async function reconcileRazorpay(
       const quantity = getNumber(s, ["quantity"]);
       const planId = getString(s, ["plan_id"]) || getString(s, ["plan", "id"]);
       await SubscriptionsRepository.upsertByProviderId({
-        tenantId: row.tenantId,
+        scopeId: row.scopeId,
         provider: "razorpay",
         providerSubId: row.providerSubId,
         planId: planId ?? "unknown",
@@ -265,7 +265,7 @@ export async function reconcileRazorpay(
         const mapped: import("@unisane/kernel").PaymentStatus =
           statusRaw === "captured" ? "succeeded" : "processing";
         await PaymentsRepository.upsertByProviderId({
-          tenantId: row.tenantId,
+          scopeId: row.scopeId,
           provider: "razorpay",
           providerPaymentId: row.providerPaymentId,
           amount: amountMajor,

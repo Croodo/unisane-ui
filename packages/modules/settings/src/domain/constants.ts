@@ -64,7 +64,7 @@ export const SETTINGS_DEFAULTS = {
   DEFAULT_PAGE_SIZE: 50,
   /** Maximum pagination limit */
   MAX_PAGE_SIZE: 200,
-  /** Platform scope identifier when tenantId is null */
+  /** Platform scope identifier when scopeId is null */
   PLATFORM_SCOPE: '__platform__',
 } as const;
 

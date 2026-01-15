@@ -1,6 +1,6 @@
-import { connectDb, enforceTokensAndQuota, FEATURE, FLAG, getTenantId, ctx } from "@unisane/kernel";
+import { connectDb, enforceTokensAndQuota, FEATURE, FLAG, getScopeId, getScopePlan } from "@unisane/kernel";
 import type { PlanId } from "@unisane/kernel";
-import { isEnabledForTenant } from "@unisane/flags";
+import { isEnabledForScope } from "@unisane/flags";
 import { ERR } from "@unisane/gateway";
 import { assertActiveSubscriptionForCredits } from "@unisane/billing";
 
@@ -11,11 +11,11 @@ export type GenerateArgs = {
 };
 
 export async function generate(args: GenerateArgs = {}): Promise<{ output: { text: string } }> {
-  const tenantId = getTenantId();
-  const plan = await ctx.getPlan() as PlanId;
+  const scopeId = getScopeId();
+  const plan = await getScopePlan() as PlanId;
 
-  // Feature gate: allow per-tenant enablement
-  const enabled = await isEnabledForTenant({ key: FLAG.AI_GENERATE, tenantId, ctx: { plan } });
+  // Feature gate: allow per-scope enablement
+  const enabled = await isEnabledForScope({ key: FLAG.AI_GENERATE, scopeId, ctx: { plan } });
   if (!enabled) throw ERR.forbidden('Feature disabled');
   // Ensure DB is connected for usage/credits checks
   await connectDb();
@@ -26,7 +26,7 @@ export async function generate(args: GenerateArgs = {}): Promise<{ output: { tex
       ? args.idem
       : (globalThis.crypto?.randomUUID?.() ?? String(Date.now()));
   await enforceTokensAndQuota({
-    tenantId,
+    tenantId: scopeId,
     featureKey: FEATURE.AI_GENERATE,
     tokens: 1,
   });

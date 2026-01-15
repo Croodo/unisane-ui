@@ -9,52 +9,71 @@ import {
 import { connectDb } from "@unisane/kernel";
 import { getUserGlobalRole } from "./users";
 
-export function permCacheKeyForUser(tenantId: string, userId: string): string {
-  return `${KV.PERMSET}${tenantId}:user:${userId}`;
+/**
+ * Build cache key for user permissions.
+ *
+ * Key format: `{KV.PERMSET}{scopeId}:user:{userId}`
+ *
+ * **Note:** The `:user:` segment ensures no collision with API key cache keys
+ * which use `:key:` segment. This is safe because:
+ * - UserIds are MongoDB ObjectIds (24 hex chars)
+ * - ApiKeyIds are also ObjectIds
+ * - Neither can contain the `:` character
+ */
+export function permCacheKeyForUser(scopeId: string, userId: string): string {
+  return `${KV.PERMSET}${scopeId}:user:${userId}`;
 }
 
 export async function invalidatePermsForUser(
-  tenantId: string,
+  scopeId: string,
   userId: string
 ): Promise<void> {
   try {
-    await kv.del(permCacheKeyForUser(tenantId, userId));
+    await kv.del(permCacheKeyForUser(scopeId, userId));
   } catch {
     // best-effort
   }
 }
 
+/**
+ * Build cache key for API key permissions.
+ *
+ * Key format: `{KV.PERMSET}{scopeId}:key:{apiKeyId}`
+ *
+ * **Note:** The `:key:` segment ensures no collision with user cache keys
+ * which use `:user:` segment. See `permCacheKeyForUser` for safety guarantees.
+ */
 export function permCacheKeyForApiKey(
-  tenantId: string,
+  scopeId: string,
   apiKeyId: string
 ): string {
-  return `${KV.PERMSET}${tenantId}:key:${apiKeyId}`;
+  return `${KV.PERMSET}${scopeId}:key:${apiKeyId}`;
 }
 
 export async function invalidatePermsForApiKey(
-  tenantId: string,
+  scopeId: string,
   apiKeyId: string
 ): Promise<void> {
   try {
-    await kv.del(permCacheKeyForApiKey(tenantId, apiKeyId));
+    await kv.del(permCacheKeyForApiKey(scopeId, apiKeyId));
   } catch {
     // best-effort
   }
 }
 
 export async function getEffectivePerms(
-  tenantId: string,
+  scopeId: string,
   userId: string
 ): Promise<Permission[]> {
   await connectDb();
-  const cacheKey = permCacheKeyForUser(tenantId, userId);
+  const cacheKey = permCacheKeyForUser(scopeId, userId);
   const cached = await kv.get(cacheKey);
   if (cached) {
     try {
       return JSON.parse(cached) as Permission[];
     } catch {}
   }
-  const m = await membershipsRepository.get(tenantId, userId);
+  const m = await membershipsRepository.get(scopeId, userId);
   const base: Set<Permission> = new Set();
   for (const r of m?.roles ?? []) {
     const bundle = ROLE_PERMS[r.roleId] ?? [];
@@ -100,6 +119,8 @@ export async function applyGlobalOverlays(
       const merged = new Set<Permission>([...perms, ...SUPPORT_ADMIN_OVERLAY]);
       return { perms: Array.from(merged), isSuperAdmin: false };
     }
-  } catch {}
+  } catch {
+    // Silently fail - user just won't get global overlays
+  }
   return { perms, isSuperAdmin: false };
 }

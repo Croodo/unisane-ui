@@ -1,7 +1,6 @@
-import { kv, randomDigits, logger } from "@unisane/kernel";
+import { kv, randomDigits, logger, PhoneE164, getAuthIdentityProvider } from "@unisane/kernel";
 import { ERR } from "@unisane/gateway";
 import { phoneVerifyKey } from "../domain/keys";
-import { normalizePhoneE164, usersRepository } from "@unisane/identity";
 
 export async function phoneStart(args: {
   userId: string;
@@ -9,9 +8,10 @@ export async function phoneStart(args: {
 }): Promise<{ sent: boolean }> {
   const userId = args.userId;
   if (!userId) throw ERR.loginRequired();
-  const phone = normalizePhoneE164(args.phone);
+  const identity = getAuthIdentityProvider();
+  const phone = PhoneE164.create(args.phone).toString();
   // Ensure phone uniqueness if different user already has it
-  const existing = await usersRepository.findByPhone(phone);
+  const existing = await identity.findUserByPhoneNorm(phone);
   if (existing && existing.id !== userId)
     throw ERR.versionMismatch();
   // Generate 6-digit code

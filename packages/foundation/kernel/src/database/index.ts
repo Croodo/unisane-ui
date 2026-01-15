@@ -60,24 +60,8 @@ export { col, db, closeDb } from './connection';
 export { getDbProvider } from './provider';
 export type { DbProvider } from './provider';
 
-// Tenant scoping utilities
-export {
-  tenantFilter,
-  tenantFilterActive,
-  assertTenantOwnership,
-  isTenantOwned,
-  withTenantId,
-  filterByTenant,
-  TenantIsolationError,
-  TenantContextRequiredError,
-  // Explicit variants for auth-time operations (before ctx.run())
-  explicitTenantFilter,
-  explicitTenantFilterActive,
-} from './tenant-scope';
-export type { TenantScoped } from './tenant-scope';
-
 // Filter utilities
-export { buildMongoFilter, escapeRegex, softDeleteFilter, SOFT_DELETE_FILTER } from './filters';
+export { buildMongoFilter, escapeRegex, softDeleteFilter } from './filters';
 export type { FilterOp, FilterSpec } from './types';
 
 // Repository selection
@@ -87,8 +71,12 @@ export { selectRepo } from './repo';
 export { runStatsAggregation, parseSortSpec, COMMON_SORT_FIELDS } from './aggregations';
 export type { StatsResult } from './aggregations';
 
-// ObjectId utilities
-export { maybeObjectId } from './objectid';
+// ObjectId utilities - use these instead of importing from 'mongodb' directly
+export { ObjectId, newObjectId, toObjectId, isValidObjectId, maybeObjectId } from './objectid';
+
+// Re-export MongoDB types so modules can import from @unisane/kernel instead of 'mongodb'
+// This centralizes the mongodb dependency and allows future database swapping
+export * from './mongo-types';
 
 // Index management
 export { ensureIndexes, listIndexes, dropIndexes, INDEX_DEFINITIONS } from './indexes';
@@ -141,7 +129,7 @@ export type { CollectionName } from './collections';
 // Base repository utilities
 export {
   createMongoRepository,
-  createTenantScopedRepository,
+  createScopedRepository,
   buildStandardUpdateSet,
 } from './base-repository';
 export type {
@@ -149,10 +137,47 @@ export type {
   BaseView,
   RepositoryConfig,
   BaseMongoRepository,
-  TenantScopedRepository,
+  ScopedRepository,
   BulkCreateResult,
   BulkDeleteResult,
 } from './base-repository';
+
+// Database Port (pluggable database abstraction)
+export {
+  getDatabaseProvider,
+  setDatabaseProvider,
+  resetDatabaseProvider,
+  createDatabaseProvider,
+  getDatabaseProviderType,
+  getCurrentDatabaseProviderType,
+  MongoDBProvider,
+  createMongoDBProvider,
+  MemoryDatabaseProvider,
+  createMemoryDatabaseProvider,
+  clearMemoryStorage,
+} from './port';
+export type {
+  DatabaseProviderType,
+  DatabaseProvider,
+  DatabaseProviderConfig,
+  DatabaseCollection,
+  DatabaseFilter,
+  FilterOperator,
+  QueryOptions as DatabaseQueryOptions,
+  UpdateOperators,
+  CreateResult as DatabaseCreateResult,
+  UpdateResult as DatabaseUpdateResult,
+  DeleteResult as DatabaseDeleteResult,
+  FindManyResult,
+  TransactionSession,
+  TransactionOptions,
+  DatabaseHealthStatus,
+  BaseRecord,
+  ScopedRecord,
+  SortDirection,
+  SortSpec,
+  PaginationOptions as DatabasePaginationOptions,
+} from './port';
 
 // Document mapper utilities
 export {

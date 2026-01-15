@@ -17,36 +17,36 @@
  * // Result: 'tenant:id:tenant_123'
  *
  * // Use with cacheGet/cacheSet
- * const cached = await cacheGet<TenantRow>(tenantKeys.byId(tenantId));
+ * const cached = await cacheGet<TenantRow>(tenantKeys.byId(scopeId));
  * ```
  */
 export const tenantKeys = {
   /** Cache key for tenant lookup by ID */
-  byId: (tenantId: string) => `tenant:id:${tenantId}` as const,
+  byId: (scopeId: string) => `tenant:id:${scopeId}` as const,
 
   /** Cache key for tenant lookup by slug */
   bySlug: (slug: string) => `tenant:slug:${slug}` as const,
 
   /** Cache key for tenant members list */
-  members: (tenantId: string) => `tenant:members:${tenantId}` as const,
+  members: (scopeId: string) => `tenant:members:${scopeId}` as const,
 
   /** Cache key for tenant member count */
-  memberCount: (tenantId: string) => `tenant:member_count:${tenantId}` as const,
+  memberCount: (scopeId: string) => `tenant:member_count:${scopeId}` as const,
 
   /** Cache key for user's tenant memberships */
   userMemberships: (userId: string) => `user:memberships:${userId}` as const,
 
   /** Cache key for pending invitations for a tenant */
-  invitations: (tenantId: string) => `tenant:invitations:${tenantId}` as const,
+  invitations: (scopeId: string) => `tenant:invitations:${scopeId}` as const,
 
   /** Cache key for a specific invitation */
   invitation: (invitationId: string) => `invitation:${invitationId}` as const,
 
   /** Cache key for tenant settings */
-  settings: (tenantId: string) => `tenant:settings:${tenantId}` as const,
+  settings: (scopeId: string) => `tenant:settings:${scopeId}` as const,
 
   /** Cache key for tenant plan info */
-  plan: (tenantId: string) => `tenant:plan:${tenantId}` as const,
+  plan: (scopeId: string) => `tenant:plan:${scopeId}` as const,
 } as const;
 
 /**

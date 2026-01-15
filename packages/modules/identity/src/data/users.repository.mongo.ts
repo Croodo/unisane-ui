@@ -17,10 +17,10 @@ import {
   decryptField,
   createSearchToken,
   parseEncryptionKey,
+  ObjectId,
+  type Collection,
+  type GlobalRole,
 } from "@unisane/kernel";
-import type { Collection } from "mongodb";
-import { ObjectId } from "mongodb";
-import type { GlobalRole } from "@unisane/kernel";
 import type {
   UserCreateInput,
   UserUpdateInput,

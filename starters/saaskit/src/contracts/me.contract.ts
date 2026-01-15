@@ -10,7 +10,7 @@ const c = initContract();
 
 export const ZMeOut = z.object({
   userId: z.string().nullable(),
-  tenantId: z.string().nullable(),
+  scopeId: z.string().nullable(),
   tenantSlug: z.string().nullable().optional(),
   tenantName: z.string().nullable().optional(),
   role: ZRoleId.nullable(),

@@ -1,14 +1,18 @@
-import { col } from "@unisane/kernel";
-import type { SortField } from "@unisane/kernel";
-import { seekPageMongoCollection } from "@unisane/kernel";
+import {
+  col,
+  COLLECTIONS,
+  seekPageMongoCollection,
+  type SortField,
+  type Filter,
+  type Document,
+  type WithId,
+  type ObjectId,
+} from "@unisane/kernel";
 import type { AuditRepoPort } from "../domain/ports";
 import type { AuditLogView } from "../domain/types";
-import type { Filter, Document, WithId } from "mongodb";
-
-import type { ObjectId } from "mongodb";
 type AuditLogDoc = {
   _id?: ObjectId;
-  tenantId: string;
+  scopeId: string;
   actorId?: string | null;
   action: string;
   resourceType: string;
@@ -22,7 +26,7 @@ type AuditLogDoc = {
   updatedAt?: Date;
 };
 
-const auditCol = () => col<AuditLogDoc>("audit_logs");
+const auditCol = () => col<AuditLogDoc>(COLLECTIONS.AUDIT_LOGS);
 
 export const AuditRepoMongo: AuditRepoPort = {
   async listPage(args) {
@@ -37,7 +41,7 @@ export const AuditRepoMongo: AuditRepoPort = {
       prevCursor,
     } = await seekPageMongoCollection<AuditLogDoc, AuditLogView>({
       collection: auditCol(),
-      baseFilter: { tenantId: args.tenantId } as Filter<AuditLogDoc>,
+      baseFilter: { scopeId: args.scopeId } as Filter<AuditLogDoc>,
       limit: args.limit,
       cursor: args.cursor ?? null,
       sortVec,
@@ -67,12 +71,12 @@ export const AuditRepoMongo: AuditRepoPort = {
       ...(prevCursor ? { prevCursor } : {}),
     } as const;
   },
-  async getTenantLastActivity(tenantIds: string[]) {
-    if (!tenantIds?.length) return new Map<string, Date | null>();
+  async getScopeLastActivity(scopeIds: string[]) {
+    if (!scopeIds?.length) return new Map<string, Date | null>();
     const rows = (await auditCol()
       .aggregate([
-        { $match: { tenantId: { $in: tenantIds } } },
-        { $group: { _id: "$tenantId", lastActivityAt: { $max: "$createdAt" } } },
+        { $match: { scopeId: { $in: scopeIds } } },
+        { $group: { _id: "$scopeId", lastActivityAt: { $max: "$createdAt" } } },
       ])
       .toArray()) as Array<{ _id: string; lastActivityAt: Date | null }>;
     const m = new Map<string, Date | null>();
@@ -84,9 +88,9 @@ export const AuditRepoMongo: AuditRepoPort = {
       { key: "createdAt", order: -1 },
       { key: "_id", order: -1 },
     ];
-    // Optional tenantId filter; empty = all logs
-    const baseFilter: Filter<AuditLogDoc> = args.tenantId
-      ? { tenantId: args.tenantId }
+    // Optional scopeId filter; empty = all logs
+    const baseFilter: Filter<AuditLogDoc> = args.scopeId
+      ? { scopeId: args.scopeId }
       : {};
     const {
       items: rows,
@@ -94,7 +98,7 @@ export const AuditRepoMongo: AuditRepoPort = {
       prevCursor,
     } = await seekPageMongoCollection<
       AuditLogDoc,
-      AuditLogView & { tenantId: string }
+      AuditLogView & { scopeId: string }
     >({
       collection: auditCol(),
       baseFilter,
@@ -103,7 +107,7 @@ export const AuditRepoMongo: AuditRepoPort = {
       sortVec,
       projection: {
         _id: 1,
-        tenantId: 1,
+        scopeId: 1,
         action: 1,
         resourceType: 1,
         resourceId: 1,
@@ -117,7 +121,7 @@ export const AuditRepoMongo: AuditRepoPort = {
       },
       map: (r: WithId<AuditLogDoc>) => ({
         id: String(r._id ?? ""),
-        tenantId: r.tenantId,
+        scopeId: r.scopeId,
         action: r.action as string,
         resourceType: r.resourceType as string,
         resourceId: r.resourceId ?? null,
@@ -139,7 +143,7 @@ export const AuditRepoMongo: AuditRepoPort = {
   async append(args) {
     const now = new Date();
     await auditCol().insertOne({
-      tenantId: args.tenantId,
+      scopeId: args.scopeId,
       actorId: args.actorId ?? null,
       action: args.action,
       resourceType: args.resourceType,

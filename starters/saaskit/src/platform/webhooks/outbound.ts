@@ -10,7 +10,7 @@ export type OutboundWebhookPayload = {
   body: unknown;
   secret?: string;
   headers?: Record<string, string>;
-  tenantId?: string | null;
+  scopeId?: string | null;
 };
 
 function isPrivateHostname(host: string): boolean {
@@ -39,11 +39,11 @@ function isAllowedTarget(urlStr: string): boolean {
   }
 }
 
-async function getAllowedHosts(tenantId?: string | null): Promise<string[]> {
+async function getAllowedHosts(scopeId?: string | null): Promise<string[]> {
   // Try tenant-scoped allowlist first
-  if (tenantId) {
+  if (scopeId) {
     const s = await getTypedSetting<string[]>({
-      tenantId,
+      scopeId,
       ns: SETTINGS_NS.WEBHOOKS,
       key: WEBHOOKS_SETTING_KEYS.ALLOWED_HOSTS,
     }).catch(() => null);
@@ -51,7 +51,7 @@ async function getAllowedHosts(tenantId?: string | null): Promise<string[]> {
   }
   // Fallback to global allowlist
   const g = await getTypedSetting<string[]>({
-    tenantId: null,
+    scopeId: null,
     ns: SETTINGS_NS.WEBHOOKS,
     key: WEBHOOKS_SETTING_KEYS.ALLOWED_HOSTS,
   }).catch(() => null);
@@ -87,7 +87,7 @@ export async function deliverWebhook(payload: OutboundWebhookPayload): Promise<v
   // SSRF/target guard
   if (!isAllowedTarget(payload.url)) {
     await recordOutbound({
-      tenantId: payload.tenantId ?? null,
+      scopeId: payload.scopeId ?? null,
       target: payload.url,
       status: 'failed',
       httpStatus: null,
@@ -101,12 +101,12 @@ export async function deliverWebhook(payload: OutboundWebhookPayload): Promise<v
   // Tenant/global allowlist (if configured)
   try {
     const u = new URL(payload.url);
-    const allowed = await getAllowedHosts(payload.tenantId ?? null);
+    const allowed = await getAllowedHosts(payload.scopeId ?? null);
     if (allowed.length > 0) {
       const ok = allowed.some((e) => hostMatchesAllowed(u.hostname, e));
       if (!ok) {
         await recordOutbound({
-          tenantId: payload.tenantId ?? null,
+          scopeId: payload.scopeId ?? null,
           target: payload.url,
           status: 'failed',
           httpStatus: null,
@@ -131,7 +131,7 @@ export async function deliverWebhook(payload: OutboundWebhookPayload): Promise<v
   } catch (e) {
     clearTimeout(to);
     await recordOutbound({
-      tenantId: payload.tenantId ?? null,
+      scopeId: payload.scopeId ?? null,
       target: payload.url,
       status: 'failed',
       httpStatus: null,
@@ -146,7 +146,7 @@ export async function deliverWebhook(payload: OutboundWebhookPayload): Promise<v
 
   if (res.ok) {
     await recordOutbound({
-      tenantId: payload.tenantId ?? null,
+      scopeId: payload.scopeId ?? null,
       target: payload.url,
       status: 'delivered',
       httpStatus: res.status,
@@ -156,7 +156,7 @@ export async function deliverWebhook(payload: OutboundWebhookPayload): Promise<v
     return;
   }
   await recordOutbound({
-    tenantId: payload.tenantId ?? null,
+    scopeId: payload.scopeId ?? null,
     target: payload.url,
     status: 'failed',
     httpStatus: res.status,

@@ -1,4 +1,4 @@
-import { getTenantId } from '@unisane/kernel';
+import { getScopeId } from '@unisane/kernel';
 import { listLedgerPage } from '../data/credits.repository';
 import type { LedgerEntry } from '../domain/types';
 
@@ -11,9 +11,9 @@ export async function listLedger(args: ListLedgerArgs): Promise<{
   items: LedgerEntry[];
   nextCursor?: string;
 }> {
-  const tenantId = getTenantId();
+  const scopeId = getScopeId();
   const { rows, nextCursor } = await listLedgerPage({
-    tenantId,
+    scopeId,
     limit: args.limit,
     ...(args.cursor ? { cursor: args.cursor } : {}),
   });

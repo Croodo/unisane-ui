@@ -1,4 +1,8 @@
-import { col, COLLECTIONS } from "@unisane/kernel";
+import {
+  col,
+  COLLECTIONS,
+  type Document,
+} from "@unisane/kernel";
 import type {
   PatchResult,
   PatchConflict,
@@ -6,12 +10,11 @@ import type {
   SettingRow,
 } from "../domain/types";
 import type { SettingsRepo } from "../domain/ports";
-import type { Document } from "mongodb";
 
 type SettingsKVDoc = {
   _id?: unknown;
   env: string;
-  tenantId: string | null;
+  scopeId: string | null;
   namespace: string;
   key: string;
   value?: unknown;
@@ -26,7 +29,7 @@ function mapDocToSettingRow(doc: SettingsKVDoc | null): SettingRow | null {
   if (!doc) return null;
   const result: SettingRow = {
     env: doc.env,
-    tenantId: doc.tenantId,
+    scopeId: doc.scopeId,
     namespace: doc.namespace,
     key: doc.key,
     value: doc.value ?? null,
@@ -40,13 +43,13 @@ function mapDocToSettingRow(doc: SettingsKVDoc | null): SettingRow | null {
 export const SettingsRepoMongo: SettingsRepo = {
   async findOne(
     env: string,
-    tenantId: string | null,
+    scopeId: string | null,
     ns: string,
     key: string
   ): Promise<SettingRow | null> {
     const doc = await settingsCol().findOne({
       env,
-      tenantId,
+      scopeId,
       namespace: ns,
       key,
     } as Document);
@@ -55,7 +58,7 @@ export const SettingsRepoMongo: SettingsRepo = {
 
   async upsertPatch(params: {
     env: string;
-    tenantId: string | null;
+    scopeId: string | null;
     ns: string;
     key: string;
     value?: unknown;
@@ -65,7 +68,7 @@ export const SettingsRepoMongo: SettingsRepo = {
   }): Promise<PatchResult> {
     const sel = {
       env: params.env,
-      tenantId: params.tenantId,
+      scopeId: params.scopeId,
       namespace: params.ns,
       key: params.key,
     } as const;

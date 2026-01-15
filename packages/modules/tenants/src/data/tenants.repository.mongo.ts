@@ -1,20 +1,26 @@
-import { col, COLLECTIONS, connectDb as connectDriverDb } from "@unisane/kernel";
+import {
+  col,
+  COLLECTIONS,
+  connectDb as connectDriverDb,
+  logger,
+  buildMongoFilter,
+  escapeRegex,
+  softDeleteFilter,
+  runStatsAggregation,
+  parseSortSpec,
+  seekPageMongoCollection,
+  maybeObjectId,
+  ObjectId,
+  type Document,
+  type Filter as MongoFilter,
+  type WithId,
+} from "@unisane/kernel";
 import type {
   TenantsRepoPort,
   TenantFilter,
 } from "../domain/ports";
 import type { TenantRow, LatestSub } from "../domain/types";
-import {
-  buildMongoFilter,
-  escapeRegex,
-  softDeleteFilter,
-} from "@unisane/kernel";
-import { runStatsAggregation, parseSortSpec } from "@unisane/kernel";
-import { seekPageMongoCollection } from "@unisane/kernel";
-import type { Document, Filter as MongoFilter, WithId } from "mongodb";
-import { ObjectId } from "mongodb";
 import { TenantSchema } from "../domain/entity";
-import { maybeObjectId } from "@unisane/kernel";
 
 // Driver-side document shape (minimal fields we read/write)
 type TenantDoc = {
@@ -142,21 +148,21 @@ export const TenantsRepoMongo: TenantsRepoPort = {
       planId: t.planId ?? "free",
     }));
   },
-  async setPlanId(tenantId: string, planId: string): Promise<void> {
+  async setPlanId(scopeId: string, planId: string): Promise<void> {
     await connectDriverDb();
     await tenantsCol().updateOne(
-      { _id: maybeObjectId(tenantId) },
+      { _id: maybeObjectId(scopeId) },
       { $set: { planId, updatedAt: new Date() } }
     );
   },
-  async deleteCascade(args: { tenantId: string; actorId?: string }) {
+  async deleteCascade(args: { scopeId: string; actorId?: string }) {
     await connectDriverDb();
-    const { tenantId, actorId } = args;
+    const { scopeId, actorId } = args;
     const now = new Date();
 
     // Verify tenant exists and not already deleted
     const tenant = await tenantsCol().findOne({
-      _id: maybeObjectId(tenantId),
+      _id: maybeObjectId(scopeId),
       ...softDeleteFilter(),
     });
     if (!tenant) {
@@ -171,37 +177,60 @@ export const TenantsRepoMongo: TenantsRepoPort = {
     // 1) Revoke all API keys (security first)
     try {
       const apiKeysResult = await col(COLLECTIONS.API_KEYS).updateMany(
-        { tenantId, revokedAt: null } as Document,
+        { scopeId, revokedAt: null } as Document,
         { $set: { revokedAt: now, updatedAt: now } } as Document
       );
       cascade.apiKeysRevoked = apiKeysResult.modifiedCount;
-    } catch {}
+    } catch (error) {
+      logger.warn('tenant.delete.cascade.apikeys_failed', {
+        scopeId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      // Continue with deletion - API keys will become orphaned but harmless
+    }
 
     // 2) Soft delete memberships
     try {
       const membershipsResult = await col(COLLECTIONS.MEMBERSHIPS).updateMany(
-        { tenantId, ...softDeleteFilter() } as Document,
+        { scopeId, ...softDeleteFilter() } as Document,
         { $set: { deletedAt: now, updatedAt: now } } as Document
       );
       cascade.membershipsDeleted = membershipsResult.modifiedCount;
-    } catch {}
+    } catch (error) {
+      logger.warn('tenant.delete.cascade.memberships_failed', {
+        scopeId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      // Continue with deletion - memberships will become orphaned
+    }
 
     // 3) Mark storage files as deleted (cleanup job handles provider)
     try {
       const storageResult = await col(COLLECTIONS.FILES).updateMany(
-        { tenantId, status: { $ne: "deleted" } } as Document,
+        { scopeId, status: { $ne: "deleted" } } as Document,
         { $set: { status: "deleted", deletedAt: now, updatedAt: now } } as Document
       );
       cascade.storageFilesMarked = storageResult.modifiedCount;
-    } catch {}
+    } catch (error) {
+      logger.warn('tenant.delete.cascade.storage_failed', {
+        scopeId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      // Continue with deletion - storage cleanup job will handle orphans
+    }
 
     // 4) Soft delete tenant
     try {
       await tenantsCol().updateOne(
-        { _id: maybeObjectId(tenantId) } as Document,
+        { _id: maybeObjectId(scopeId) } as Document,
         { $set: { deletedAt: now, deletedBy: actorId ?? null, updatedAt: now } } as Document
       );
-    } catch {
+    } catch (error) {
+      logger.error('tenant.delete.soft_delete_failed', {
+        scopeId,
+        actorId,
+        error: error instanceof Error ? error.message : String(error),
+      });
       return { deleted: false, cascade } as const;
     }
 

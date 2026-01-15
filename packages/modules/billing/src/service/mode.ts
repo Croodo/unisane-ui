@@ -4,7 +4,7 @@ import type { BillingMode } from "@unisane/kernel";
 
 export async function getBillingMode(): Promise<BillingMode> {
   const s = await getTypedSetting<BillingMode>({
-    tenantId: null, // Platform setting
+    scopeId: null, // Platform setting
     ns: "billing",
     key: "mode",
   });

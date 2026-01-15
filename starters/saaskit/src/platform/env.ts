@@ -2,10 +2,10 @@
  * Boot-time environment validation.
  *
  * This is intentionally a thin wrapper around the canonical Zod schema in
- * `src/shared/env.ts` so we don't drift between "docs validation" and actual runtime parsing.
+ * kernel's env module so we don't drift between "docs validation" and actual runtime parsing.
  */
 
-import { EnvSchema } from "@/src/shared/env";
+import { EnvSchema } from "@unisane/kernel";
 
 type ValidationResult = {
   valid: boolean;

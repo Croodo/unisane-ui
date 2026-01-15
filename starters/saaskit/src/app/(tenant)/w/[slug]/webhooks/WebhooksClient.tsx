@@ -5,7 +5,7 @@ import type { Column } from "@unisane/data-table";
 import { hooks } from "@/src/sdk/hooks";
 import type { WebhooksListEventsItem } from "@/src/sdk/types";
 import { PageLayout } from "@/src/context/usePageLayout";
-import { useSession } from "@/src/hooks/useSession";
+import { useSession } from "@/src/hooks/use-session";
 import { Card } from "@unisane/ui/components/card";
 import {
   StatusBadge,
@@ -16,7 +16,7 @@ import { Icon } from "@unisane/ui/primitives/icon";
 
 export default function WebhooksClient() {
   const { me } = useSession();
-  const tenantId = me?.tenantId ?? undefined;
+  const tenantId = me?.scopeId ?? undefined;
 
   const query = hooks.webhooks.listEvents(
     tenantId ? { params: { tenantId }, query: { limit: 100 } } : undefined,

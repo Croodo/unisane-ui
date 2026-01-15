@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { getTenantId, connectDb, getSignedUploadUrl, events } from "@unisane/kernel";
+import { getScopeId, connectDb, getSignedUploadUrl, events } from "@unisane/kernel";
 import {
   generateStorageKey,
   STORAGE_LIMITS,
@@ -17,7 +17,7 @@ export type RequestUploadArgs = {
 };
 
 export async function requestUpload(args: RequestUploadArgs) {
-  const tenantId = getTenantId();
+  const scopeId = getScopeId();
   await connectDb();
 
   const { uploaderId, input } = args;
@@ -35,7 +35,7 @@ export async function requestUpload(args: RequestUploadArgs) {
 
   const uuid = randomUUID();
   const key = generateStorageKey({
-    tenantId,
+    scopeId,
     folder,
     uuid,
     filename,
@@ -43,7 +43,7 @@ export async function requestUpload(args: RequestUploadArgs) {
   });
 
   const file = await StorageRepo.create({
-    tenantId,
+    scopeId,
     uploaderId,
     key,
     folder,
@@ -59,7 +59,7 @@ export async function requestUpload(args: RequestUploadArgs) {
   );
 
   await events.emit(STORAGE_EVENTS.UPLOAD_REQUESTED, {
-    tenantId,
+    scopeId,
     fileId: file.id,
     key,
     uploaderId,

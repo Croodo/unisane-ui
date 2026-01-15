@@ -6,7 +6,7 @@ import { ERR } from "@unisane/gateway";
 import { getEnv } from "@unisane/kernel";
 
 export async function topup(args: {
-  tenantId: string;
+  scopeId: string;
   amount: number;
   currency: string;
   description?: string;
@@ -37,7 +37,7 @@ export async function topup(args: {
   const amountMinorStr = toMinorStrCurrency(args.amount, args.currency);
   const credits = creditsForPurchase(args.amount, args.currency);
   const res = await provider.createTopupCheckout({
-    tenantId: args.tenantId,
+    scopeId: args.scopeId,
     amountMinorStr,
     currency: args.currency.toUpperCase(),
     credits,

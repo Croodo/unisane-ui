@@ -1,8 +1,13 @@
-import { col, COLLECTIONS, explicitTenantFilter, clampInt } from '@unisane/kernel';
-import type { Document } from 'mongodb';
+import {
+  col,
+  COLLECTIONS,
+  explicitScopeFilter,
+  clampInt,
+  type Document,
+} from '@unisane/kernel';
 
 export type ApiKeyCreateDbInput = {
-  tenantId: string;
+  scopeId: string;
   name?: string | null;
   hash: string;
   scopes: string[];
@@ -12,9 +17,10 @@ export type ApiKeyCreateDbInput = {
 export const mongoApiKeysRepository = {
   async create(input: ApiKeyCreateDbInput) {
     const now = new Date();
-    // Use explicit tenantId from input - operations happen within ctx.run() but we use the passed value
+    // Use explicit scopeId from input - operations happen within ctx.run() but we use the passed value
     const r = await col(COLLECTIONS.API_KEYS).insertOne({
-      tenantId: input.tenantId,
+      scopeType: 'tenant',
+      scopeId: input.scopeId,
       name: input.name ?? null,
       hash: input.hash,
       scopes: input.scopes,
@@ -29,18 +35,18 @@ export const mongoApiKeysRepository = {
       createdAt: now,
     } as const;
   },
-  async revoke(tenantId: string, keyId: string) {
-    // Use explicit tenantId parameter
+  async revoke(scopeId: string, keyId: string) {
+    // Use explicit scopeId parameter
     await col(COLLECTIONS.API_KEYS).updateOne(
-      explicitTenantFilter(tenantId, { _id: keyId }) as unknown as Document,
+      explicitScopeFilter('tenant', scopeId, { _id: keyId }) as unknown as Document,
       { $set: { revokedAt: new Date(), updatedAt: new Date() } } as unknown as Document
     );
     return { ok: true as const };
   },
-  async listByTenant(tenantId: string, limit = 100) {
-    // Use explicit tenantId parameter
+  async listByScope(scopeId: string, limit = 100) {
+    // Use explicit scopeId parameter
     const rows = await col(COLLECTIONS.API_KEYS)
-      .find(explicitTenantFilter(tenantId, {}) as unknown as Document)
+      .find(explicitScopeFilter('tenant', scopeId, {}) as unknown as Document)
       .sort({ createdAt: -1 })
       .limit(clampInt(limit, 1, 500))
       .project({ _id: 1, name: 1, scopes: 1, revokedAt: 1, createdAt: 1 } as unknown as Document)
@@ -59,15 +65,15 @@ export const mongoApiKeysRepository = {
       createdAt: k.createdAt ?? null,
     }));
   },
-  // NOTE: Cross-tenant operation - intentionally NOT using tenantFilter()
-  // This verifies API key by hash and returns the tenantId for context bootstrapping
+  // NOTE: Cross-scope operation - intentionally NOT using scopeFilter()
+  // This verifies API key by hash and returns the scopeId for context bootstrapping
   async findActiveByHash(hash: string) {
     const doc = (await col(COLLECTIONS.API_KEYS).findOne({ hash, revokedAt: null } as unknown as Document)) as unknown as {
       _id: unknown;
-      tenantId?: string;
+      scopeId?: string;
       scopes?: string[];
     } | null;
     if (!doc) return null;
-    return { id: String(doc._id), tenantId: String(doc.tenantId ?? ''), scopes: doc.scopes ?? [] } as const;
+    return { id: String(doc._id), scopeId: String(doc.scopeId ?? ''), scopes: doc.scopes ?? [] } as const;
   },
 };

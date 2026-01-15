@@ -5,12 +5,12 @@ import { SidebarTrigger } from "@unisane/ui/components/sidebar";
 import { Divider } from "@unisane/ui/components/divider";
 import { Text } from "@unisane/ui/primitives/text";
 import { usePageHeader } from "@/src/context/usePageHeader";
-import { useSession } from "@/src/hooks/useSession";
+import { useSession } from "@/src/hooks/use-session";
 import { NotificationBell } from "@/src/components/notifications/NotificationBell";
 
 function NotificationBellWrapper() {
   const { me } = useSession();
-  return <NotificationBell tenantId={me?.tenantId ?? undefined} />;
+  return <NotificationBell tenantId={me?.scopeId ?? undefined} />;
 }
 
 export function HeaderBar({ defaultTitle }: { defaultTitle: React.ReactNode }) {

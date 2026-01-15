@@ -1,7 +1,6 @@
 export * from "./env";
 export * from "./plan";
 export * from "./identity";
-export * from "./headers";
 export * from "./kv";
 export * from "./providers";
 export * from "./notify";
@@ -30,6 +29,7 @@ export * from "./rate-limits";
 export * from "./registry";
 export * from "./feature-flags";
 export * from "./usage";
+export * from "./headers";
 
 // Users (UI/registry enums)
 export const USER_STATUS = ["invited", "active", "suspended"] as const;

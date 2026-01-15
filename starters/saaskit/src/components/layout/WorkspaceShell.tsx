@@ -19,9 +19,9 @@ import {
 import { TopAppBar } from "@unisane/ui/components/top-app-bar";
 import { IconButton } from "@unisane/ui/components/icon-button";
 import { RailUserMenu } from "@/src/components/layout/RailUserMenu";
-import { useSession } from "@/src/hooks/useSession";
-import { PERM } from "@/src/shared/rbac/permissions";
-import type { Permission } from "@/src/shared/rbac/permissions";
+import { useSession } from "@/src/hooks/use-session";
+import { PERM } from "@unisane/kernel/client";
+import type { Permission } from "@unisane/kernel/client";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types

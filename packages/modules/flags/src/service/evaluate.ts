@@ -1,6 +1,6 @@
-import { isEnabledForSubject } from "./overrides";
+import { isEnabledForScope } from "./overrides";
 import { ExposuresRepo } from "../data/exposures.repository";
-import { getEnv, logger } from "@unisane/kernel";
+import { getEnv, logger, metrics } from "@unisane/kernel";
 import type { EvaluateFlagsArgs, EvalCtx } from "../domain/types";
 
 export type { EvaluateFlagsArgs };
@@ -20,10 +20,10 @@ export async function evaluateFlags(args: EvaluateFlagsArgs) {
         // plan: args.context.plan, // Need to map string to PlanId if we want to support it here
       };
 
-      const value = await isEnabledForSubject({
+      const value = await isEnabledForScope({
         env,
         key,
-        tenantId: args.context.tenantId ?? "anon", // Fallback for tenant-less eval
+        scopeId: args.context.tenantId ?? "anon", // Fallback for scope-less eval
         ...(args.context.userId ? { userId: args.context.userId } : {}),
         ctx,
       });
@@ -31,9 +31,9 @@ export async function evaluateFlags(args: EvaluateFlagsArgs) {
       results[key] = value;
 
       // Log exposure (fire and forget)
-      // Note: isEnabledForSubject doesn't currently return the *reason*.
+      // Note: isEnabledForScope doesn't currently return the *reason*.
       // For now we log a generic reason. To improve this, we'd need to refactor
-      // isEnabledForSubject to return { value, reason }.
+      // isEnabledForScope to return { value, reason }.
       // For MVP analytics, just knowing the value + context is often enough.
       void ExposuresRepo.log({
         env,
@@ -46,6 +46,7 @@ export async function evaluateFlags(args: EvaluateFlagsArgs) {
       }).catch((err) => {
         // Suppress logging errors to avoid impacting the user
         logger.warn("flags: failed to log flag exposure", { err });
+        metrics.increment("flags.exposure.log_failures", { labels: { flagKey: key } });
       });
     })
   );

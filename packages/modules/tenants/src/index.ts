@@ -27,11 +27,11 @@
  * const tenant = await readTenant('tenant_123');
  *
  * // Use cache keys
- * const cached = await cacheGet(tenantKeys.byId(tenantId));
+ * const cached = await cacheGet(tenantKeys.byId(scopeId));
  *
  * // Listen for events
  * events.on(TENANT_EVENTS.CREATED, async (event) => {
- *   console.log('New tenant:', event.payload.tenantId);
+ *   console.log('New tenant:', event.payload.scopeId);
  * });
  * ```
  */
@@ -104,16 +104,16 @@ export {
 
 export {
   TENANT_EVENTS,
-  TENANT_ROLES,
   INVITATION_STATUS,
   TENANT_DEFAULTS,
   TENANT_COLLECTIONS,
 } from "./domain/constants";
 
-export type {
-  TenantRole,
-  InvitationStatus,
-} from "./domain/constants";
+export type { InvitationStatus } from "./domain/constants";
+
+// Re-export kernel roles for backward compatibility
+// Consumers should prefer importing ROLE/RoleId directly from @unisane/kernel
+export { ROLE as TENANT_ROLES, type RoleId as TenantRole } from "@unisane/kernel";
 
 // ════════════════════════════════════════════════════════════════════════════
 // Domain - Cache Keys
@@ -133,3 +133,9 @@ export * from "./domain/ports";
 // ════════════════════════════════════════════════════════════════════════════
 
 export { TenantsRepo } from "./data/tenants.repository";
+
+// ════════════════════════════════════════════════════════════════════════════
+// Event Handlers (for event-driven decoupling)
+// ════════════════════════════════════════════════════════════════════════════
+
+export { registerTenantEventHandlers } from "./event-handlers";

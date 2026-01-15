@@ -3,7 +3,7 @@ import { Typography } from "@unisane/ui/components/typography";
 import { Input } from "@unisane/ui/primitives/input";
 import { Label } from "@unisane/ui/primitives/label";
 import { Icon } from "@unisane/ui/primitives/icon";
-import type { PlanId } from "@/src/shared/constants/plan";
+import type { PlanId } from "@unisane/kernel/client";
 
 export type PlanActionsSectionProps = {
   isSubscriptionMode: boolean;

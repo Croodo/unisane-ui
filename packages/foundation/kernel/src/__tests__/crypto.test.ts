@@ -4,7 +4,7 @@
  * Tests for cryptographic utilities: hashing, encryption, password handling.
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import {
   sha256Hex,
   randomDigits,

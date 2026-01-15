@@ -7,7 +7,8 @@ export const runtime = 'nodejs';
 
 export const POST = makeHandlerRaw<unknown>(
   ({ op: "auth.signOut", allowUnauthed: true }),
-  async ({ req, params, body, ctx, requestId }) => {const result = await (signoutFactory({ req, ctx, ...(params ? { params: params as Record<string, unknown> } : {}), requestId } as Parameters<typeof signoutFactory>[0]));
+  async ({ req, params, body, ctx, requestId }) => {
+    const result = await (signoutFactory({ req, ctx, ...(params ? { params: params as Record<string, unknown> } : {}), requestId } as Parameters<typeof signoutFactory>[0]));
     return result as Response;
   }
 );

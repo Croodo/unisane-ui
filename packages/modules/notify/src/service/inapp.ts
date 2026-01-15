@@ -3,7 +3,7 @@ import type {
   InappReceiptView,
 } from "../domain/types";
 import { NotificationsRepository } from "../data/notifications.repository";
-import { getTenantId, getUserId, redis, events, logger } from "@unisane/kernel";
+import { getScopeId, getScopeUserId, redis, events, logger, metrics } from "@unisane/kernel";
 import { KV } from "@unisane/kernel";
 import { NOTIFY_EVENTS } from "../domain/constants";
 
@@ -17,10 +17,10 @@ export type ListInappArgs = {
 };
 
 export async function listInapp(args: ListInappArgs) {
-  const tenantId = getTenantId();
-  const userId = getUserId();
+  const scopeId = getScopeId();
+  const userId = getScopeUserId();
   const { items: rows, nextCursor } = (await NotificationsRepository.listInappPage({
-    tenantId,
+    scopeId,
     userId,
     cursor: args.cursor,
     limit: args.limit,
@@ -30,7 +30,7 @@ export async function listInapp(args: ListInappArgs) {
   };
   const ids = rows.map((r) => r.id);
   const receiptMap = (await NotificationsRepository.listReceiptsMap(
-    tenantId,
+    scopeId,
     userId,
     ids
   )) as Map<string, InappReceiptView>;
@@ -54,9 +54,9 @@ export async function listInapp(args: ListInappArgs) {
 // ════════════════════════════════════════════════════════════════════════════
 
 export async function getUnreadCount() {
-  const tenantId = getTenantId();
-  const userId = getUserId();
-  const count = await NotificationsRepository.countUnread(tenantId, userId);
+  const scopeId = getScopeId();
+  const userId = getScopeUserId();
+  const count = await NotificationsRepository.countUnread(scopeId, userId);
   return { count } as const;
 }
 
@@ -69,11 +69,11 @@ export type MarkReadArgs = {
 };
 
 export async function markRead(args: MarkReadArgs) {
-  const tenantId = getTenantId();
-  const userId = getUserId();
-  await NotificationsRepository.upsertRead(tenantId, userId, args.id);
+  const scopeId = getScopeId();
+  const userId = getScopeUserId();
+  await NotificationsRepository.upsertRead(scopeId, userId, args.id);
   await events.emit(NOTIFY_EVENTS.READ, {
-    tenantId,
+    scopeId,
     userId,
     notificationId: args.id,
   });
@@ -85,11 +85,11 @@ export async function markRead(args: MarkReadArgs) {
 // ════════════════════════════════════════════════════════════════════════════
 
 export async function markAllSeen() {
-  const tenantId = getTenantId();
-  const userId = getUserId();
-  const cutoffId = await NotificationsRepository.latestNotificationId(tenantId, userId);
+  const scopeId = getScopeId();
+  const userId = getScopeUserId();
+  const cutoffId = await NotificationsRepository.latestNotificationId(scopeId, userId);
   if (!cutoffId) return { ok: true as const };
-  await NotificationsRepository.upsertSeenUntil(tenantId, userId, cutoffId);
+  await NotificationsRepository.upsertSeenUntil(scopeId, userId, cutoffId);
   return { ok: true as const };
 }
 
@@ -98,7 +98,7 @@ export async function markAllSeen() {
 // ════════════════════════════════════════════════════════════════════════════
 
 export type SendInappArgs = {
-  targetUserId: string;
+  targetScopeUserId: string;
   title: string;
   body: string;
   category?: string | null;
@@ -106,20 +106,20 @@ export type SendInappArgs = {
 };
 
 export async function sendInapp(args: SendInappArgs) {
-  const tenantId = getTenantId();
+  const scopeId = getScopeId();
   const created = await NotificationsRepository.createInapp({
-    tenantId,
-    userId: args.targetUserId,
+    scopeId,
+    userId: args.targetScopeUserId,
     title: args.title,
     body: args.body,
     ...(args.category ? { category: args.category } : {}),
     ...(args.data !== undefined ? { data: args.data } : {}),
   });
 
-  await NotificationsRepository.ensureReceipt(tenantId, args.targetUserId, created.id);
+  await NotificationsRepository.ensureReceipt(scopeId, args.targetScopeUserId, created.id);
 
   try {
-    const channel = `${KV.INAPP}${tenantId}:${args.targetUserId}`;
+    const channel = `${KV.INAPP}${scopeId}:${args.targetScopeUserId}`;
     const payload = JSON.stringify({
       id: created.id,
       title: created.title,
@@ -128,11 +128,12 @@ export async function sendInapp(args: SendInappArgs) {
     await redis.publish(channel, payload);
   } catch (err) {
     logger.warn("notify/inapp: redis publish failed", { err });
+    metrics.increment("notify.inapp.publish_failures");
   }
 
   await events.emit(NOTIFY_EVENTS.SENT, {
-    tenantId,
-    userId: args.targetUserId,
+    scopeId,
+    userId: args.targetScopeUserId,
     notificationId: created.id,
     channel: "in_app",
   });
@@ -149,15 +150,15 @@ export type DeleteNotificationArgs = {
 };
 
 export async function deleteNotification(args: DeleteNotificationArgs) {
-  const tenantId = getTenantId();
-  const userId = getUserId();
-  const result = await NotificationsRepository.deleteNotification(tenantId, userId, args.id);
+  const scopeId = getScopeId();
+  const userId = getScopeUserId();
+  const result = await NotificationsRepository.deleteNotification(scopeId, userId, args.id);
   return result;
 }
 
 export async function deleteAllNotifications() {
-  const tenantId = getTenantId();
-  const userId = getUserId();
-  const result = await NotificationsRepository.deleteAllNotifications(tenantId, userId);
+  const scopeId = getScopeId();
+  const userId = getScopeUserId();
+  const result = await NotificationsRepository.deleteAllNotifications(scopeId, userId);
   return result;
 }

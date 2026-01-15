@@ -36,4 +36,10 @@ export type { AuditKeyBuilder } from './domain/keys';
 export * from "./service/append";
 export * from "./service/list";
 export * from "./service/admin/list";
-export { getTenantLastActivity } from "./service/admin/stats";
+export { getScopeLastActivity } from "./service/admin/stats";
+
+// ════════════════════════════════════════════════════════════════════════════
+// Event Handlers
+// ════════════════════════════════════════════════════════════════════════════
+
+export { registerAuditEventHandlers } from "./event-handlers";

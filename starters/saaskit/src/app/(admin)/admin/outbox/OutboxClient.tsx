@@ -6,7 +6,7 @@ import { hooks } from "@/src/sdk/hooks";
 import type { OutboxAdminDeadListItem, OutboxAdminDeadListResponse } from "@/src/sdk/types";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@unisane/ui/components/toast";
-import { RATE_LIMIT_POLICIES } from "@/src/shared/constants/rate-limits";
+import { RATE_LIMIT_POLICIES } from "@unisane/gateway/client";
 import { PageLayout } from "@/src/context/usePageLayout";
 
 export default function OutboxClient({ initial }: { initial: OutboxAdminDeadListResponse }) {

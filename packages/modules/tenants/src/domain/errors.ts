@@ -39,8 +39,8 @@ export class TenantAccessDeniedError extends DomainError {
   readonly code = ErrorCode.PERMISSION_DENIED;
   readonly status = 403;
 
-  constructor(tenantId: string) {
-    super(`Access denied to tenant: ${tenantId}`);
+  constructor(scopeId: string) {
+    super(`Access denied to tenant: ${scopeId}`);
     this.name = 'TenantAccessDeniedError';
   }
 }
@@ -52,8 +52,8 @@ export class TenantHasActiveSubscriptionError extends DomainError {
   readonly code = ErrorCode.PRECONDITION_FAILED;
   readonly status = 412;
 
-  constructor(tenantId: string) {
-    super(`Cannot delete tenant ${tenantId}: has active subscription. Cancel subscription first.`);
+  constructor(scopeId: string) {
+    super(`Cannot delete tenant ${scopeId}: has active subscription. Cancel subscription first.`);
     this.name = 'TenantHasActiveSubscriptionError';
   }
 }
@@ -65,8 +65,8 @@ export class MembershipNotFoundError extends DomainError {
   readonly code = ErrorCode.MEMBER_NOT_FOUND;
   readonly status = 404;
 
-  constructor(tenantId: string, userId: string) {
-    super(`Membership not found for user ${userId} in tenant ${tenantId}`);
+  constructor(scopeId: string, userId: string) {
+    super(`Membership not found for user ${userId} in tenant ${scopeId}`);
     this.name = 'MembershipNotFoundError';
   }
 }
@@ -78,8 +78,8 @@ export class LastOwnerError extends DomainError {
   readonly code = ErrorCode.LAST_OWNER;
   readonly status = 400;
 
-  constructor(tenantId: string) {
-    super(`Cannot remove the last owner of tenant ${tenantId}`);
+  constructor(scopeId: string) {
+    super(`Cannot remove the last owner of tenant ${scopeId}`);
     this.name = 'LastOwnerError';
   }
 }
@@ -117,8 +117,8 @@ export class MemberAlreadyExistsError extends DomainError {
   readonly code = ErrorCode.MEMBER_EXISTS;
   readonly status = 409;
 
-  constructor(tenantId: string, userId: string) {
-    super(`User ${userId} is already a member of tenant ${tenantId}`);
+  constructor(scopeId: string, userId: string) {
+    super(`User ${userId} is already a member of tenant ${scopeId}`);
     this.name = 'MemberAlreadyExistsError';
   }
 }

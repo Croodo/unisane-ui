@@ -1,5 +1,5 @@
-import { countActiveTenantOverrides } from "../../data/overrides.repository";
+import { countActiveScopeOverrides } from "../../data/overrides.repository";
 
-export async function getTenantOverrideCounts(tenantIds: string[]) {
-  return countActiveTenantOverrides(tenantIds);
+export async function getScopeOverrideCounts(scopeIds: string[]) {
+  return countActiveScopeOverrides(scopeIds);
 }

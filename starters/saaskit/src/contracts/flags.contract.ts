@@ -132,6 +132,7 @@ export const flagsContract = c.router({
     })
   ),
 
+  // Tenant scope overrides
   override: withMeta(
     {
       method: "GET",
@@ -144,14 +145,14 @@ export const flagsContract = c.router({
       responses: {
         200: z.object({ ok: z.literal(true), data: ZOverrideOut.nullable() }),
       },
-      summary: "Get tenant override",
+      summary: "Get tenant scope override",
     },
     defineOpMeta({
       op: "flags.override.get",
       perm: PERM.FLAGS_READ,
       service: {
         importPath: "@unisane/flags",
-        fn: "getTenantOverride",
+        fn: "getScopeOverride",
         invoke: "object",
         callArgs: [
           {
@@ -162,7 +163,8 @@ export const flagsContract = c.router({
             fallback: { kind: "env", key: "APP_ENV" },
           },
           { name: "key", from: "params", key: "key" },
-          { name: "tenantId", from: "params", key: "tenantId" },
+          { name: "scopeType", from: "const", value: "tenant" },
+          { name: "scopeId", from: "params", key: "tenantId" },
         ],
         requireTenantMatch: true,
       },
@@ -180,7 +182,7 @@ export const flagsContract = c.router({
       body: ZOverrideWrite,
       query: z.object({ env: z.string().optional() }).optional(),
       responses: { 200: z.object({ ok: z.literal(true), data: ZOverrideOut }) },
-      summary: "Set tenant override",
+      summary: "Set tenant scope override",
     },
     defineOpMeta({
       op: "flags.override.set",
@@ -190,7 +192,7 @@ export const flagsContract = c.router({
       ],
       service: {
         importPath: "@unisane/flags",
-        fn: "setTenantOverride",
+        fn: "setScopeOverride",
         zodBody: {
           importPath: "@unisane/flags",
           name: "ZOverrideWrite",
@@ -205,7 +207,8 @@ export const flagsContract = c.router({
             fallback: { kind: "env", key: "APP_ENV" },
           },
           { name: "key", from: "params", key: "key" },
-          { name: "tenantId", from: "params", key: "tenantId" },
+          { name: "scopeType", from: "const", value: "tenant" },
+          { name: "scopeId", from: "params", key: "tenantId" },
           { name: "value", from: "body", key: "value" },
           {
             name: "expiresAt",
@@ -249,7 +252,7 @@ export const flagsContract = c.router({
           data: z.object({ ok: z.literal(true) }),
         }),
       },
-      summary: "Clear tenant override",
+      summary: "Clear tenant scope override",
     },
     defineOpMeta({
       op: "flags.override.clear",
@@ -259,7 +262,7 @@ export const flagsContract = c.router({
       ],
       service: {
         importPath: "@unisane/flags",
-        fn: "clearTenantOverride",
+        fn: "clearScopeOverride",
         invoke: "object",
         callArgs: [
           {
@@ -270,7 +273,8 @@ export const flagsContract = c.router({
             fallback: { kind: "env", key: "APP_ENV" },
           },
           { name: "key", from: "params", key: "key" },
-          { name: "tenantId", from: "params", key: "tenantId" },
+          { name: "scopeType", from: "const", value: "tenant" },
+          { name: "scopeId", from: "params", key: "tenantId" },
           {
             name: "actorIsSuperAdmin",
             from: "ctx",
@@ -290,6 +294,7 @@ export const flagsContract = c.router({
     })
   ),
 
+  // User scope overrides
   userOverride: withMeta(
     {
       method: "GET",
@@ -302,14 +307,14 @@ export const flagsContract = c.router({
       responses: {
         200: z.object({ ok: z.literal(true), data: ZOverrideOut.nullable() }),
       },
-      summary: "Get user override",
+      summary: "Get user scope override",
     },
     defineOpMeta({
       op: "flags.userOverride.get",
       perm: PERM.FLAGS_READ,
       service: {
         importPath: "@unisane/flags",
-        fn: "getUserOverride",
+        fn: "getScopeOverride",
         invoke: "object",
         callArgs: [
           {
@@ -320,7 +325,8 @@ export const flagsContract = c.router({
             fallback: { kind: "env", key: "APP_ENV" },
           },
           { name: "key", from: "params", key: "key" },
-          { name: "userId", from: "params", key: "userId" },
+          { name: "scopeType", from: "const", value: "user" },
+          { name: "scopeId", from: "params", key: "userId" },
         ],
       },
     })
@@ -339,7 +345,7 @@ export const flagsContract = c.router({
       responses: {
         200: z.object({ ok: z.literal(true), data: ZOverrideOut }),
       },
-      summary: "Set user override",
+      summary: "Set user scope override",
     },
     defineOpMeta({
       op: "flags.userOverride.set",
@@ -347,7 +353,7 @@ export const flagsContract = c.router({
       invalidate: [],
       service: {
         importPath: "@unisane/flags",
-        fn: "setUserOverride",
+        fn: "setScopeOverride",
         zodBody: {
           importPath: "@unisane/flags",
           name: "ZOverrideWrite",
@@ -362,7 +368,8 @@ export const flagsContract = c.router({
             fallback: { kind: "env", key: "APP_ENV" },
           },
           { name: "key", from: "params", key: "key" },
-          { name: "userId", from: "params", key: "userId" },
+          { name: "scopeType", from: "const", value: "user" },
+          { name: "scopeId", from: "params", key: "userId" },
           { name: "value", from: "body", key: "value" },
           {
             name: "expiresAt",
@@ -405,7 +412,7 @@ export const flagsContract = c.router({
           data: z.object({ ok: z.literal(true) }),
         }),
       },
-      summary: "Clear user override",
+      summary: "Clear user scope override",
     },
     defineOpMeta({
       op: "flags.userOverride.clear",
@@ -413,7 +420,7 @@ export const flagsContract = c.router({
       invalidate: [],
       service: {
         importPath: "@unisane/flags",
-        fn: "clearUserOverride",
+        fn: "clearScopeOverride",
         invoke: "object",
         callArgs: [
           {
@@ -424,7 +431,8 @@ export const flagsContract = c.router({
             fallback: { kind: "env", key: "APP_ENV" },
           },
           { name: "key", from: "params", key: "key" },
-          { name: "userId", from: "params", key: "userId" },
+          { name: "scopeType", from: "const", value: "user" },
+          { name: "scopeId", from: "params", key: "userId" },
           {
             name: "actorIsSuperAdmin",
             from: "ctx",

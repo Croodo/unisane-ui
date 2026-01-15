@@ -1,10 +1,14 @@
-import { col } from '@unisane/kernel';
+import {
+  col,
+  COLLECTIONS,
+  Email,
+  type Document,
+} from '@unisane/kernel';
 import type { EmailSuppressionRepoPort } from '../domain/ports';
-import type { Document } from 'mongodb';
 
 type SuppressionDoc = {
   _id?: unknown;
-  tenantId: string | null;
+  scopeId: string | null;
   email: string;
   reason?: string | null;
   provider?: string | null;
@@ -12,19 +16,20 @@ type SuppressionDoc = {
   updatedAt?: Date;
 };
 
-const supCol = () => col<SuppressionDoc>('email_suppressions');
+const supCol = () => col<SuppressionDoc>(COLLECTIONS.EMAIL_SUPPRESSIONS);
 
 export const EmailSuppressionRepoMongo: EmailSuppressionRepoPort = {
   async upsert(args) {
-    const email = args.email.trim().toLowerCase();
+    const email = Email.create(args.email).toString();
     await supCol().updateOne(
-      { email, tenantId: args.tenantId ?? null } as Document,
+      { email, scopeId: args.scopeId ?? null } as Document,
       { $set: { reason: args.reason, provider: args.provider ?? null, updatedAt: new Date() }, $setOnInsert: { createdAt: new Date() } } as Document,
       { upsert: true }
     );
   },
-  async isSuppressed(email: string, tenantId?: string | null): Promise<boolean> {
-    const row = await supCol().findOne({ email: email.trim().toLowerCase(), tenantId: tenantId ?? null } as Document);
+  async isSuppressed(email: string, scopeId?: string | null): Promise<boolean> {
+    const emailNorm = Email.tryCreate(email)?.toString() ?? email.trim().toLowerCase();
+    const row = await supCol().findOne({ email: emailNorm, scopeId: scopeId ?? null } as Document);
     return !!row;
   },
 };

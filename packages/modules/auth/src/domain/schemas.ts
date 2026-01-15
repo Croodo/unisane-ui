@@ -1,40 +1,40 @@
 import { z } from 'zod';
 import { ZLocale, DEFAULT_LOCALE } from '@unisane/kernel/client';
-import { ZPhoneE164 } from '@unisane/identity/client';
+import { ZEmailString, ZUsernameString, ZPhoneE164String } from '@unisane/kernel';
 
 export const ZPasswordSignup = z.object({
-  email: z.string().email(),
+  email: ZEmailString,
   password: z.string().min(8),
   displayName: z.string().optional(),
-  username: z.string().trim().regex(/^[a-z0-9_.]{3,30}$/i).optional(),
+  username: ZUsernameString.optional(),
   firstName: z.string().trim().max(80).optional(),
   lastName: z.string().trim().max(80).optional(),
-  phone: ZPhoneE164.optional(),
+  phone: ZPhoneE164String.optional(),
   locale: ZLocale.default(DEFAULT_LOCALE),
   timezone: z.string().trim().optional(),
 });
 
 export const ZPasswordSignin = z.object({
-  email: z.string().email(),
+  email: ZEmailString,
   password: z.string().min(1),
 });
 
 export const ZOtpStart = z.object({
-  email: z.string().email(),
+  email: ZEmailString,
 });
 
 export const ZOtpVerify = z.object({
-  email: z.string().email(),
+  email: ZEmailString,
   code: z.string().min(4).max(8),
 });
 
 export const ZResetStart = z.object({
-  email: z.string().email(),
+  email: ZEmailString,
   redirectTo: z.string().optional(),
 });
 
 export const ZResetVerify = z.object({
-  email: z.string().email(),
+  email: ZEmailString,
   token: z.string().min(16),
   password: z.string().min(8),
 });
@@ -44,8 +44,8 @@ export const ZTokenExchange = z.object({
   token: z.string().min(16),
 });
 
-export const ZPhoneStart = z.object({ phone: ZPhoneE164 });
-export const ZPhoneVerify = z.object({ phone: ZPhoneE164, code: z.string().min(4).max(8) });
+export const ZPhoneStart = z.object({ phone: ZPhoneE164String });
+export const ZPhoneVerify = z.object({ phone: ZPhoneE164String, code: z.string().min(4).max(8) });
 
 export type PasswordSignup = z.infer<typeof ZPasswordSignup>;
 export type PasswordSignin = z.infer<typeof ZPasswordSignin>;

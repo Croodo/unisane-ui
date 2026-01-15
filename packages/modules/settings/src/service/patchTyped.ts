@@ -12,8 +12,8 @@ export async function patchTypedSetting(args: PatchSettingArgs) {
     return patchSetting(args);
   }
 
-  // Scope enforcement: platform-scoped settings should not carry a tenantId.
-  if (def.scope === "platform" && args.tenantId !== null) {
+  // Scope enforcement: platform-scoped settings should not carry a scopeId.
+  if (def.scope === "platform" && args.scopeId !== null) {
     throw ERR.forbidden("Platform settings cannot be patched at tenant scope");
   }
 

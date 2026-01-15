@@ -17,17 +17,3 @@ export const flagsKeys = {
 } as const;
 
 export type FlagsKeyBuilder = typeof flagsKeys;
-
-/**
- * @deprecated Use flagsKeys.flagByEnv() instead
- */
-export function flagCacheKey(env: string, key: string) {
-  return flagsKeys.flagByEnv(env, key);
-}
-
-/**
- * @deprecated Use flagsKeys.overrideByScope() instead
- */
-export function flagOverrideCacheKey(env: string, key: string, scopeType: FlagOverrideScope, scopeId: string) {
-  return flagsKeys.overrideByScope(env, key, scopeType, scopeId);
-}

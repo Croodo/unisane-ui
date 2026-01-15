@@ -3,7 +3,7 @@ import type { Permission } from "@unisane/kernel";
 import type { GrantEffect } from "@unisane/kernel";
 
 export type Membership = {
-  tenantId: string;
+  scopeId: string;
   userId: string;
   roles: { roleId: RoleId; grantedAt?: Date }[];
   grants: { perm: Permission; effect: GrantEffect }[];
@@ -14,7 +14,7 @@ export type Membership = {
 
 export type ApiKey = {
   id: string;
-  tenantId: string;
+  scopeId: string;
   name?: string;
   scopes: string[];
   createdBy?: string;
@@ -55,9 +55,9 @@ export type MinimalUserRow = {
 };
 
 export type MembershipsApi = {
-  get(tenantId: string, userId: string): Promise<Membership | null>;
+  get(scopeId: string, userId: string): Promise<Membership | null>;
   addRole(
-    tenantId: string,
+    scopeId: string,
     userId: string,
     roleId: RoleId,
     expectedVersion?: number
@@ -66,7 +66,7 @@ export type MembershipsApi = {
     | { conflict: true; expected: number }
   >;
   removeRole(
-    tenantId: string,
+    scopeId: string,
     userId: string,
     roleId: RoleId,
     expectedVersion?: number
@@ -75,7 +75,7 @@ export type MembershipsApi = {
     | { conflict: true; expected: number }
   >;
   grantPerm(
-    tenantId: string,
+    scopeId: string,
     userId: string,
     perm: Permission,
     effect: GrantEffect,
@@ -85,7 +85,7 @@ export type MembershipsApi = {
     | { conflict: true; expected: number }
   >;
   revokePerm(
-    tenantId: string,
+    scopeId: string,
     userId: string,
     perm: Permission,
     expectedVersion?: number
@@ -94,8 +94,8 @@ export type MembershipsApi = {
     | { conflict: true; expected: number }
   >;
   findLatestForUser(userId: string): Promise<Membership | null>;
-  listByTenant(
-    tenantId: string,
+  listByScope(
+    scopeId: string,
     limit?: number,
     cursor?: string
   ): Promise<{ items: Membership[]; nextCursor?: string }>;
@@ -105,7 +105,7 @@ export type MembershipsApi = {
     cursor?: string
   ): Promise<{ items: Membership[]; nextCursor?: string }>;
   delete(
-    tenantId: string,
+    scopeId: string,
     userId: string,
     expectedVersion?: number
   ): Promise<
@@ -178,21 +178,21 @@ export type UsersApi = {
   }>;
   getMembershipsCount(
     userId: string
-  ): Promise<{ tenantsCount: number; adminTenantsCount: number }>;
+  ): Promise<{ scopesCount: number; adminScopesCount: number }>;
   getApiKeysCreatedCount(userId: string): Promise<number>;
   getLastActivity(userId: string): Promise<Date | null>;
 
   // Cross-module aggregations for Tenants module
-  getTenantMembershipCounts(
-    tenantIds: string[]
+  getScopeMembershipCounts(
+    scopeIds: string[]
   ): Promise<Map<string, { membersCount: number; adminsCount: number }>>;
-  getTenantApiKeyCounts(tenantIds: string[]): Promise<Map<string, number>>;
+  getScopeApiKeyCounts(scopeIds: string[]): Promise<Map<string, number>>;
 };
 
 // Service-level summary used by identity/service/me and the /me route
 export type MeSummary = {
   userId: string | null;
-  tenantId: string | null;
+  scopeId: string | null;
   tenantSlug?: string | null;
   tenantName?: string | null;
   role: string | null;

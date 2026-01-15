@@ -18,7 +18,7 @@ export type WebhookEventListPage = {
 
 export type WebhookEventDetail = {
   id: string;
-  tenantId: string;
+  scopeId: string;
   direction: WebhookDirection;
   status: WebhookEventStatus;
   target: string | null;

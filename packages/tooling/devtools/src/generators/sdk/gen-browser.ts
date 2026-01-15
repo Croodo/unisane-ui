@@ -26,7 +26,14 @@ export interface GenBrowserOptions {
 }
 
 /**
- * Check if a route is an admin route
+ * Check if a route is an admin route.
+ *
+ * **Convention:** Admin routes are identified by:
+ * - Route name starting with "admin" (e.g., `adminList`, `adminReadOrNull`)
+ * - Path containing "/admin/" segment (e.g., `/api/rest/v1/admin/tenants`)
+ *
+ * Admin routes are grouped separately in the generated SDK under `api.admin.*`
+ * to distinguish them from regular tenant-scoped routes.
  */
 function isAdminRoute(route: AppRouteEntry): boolean {
   return route.name.startsWith('admin') || route.path.includes('/admin/');

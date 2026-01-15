@@ -39,7 +39,14 @@ export function buildRateKey(args: {
 
 /**
  * Hash IP address for use in rate limit keys.
- * Uses a simple hash to preserve privacy while still allowing rate limiting.
+ * Uses a simple djb2 hash to preserve privacy while still allowing rate limiting.
+ *
+ * **Trade-off Note:** This produces 32-bit integers (~4 billion unique values).
+ * For rate limiting purposes, the occasional collision is acceptable:
+ * - IPv4 address space (~4 billion) roughly matches 32-bit hash space
+ * - Collisions only affect rate limit accuracy, not security
+ * - A cryptographic hash (SHA-256) would add ~10x latency for minimal benefit
+ * - Collisions mean two IPs might share a rate limit bucket (fail-safe behavior)
  */
 function hashIp(ip: string): string {
   let hash = 0;

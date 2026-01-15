@@ -93,13 +93,33 @@ export { topup } from "./service/topup";
 export { getConfig } from "./service/config";
 export { getBillingMode } from "./service/mode";
 export { portal } from "./service/portal";
-export { TenantIntegrationsService } from "./service/tenantIntegrations";
+export { ScopeIntegrationsService } from "./service/scope-integrations";
+
+// ════════════════════════════════════════════════════════════════════════════
+// Services - Entitlements
+// ════════════════════════════════════════════════════════════════════════════
+
+export {
+  resolveEntitlements,
+  resolveEntitlementsForPlan,
+  resolveTokenPolicy,
+  invalidateEntitlements,
+  deepMergeEntitlements,
+  getEntitlementsWithUsage,
+  setUsageWindowProvider,
+} from "./service/entitlements";
+export type {
+  Entitlements,
+  TokenPolicy,
+  EntitlementsWithUsage,
+  GetEntitlementsWithUsageArgs,
+} from "./service/entitlements";
 
 // ════════════════════════════════════════════════════════════════════════════
 // Services - Admin
 // ════════════════════════════════════════════════════════════════════════════
 
-export { getTenantOpenInvoiceCounts, getTenantLatestSubscriptions } from "./service/admin/stats";
+export { getScopeOpenInvoiceCounts, getScopeLatestSubscriptions } from "./service/admin/stats";
 
 // ════════════════════════════════════════════════════════════════════════════
 // Data - Repositories (for internal/webhook use)
@@ -113,11 +133,11 @@ export { PaymentsRepository as paymentsRepo } from "./data/payments.repository";
 export { InvoicesRepository as invoicesRepo } from "./data/invoices.repository";
 export { SubscriptionsRepository as subscriptionsRepo } from "./data/subscriptions.repository";
 export {
-  findTenantIdByCustomer,
+  findScopeIdByCustomer,
   upsertCustomerMapping,
   softDeleteCustomerMapping,
   findCustomerId,
-} from "./data/tenant-integrations.repository";
+} from "./data/scope-integrations.repository";
 
 // ════════════════════════════════════════════════════════════════════════════
 // Domain - Mappers (for webhook use)
@@ -130,3 +150,15 @@ export { mapStripeSubStatus, mapRazorpaySubStatus } from "./domain/mappers";
 // ════════════════════════════════════════════════════════════════════════════
 
 export { reconcileStripe, reconcileRazorpay } from "./service/reconcile";
+
+// ════════════════════════════════════════════════════════════════════════════
+// Event Handlers - Hexagonal Architecture
+// ════════════════════════════════════════════════════════════════════════════
+
+export { registerBillingEventHandlers } from "./event-handlers";
+
+// ════════════════════════════════════════════════════════════════════════════
+// Adapters
+// ════════════════════════════════════════════════════════════════════════════
+
+export { billingServiceAdapter } from "./adapters";

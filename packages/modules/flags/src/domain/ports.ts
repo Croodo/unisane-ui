@@ -17,8 +17,8 @@ export interface FlagOverridesRepoPort {
   get(env: string, key: string, scopeType: FlagOverrideScope, scopeId: string): Promise<{ value: boolean; expiresAt?: Date | null } | null>;
   upsert(args: { env: string; key: string; scopeType: FlagOverrideScope; scopeId: string; value: boolean; expiresAt?: Date | null }): Promise<{ value: boolean; expiresAt?: Date | null } | null>;
   clear(env: string, key: string, scopeType: FlagOverrideScope, scopeId: string): Promise<void>;
-  // Admin/stats: active override counts per tenant
-  countActiveTenantOverrides(tenantIds: string[], now?: Date): Promise<Map<string, number>>;
+  // Admin/stats: active override counts per scope
+  countActiveScopeOverrides(scopeIds: string[], now?: Date): Promise<Map<string, number>>;
   // Jobs: list expired overrides for cleanup
   listExpiredForCleanup(args: {
     now: Date;

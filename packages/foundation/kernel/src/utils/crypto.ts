@@ -171,11 +171,11 @@ export function decryptField(ciphertext: string, key: Buffer): string {
  * // Storing a searchable encrypted email
  * const doc = {
  *   emailEncrypted: encryptField(email, key),
- *   emailSearchToken: createSearchToken(normalizeEmail(email), key),
+ *   emailSearchToken: createSearchToken(Email.create(email).toString(), key),
  * };
  *
  * // Looking up by email
- * const token = createSearchToken(normalizeEmail(searchEmail), key);
+ * const token = createSearchToken(Email.create(searchEmail).toString(), key);
  * const user = await users.findOne({ emailSearchToken: token });
  * ```
  */
@@ -183,7 +183,7 @@ export function createSearchToken(plaintext: string, key: Buffer): string {
   return crypto.createHmac('sha256', key).update(plaintext).digest('hex');
 }
 
-// For normalization, use normalizeEmail and normalizePhoneE164 from './normalize'
+// For normalization, use Email.create().toString() and PhoneE164.create().toString() from value-objects
 
 /**
  * Generate a new 32-byte encryption key.

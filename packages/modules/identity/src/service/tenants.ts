@@ -1,4 +1,4 @@
-import { withTransaction, toSlug, isDuplicateKeyError } from "@unisane/kernel";
+import { withTransaction, Slug, isDuplicateKeyError } from "@unisane/kernel";
 import { getTenantsRepo } from "../providers";
 import {
   usersRepository,
@@ -14,13 +14,13 @@ export type { FindTenantBySlugArgs };
 export async function createTenantForUser(args: CreateTenantForUserArgs) {
   const tenantsRepo = getTenantsRepo();
   const base = args.input.slug?.trim() || args.input.name.trim();
-  let slug = toSlug(base);
+  let slug = Slug.fromName(base).toString();
   let n = 0;
   while (true) {
     const exists = await tenantsRepo.findBySlug(slug);
     if (!exists) break;
     n += 1;
-    slug = toSlug(`${base}-${n}`);
+    slug = Slug.fromName(`${base}-${n}`).toString();
   }
   const name = args.input.name.trim();
 
@@ -35,7 +35,7 @@ export async function createTenantForUser(args: CreateTenantForUserArgs) {
         let i = n;
         while (true) {
           i += 1;
-          retrySlug = toSlug(`${base}-${i}`);
+          retrySlug = Slug.fromName(`${base}-${i}`).toString();
           const exists = await tenantsRepo.findBySlug(retrySlug);
           if (!exists) break;
         }

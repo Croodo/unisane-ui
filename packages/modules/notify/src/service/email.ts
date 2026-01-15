@@ -1,6 +1,4 @@
-import { getEnv } from "@unisane/kernel";
-import { sendEmailResend } from "@unisane/kernel";
-import { sendEmailSes } from "@unisane/kernel";
+import { sendEmail as sendEmailKernel } from "@unisane/kernel";
 import { isSuppressed } from "./suppression";
 import { renderEmail } from "@unisane/kernel";
 
@@ -19,10 +17,8 @@ export type { SendEmailInput, SendEmailResult };
 export async function sendEmail(
   input: SendEmailInput
 ): Promise<SendEmailResult> {
-  const { MAIL_PROVIDER } = getEnv();
-
   // 1. Check suppression list (bounces/complaints always block)
-  const suppressed = await isSuppressed(input.to.email, input.tenantId ?? null);
+  const suppressed = await isSuppressed(input.to.email, input.scopeId ?? null);
   if (suppressed) {
     return { sent: false, reason: "suppressed" };
   }
@@ -30,7 +26,7 @@ export async function sendEmail(
   // 2. Check user preferences (if category and userId provided)
   // Note: getPrefs() uses context, so preference checking requires the caller
   // to set up proper context. For system emails, skip preference checking.
-  // TODO: Consider adding a version that accepts explicit tenantId/userId
+  // TODO: Consider adding a version that accepts explicit scopeId/userId
 
   // 3. Render email template
   const rendered = await renderEmail(
@@ -46,29 +42,17 @@ export async function sendEmail(
   };
 
   // 5. Send via configured provider
-  const toEmail = input.to.email;
-  switch (MAIL_PROVIDER) {
-    case "resend":
-      await sendEmailResend({
-        to: toEmail,
-        subject: rendered.subject,
-        html: rendered.html,
-        text: rendered.text,
-        headers,
-      });
-      return { sent: true };
+  const result = await sendEmailKernel({
+    to: input.to.email,
+    subject: rendered.subject,
+    html: rendered.html,
+    text: rendered.text,
+    headers,
+  });
 
-    case "ses":
-      await sendEmailSes({
-        to: toEmail,
-        subject: rendered.subject,
-        html: rendered.html,
-        text: rendered.text,
-        headers,
-      });
-      return { sent: true };
-
-    default:
-      return { sent: false, reason: "no_provider" };
+  if (!result.success) {
+    return { sent: false, reason: "provider_error", error: result.error };
   }
+
+  return { sent: true, messageId: result.messageId };
 }

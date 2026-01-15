@@ -1,4 +1,4 @@
-import { getEnv } from "@/src/shared/env";
+import { getEnv, decodeBase64UrlJson } from "@unisane/kernel";
 import { decodeJwt } from "jose";
 import { exchange } from "@unisane/auth";
 import { getAuthConfig } from "@/src/platform/auth/config";
@@ -8,7 +8,6 @@ import { makeHandlerRaw } from "@unisane/gateway";
 import { ipFrom } from "@unisane/gateway";
 import { metrics } from "@/src/platform/telemetry";
 import { appendAudit } from "@unisane/audit";
-import { decodeBase64UrlJson } from "@/src/shared/encoding/base64urlJson";
 export const runtime = "nodejs";
 
 function readOAuthCookie(
@@ -223,7 +222,7 @@ export const GET = makeHandlerRaw<unknown, { provider: string }>(
       const ip = ipFrom(req);
       const ua = req.headers.get("user-agent");
       await appendAudit({
-        tenantId: "-",
+        scopeId: "-",
         actorId: userId,
         action: "auth.signin",
         resourceType: "auth",

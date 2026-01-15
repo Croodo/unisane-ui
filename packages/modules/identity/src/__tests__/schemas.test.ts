@@ -490,7 +490,7 @@ describe('ZMeOut', () => {
   it('should accept valid me response', () => {
     const result = ZMeOut.safeParse({
       userId: 'user_123',
-      tenantId: 'tenant_456',
+      scopeId: 'scope_456',
       tenantSlug: 'my-company',
       tenantName: 'My Company',
       role: 'admin',
@@ -504,7 +504,7 @@ describe('ZMeOut', () => {
   it('should accept null values for optional fields', () => {
     const result = ZMeOut.safeParse({
       userId: null,
-      tenantId: null,
+      scopeId: null,
       role: null,
       plan: null,
       perms: [],
@@ -516,7 +516,7 @@ describe('ZMeOut', () => {
   it('should require perms array', () => {
     const result = ZMeOut.safeParse({
       userId: 'user_123',
-      tenantId: 'tenant_456',
+      scopeId: 'scope_456',
       role: 'admin',
       plan: 'pro',
     });

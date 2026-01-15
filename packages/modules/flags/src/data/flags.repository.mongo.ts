@@ -1,9 +1,11 @@
-import { col } from "@unisane/kernel";
+import {
+  col,
+  COLLECTIONS,
+  softDeleteFilter,
+  type Document,
+} from "@unisane/kernel";
 import type { FlagsRepoPort } from "../domain/ports";
-import type { UpsertResult } from "../domain/types";
-import type { FlagRow } from "../domain/types";
-import type { Document } from "mongodb";
-import { softDeleteFilter } from "@unisane/kernel";
+import type { UpsertResult, FlagRow } from "../domain/types";
 
 type FeatureFlagDoc = {
   _id?: unknown;
@@ -18,7 +20,7 @@ type FeatureFlagDoc = {
   updatedAt?: Date;
 };
 
-const flagsCol = () => col<FeatureFlagDoc>("feature_flags");
+const flagsCol = () => col<FeatureFlagDoc>(COLLECTIONS.FEATURE_FLAGS);
 
 export const FlagsRepoMongo: FlagsRepoPort = {
   async findOne(env: string, key: string) {

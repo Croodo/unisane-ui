@@ -7,8 +7,9 @@ import { z } from 'zod';
 export const runtime = 'nodejs';
 
 export const POST = makeHandlerRaw<typeof __BodySchema_POST>(
-  ({ op: "auth.token.exchange", allowUnauthed: true, zod: __BodySchema_POST }),
-  async ({ req, params, body, ctx, requestId }) => {const __body: z.output<typeof __BodySchema_POST> = body!;
+  ({ op: "auth.token.exchange", allowUnauthed: true, zod: __BodySchema_POST, rateKey: ({ req, ctx, body, params }) => ((() => { const xfwd = req.headers.get('x-forwarded-for') ?? ''; const ip = xfwd.split(',')[0]?.trim() || (req.headers.get('x-real-ip') ?? '-'); return ['-', ip, 'auth.token.exchange'].join(':'); })()) }),
+  async ({ req, params, body, ctx, requestId }) => {
+    const __body: z.output<typeof __BodySchema_POST> = body!;
     const result = await (tokenExchangeFactory({ req, ctx, ...(params ? { params: params as Record<string, unknown> } : {}), ...(body !== undefined ? { body } : {}), requestId } as Parameters<typeof tokenExchangeFactory>[0]));
     return result as Response;
   }

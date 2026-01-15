@@ -3,15 +3,15 @@ import type { BillingProvider, SubscriptionStatus } from '@unisane/kernel';
 import type { LatestSub } from '@unisane/tenants';
 
 export interface SubscriptionsRepo {
-  getLatest(tenantId: string): Promise<SubscriptionView | null>;
-  // Admin/stats: latest subscription fields grouped by tenantId
-  getLatestByTenantIds(tenantIds: string[]): Promise<Map<string, LatestSub>>;
-  getLatestProviderSubId(tenantId: string): Promise<string | null>;
-  setCancelAtPeriodEnd(tenantId: string): Promise<void>;
-  setCanceledImmediate(tenantId: string): Promise<void>;
-  setQuantity(tenantId: string, quantity: number): Promise<void>;
+  getLatest(scopeId: string): Promise<SubscriptionView | null>;
+  // Admin/stats: latest subscription fields grouped by scopeId
+  getLatestByScopeIds(scopeIds: string[]): Promise<Map<string, LatestSub>>;
+  getLatestProviderSubId(scopeId: string): Promise<string | null>;
+  setCancelAtPeriodEnd(scopeId: string): Promise<void>;
+  setCanceledImmediate(scopeId: string): Promise<void>;
+  setQuantity(scopeId: string, quantity: number): Promise<void>;
   upsertByProviderId(args: {
-    tenantId: string;
+    scopeId: string;
     provider: BillingProvider;
     providerSubId: string;
     planId: string;
@@ -21,6 +21,6 @@ export interface SubscriptionsRepo {
     cancelAtPeriodEnd?: boolean;
     currentPeriodEnd?: Date | null;
   }): Promise<void>;
-  listByProviderId(provider: BillingProvider): Promise<Array<{ tenantId: string; providerSubId: string }>>;
-  listByStatusAged(statuses: SubscriptionStatus[], updatedBefore: Date, limit: number): Promise<Array<{ tenantId: string; providerSubId?: string | null; status?: SubscriptionStatus | null; updatedAt?: Date | null }>>;
+  listByProviderId(provider: BillingProvider): Promise<Array<{ scopeId: string; providerSubId: string }>>;
+  listByStatusAged(statuses: SubscriptionStatus[], updatedBefore: Date, limit: number): Promise<Array<{ scopeId: string; providerSubId?: string | null; status?: SubscriptionStatus | null; updatedAt?: Date | null }>>;
 }

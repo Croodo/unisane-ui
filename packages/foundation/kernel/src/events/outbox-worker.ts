@@ -56,6 +56,11 @@ export interface OutboxWorkerOptions {
     error: (msg: string, data?: Record<string, unknown>) => void;
     debug: (msg: string, data?: Record<string, unknown>) => void;
   };
+  /**
+   * Called when an event permanently fails after all retry attempts.
+   * Use this for alerting, dead letter queue integration, or custom handling.
+   */
+  onPermanentFailure?: (entry: OutboxEntry, error: Error) => Promise<void>;
 }
 
 /**
@@ -70,6 +75,10 @@ export interface OutboxWorker {
   isRunning: () => boolean;
   /** Process a single batch (for testing) */
   processBatch: () => Promise<number>;
+  /** Retry a specific failed event by eventId */
+  retryFailed: (eventId: string) => Promise<boolean>;
+  /** Get count of permanently failed events */
+  getFailedCount: () => Promise<number>;
 }
 
 /**
@@ -110,6 +119,7 @@ export function createOutboxWorker(options: OutboxWorkerOptions): OutboxWorker {
     baseRetryDelay = 1000,
     maxRetryDelay = 60000,
     logger = defaultLogger,
+    onPermanentFailure,
   } = options;
 
   let running = false;
@@ -202,6 +212,18 @@ export function createOutboxWorker(options: OutboxWorkerOptions): OutboxWorker {
             eventId: entry.meta.eventId,
             error: err.message,
           });
+
+          // Invoke failure callback for alerting/DLQ integration
+          if (onPermanentFailure) {
+            try {
+              await onPermanentFailure(entry, err);
+            } catch (callbackErr) {
+              logger.error('onPermanentFailure callback failed', {
+                eventId: entry.meta.eventId,
+                error: (callbackErr as Error).message,
+              });
+            }
+          }
         } else {
           // Schedule retry with exponential backoff
           const nextRetryAt = calculateNextRetry(
@@ -317,6 +339,33 @@ export function createOutboxWorker(options: OutboxWorkerOptions): OutboxWorker {
     },
 
     processBatch,
+
+    async retryFailed(eventId: string): Promise<boolean> {
+      const collection = getCollection();
+      const result = await collection.updateOne(
+        { 'meta.eventId': eventId, status: 'failed' },
+        {
+          $set: {
+            status: 'pending',
+            attempts: 0,
+            updatedAt: new Date(),
+          },
+          $unset: {
+            lastError: '',
+            nextRetryAt: '',
+          },
+        }
+      );
+      if (result.modifiedCount > 0) {
+        logger.info('Failed event reset for retry', { eventId });
+      }
+      return result.modifiedCount > 0;
+    },
+
+    async getFailedCount(): Promise<number> {
+      const collection = getCollection();
+      return collection.countDocuments({ status: 'failed' });
+    },
   };
 }
 

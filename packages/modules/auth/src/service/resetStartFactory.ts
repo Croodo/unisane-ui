@@ -1,11 +1,11 @@
-import { getTypedSetting } from "@unisane/settings";
+import { getTypedSetting } from "@unisane/kernel";
 import { resetStart } from "./resetStart";
 import { makeAuthStartHandler } from "./make-auth-handler";
 
 export const resetStartFactory = makeAuthStartHandler({
   handler: async (body: { email: string; redirectTo?: string }) => {
     const { value: ttlSec } = await getTypedSetting<number>({
-      tenantId: null,
+      scopeId: null,
       ns: "auth",
       key: "resetTokenTtlSeconds",
     });

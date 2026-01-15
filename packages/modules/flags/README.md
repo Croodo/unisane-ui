@@ -61,12 +61,12 @@ console.log(results);
 ### Check If Flag Enabled
 
 ```typescript
-import { isEnabledForSubject } from '@unisane/flags';
+import { isEnabledForScope } from '@unisane/flags';
 
-const enabled = await isEnabledForSubject({
+const enabled = await isEnabledForScope({
   env: 'production',
   key: 'new_feature',
-  tenantId: 'tenant_123',
+  scopeId: 'tenant_123',
   userId: 'user_456',
   ctx: { plan: 'pro', country: 'US' },
 });
@@ -79,10 +79,10 @@ if (enabled) {
 ### Set Override
 
 ```typescript
-import { setOverride, removeOverride } from '@unisane/flags';
+import { setScopeOverride, clearScopeOverride } from '@unisane/flags';
 
 // Enable for specific tenant
-await setOverride({
+await setScopeOverride({
   env: 'production',
   key: 'beta_feature',
   scopeType: 'tenant',
@@ -91,7 +91,7 @@ await setOverride({
 });
 
 // Disable for specific user
-await setOverride({
+await setScopeOverride({
   env: 'production',
   key: 'experimental',
   scopeType: 'user',
@@ -101,7 +101,7 @@ await setOverride({
 });
 
 // Remove override
-await removeOverride({
+await clearScopeOverride({
   env: 'production',
   key: 'beta_feature',
   scopeType: 'tenant',
@@ -168,15 +168,16 @@ events.on(FLAGS_EVENTS.OVERRIDE_SET, async ({ payload }) => {
 | `getFlags` | Get multiple flag definitions |
 | `upsertFlag` | Create or update flag |
 | `evaluateFlags` | Evaluate flags for context |
-| `isEnabledForSubject` | Check if flag enabled for subject |
-| `setOverride` | Set tenant/user override |
-| `removeOverride` | Remove override |
+| `isEnabledForScope` | Check if flag enabled for scope |
+| `setScopeOverride` | Set scope override (tenant/user) |
+| `getScopeOverride` | Get scope override |
+| `clearScopeOverride` | Clear scope override |
 
 ### Admin Services
 
 | Function | Description |
 |----------|-------------|
-| `getTenantOverrideCounts` | Count overrides per tenant |
+| `getScopeOverrideCounts` | Count overrides per scope |
 
 ### Types
 

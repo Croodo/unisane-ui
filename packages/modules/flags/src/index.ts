@@ -36,17 +36,29 @@ export type { FlagsKeyBuilder } from './domain/keys';
 
 export * from './service/get';
 export * from './service/write';
-export * from './service/overrides';
+export {
+  setScopeOverride,
+  clearScopeOverride,
+  getScopeOverride,
+  isEnabledForScope,
+  type OverrideScopeType,
+} from './service/overrides';
 export * from './service/evaluate';
 
 // ════════════════════════════════════════════════════════════════════════════
 // Services - Admin
 // ════════════════════════════════════════════════════════════════════════════
 
-export { getTenantOverrideCounts } from './service/admin/stats';
+export { getScopeOverrideCounts } from './service/admin/stats';
 
 // ════════════════════════════════════════════════════════════════════════════
 // Data - Repository (for background jobs)
 // ════════════════════════════════════════════════════════════════════════════
 
 export { listExpiredOverridesForCleanup } from './data/overrides.repository';
+
+// ════════════════════════════════════════════════════════════════════════════
+// Adapters
+// ════════════════════════════════════════════════════════════════════════════
+
+export { flagsAdapter } from './adapters';

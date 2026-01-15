@@ -1,17 +1,17 @@
-import { getTenantId, getBillingProvider, getEnv } from "@unisane/kernel";
+import { getScopeId, getBillingProvider, getEnv } from "@unisane/kernel";
 import { ERR } from "@unisane/gateway";
 import { getBillingMode } from "./mode";
-import { findCustomerId } from "../data/tenant-integrations.repository";
+import { findCustomerId } from "../data/scope-integrations.repository";
 
 export async function portal() {
-  const tenantId = getTenantId();
+  const scopeId = getScopeId();
   const mode = await getBillingMode();
   if (mode === "topup_only" || mode === "disabled") {
     throw ERR.validation(
       "Billing portal is only available for subscription deployments."
     );
   }
-  const customerId = await findCustomerId(tenantId, "stripe");
+  const customerId = await findCustomerId(scopeId, "stripe");
   if (!customerId) {
     throw ERR.validation("No billing customer found for this tenant.");
   }

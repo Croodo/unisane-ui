@@ -28,8 +28,8 @@ import { ObjectId } from 'mongodb';
 import { col } from './connection';
 import { softDeleteFilter } from './filters';
 import { maybeObjectId } from './objectid';
-import { tenantFilter as buildTenantFilter, tenantFilterActive } from './tenant-scope';
-import type { TenantScoped } from './tenant-scope';
+import { scopedFilter, scopedFilterActive } from '../scope/helpers';
+import type { Scoped } from '../scope/types';
 
 /**
  * Base document interface with standard MongoDB fields.
@@ -196,31 +196,31 @@ export interface BaseMongoRepository<Doc extends BaseDocument, View extends Base
 }
 
 /**
- * Tenant-scoped repository operations.
- * Automatically adds tenantId from request context to all queries.
+ * Scope-aware repository operations.
+ * Automatically adds scope fields from request context to all queries.
  */
-export interface TenantScopedRepository<Doc extends BaseDocument & TenantScoped, View extends BaseView, CreateInput, UpdateInput>
+export interface ScopedRepository<Doc extends BaseDocument & Scoped, View extends BaseView, CreateInput, UpdateInput>
   extends BaseMongoRepository<Doc, View, CreateInput, UpdateInput> {
   /**
-   * Find a document by ID within the current tenant.
-   * Uses tenantFilter from context.
+   * Find a document by ID within the current scope.
+   * Uses scopedFilter from context.
    * @param id - Document ID
-   * @returns The view or null if not found or wrong tenant
+   * @returns The view or null if not found or wrong scope
    */
-  findByIdForTenant(id: string): Promise<View | null>;
+  findByIdForScope(id: string): Promise<View | null>;
 
   /**
-   * Soft delete a document by ID within the current tenant.
+   * Soft delete a document by ID within the current scope.
    * @param id - Document ID
    * @returns The deleted view or null
    */
-  softDeleteByTenant(id: string): Promise<View | null>;
+  softDeleteByScope(id: string): Promise<View | null>;
 
   /**
-   * Count documents for the current tenant.
+   * Count documents for the current scope.
    * @param filter - Optional additional filter
    */
-  countByTenant(filter?: Partial<Filter<Doc>>): Promise<number>;
+  countByScope(filter?: Partial<Filter<Doc>>): Promise<number>;
 }
 
 /**
@@ -463,17 +463,17 @@ export function createMongoRepository<
 }
 
 /**
- * Create a tenant-scoped MongoDB repository.
- * All operations automatically include tenantId from request context.
+ * Create a scope-aware MongoDB repository.
+ * All operations automatically include scope fields from request context.
  */
-export function createTenantScopedRepository<
-  Doc extends BaseDocument & TenantScoped,
+export function createScopedRepository<
+  Doc extends BaseDocument & Scoped,
   View extends BaseView,
   CreateInput,
   UpdateInput,
 >(
   config: RepositoryConfig<Doc, View, CreateInput, UpdateInput>
-): TenantScopedRepository<Doc, View, CreateInput, UpdateInput> {
+): ScopedRepository<Doc, View, CreateInput, UpdateInput> {
   // Get the base repository
   const base = createMongoRepository<Doc, View, CreateInput, UpdateInput>(config);
 
@@ -481,11 +481,11 @@ export function createTenantScopedRepository<
     // Spread all base operations
     ...base,
 
-    async findByIdForTenant(id: string): Promise<View | null> {
+    async findByIdForScope(id: string): Promise<View | null> {
       if (!ObjectId.isValid(id)) return null;
 
-      // tenantFilterActive combines tenant scoping with soft delete filter
-      const filter = tenantFilterActive<Doc>({
+      // scopedFilterActive combines scope filtering with soft delete filter
+      const filter = scopedFilterActive<Doc>({
         _id: new ObjectId(id),
       } as Partial<Filter<Doc>>);
 
@@ -493,13 +493,13 @@ export function createTenantScopedRepository<
       return doc ? config.mapDocToView(doc as WithId<Doc>) : null;
     },
 
-    async softDeleteByTenant(id: string): Promise<View | null> {
+    async softDeleteByScope(id: string): Promise<View | null> {
       if (!ObjectId.isValid(id)) return null;
 
       const now = new Date();
 
-      // Use tenant filter to ensure only deleting own documents
-      const filter = tenantFilterActive<Doc>({
+      // Use scope filter to ensure only deleting own documents
+      const filter = scopedFilterActive<Doc>({
         _id: new ObjectId(id),
       } as Partial<Filter<Doc>>);
 
@@ -512,9 +512,9 @@ export function createTenantScopedRepository<
       return result ? config.mapDocToView(result as WithId<Doc>) : null;
     },
 
-    async countByTenant(filter?: Partial<Filter<Doc>>): Promise<number> {
-      // tenantFilterActive adds tenant scoping and soft delete filter
-      const finalFilter = tenantFilterActive<Doc>(filter ?? {});
+    async countByScope(filter?: Partial<Filter<Doc>>): Promise<number> {
+      // scopedFilterActive adds scope filtering and soft delete filter
+      const finalFilter = scopedFilterActive<Doc>(filter ?? {});
       return base.collection().countDocuments(finalFilter);
     },
   };

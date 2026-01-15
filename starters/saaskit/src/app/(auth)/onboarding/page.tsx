@@ -9,7 +9,7 @@ export default async function OnboardingRedirect() {
   const { me } = await requireUser("/onboarding", api);
   const destination = me.tenantSlug
     ? `/w/${me.tenantSlug}/dashboard`
-    : me.tenantId
+    : me.scopeId
       ? "/workspaces"
       : "/welcome";
   redirect(destination);

@@ -286,7 +286,7 @@ describe("Storage Schemas", () => {
     it("should accept valid file response", () => {
       const result = ZStorageFileResponse.safeParse({
         id: "60f7b3b3c3b3c3b3c3b3c3b3",
-        tenantId: "tenant123",
+        scopeId: "tenant123",
         uploaderId: "user123",
         key: "tenant123/documents/report.pdf",
         folder: "documents",
@@ -304,7 +304,7 @@ describe("Storage Schemas", () => {
     it("should accept file with metadata", () => {
       const result = ZStorageFileResponse.safeParse({
         id: "60f7b3b3c3b3c3b3c3b3c3b3",
-        tenantId: "tenant123",
+        scopeId: "tenant123",
         uploaderId: "user456",
         key: "tenant123/photos/img.jpg",
         folder: "avatars",
@@ -329,7 +329,7 @@ describe("Storage Schemas", () => {
     it("should accept deleted file status", () => {
       const result = ZStorageFileResponse.safeParse({
         id: "60f7b3b3c3b3c3b3c3b3c3b3",
-        tenantId: "tenant123",
+        scopeId: "tenant123",
         uploaderId: "user789",
         key: "tenant123/old/file.txt",
         folder: "documents",
@@ -347,7 +347,7 @@ describe("Storage Schemas", () => {
     it("should reject missing required fields", () => {
       const result = ZStorageFileResponse.safeParse({
         id: "60f7b3b3c3b3c3b3c3b3c3b3",
-        tenantId: "tenant123",
+        scopeId: "tenant123",
       });
 
       expect(result.success).toBe(false);

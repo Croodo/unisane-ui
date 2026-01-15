@@ -12,54 +12,70 @@ import type { EvalCtx } from './evaluator';
 import type { FlagWrite } from '../domain/schemas';
 import { ERR } from '@unisane/gateway';
 
-export async function setTenantOverride(args: {
+// Scope types for flag overrides
+export type OverrideScopeType = 'tenant' | 'user';
+
+/**
+ * Set a flag override for a specific scope (tenant or user)
+ */
+export async function setScopeOverride(args: {
   env?: AppEnv;
   key: string;
-  tenantId: string;
+  scopeType: OverrideScopeType;
+  scopeId: string;
   value: boolean;
   expiresAt?: Date | null;
   actorIsSuperAdmin?: boolean;
 }) {
   if (isPlatformOnlyFlag(args.key) && !args.actorIsSuperAdmin) {
-    throw ERR.forbidden('Platform-only flags cannot be overridden at tenant scope');
+    throw ERR.forbidden(`Platform-only flags cannot be overridden at ${args.scopeType} scope`);
   }
   const env = args.env ?? getEnv().APP_ENV;
-  const row = await OverridesRepo.upsert({ env, key: args.key, scopeType: 'tenant', scopeId: args.tenantId, value: args.value, ...(args.expiresAt !== undefined ? { expiresAt: args.expiresAt } : {}) });
-  const ck = flagsKeys.overrideByScope(env, args.key, 'tenant', args.tenantId);
+  const row = await OverridesRepo.upsert({
+    env,
+    key: args.key,
+    scopeType: args.scopeType,
+    scopeId: args.scopeId,
+    value: args.value,
+    ...(args.expiresAt !== undefined ? { expiresAt: args.expiresAt } : {}),
+  });
+  const ck = flagsKeys.overrideByScope(env, args.key, args.scopeType, args.scopeId);
   await kv.del(ck);
-  await publish('flag.override.updated', { env, key: args.key, scopeType: 'tenant', scopeId: args.tenantId });
+  await publish('flag.override.updated', { env, key: args.key, scopeType: args.scopeType, scopeId: args.scopeId });
   return row;
 }
 
-export async function clearTenantOverride(args: {
+/**
+ * Clear a flag override for a specific scope (tenant or user)
+ */
+export async function clearScopeOverride(args: {
   env?: AppEnv;
   key: string;
-  tenantId: string;
+  scopeType: OverrideScopeType;
+  scopeId: string;
   actorIsSuperAdmin?: boolean;
 }) {
   if (isPlatformOnlyFlag(args.key) && !args.actorIsSuperAdmin) {
-    throw ERR.forbidden('Platform-only flags cannot be overridden at tenant scope');
+    throw ERR.forbidden(`Platform-only flags cannot be overridden at ${args.scopeType} scope`);
   }
   const env = args.env ?? getEnv().APP_ENV;
-  await OverridesRepo.clear(env, args.key, 'tenant', args.tenantId);
-  const ck = flagsKeys.overrideByScope(env, args.key, 'tenant', args.tenantId);
+  await OverridesRepo.clear(env, args.key, args.scopeType, args.scopeId);
+  const ck = flagsKeys.overrideByScope(env, args.key, args.scopeType, args.scopeId);
   await kv.del(ck);
-  await publish('flag.override.cleared', { env, key: args.key, scopeType: 'tenant', scopeId: args.tenantId });
+  await publish('flag.override.cleared', { env, key: args.key, scopeType: args.scopeType, scopeId: args.scopeId });
 }
 
-export async function getTenantOverride(args: { env?: AppEnv; key: string; tenantId: string }) {
+/**
+ * Get a flag override for a specific scope (tenant or user)
+ */
+export async function getScopeOverride(args: {
+  env?: AppEnv;
+  key: string;
+  scopeType: OverrideScopeType;
+  scopeId: string;
+}) {
   const env = args.env ?? getEnv().APP_ENV;
-  const ck = flagsKeys.overrideByScope(env, args.key, 'tenant', args.tenantId);
-  const cached = await cacheGet<{ value: boolean; expiresAt: string | null } | null>(ck);
-  if (cached) return { value: cached.value, expiresAt: cached.expiresAt ? new Date(cached.expiresAt) : null } as const;
-  const row = await OverridesRepo.get(env, args.key, 'tenant', args.tenantId);
-  if (row) await cacheSet(ck, { value: !!row.value, expiresAt: row.expiresAt ?? null }, 60_000);
-  return row ? { value: !!row.value, expiresAt: row.expiresAt ?? null } : null;
-}
-
-export async function getUserOverride(args: { env?: AppEnv; key: string; userId: string }) {
-  const env = args.env ?? getEnv().APP_ENV;
-  const ck = flagsKeys.overrideByScope(env, args.key, 'user', args.userId);
+  const ck = flagsKeys.overrideByScope(env, args.key, args.scopeType, args.scopeId);
   const cached = await cacheGet<{ value: boolean; expiresAt: string | null } | null>(ck);
   if (cached) {
     return {
@@ -67,93 +83,42 @@ export async function getUserOverride(args: { env?: AppEnv; key: string; userId:
       expiresAt: cached.expiresAt ? new Date(cached.expiresAt) : null,
     } as const;
   }
-  const row = await OverridesRepo.get(env, args.key, 'user', args.userId);
+  const row = await OverridesRepo.get(env, args.key, args.scopeType, args.scopeId);
   if (row) {
-    await cacheSet(
-      ck,
-      { value: !!row.value, expiresAt: row.expiresAt ?? null },
-      60_000,
-    );
+    await cacheSet(ck, { value: !!row.value, expiresAt: row.expiresAt ?? null }, 60_000);
   }
   return row ? { value: !!row.value, expiresAt: row.expiresAt ?? null } : null;
 }
 
-export async function setUserOverride(args: {
+/**
+ * Check if a flag is enabled for a subject (checks user override, then scope override, then rules)
+ */
+export async function isEnabledForScope(args: {
   env?: AppEnv;
   key: string;
-  userId: string;
-  value: boolean;
-  expiresAt?: Date | null;
-  actorIsSuperAdmin?: boolean;
-}) {
-  if (isPlatformOnlyFlag(args.key) && !args.actorIsSuperAdmin) {
-    throw ERR.forbidden('Platform-only flags cannot be overridden at user scope');
-  }
-  const env = args.env ?? getEnv().APP_ENV;
-  const row = await OverridesRepo.upsert({
-    env,
-    key: args.key,
-    scopeType: 'user',
-    scopeId: args.userId,
-    value: args.value,
-    ...(args.expiresAt !== undefined ? { expiresAt: args.expiresAt } : {}),
-  });
-  const ck = flagsKeys.overrideByScope(env, args.key, 'user', args.userId);
-  await kv.del(ck);
-  await publish('flag.override.updated', {
-    env,
-    key: args.key,
-    scopeType: 'user',
-    scopeId: args.userId,
-  });
-  return row;
-}
-
-export async function clearUserOverride(args: {
-  env?: AppEnv;
-  key: string;
-  userId: string;
-  actorIsSuperAdmin?: boolean;
-}) {
-  if (isPlatformOnlyFlag(args.key) && !args.actorIsSuperAdmin) {
-    throw ERR.forbidden('Platform-only flags cannot be overridden at user scope');
-  }
-  const env = args.env ?? getEnv().APP_ENV;
-  await OverridesRepo.clear(env, args.key, 'user', args.userId);
-  const ck = flagsKeys.overrideByScope(env, args.key, 'user', args.userId);
-  await kv.del(ck);
-  await publish('flag.override.cleared', {
-    env,
-    key: args.key,
-    scopeType: 'user',
-    scopeId: args.userId,
-  });
-}
-
-export async function isEnabledForSubject(args: {
-  env?: AppEnv;
-  key: string;
-  tenantId: string;
+  scopeId: string;
   userId?: string;
   ctx?: EvalCtx;
 }) {
   const env = args.env ?? getEnv().APP_ENV;
   // 1) User override (if userId present)
   if (args.userId) {
-    const uovr = await getUserOverride({
+    const uovr = await getScopeOverride({
       env,
       key: args.key,
-      userId: args.userId,
+      scopeType: 'user',
+      scopeId: args.userId,
     });
     if (uovr) return uovr.value;
   }
-  // 2) Tenant override
-  const tovr = await getTenantOverride({
+  // 2) Scope (tenant) override
+  const sovr = await getScopeOverride({
     env,
     key: args.key,
-    tenantId: args.tenantId,
+    scopeType: 'tenant',
+    scopeId: args.scopeId,
   });
-  if (tovr) return tovr.value;
+  if (sovr) return sovr.value;
   // 3) Rules / default
   const flag = await getFlag({ env, key: args.key });
   if (!flag) return false; // default absent as disabled
@@ -165,18 +130,4 @@ export async function isEnabledForSubject(args: {
     expectedVersion: flag.snapshotVersion,
   };
   return applyThen(input, args.ctx ?? {});
-}
-
-export async function isEnabledForTenant(args: {
-  env?: AppEnv;
-  key: string;
-  tenantId: string;
-  ctx?: EvalCtx;
-}) {
-  return isEnabledForSubject({
-    ...(args.env ? { env: args.env } : {}),
-    key: args.key,
-    tenantId: args.tenantId,
-    ...(args.ctx ? { ctx: args.ctx } : {}),
-  });
 }

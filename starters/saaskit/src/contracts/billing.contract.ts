@@ -388,8 +388,7 @@ export const billingContract = c.router({
       service: {
         importPath: "@unisane/billing",
         fn: "getSubscription",
-        invoke: "object",
-        callArgs: [{ name: "tenantId", from: "params", key: "tenantId" }],
+        callArgs: [],
         requireTenantMatch: true,
       },
     })

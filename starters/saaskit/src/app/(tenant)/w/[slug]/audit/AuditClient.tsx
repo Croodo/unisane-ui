@@ -5,7 +5,7 @@ import { RowDetailSection, KeyValueRow } from "@/src/components/shared";
 import { hooks } from "@/src/sdk/hooks";
 import type { AuditListItem } from "@/src/sdk/types";
 import { PageLayout } from "@/src/context/usePageLayout";
-import { useSession } from "@/src/hooks/useSession";
+import { useSession } from "@/src/hooks/use-session";
 import { Icon } from "@unisane/ui/primitives/icon";
 import { Card } from "@unisane/ui/components/card";
 import {
@@ -123,7 +123,7 @@ function createAuditPanelContent(audit: AuditListItem): DetailPanelContent {
 
 export default function AuditClient() {
   const { me } = useSession();
-  const tenantId = me?.tenantId ?? undefined;
+  const tenantId = me?.scopeId ?? undefined;
   const currentUserId = me?.userId;
 
   // Fetch audit logs

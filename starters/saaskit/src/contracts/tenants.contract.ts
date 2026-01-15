@@ -79,12 +79,13 @@ export const tenantsContract = c.router({
     })
   ),
   // Admin: export current view as CSV (page scope)
+  // Note: z.any() is used for binary/CSV responses where JSON schema doesn't apply
   adminExport: withMeta(
     {
       method: "GET",
       path: "/api/rest/v1/admin/tenants/export",
       query: ZAdminListQuery,
-      responses: { 200: z.any() },
+      responses: { 200: z.any() }, // Binary CSV response - schema not applicable
       summary: "Admin tenants export (CSV)",
     },
     defineOpMeta({

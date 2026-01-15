@@ -8,7 +8,7 @@ import { toast } from "@unisane/ui/components/toast";
 import { Alert } from "@unisane/ui/components/alert";
 import { Badge } from "@unisane/ui/components/badge";
 import { Typography } from "@unisane/ui/components/typography";
-import { useSession } from "@/src/hooks/useSession";
+import { useSession } from "@/src/hooks/use-session";
 import { hooks } from "@/src/sdk/hooks";
 import { normalizeError } from "@/src/sdk/errors";
 import { PageLayout } from "@/src/context/usePageLayout";
@@ -16,12 +16,11 @@ import { useTabNavigation } from "@/src/context/useTabNavigation";
 import {
   TOPUP_OPTIONS,
   creditsForPurchase,
-} from "@/src/shared/constants/credits";
-import type { TopupOptionId } from "@/src/shared/constants/credits";
+  PLAN_META,
+} from "@unisane/kernel/client";
+import type { TopupOptionId, PlanId } from "@unisane/kernel/client";
 import { Tabs, TabsContent } from "@unisane/ui/components/tabs";
 import { InvoicesTab, PaymentsTab, CreditsTab } from "./components";
-import { PLAN_META } from "@/src/shared/constants/plan";
-import type { PlanId } from "@/src/shared/constants/plan";
 
 /**
  * BillingClient — Consolidated billing with tabs
@@ -33,7 +32,7 @@ import type { PlanId } from "@/src/shared/constants/plan";
  */
 export function BillingClient({ slug }: { slug: string }) {
   const { me } = useSession();
-  const tenantId = me?.tenantId ?? undefined;
+  const tenantId = me?.scopeId ?? undefined;
 
   // URL-synchronized tab navigation
   const { currentTab, navigate: handleTabChange } = useTabNavigation({

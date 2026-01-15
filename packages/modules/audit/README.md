@@ -19,16 +19,16 @@ Immutable audit logging with tenant isolation.
 | Pattern | Status | Notes |
 |---------|--------|-------|
 | `selectRepo()` | ✅ | Used in repository facade |
-| `getTenantId()` | ✅ | Used in services (with optional override) |
-| `tenantFilter()` | N/A | Explicit filter for append-only logs |
+| `getScopeId()` | ✅ | Used in services (with optional override) |
+| `scopeFilter()` | N/A | Explicit filter for append-only logs |
 | Keys builder | ✅ | `auditKeys` in domain/keys.ts |
 
 ## Usage
 
 ```typescript
-import { appendAudit, listAudit, listAuditAdmin, getTenantLastActivity } from "@unisane/audit";
+import { appendAudit, listAudit, listAuditAdmin, getScopeLastActivity } from "@unisane/audit";
 
-// Append audit entry (uses context tenantId)
+// Append audit entry (uses context scopeId)
 await appendAudit({
   action: "user.created",
   resourceType: "user",
@@ -37,22 +37,22 @@ await appendAudit({
   after: userData,
 });
 
-// List audit logs for current tenant
+// List audit logs for current scope
 const { items, nextCursor } = await listAudit({ limit: 50 });
 
-// Admin: list all audit logs (optional tenantId filter)
-const { items: allLogs } = await listAuditAdmin({ limit: 100, tenantId: "tenant-123" });
+// Admin: list all audit logs (optional scopeId filter)
+const { items: allLogs } = await listAuditAdmin({ limit: 100, scopeId: "scope-123" });
 
-// Get last activity per tenant (batch)
-const activityMap = await getTenantLastActivity(["tenant-1", "tenant-2"]);
+// Get last activity per scope (batch)
+const activityMap = await getScopeLastActivity(["scope-1", "scope-2"]);
 ```
 
 ## Exports
 
 - `appendAudit` - Append immutable audit entry
-- `listAudit` - List tenant's audit logs with pagination
-- `listAuditAdmin` - Admin: list all logs (optional tenant filter)
-- `getTenantLastActivity` - Batch get last activity timestamps
+- `listAudit` - List scope's audit logs with pagination
+- `listAuditAdmin` - Admin: list all logs (optional scope filter)
+- `getScopeLastActivity` - Batch get last activity timestamps
 - `auditKeys` - Cache key builder
 - `AUDIT_EVENTS` - Event constants
 - `AUDIT_DEFAULTS` - Default configuration

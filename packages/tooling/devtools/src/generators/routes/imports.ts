@@ -28,6 +28,12 @@ export function toModuleImport(importPath: string, usePackages: boolean = true):
     return `@unisane/${pkgMatch[1]}`;
   }
 
+  // Match relative contract paths like './tenants.contract' -> '@/src/contracts/tenants.contract'
+  const contractMatch = importPath.match(/^\.\/([^/]+)\.contract$/);
+  if (contractMatch && contractMatch[1]) {
+    return `@/src/contracts/${contractMatch[1]}.contract`;
+  }
+
   // Return as-is for other paths
   return importPath;
 }

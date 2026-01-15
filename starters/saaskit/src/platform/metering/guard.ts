@@ -1,10 +1,8 @@
-import type { FeatureKey } from "@/src/shared/constants/features";
-import type { PlanId } from "@/src/shared/constants/plan";
+import type { FeatureKey, PlanId, FeaturePolicyMap } from "@unisane/kernel";
 import {
   resolveTokenPolicy,
   resolveEntitlements,
-} from "@/src/platform/metering/policy";
-import type { FeaturePolicyMap } from "@/src/shared/constants/metering";
+} from "@unisane/billing";
 import { getWindow, increment } from "@unisane/usage";
 import { consume as consumeCredits } from "@unisane/credits";
 import { metrics } from "@/src/platform/telemetry";
@@ -89,7 +87,7 @@ export function createGuard(deps: { usage: UsagePort; credits: CreditsPort }) {
 }
 
 // DX helper: default guard wired to module services
-// Note: The @unisane/* functions use getTenantId() from kernel context,
+// Note: The @unisane/* functions use getScopeId() from kernel context,
 // so we don't pass tenantId to them (the port interface includes it for flexibility)
 export function createDefaultGuard() {
   return createGuard({
@@ -164,7 +162,7 @@ export async function checkQuotaWindow(
   )[feature];
   if (!q) return { used: 0, limit: Number.POSITIVE_INFINITY, ok: true };
   // Only day window is tracked precisely; others require additional rollups.
-  // Note: getWindow uses getTenantId() from kernel context
+  // Note: getWindow uses getScopeId() from kernel context
   void tenantId; // tenantId passed in but used from context
   const used =
     q.window === "day"

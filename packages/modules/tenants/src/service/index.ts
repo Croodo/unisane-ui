@@ -5,14 +5,14 @@
  */
 
 // Core tenant operations
-export { getCurrentTenant } from "./getCurrentTenant";
-export { readTenant } from "./readTenant";
-export { readTenantBySlug } from "./readTenantBySlug";
-export { listTenants } from "./listTenants";
-export { deleteTenant } from "./deleteTenant";
-export type { DeleteTenantArgs, DeleteTenantResult } from "./deleteTenant";
+export { getCurrentTenant } from "./get-current-tenant";
+export { readTenant } from "./read-tenant";
+export { readTenantBySlug } from "./read-tenant-by-slug";
+export { listTenants } from "./list-tenants";
+export { deleteTenant } from "./delete-tenant";
+export type { DeleteTenantArgs, DeleteTenantResult } from "./delete-tenant";
 export {
   bootstrapFirstTenantForUser,
   configureTenantBootstrap,
-} from "./bootstrapTenant";
-export type { TenantBootstrapProviders } from "./bootstrapTenant";
+} from "./bootstrap-tenant";
+export type { TenantBootstrapProviders } from "./bootstrap-tenant";

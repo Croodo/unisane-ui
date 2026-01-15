@@ -1,7 +1,7 @@
 import { WebhooksRepo } from '../data/webhooks.repository';
 
 export async function recordOutbound(args: {
-  tenantId: string | null;
+  scopeId: string | null;
   target: string;
   status: 'delivered' | 'failed';
   httpStatus: number | null;

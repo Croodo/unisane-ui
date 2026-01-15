@@ -4,8 +4,8 @@ import { FlagOverridesRepoMongo } from './overrides.repository.mongo';
 
 export const OverridesRepo = selectRepo<FlagOverridesRepoPort>({ mongo: FlagOverridesRepoMongo });
 
-export async function countActiveTenantOverrides(tenantIds: string[], now = new Date()): Promise<Map<string, number>> {
-  return OverridesRepo.countActiveTenantOverrides(tenantIds, now);
+export async function countActiveScopeOverrides(scopeIds: string[], now = new Date()): Promise<Map<string, number>> {
+  return OverridesRepo.countActiveScopeOverrides(scopeIds, now);
 }
 
 export async function listExpiredOverridesForCleanup(now = new Date(), limit = 200): Promise<Array<{ env?: string; key: string; scopeType: "tenant" | "user"; scopeId: string }>> {

@@ -3,6 +3,25 @@ import { ZodError, z } from "zod";
 import { toHttp, ERR } from "../errors/errors";
 import { HEADER_NAMES } from "../headers";
 
+/**
+ * Valid pattern for request IDs: alphanumeric, underscores, hyphens, 1-64 chars.
+ * This prevents log injection attacks from malicious request ID headers.
+ */
+const REQUEST_ID_PATTERN = /^[a-zA-Z0-9_-]{1,64}$/;
+
+/**
+ * Sanitize a request ID from headers.
+ * Returns a new UUID if the input is invalid or missing.
+ *
+ * @param input - The raw request ID header value
+ * @returns A valid request ID string
+ */
+export function sanitizeRequestId(input: string | null): string {
+  if (!input) return crypto.randomUUID();
+  if (!REQUEST_ID_PATTERN.test(input)) return crypto.randomUUID();
+  return input;
+}
+
 export async function parseJson<Z extends ZodTypeAny>(
   req: Request,
   schema: Z
@@ -43,8 +62,7 @@ export async function handle<Z extends ZodTypeAny, Out>(
   try {
     const body = schema.parse(await req.json()) as z.output<Z>;
     const data = await fn(body);
-    const requestId =
-      req.headers.get(HEADER_NAMES.REQUEST_ID) ?? crypto.randomUUID();
+    const requestId = sanitizeRequestId(req.headers.get(HEADER_NAMES.REQUEST_ID));
     return new Response(JSON.stringify({ ok: true, data }), {
       status: 200,
       headers: {

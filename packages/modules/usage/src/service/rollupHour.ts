@@ -1,11 +1,11 @@
-import { redis } from '@unisane/kernel';
+import { redis, logger } from '@unisane/kernel';
 import { UsageRepo } from '../data/usage.repository';
-import { hourLabel, usageHourScanPattern } from '../domain/keys';
+import { hourLabel, usageKeys } from '../domain/keys';
 
 export async function rollupHour(now = new Date()) {
   const hourStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), now.getUTCHours() - 1, 0, 0));
   const label = hourLabel(hourStart);
-  const pattern = usageHourScanPattern(label);
+  const pattern = usageKeys.hourScanPattern(label);
   const counts: Record<string, number> = {};
   let cursor = '0';
   do {
@@ -19,19 +19,27 @@ export async function rollupHour(now = new Date()) {
     }
   } while (cursor !== '0');
 
-  const groups = new Map<string, { tenantId: string; feature: string; count: number }>();
+  const groups = new Map<string, { scopeId: string; feature: string; count: number }>();
   for (const [key, val] of Object.entries(counts)) {
-    // key format: usage:{tenantId}:{feature}:{YYYYMMDDHHmm}
+    // key format: usage:{scopeId}:{feature}:{YYYYMMDDHHmm}
     const parts = key.split(':');
-    const tenantId = parts[1] ?? '';
+    if (parts.length < 4 || parts[0] !== 'usage') {
+      logger.warn('usage.rollup.unexpected_key_format', { key });
+      continue;
+    }
+    const scopeId = parts[1] ?? '';
     const feature = parts[2] ?? '';
-    const gk = `${tenantId}::${feature}`;
-    const g = groups.get(gk) ?? { tenantId, feature, count: 0 };
+    if (!scopeId || !feature) {
+      logger.warn('usage.rollup.empty_key_parts', { key, scopeId, feature });
+      continue;
+    }
+    const gk = `${scopeId}::${feature}`;
+    const g = groups.get(gk) ?? { scopeId, feature, count: 0 };
     g.count += val;
     groups.set(gk, g);
   }
   for (const g of groups.values()) {
-    await UsageRepo.upsertIncrement('hour', hourStart, g.tenantId, g.feature, g.count);
+    await UsageRepo.upsertIncrement('hour', hourStart, g.scopeId, g.feature, g.count);
   }
   return { ok: true as const, groups: groups.size };
 }

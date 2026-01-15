@@ -7,7 +7,7 @@ import {
   SETTINGS_NS,
   PLAN_SETTING_KEYS,
   WEBHOOKS_SETTING_KEYS,
-} from "@/src/shared/constants/settings";
+} from "@unisane/kernel/client";
 import { TextField } from "@unisane/ui/components/text-field";
 import { Button } from "@unisane/ui/components/button";
 import { Badge } from "@unisane/ui/components/badge";

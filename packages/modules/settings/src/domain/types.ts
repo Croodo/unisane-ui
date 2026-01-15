@@ -1,6 +1,6 @@
 export type SettingRow = {
   env: string;
-  tenantId: string | null;
+  scopeId: string | null;
   namespace: string;
   key: string;
   value: unknown | null;
@@ -23,7 +23,7 @@ export type PatchOk = {
 export type PatchResult = PatchConflict | PatchOk;
 
 export type PatchSettingArgs = {
-  tenantId: string | null;
+  scopeId: string | null;
   namespace: string;
   key: string;
   value?: unknown;
@@ -34,7 +34,7 @@ export type PatchSettingArgs = {
 };
 
 export type GetSettingArgs = {
-  tenantId: string | null;
+  scopeId: string | null;
   ns: string;
   key: string;
   env?: string;

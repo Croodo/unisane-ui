@@ -1,8 +1,5 @@
-import { connectDb } from "@unisane/kernel";
-import { ensureUserByEmail, updateUser } from "@unisane/identity";
+import { connectDb, getEnv, getProviderAdapter, getAuthIdentityProvider } from "@unisane/kernel";
 import { ERR } from "@unisane/gateway";
-import { getEnv } from "@unisane/kernel";
-import { getProviderAdapter } from "@unisane/kernel";
 import type { OAuthProvider } from "@unisane/kernel";
 import type { ExchangeInput, ExchangeResult } from "../domain/types";
 
@@ -28,19 +25,13 @@ export async function exchange({
   const userInfo = await adapter.getUserInfo({ accessToken: token });
   if (!userInfo?.email) throw ERR.forbidden("Provider email required");
   const authUserId = `${p}:${userInfo.id}`;
+  const identity = getAuthIdentityProvider();
   // Ensure user and backfill profile fields if missing
-  const userId = await ensureUserByEmail(
-    userInfo.email,
-    userInfo.name ?? undefined,
-    authUserId
-  );
+  const userId = await identity.ensureUserByEmail(userInfo.email);
   try {
-    await updateUser({
-      userId,
-      patch: {
-        ...(userInfo.name ? { displayName: userInfo.name } : {}),
-        ...(userInfo.picture ? { imageUrl: userInfo.picture } : {}),
-      },
+    await identity.updateUserById(userId, {
+      ...(userInfo.name ? { displayName: userInfo.name } : {}),
+      authUserId,
     });
   } catch {}
   return { userId };

@@ -1,7 +1,7 @@
 import { usersRepository, membershipsRepository } from "../data/repo";
 import { ERR } from "@unisane/gateway";
 import { invalidatePermsForUser } from "./perms";
-import { getTenantId, resolveEntitlements, events } from "@unisane/kernel";
+import { getScopeId, resolveEntitlements, events } from "@unisane/kernel";
 import { IDENTITY_EVENTS } from "../domain/constants";
 import { getTenantsRepo } from "../providers";
 import type { RoleId } from "@unisane/kernel";
@@ -33,13 +33,13 @@ import type { RemoveMemberArgs } from "../domain/types";
 export type { RemoveMemberArgs };
 
 export async function addRole(args: AddRoleArgs) {
-  const tenantId = getTenantId(); // Throws if not set
+  const scopeId = getScopeId(); // Throws if not set
   const { userId, roleId, expectedVersion } = args;
-  const existing = await membershipsRepository.get(tenantId, userId);
+  const existing = await membershipsRepository.get(scopeId, userId);
   const isNewSeat =
     !existing || !Array.isArray(existing.roles) || existing.roles.length === 0;
   if (isNewSeat) {
-    const ent = await resolveEntitlements(tenantId);
+    const ent = await resolveEntitlements(scopeId);
     const maxSeatsRaw = (ent.capacities as Record<string, number | undefined>)[
       "seats"
     ];
@@ -50,8 +50,8 @@ export async function addRole(args: AddRoleArgs) {
         ? maxSeatsRaw
         : undefined;
     if (maxSeats !== undefined) {
-      const page = await membershipsRepository.listByTenant(
-        tenantId,
+      const page = await membershipsRepository.listByScope(
+        scopeId,
         maxSeats + 1
       );
       const activeSeats = page.items.filter(
@@ -65,15 +65,15 @@ export async function addRole(args: AddRoleArgs) {
     }
   }
   const res = await membershipsRepository.addRole(
-    tenantId,
+    scopeId,
     userId,
     roleId,
     expectedVersion
   );
   if ("conflict" in res) throw ERR.versionMismatch();
-  await invalidatePermsForUser(tenantId, userId);
+  await invalidatePermsForUser(scopeId, userId);
   await events.emit(IDENTITY_EVENTS.MEMBERSHIP_ROLE_CHANGED, {
-    tenantId,
+    scopeId,
     userId,
     roleId,
     action: "added",
@@ -82,45 +82,45 @@ export async function addRole(args: AddRoleArgs) {
 }
 
 export async function grantPerm(args: GrantPermArgs) {
-  const tenantId = getTenantId(); // Throws if not set
+  const scopeId = getScopeId(); // Throws if not set
   const { userId, perm, effect, expectedVersion } = args;
   const res = await membershipsRepository.grantPerm(
-    tenantId,
+    scopeId,
     userId,
     perm,
     effect,
     expectedVersion
   );
   if ("conflict" in res) throw ERR.versionMismatch();
-  await invalidatePermsForUser(tenantId, userId);
+  await invalidatePermsForUser(scopeId, userId);
   return res.membership;
 }
 
-export async function getActiveTenantId(
+export async function getActiveScopeId(
   userId: string
 ): Promise<string | undefined> {
   const m = await membershipsRepository.findLatestForUser(userId);
-  return m?.tenantId ?? undefined;
+  return m?.scopeId ?? undefined;
 }
 
 export async function getMembership(args: GetMembershipArgs) {
-  const tenantId = getTenantId(); // Throws if not set
-  return membershipsRepository.get(tenantId, args.userId);
+  const scopeId = getScopeId(); // Throws if not set
+  return membershipsRepository.get(scopeId, args.userId);
 }
 
 export async function removeRole(args: RemoveRoleArgs) {
-  const tenantId = getTenantId(); // Throws if not set
+  const scopeId = getScopeId(); // Throws if not set
   const { userId, roleId, expectedVersion } = args;
   const res = await membershipsRepository.removeRole(
-    tenantId,
+    scopeId,
     userId,
     roleId,
     expectedVersion
   );
   if ("conflict" in res) throw ERR.versionMismatch();
-  await invalidatePermsForUser(tenantId, userId);
+  await invalidatePermsForUser(scopeId, userId);
   await events.emit(IDENTITY_EVENTS.MEMBERSHIP_ROLE_CHANGED, {
-    tenantId,
+    scopeId,
     userId,
     roleId,
     action: "removed",
@@ -129,23 +129,23 @@ export async function removeRole(args: RemoveRoleArgs) {
 }
 
 export async function revokePerm(args: RevokePermArgs) {
-  const tenantId = getTenantId(); // Throws if not set
+  const scopeId = getScopeId(); // Throws if not set
   const { userId, perm, expectedVersion } = args;
   const res = await membershipsRepository.revokePerm(
-    tenantId,
+    scopeId,
     userId,
     perm,
     expectedVersion
   );
   if ("conflict" in res) throw ERR.versionMismatch();
-  await invalidatePermsForUser(tenantId, userId);
+  await invalidatePermsForUser(scopeId, userId);
   return res.membership;
 }
 
 export async function listMembers(args: ListMembersArgs) {
-  const tenantId = getTenantId(); // Throws if not set
-  const page = await membershipsRepository.listByTenant(
-    tenantId,
+  const scopeId = getScopeId(); // Throws if not set
+  const page = await membershipsRepository.listByScope(
+    scopeId,
     args.limit,
     args.cursor
   );
@@ -164,8 +164,8 @@ export async function listMembers(args: ListMembersArgs) {
     const userId = (m as { userId?: string }).userId ?? null;
     const user = userId ? userMap.get(userId) : null;
     return {
-      id: `${tenantId}:${userId}`, // Composite key for memberships
-      tenantId: (m as { tenantId?: string }).tenantId ?? tenantId,
+      id: `${scopeId}:${userId}`, // Composite key for memberships
+      scopeId: (m as { scopeId?: string }).scopeId ?? scopeId,
       userId,
       userName: user?.displayName ?? null,
       userEmail: user?.email ?? null,
@@ -185,16 +185,16 @@ export async function listMembers(args: ListMembersArgs) {
 }
 
 export async function removeMember(args: RemoveMemberArgs) {
-  const tenantId = getTenantId(); // Throws if not set
+  const scopeId = getScopeId(); // Throws if not set
   const { userId, expectedVersion } = args;
   const res = await membershipsRepository.delete(
-    tenantId,
+    scopeId,
     userId,
     expectedVersion
   );
   if ("notFound" in res) throw ERR.notFound("Membership not found");
   if ("conflict" in res) throw ERR.versionMismatch();
-  await invalidatePermsForUser(tenantId, userId);
+  await invalidatePermsForUser(scopeId, userId);
   return { ok: true };
 }
 
@@ -204,23 +204,23 @@ export async function listMyMemberships(args: ListMyMembershipsArgs) {
     args.limit,
     args.cursor
   );
-  const tenantIds = page.items.map((m) =>
-    String((m as { tenantId: unknown }).tenantId)
+  const scopeIds = page.items.map((m) =>
+    String((m as { scopeId: unknown }).scopeId)
   );
   const tenantsRepo = getTenantsRepo();
-  const tenants = await tenantsRepo.findMany(tenantIds);
+  const tenants = await tenantsRepo.findMany(scopeIds);
   type TenantRecord = { id: string; slug?: string; name?: string };
   const tMap = new Map<string, TenantRecord>(tenants.map((t: TenantRecord) => [t.id, t]));
   const items = page.items.map((m) => {
-    const tid = String((m as { tenantId: unknown }).tenantId);
-    const t = tMap.get(tid);
+    const sid = String((m as { scopeId: unknown }).scopeId);
+    const t = tMap.get(sid);
     const roles =
       (m as { roles?: Array<{ roleId: RoleId }> }).roles?.map(
         (r) => r.roleId
       ) ?? [];
     const updatedAt = (m as { updatedAt?: Date }).updatedAt ?? null;
     return {
-      tenantId: tid,
+      scopeId: sid,
       tenantSlug: t?.slug ?? null,
       tenantName: t?.name ?? null,
       roles,

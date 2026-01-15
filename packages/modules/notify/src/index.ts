@@ -45,3 +45,9 @@ export * from "./service/enqueue";
 export * from "./service/inapp";
 export * from "./service/prefs";
 export * from "./service/suppression";
+
+// ════════════════════════════════════════════════════════════════════════════
+// Event Handlers - Hexagonal Architecture
+// ════════════════════════════════════════════════════════════════════════════
+
+export { registerNotifyEventHandlers } from "./event-handlers";

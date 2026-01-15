@@ -1,7 +1,7 @@
-import { connectDb } from "@unisane/kernel";
+import { connectDb, logger } from "@unisane/kernel";
 import { STORAGE_LIMITS } from "@unisane/kernel";
 import { StorageRepo } from "../data/storage.repository";
-import { deleteS3Object } from "@unisane/kernel";
+import { deleteObject } from "@unisane/kernel";
 import { metrics } from "@unisane/kernel";
 
 const BATCH_CONCURRENCY = 5;
@@ -71,11 +71,19 @@ export async function cleanupDeletedFiles(): Promise<{
 
   const { success, failed } = await processBatch(deleted, async (file) => {
     try {
-      await deleteS3Object(file.key);
-    } catch {
+      await deleteObject(file.key);
+      // Only delete DB record if S3 delete succeeds
+      return StorageRepo.hardDelete(file.id);
+    } catch (err) {
       s3Errors++;
+      logger.warn('storage.cleanup.s3_delete_failed', {
+        fileId: file.id,
+        key: file.key,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      // Keep DB record to retry on next cleanup run
+      return false;
     }
-    return StorageRepo.hardDelete(file.id);
   });
 
   metrics.increment("storage.cleanup.deleted", {

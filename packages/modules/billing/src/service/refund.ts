@@ -5,23 +5,23 @@ import { PaymentsRepository } from "../data/payments.repository";
 import { getEnv } from "@unisane/kernel";
 import { refundLockKey } from "../domain/keys";
 import type { BillingProvider } from "@unisane/kernel";
-import { isEnabledForTenant } from "@unisane/flags";
+import { isEnabledForScope } from "@unisane/flags";
 import { FLAG } from "@unisane/kernel";
 import { ERR } from "@unisane/gateway";
 
 export async function refund(args: {
-  tenantId: string;
+  scopeId: string;
   providerPaymentId: string;
   amount?: number;
 }) {
   // Feature gate
-  const enabled = await isEnabledForTenant({
+  const enabled = await isEnabledForScope({
     key: FLAG.BILLING_REFUND,
-    tenantId: args.tenantId,
+    scopeId: args.scopeId,
   });
   if (!enabled) throw ERR.forbidden("Refunds disabled");
   const p = await PaymentsRepository.findByProviderPaymentId({
-    tenantId: args.tenantId,
+    scopeId: args.scopeId,
     providerPaymentId: args.providerPaymentId,
   });
   if (!p) return { ok: false as const, error: "PAYMENT_NOT_FOUND" };
@@ -36,7 +36,7 @@ export async function refund(args: {
     "stub"
   ).toString();
   const lockKey = refundLockKey(
-    args.tenantId,
+    args.scopeId,
     currentProvider as BillingProvider,
     args.providerPaymentId,
     amountMinorStrLock
@@ -50,7 +50,7 @@ export async function refund(args: {
       ? toMinorStrCurrency(args.amount, p.currency)
       : undefined;
   await provider.refundPayment({
-    tenantId: args.tenantId,
+    scopeId: args.scopeId,
     providerPaymentId: args.providerPaymentId,
     ...(amountMinorStr ? { amountMinorStr } : {}),
   });

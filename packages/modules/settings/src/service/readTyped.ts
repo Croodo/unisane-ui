@@ -4,7 +4,7 @@ import { getSettingDefinition } from "@unisane/kernel";
 import { ERR } from "@unisane/gateway";
 
 export async function getTypedSetting<T>(args: {
-  tenantId: string | null;
+  scopeId: string | null;
   ns: string;
   key: string;
   env?: string;
@@ -13,7 +13,7 @@ export async function getTypedSetting<T>(args: {
   if (!def) throw ERR.validation("Unknown setting key");
 
   const raw = await getSetting({
-    tenantId: args.tenantId,
+    scopeId: args.scopeId,
     ns: args.ns,
     key: args.key,
     ...(args.env !== undefined ? { env: args.env } : {}),

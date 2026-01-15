@@ -2,7 +2,7 @@ import type { AuditLogView } from "./types";
 
 export interface AuditRepoPort {
   listPage(args: {
-    tenantId: string;
+    scopeId: string;
     limit: number;
     cursor?: string;
   }): Promise<{
@@ -10,19 +10,19 @@ export interface AuditRepoPort {
     nextCursor?: string;
     prevCursor?: string;
   }>;
-  getTenantLastActivity(tenantIds: string[]): Promise<Map<string, Date | null>>;
-  /** Admin list - all audit logs, optionally filtered by tenantId */
+  getScopeLastActivity(scopeIds: string[]): Promise<Map<string, Date | null>>;
+  /** Admin list - all audit logs, optionally filtered by scopeId */
   listPageAdmin(args: {
     limit: number;
     cursor?: string;
-    tenantId?: string;
+    scopeId?: string;
   }): Promise<{
     rows: AuditLogView[];
     nextCursor?: string;
     prevCursor?: string;
   }>;
   append(args: {
-    tenantId: string;
+    scopeId: string;
     actorId?: string;
     action: string;
     resourceType: string;

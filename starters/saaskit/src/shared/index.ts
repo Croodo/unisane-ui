@@ -1,34 +1,14 @@
-// ─── Environment ──────────────────────────────────────────────────────────────
-export { EnvSchema, getEnv, validateCriticalEnv, assertCriticalEnv } from './env';
-export type { Env } from './env';
+// ─── App-specific exports ─────────────────────────────────────────────────────
+export { KIT_ID, KIT_VERSION, KIT_CHANNEL } from './kitVersion';
 
-// ─── Money utilities ──────────────────────────────────────────────────────────
-export {
-  moneyDecimals,
-  parseMinorStr,
-  toMinorStr,
-  toMinorStrCurrency,
-  toMajorNumber,
-  toMajorNumberCurrency,
-} from './money';
-
-// ─── Time utilities ───────────────────────────────────────────────────────────
-export { ZRFC3339, parseRFC3339, clampRangeDays } from './time';
-
-// ─── ID generation ────────────────────────────────────────────────────────────
-export { uuid, newTenantId, newUserId, newApiKeyId } from './ids';
-
-// ─── DTO schemas ──────────────────────────────────────────────────────────────
-export {
-  ZCursor,
-  ZLimit,
-  ZIdem,
-  ZLimitCoerce,
-  ZSeekPageQuery,
-  ZSeekPageWithSort,
-} from './dto';
-export type { Cursor, Limit, Idem, SeekPageQuery, SeekPageWithSort } from './dto';
-
-// ─── Constants (re-export entire module for backwards compatibility) ──────────
-// NOTE: Consider importing from @/src/shared/constants directly for better tree-shaking
-export * from './constants';
+// ─── All other utilities are now in @unisane/kernel ───────────────────────────
+// Import directly from @unisane/kernel:
+// - Environment: EnvSchema, getEnv, validateCriticalEnv, assertCriticalEnv
+// - Money utilities: moneyDecimals, parseMinorStr, toMinorStr, etc.
+// - Time utilities: ZRFC3339, parseRFC3339, clampRangeDays
+// - ID generation: uuid, newTenantId, newUserId, newApiKeyId
+// - DTO schemas: ZCursor, ZLimit, ZIdem, etc.
+// - Constants: All constants from ./constants/
+// - RBAC: PERM, ROLE, etc.
+// - Encoding: base64url utilities
+// - Schema utilities

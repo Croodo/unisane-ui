@@ -8,7 +8,7 @@ import {
   getStatusConfig,
   getStatusStyles,
   type StatusCategory,
-} from "@/src/shared/constants/status";
+} from "@unisane/kernel/client";
 
 /** Material Symbol icons for each status category */
 const CATEGORY_ICONS: Record<StatusCategory, string> = {

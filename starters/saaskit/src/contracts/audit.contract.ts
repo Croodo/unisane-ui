@@ -63,7 +63,6 @@ export const auditContract = c.router({
         zodQuery: { importPath: "@unisane/kernel", name: "ZSeekPageQuery" },
         invoke: "object",
         callArgs: [
-          { name: "tenantId", from: "params", key: "tenantId" },
           { name: "limit", from: "query", key: "limit" },
           { name: "cursor", from: "query", key: "cursor", optional: true },
         ],
@@ -105,7 +104,7 @@ export const auditContract = c.router({
         callArgs: [
           { name: "limit", from: "query", key: "limit" },
           { name: "cursor", from: "query", key: "cursor", optional: true },
-          { name: "tenantId", from: "query", key: "tenantId", optional: true },
+          { name: "scopeId", from: "query", key: "tenantId", optional: true },
         ],
       },
     })

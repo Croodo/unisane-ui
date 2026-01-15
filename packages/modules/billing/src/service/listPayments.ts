@@ -1,11 +1,11 @@
 import { PaymentsRepository } from "../data/payments.repository";
-import { getTenantId } from "@unisane/kernel";
+import { getScopeId } from "@unisane/kernel";
 import type { ListPageArgs } from "@unisane/kernel";
 
 export async function listPayments(args: ListPageArgs) {
-  const tenantId = getTenantId();
-  const base = { tenantId, limit: args.limit } as {
-    tenantId: string;
+  const scopeId = getScopeId();
+  const base = { scopeId, limit: args.limit } as {
+    scopeId: string;
     limit: number;
     cursor?: string;
   };

@@ -1,0 +1,346 @@
+/**
+ * Razorpay Billing Adapter
+ *
+ * Implements the BillingProviderAdapter interface for Razorpay payments.
+ * Optimized for Indian market with INR support.
+ *
+ * @example
+ * ```typescript
+ * import { RazorpayBillingAdapter } from '@unisane/billing-razorpay';
+ *
+ * const adapter = new RazorpayBillingAdapter({
+ *   keyId: process.env.RAZORPAY_KEY_ID!,
+ *   keySecret: process.env.RAZORPAY_KEY_SECRET!,
+ * });
+ *
+ * // Create subscription checkout
+ * const { url } = await adapter.createCheckout({
+ *   scopeId: 'tenant_123',
+ *   planId: 'plan_xxx',
+ *   successUrl: 'https://app.example.com/success',
+ *   cancelUrl: 'https://app.example.com/cancel',
+ * });
+ * ```
+ */
+
+import type { BillingProviderAdapter, CheckoutSession, PortalSession, Subscription } from '@unisane/kernel';
+
+const BASE_URL = 'https://api.razorpay.com/v1';
+
+export interface RazorpayBillingAdapterConfig {
+  /** Razorpay Key ID */
+  keyId: string;
+  /** Razorpay Key Secret */
+  keySecret: string;
+  /** Optional: Map plan IDs to Razorpay plan IDs */
+  mapPlanId?: (planId: string) => string | undefined;
+}
+
+
+
+/**
+ * Razorpay implementation of the BillingProviderAdapter interface.
+ */
+export class RazorpayBillingAdapter implements BillingProviderAdapter {
+  readonly name = 'razorpay' as const;
+
+  private readonly keyId: string;
+  private readonly keySecret: string;
+  private readonly mapPlanId?: (planId: string) => string | undefined;
+
+  constructor(config: RazorpayBillingAdapterConfig) {
+    if (!config.keyId) {
+      throw new Error('RazorpayBillingAdapter: config.keyId is required');
+    }
+    if (!config.keySecret) {
+      throw new Error('RazorpayBillingAdapter: config.keySecret is required');
+    }
+    this.keyId = config.keyId;
+    this.keySecret = config.keySecret;
+    this.mapPlanId = config.mapPlanId;
+  }
+
+  private authHeader(): string {
+    const token = Buffer.from(`${this.keyId}:${this.keySecret}`).toString('base64');
+    return `Basic ${token}`;
+  }
+
+  private async rzpRequest<T = unknown>(
+    path: string,
+    init: { method?: string; body?: unknown; timeoutMs?: number } = {}
+  ): Promise<T> {
+    const timeoutMs = Math.max(1000, init.timeoutMs ?? 10_000);
+
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), timeoutMs);
+
+    try {
+      const res = await fetch(`${BASE_URL}${path}`, {
+        method: init.method ?? 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: this.authHeader(),
+        },
+        ...(init.body !== undefined ? { body: JSON.stringify(init.body) } : {}),
+        signal: ctrl.signal,
+      }).finally(() => clearTimeout(t));
+
+      type RazorpayError = { error?: { description?: string } };
+      const json = (await res.json().catch(() => ({}))) as unknown;
+
+      if (!res.ok) {
+        const err = json as RazorpayError;
+        const msg = err.error?.description ?? `Razorpay ${res.status}`;
+        throw new Error(msg);
+      }
+      return json as T;
+    } catch (e) {
+      throw e instanceof Error ? e : new Error('Razorpay request failed');
+    }
+  }
+
+  async createCheckoutSession(args: {
+    scopeId: string;
+    customerId?: string;
+    priceId: string;
+    quantity?: number;
+    successUrl: string;
+    cancelUrl: string;
+    mode?: 'subscription' | 'payment';
+    metadata?: Record<string, string>;
+  }): Promise<CheckoutSession> {
+    if (args.mode === 'payment') {
+      // Use payment link for one-time payments
+      return this.createPaymentLink({
+        scopeId: args.scopeId,
+        amount: 0, // Would need actual amount
+        currency: 'INR',
+        description: 'Payment',
+        successUrl: args.successUrl,
+      });
+    }
+
+    // Create subscription
+    const payload = {
+      plan_id: args.priceId,
+      total_count: 1,
+      quantity: args.quantity ?? 1,
+      customer_notify: 1,
+      notes: {
+        scopeId: args.scopeId,
+        ...args.metadata,
+      },
+    };
+
+    const sub = await this.rzpRequest<{ id: string; short_url?: string }>(
+      '/subscriptions',
+      { method: 'POST', body: payload }
+    );
+
+    return {
+      id: sub.id,
+      url: sub.short_url ?? args.successUrl,
+    };
+  }
+
+  async createCheckout(args: {
+    scopeId: string;
+    planId?: string;
+    quantity?: number;
+    successUrl: string;
+    cancelUrl: string;
+  }): Promise<CheckoutSession> {
+    const priceId = args.planId
+      ? (this.mapPlanId?.(args.planId) ?? args.planId)
+      : '';
+
+    if (!priceId) {
+      throw new Error('Plan ID is required for Razorpay checkout');
+    }
+
+    return this.createCheckoutSession({
+      scopeId: args.scopeId,
+      priceId,
+      quantity: args.quantity,
+      successUrl: args.successUrl,
+      cancelUrl: args.cancelUrl,
+      mode: 'subscription',
+    });
+  }
+
+  private async createPaymentLink(input: {
+    scopeId: string;
+    amount: number;
+    currency: string;
+    description?: string;
+    successUrl: string;
+    credits?: number;
+  }): Promise<CheckoutSession> {
+    if (!Number.isFinite(input.amount) || input.amount <= 0) {
+      throw new Error('Invalid amount');
+    }
+
+    const payload = {
+      amount: input.amount,
+      currency: input.currency,
+      description: input.description ?? 'Payment',
+      callback_url: input.successUrl,
+      callback_method: 'get',
+      notes: {
+        scopeId: input.scopeId,
+        ...(input.credits !== undefined ? { credits: String(input.credits) } : {}),
+      },
+    };
+
+    const pl = await this.rzpRequest<{ id: string; short_url?: string }>(
+      '/payment_links',
+      { method: 'POST', body: payload }
+    );
+
+    return {
+      id: pl.id,
+      url: pl.short_url ?? input.successUrl,
+    };
+  }
+
+  async createTopupCheckout(args: {
+    scopeId: string;
+    amountMinorStr: string;
+    currency: string;
+    credits: number;
+    successUrl: string;
+    cancelUrl: string;
+  }): Promise<CheckoutSession> {
+    const amount = parseInt(args.amountMinorStr, 10);
+
+    return this.createPaymentLink({
+      scopeId: args.scopeId,
+      amount,
+      currency: args.currency,
+      description: `Credits top-up (${args.credits})`,
+      successUrl: args.successUrl,
+      credits: args.credits,
+    });
+  }
+
+  async createPortalSession(_args: {
+    customerId: string;
+    returnUrl: string;
+  }): Promise<PortalSession> {
+    // Razorpay does not offer a general customer billing portal
+    throw new Error('Razorpay customer portal is not supported. Use app-side billing page instead.');
+  }
+
+  async getSubscription(subscriptionId: string): Promise<Subscription | null> {
+    try {
+      const sub = await this.rzpRequest<{
+        id: string;
+        status: string;
+        current_end?: number;
+        ended_at?: number;
+      }>(`/subscriptions/${encodeURIComponent(subscriptionId)}`);
+
+      return {
+        id: sub.id,
+        status: sub.status,
+        currentPeriodEnd: sub.current_end
+          ? new Date(sub.current_end * 1000)
+          : undefined,
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  async cancelSubscription(subscriptionId: string, immediately = false): Promise<void> {
+    await this.rzpRequest(`/subscriptions/${encodeURIComponent(subscriptionId)}/cancel`, {
+      method: 'POST',
+      body: { cancel_at_cycle_end: !immediately },
+    });
+  }
+
+  async updateSubscription(
+    subscriptionId: string,
+    args: { priceId?: string; quantity?: number }
+  ): Promise<Subscription> {
+    const body: Record<string, unknown> = {};
+
+    if (args.quantity !== undefined) {
+      body.quantity = Math.max(1, Math.trunc(args.quantity));
+    }
+
+    if (args.priceId) {
+      body.plan_id = args.priceId;
+    }
+
+    await this.rzpRequest(`/subscriptions/${encodeURIComponent(subscriptionId)}`, {
+      method: 'POST',
+      body,
+    });
+
+    const sub = await this.getSubscription(subscriptionId);
+    if (!sub) throw new Error('Failed to fetch updated subscription');
+
+    return sub;
+  }
+
+  async updateSubscriptionPlan(_args: {
+    scopeId: string;
+    providerSubId: string;
+    planId?: string;
+  }): Promise<Subscription> {
+    // Razorpay subscription plan changes are complex
+    // For now, throw an error and handle via app-side flows
+    throw new Error(
+      'Razorpay subscription plan changes are not directly supported. ' +
+      'Use cancel + recreate subscription flow instead.'
+    );
+  }
+
+  async updateSubscriptionQuantity(args: {
+    scopeId: string;
+    providerSubId: string;
+    quantity: number;
+  }): Promise<Subscription> {
+    return this.updateSubscription(args.providerSubId, { quantity: args.quantity });
+  }
+
+  async refundPayment(args: {
+    scopeId: string;
+    providerPaymentId: string;
+    amountMinorStr?: string;
+  }): Promise<void> {
+    const body: Record<string, unknown> = {};
+
+    if (args.amountMinorStr) {
+      body.amount = parseInt(args.amountMinorStr, 10);
+    }
+
+    await this.rzpRequest(
+      `/payments/${encodeURIComponent(args.providerPaymentId)}/refund`,
+      { method: 'POST', body }
+    );
+  }
+}
+
+/**
+ * Create a new Razorpay billing adapter.
+ * Wrapped with resilience (circuit breaker, retry).
+ */
+import { createResilientProxy } from '@unisane/kernel';
+
+export function createRazorpayBillingAdapter(config: RazorpayBillingAdapterConfig): BillingProviderAdapter {
+  return createResilientProxy({
+    name: 'razorpay',
+    primary: new RazorpayBillingAdapter(config),
+    circuitBreaker: {
+      failureThreshold: 5,
+      resetTimeout: 30000,
+    },
+    retry: {
+      maxRetries: 3,
+      baseDelayMs: 500,
+    },
+  });
+}
+

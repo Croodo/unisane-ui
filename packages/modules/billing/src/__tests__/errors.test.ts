@@ -29,7 +29,7 @@ describe('SubscriptionNotFoundError', () => {
     const error = new SubscriptionNotFoundError('tenant_123');
 
     expect(error.name).toBe('SubscriptionNotFoundError');
-    expect(error.message).toBe('No subscription found for tenant: tenant_123');
+    expect(error.message).toBe('No subscription found for scope: tenant_123');
     expect(error.code).toBe(ErrorCode.SUBSCRIPTION_NOT_FOUND);
     expect(error.status).toBe(404);
   });
@@ -46,7 +46,7 @@ describe('SubscriptionAlreadyExistsError', () => {
     const error = new SubscriptionAlreadyExistsError('tenant_456');
 
     expect(error.name).toBe('SubscriptionAlreadyExistsError');
-    expect(error.message).toBe('Tenant tenant_456 already has an active subscription');
+    expect(error.message).toBe('Scope tenant_456 already has an active subscription');
     expect(error.code).toBe(ErrorCode.CONFLICT);
     expect(error.status).toBe(409);
   });
@@ -63,7 +63,7 @@ describe('SubscriptionCancelledError', () => {
     const error = new SubscriptionCancelledError('tenant_789');
 
     expect(error.name).toBe('SubscriptionCancelledError');
-    expect(error.message).toBe('Subscription for tenant tenant_789 has been cancelled');
+    expect(error.message).toBe('Subscription for scope tenant_789 has been cancelled');
     expect(error.code).toBe(ErrorCode.SUBSCRIPTION_CANCELLED);
     expect(error.status).toBe(403);
   });
@@ -243,7 +243,7 @@ describe('CustomerNotFoundError', () => {
     const error = new CustomerNotFoundError('tenant_abc');
 
     expect(error.name).toBe('CustomerNotFoundError');
-    expect(error.message).toBe('Billing customer not found for tenant: tenant_abc');
+    expect(error.message).toBe('Billing customer not found for scope: tenant_abc');
     expect(error.code).toBe(ErrorCode.CUSTOMER_NOT_FOUND);
     expect(error.status).toBe(404);
   });

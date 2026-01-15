@@ -8,8 +8,8 @@ import type { BillingProvider } from "@unisane/kernel";
 
 import type { BillingMode } from "@unisane/kernel";
 
-export type CancelSubscriptionArgs = { tenantId: string; atPeriodEnd: boolean };
-export type GetSubscriptionArgs = { tenantId: string };
+export type CancelSubscriptionArgs = { scopeId: string; atPeriodEnd: boolean };
+export type GetSubscriptionArgs = { scopeId: string };
 
 export type PlanConfig = {
   id: PlanId;
@@ -72,4 +72,5 @@ export type SubscriptionView = {
   currentPeriodEnd: Date | null;
 };
 
-export type TenantIntegrationRef = { tenantId: string; customerId: string };
+/** Reference for scope-to-provider customer mapping. Note: tenantId is the DB field name (persisted data) */
+export type ScopeIntegrationRef = { scopeId: string; customerId: string };

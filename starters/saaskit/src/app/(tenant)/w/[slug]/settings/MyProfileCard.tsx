@@ -8,8 +8,7 @@ import { TextField } from "@unisane/ui/components/text-field";
 import { Typography } from "@unisane/ui/components/typography";
 import { Card } from "@unisane/ui/components/card";
 import { Combobox } from "@unisane/ui/components/combobox";
-import { SUPPORTED_LOCALES } from "@/src/shared/constants/i18n";
-import { normalizePhoneE164, normalizeUsername } from "@/src/shared/normalize";
+import { SUPPORTED_LOCALES, Username, PhoneE164 } from "@unisane/kernel/client";
 import { normalizeError } from "@/src/sdk/errors";
 import { hooks } from "@/src/sdk/hooks";
 import { Icon } from "@unisane/ui/primitives/icon";
@@ -54,17 +53,13 @@ export function MyProfileCard() {
     Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   const usernameNormalized = useMemo(
-    () => normalizeUsername(usernameVal || ""),
+    () => Username.tryCreate(usernameVal || "")?.toString() ?? "",
     [usernameVal]
   );
   const uname = useDebouncedValue(usernameNormalized, 300);
 
   const phoneNormRaw = useMemo(() => {
-    try {
-      return phoneVal ? normalizePhoneE164(phoneVal) : "";
-    } catch {
-      return "";
-    }
+    return phoneVal ? (PhoneE164.tryCreate(phoneVal)?.toString() ?? "") : "";
   }, [phoneVal]);
   const phoneNorm = useDebouncedValue(phoneNormRaw, 300);
 
@@ -121,14 +116,14 @@ export function MyProfileCard() {
       timezone: timezoneVal || null,
     };
     if (phoneVal) {
-      try {
-        body.phone = normalizePhoneE164(phoneVal);
-      } catch (e) {
+      const phone = PhoneE164.tryCreate(phoneVal);
+      if (!phone) {
         toast.error("Invalid phone", {
-          description: String((e as Error)?.message ?? ""),
+          description: "Phone number must be in E.164 format (e.g., +14155550123)",
         });
         return;
       }
+      body.phone = phone.toString();
     } else {
       body.phone = null;
     }
@@ -136,13 +131,17 @@ export function MyProfileCard() {
   };
 
   const sendPhoneCode = async () => {
+    if (!phoneVal) {
+      toast.error("Add a phone first");
+      return;
+    }
+    const phone = PhoneE164.tryCreate(phoneVal);
+    if (!phone) {
+      toast.error("Invalid phone format");
+      return;
+    }
     try {
-      if (!phoneVal) {
-        toast.error("Add a phone first");
-        return;
-      }
-      const phone = normalizePhoneE164(phoneVal);
-      await phoneStart.mutateAsync({ body: { phone } });
+      await phoneStart.mutateAsync({ body: { phone: phone.toString() } });
     } catch {}
   };
 
@@ -379,10 +378,11 @@ export function MyProfileCard() {
                       const el = e.currentTarget as HTMLInputElement;
                       const code = (el.value || "").trim();
                       if (!code) return;
+                      const phone = phoneVal
+                        ? PhoneE164.tryCreate(phoneVal)?.toString() ?? ""
+                        : "";
+                      if (!phone) return;
                       try {
-                        const phone = phoneVal
-                          ? normalizePhoneE164(phoneVal)
-                          : "";
                         await phoneVerify.mutateAsync({
                           body: { phone, code },
                         });

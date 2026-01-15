@@ -37,7 +37,6 @@ export const storageContract = c.router({
         },
         invoke: "object",
         callArgs: [
-          { name: "tenantId", from: "params", key: "tenantId" },
           { name: "uploaderId", from: "ctx", key: "userId" },
           { name: "input", from: "body" },
         ],
@@ -68,7 +67,6 @@ export const storageContract = c.router({
         fn: "confirmUpload",
         invoke: "object",
         callArgs: [
-          { name: "tenantId", from: "params", key: "tenantId" },
           { name: "fileId", from: "params", key: "fileId" },
         ],
         requireTenantMatch: true,
@@ -97,7 +95,6 @@ export const storageContract = c.router({
         fn: "getDownloadUrl",
         invoke: "object",
         callArgs: [
-          { name: "tenantId", from: "params", key: "tenantId" },
           { name: "fileId", from: "params", key: "fileId" },
         ],
         requireTenantMatch: true,
@@ -130,7 +127,6 @@ export const storageContract = c.router({
         fn: "deleteFile",
         invoke: "object",
         callArgs: [
-          { name: "tenantId", from: "params", key: "tenantId" },
           { name: "fileId", from: "params", key: "fileId" },
         ],
         requireTenantMatch: true,
@@ -167,7 +163,6 @@ export const storageContract = c.router({
         },
         invoke: "positional",
         callArgs: [
-          { name: "tenantId", from: "params", key: "tenantId" },
           { name: "input", from: "query" },
         ],
         requireTenantMatch: true,

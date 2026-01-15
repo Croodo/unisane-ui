@@ -126,8 +126,8 @@ export class MembershipNotFoundError extends DomainError {
   readonly code = ErrorCode.MEMBER_NOT_FOUND;
   readonly status = 404;
 
-  constructor(tenantId: string, userId: string) {
-    super(`Membership not found for user ${userId} in tenant ${tenantId}`);
+  constructor(scopeId: string, userId: string) {
+    super(`Membership not found for user ${userId} in scope ${scopeId}`);
     this.name = 'MembershipNotFoundError';
   }
 }

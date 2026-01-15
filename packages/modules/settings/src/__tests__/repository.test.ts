@@ -24,10 +24,10 @@ describe("Settings Repository (MongoDB)", () => {
   });
 
   describe("findOne", () => {
-    it("should find a setting by env, tenantId, namespace, and key", async () => {
+    it("should find a setting by env, scopeId, namespace, and key", async () => {
       const mockDoc = {
         env: "test",
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         namespace: "app",
         key: "theme",
         value: "dark",
@@ -47,7 +47,7 @@ describe("Settings Repository (MongoDB)", () => {
 
       expect(result).toEqual({
         env: "test",
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         namespace: "app",
         key: "theme",
         value: "dark",
@@ -58,7 +58,7 @@ describe("Settings Repository (MongoDB)", () => {
 
       expect(mockFindOne).toHaveBeenCalledWith({
         env: "test",
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         namespace: "app",
         key: "theme",
       });
@@ -77,10 +77,10 @@ describe("Settings Repository (MongoDB)", () => {
       expect(result).toBeNull();
     });
 
-    it("should handle platform-scoped settings with null tenantId", async () => {
+    it("should handle platform-scoped settings with null scopeId", async () => {
       const mockDoc = {
         env: "production",
-        tenantId: null,
+        scopeId: null,
         namespace: "platform",
         key: "maintenance_mode",
         value: false,
@@ -98,7 +98,7 @@ describe("Settings Repository (MongoDB)", () => {
 
       expect(result).toEqual({
         env: "production",
-        tenantId: null,
+        scopeId: null,
         namespace: "platform",
         key: "maintenance_mode",
         value: false,
@@ -107,7 +107,7 @@ describe("Settings Repository (MongoDB)", () => {
 
       expect(mockFindOne).toHaveBeenCalledWith({
         env: "production",
-        tenantId: null,
+        scopeId: null,
         namespace: "platform",
         key: "maintenance_mode",
       });
@@ -116,7 +116,7 @@ describe("Settings Repository (MongoDB)", () => {
     it("should map undefined value to null", async () => {
       const mockDoc = {
         env: "test",
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         namespace: "app",
         key: "unset",
         value: undefined,
@@ -138,7 +138,7 @@ describe("Settings Repository (MongoDB)", () => {
     it("should default version to 0 if missing", async () => {
       const mockDoc = {
         env: "test",
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         namespace: "app",
         key: "key",
         value: "val",
@@ -159,7 +159,7 @@ describe("Settings Repository (MongoDB)", () => {
     it("should omit updatedBy and updatedAt when not present", async () => {
       const mockDoc = {
         env: "test",
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         namespace: "app",
         key: "new_setting",
         value: "initial",
@@ -186,7 +186,7 @@ describe("Settings Repository (MongoDB)", () => {
 
       const mockAfter = {
         env: "test",
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         namespace: "app",
         key: "new_key",
         value: "new_value",
@@ -199,7 +199,7 @@ describe("Settings Repository (MongoDB)", () => {
 
       const result = await SettingsRepoMongo.upsertPatch({
         env: "test",
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         ns: "app",
         key: "new_key",
         value: "new_value",
@@ -216,7 +216,7 @@ describe("Settings Repository (MongoDB)", () => {
 
       expect(mockFindOne).toHaveBeenCalledWith({
         env: "test",
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         namespace: "app",
         key: "new_key",
       });
@@ -224,7 +224,7 @@ describe("Settings Repository (MongoDB)", () => {
       expect(mockFindOneAndUpdate).toHaveBeenCalledWith(
         {
           env: "test",
-          tenantId: "tenant1",
+          scopeId: "tenant1",
           namespace: "app",
           key: "new_key",
         },
@@ -242,7 +242,7 @@ describe("Settings Repository (MongoDB)", () => {
     it("should update an existing setting", async () => {
       const existingDoc = {
         env: "test",
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         namespace: "app",
         key: "theme",
         value: "light",
@@ -263,7 +263,7 @@ describe("Settings Repository (MongoDB)", () => {
 
       const result = await SettingsRepoMongo.upsertPatch({
         env: "test",
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         ns: "app",
         key: "theme",
         value: "dark",
@@ -280,7 +280,7 @@ describe("Settings Repository (MongoDB)", () => {
     it("should return conflict when expectedVersion does not match", async () => {
       const existingDoc = {
         env: "test",
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         namespace: "app",
         key: "counter",
         value: 10,
@@ -291,7 +291,7 @@ describe("Settings Repository (MongoDB)", () => {
 
       const result = await SettingsRepoMongo.upsertPatch({
         env: "test",
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         ns: "app",
         key: "counter",
         value: 11,
@@ -310,7 +310,7 @@ describe("Settings Repository (MongoDB)", () => {
     it("should succeed with correct expectedVersion", async () => {
       const existingDoc = {
         env: "test",
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         namespace: "billing",
         key: "subscription",
         value: "basic",
@@ -330,7 +330,7 @@ describe("Settings Repository (MongoDB)", () => {
 
       const result = await SettingsRepoMongo.upsertPatch({
         env: "test",
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         ns: "billing",
         key: "subscription",
         value: "premium",
@@ -347,7 +347,7 @@ describe("Settings Repository (MongoDB)", () => {
     it("should handle unset operation", async () => {
       const existingDoc = {
         env: "test",
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         namespace: "app",
         key: "optional",
         value: "something",
@@ -367,7 +367,7 @@ describe("Settings Repository (MongoDB)", () => {
 
       const result = await SettingsRepoMongo.upsertPatch({
         env: "test",
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         ns: "app",
         key: "optional",
         unset: true,
@@ -393,7 +393,7 @@ describe("Settings Repository (MongoDB)", () => {
     it("should allow unset without expectedVersion", async () => {
       mockFindOne.mockResolvedValueOnce({
         env: "test",
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         namespace: "app",
         key: "temp",
         value: "old",
@@ -403,7 +403,7 @@ describe("Settings Repository (MongoDB)", () => {
       mockFindOneAndUpdate.mockResolvedValueOnce({
         value: {
           env: "test",
-          tenantId: "tenant1",
+          scopeId: "tenant1",
           namespace: "app",
           key: "temp",
           value: undefined,
@@ -413,7 +413,7 @@ describe("Settings Repository (MongoDB)", () => {
 
       const result = await SettingsRepoMongo.upsertPatch({
         env: "test",
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         ns: "app",
         key: "temp",
         unset: true,
@@ -425,7 +425,7 @@ describe("Settings Repository (MongoDB)", () => {
     it("should increment version on every patch", async () => {
       mockFindOne.mockResolvedValueOnce({
         env: "test",
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         namespace: "app",
         key: "version_test",
         value: "v1",
@@ -435,7 +435,7 @@ describe("Settings Repository (MongoDB)", () => {
       mockFindOneAndUpdate.mockResolvedValueOnce({
         value: {
           env: "test",
-          tenantId: "tenant1",
+          scopeId: "tenant1",
           namespace: "app",
           key: "version_test",
           value: "v2",
@@ -445,7 +445,7 @@ describe("Settings Repository (MongoDB)", () => {
 
       const result = await SettingsRepoMongo.upsertPatch({
         env: "test",
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         ns: "app",
         key: "version_test",
         value: "v2",
@@ -470,7 +470,7 @@ describe("Settings Repository (MongoDB)", () => {
       mockFindOneAndUpdate.mockResolvedValueOnce({
         value: {
           env: "test",
-          tenantId: "tenant1",
+          scopeId: "tenant1",
           namespace: "audit",
           key: "log_level",
           value: "debug",
@@ -482,7 +482,7 @@ describe("Settings Repository (MongoDB)", () => {
 
       await SettingsRepoMongo.upsertPatch({
         env: "test",
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         ns: "audit",
         key: "log_level",
         value: "debug",
@@ -516,7 +516,7 @@ describe("Settings Repository (MongoDB)", () => {
         return Promise.resolve({
           value: {
             env: "test",
-            tenantId: "tenant1",
+            scopeId: "tenant1",
             namespace: "app",
             key: "key",
             value: "val",
@@ -528,7 +528,7 @@ describe("Settings Repository (MongoDB)", () => {
 
       await SettingsRepoMongo.upsertPatch({
         env: "test",
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         ns: "app",
         key: "key",
         value: "val",
@@ -543,7 +543,7 @@ describe("Settings Repository (MongoDB)", () => {
       mockFindOneAndUpdate.mockResolvedValueOnce({
         value: {
           env: "production",
-          tenantId: null,
+          scopeId: null,
           namespace: "platform",
           key: "feature_flag",
           value: true,
@@ -553,7 +553,7 @@ describe("Settings Repository (MongoDB)", () => {
 
       const result = await SettingsRepoMongo.upsertPatch({
         env: "production",
-        tenantId: null,
+        scopeId: null,
         ns: "platform",
         key: "feature_flag",
         value: true,
@@ -568,7 +568,7 @@ describe("Settings Repository (MongoDB)", () => {
 
       expect(mockFindOne).toHaveBeenCalledWith(
         expect.objectContaining({
-          tenantId: null,
+          scopeId: null,
         })
       );
     });
@@ -587,7 +587,7 @@ describe("Settings Repository (MongoDB)", () => {
       mockFindOneAndUpdate.mockResolvedValueOnce({
         value: {
           env: "test",
-          tenantId: "tenant1",
+          scopeId: "tenant1",
           namespace: "app",
           key: "config",
           value: complexValue,
@@ -597,7 +597,7 @@ describe("Settings Repository (MongoDB)", () => {
 
       const result = await SettingsRepoMongo.upsertPatch({
         env: "test",
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         ns: "app",
         key: "config",
         value: complexValue,
@@ -614,7 +614,7 @@ describe("Settings Repository (MongoDB)", () => {
       mockFindOneAndUpdate.mockResolvedValueOnce({
         value: {
           env: "test",
-          tenantId: "tenant1",
+          scopeId: "tenant1",
           namespace: "app",
           key: "nullable",
           value: null,
@@ -624,7 +624,7 @@ describe("Settings Repository (MongoDB)", () => {
 
       const result = await SettingsRepoMongo.upsertPatch({
         env: "test",
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         ns: "app",
         key: "nullable",
         value: null,
@@ -641,7 +641,7 @@ describe("Settings Repository (MongoDB)", () => {
       mockFindOneAndUpdate.mockResolvedValueOnce({
         value: {
           env: "test",
-          tenantId: "tenant1",
+          scopeId: "tenant1",
           namespace: "new",
           key: "key",
           value: "val",
@@ -651,7 +651,7 @@ describe("Settings Repository (MongoDB)", () => {
 
       await SettingsRepoMongo.upsertPatch({
         env: "test",
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         ns: "new",
         key: "key",
         value: "val",
@@ -673,7 +673,7 @@ describe("Settings Repository (MongoDB)", () => {
       mockFindOneAndUpdate.mockResolvedValueOnce({
         value: {
           env: "test",
-          tenantId: "tenant1",
+          scopeId: "tenant1",
           namespace: "app",
           key: "noversion",
           value: "data",
@@ -682,7 +682,7 @@ describe("Settings Repository (MongoDB)", () => {
 
       const result = await SettingsRepoMongo.upsertPatch({
         env: "test",
-        tenantId: "tenant1",
+        scopeId: "tenant1",
         ns: "app",
         key: "noversion",
         value: "data",

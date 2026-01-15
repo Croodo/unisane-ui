@@ -1,17 +1,25 @@
-import { col } from "@unisane/kernel";
-import type { Collection, Filter, Document, WithId } from "mongodb";
-import { ObjectId } from "mongodb";
-import { seekPageMongoCollection } from '@unisane/kernel';
-import type { WebhookDirection, WebhookEventStatus, WebhookProvider } from '@unisane/kernel';
+import {
+  col,
+  COLLECTIONS,
+  seekPageMongoCollection,
+  maybeObjectId,
+  clampInt,
+  ObjectId,
+  type Collection,
+  type Filter,
+  type Document,
+  type WithId,
+  type WebhookDirection,
+  type WebhookEventStatus,
+  type WebhookProvider,
+} from "@unisane/kernel";
 import type { WebhooksRepoPort } from "../domain/ports";
 import type { WebhookEventDetail, WebhookEventListItem, WebhookEventListPage } from "../domain/types";
 import { getTypedSetting } from "@unisane/settings";
-import { maybeObjectId } from "@unisane/kernel";
-import { clampInt } from "@unisane/kernel";
 
 type WebhookEventDoc = {
   _id: string | ObjectId;
-  tenantId: string | null;
+  scopeId: string | null;
   direction: WebhookDirection;
   provider?: WebhookProvider | null;
   eventId?: string | null;
@@ -27,12 +35,12 @@ type WebhookEventDoc = {
   updatedAt?: Date;
 } & Document;
 
-const eventsCol = (): Collection<WebhookEventDoc> => col<WebhookEventDoc>("webhook_events");
+const eventsCol = (): Collection<WebhookEventDoc> => col<WebhookEventDoc>(COLLECTIONS.WEBHOOK_EVENTS);
 
 export const WebhooksRepoMongo: WebhooksRepoPort = {
   async listPage(args): Promise<WebhookEventListPage> {
     type Row = Pick<WebhookEventDoc, "_id" | "direction" | "status" | "httpStatus" | "target" | "provider" | "createdAt">;
-    const baseFilter: Filter<WebhookEventDoc> = { tenantId: args.tenantId };
+    const baseFilter: Filter<WebhookEventDoc> = { scopeId: args.scopeId };
     if (args.direction) baseFilter.direction = args.direction;
     if (args.status) baseFilter.status = args.status;
 
@@ -71,13 +79,13 @@ export const WebhooksRepoMongo: WebhooksRepoPort = {
     return { items, ...(nextCursor ? { nextCursor } : {}), ...(prevCursor ? { prevCursor } : {}) } as const;
   },
   async getById(args): Promise<WebhookEventDetail | null> {
-    const filter: Record<string, unknown> = { _id: maybeObjectId(args.id), tenantId: args.tenantId };
+    const filter: Record<string, unknown> = { _id: maybeObjectId(args.id), scopeId: args.scopeId };
     if (args.direction) filter.direction = args.direction;
     const ev = await eventsCol().findOne(filter as Filter<WebhookEventDoc>);
     if (!ev) return null;
     return {
       id: String(ev._id),
-      tenantId: String(ev.tenantId ?? ""),
+      scopeId: String(ev.scopeId ?? ""),
       direction: ev.direction,
       status: ev.status,
       target: (ev.target as string | null | undefined) ?? null,
@@ -87,7 +95,7 @@ export const WebhooksRepoMongo: WebhooksRepoPort = {
   async recordInbound(args) {
     try {
       const { value: retentionDays } = await getTypedSetting<number>({
-        tenantId: null,
+        scopeId: null,
         ns: "webhooks",
         key: "retentionDays",
       });
@@ -95,7 +103,7 @@ export const WebhooksRepoMongo: WebhooksRepoPort = {
       const now = new Date();
       await eventsCol().insertOne({
         _id: new ObjectId(),
-        tenantId: args.tenantId,
+        scopeId: args.scopeId,
         direction: "in",
         provider: args.provider,
         eventId: args.eventId,
@@ -117,7 +125,7 @@ export const WebhooksRepoMongo: WebhooksRepoPort = {
     const now = new Date();
     await eventsCol().insertOne({
       _id: new ObjectId(),
-      tenantId: args.tenantId,
+      scopeId: args.scopeId,
       direction: "out",
       provider: null,
       eventId: null,
@@ -131,19 +139,19 @@ export const WebhooksRepoMongo: WebhooksRepoPort = {
       updatedAt: now,
     } as unknown as WebhookEventDoc);
   },
-  async countOutboundFailuresSince(tenantIds: string[], since: Date) {
-    if (!tenantIds?.length) return new Map<string, number>();
+  async countOutboundFailuresSince(scopeIds: string[], since: Date) {
+    if (!scopeIds?.length) return new Map<string, number>();
     const rows = (await eventsCol()
       .aggregate([
         {
           $match: {
-            tenantId: { $in: tenantIds },
+            scopeId: { $in: scopeIds },
             direction: "out",
             status: "failed",
             createdAt: { $gte: since },
           },
         },
-        { $group: { _id: "$tenantId", webhooksFailed24h: { $sum: 1 } } },
+        { $group: { _id: "$scopeId", webhooksFailed24h: { $sum: 1 } } },
       ])
       .toArray()) as Array<{ _id: string; webhooksFailed24h: number }>;
     const m = new Map<string, number>();

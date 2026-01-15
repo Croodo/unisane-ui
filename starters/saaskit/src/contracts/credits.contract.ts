@@ -176,8 +176,7 @@ export const creditsContract = c.router({
       service: {
         importPath: "@unisane/credits",
         fn: "balance",
-        invoke: "object",
-        callArgs: [{ name: "tenantId", from: "params", key: "tenantId" }],
+        callArgs: [],
         requireTenantMatch: true,
       },
     })
@@ -200,8 +199,7 @@ export const creditsContract = c.router({
       service: {
         importPath: "@unisane/credits",
         fn: "breakdown",
-        invoke: "object",
-        callArgs: [{ name: "tenantId", from: "params", key: "tenantId" }],
+        callArgs: [],
         requireTenantMatch: true,
       },
     })

@@ -102,10 +102,10 @@ export const STORAGE_LIMITS = {
 
 /**
  * Generate S3 object key path
- * Format: {tenantId}/{folder}/{year}/{month}/{uuid}_{safeFilename}.{ext}
+ * Format: {scopeId}/{folder}/{year}/{month}/{uuid}_{safeFilename}.{ext}
  */
 export function generateStorageKey(params: {
-  tenantId: string;
+  scopeId: string;
   folder: StorageFolder;
   uuid: string;
   filename: string;
@@ -118,13 +118,13 @@ export function generateStorageKey(params: {
   const safeFilename = params.filename
     .replace(/[^a-zA-Z0-9._-]/g, "_")
     .substring(0, 50);
-  return `${params.tenantId}/${params.folder}/${year}/${month}/${params.uuid}_${safeFilename}.${ext}`;
+  return `${params.scopeId}/${params.folder}/${year}/${month}/${params.uuid}_${safeFilename}.${ext}`;
 }
 
 /**
- * Parse tenant ID from storage key
+ * Parse scope ID from storage key
  */
-export function parseTenantFromKey(key: string): string | null {
+export function parseScopeFromKey(key: string): string | null {
   const parts = key.split("/");
   return parts.length > 0 ? parts[0]! : null;
 }

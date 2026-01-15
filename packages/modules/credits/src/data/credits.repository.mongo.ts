@@ -1,13 +1,18 @@
-import { col } from '@unisane/kernel';
+import {
+  col,
+  COLLECTIONS,
+  seekPageMongoCollection,
+  type CreditKind,
+  type FeatureKey,
+  type Document,
+  type Filter,
+  type WithId,
+} from '@unisane/kernel';
 import type { CreditsRepoPort } from '../domain/ports';
 import type { LedgerEntry } from '../domain/types';
-import type { CreditKind } from '@unisane/kernel';
-import type { FeatureKey } from '@unisane/kernel';
-import type { Document, Filter, WithId } from 'mongodb';
-import { seekPageMongoCollection } from '@unisane/kernel';
 
 type CreditLedgerDoc = {
-  tenantId: string;
+  scopeId: string;
   kind: CreditKind;
   amount: number;
   reason?: string | null;
@@ -17,11 +22,11 @@ type CreditLedgerDoc = {
   createdAt?: Date;
 };
 
-const ledgerCol = () => col<CreditLedgerDoc>('credit_ledger');
+const ledgerCol = () => col<CreditLedgerDoc>(COLLECTIONS.CREDIT_LEDGER);
 
 export const CreditsRepoMongo: CreditsRepoPort = {
-  async findByIdem(tenantId, idemKey) {
-    const row = (await ledgerCol().findOne({ tenantId, idemKey } as Document)) as CreditLedgerDoc | null;
+  async findByIdem(scopeId, idemKey) {
+    const row = (await ledgerCol().findOne({ scopeId, idemKey } as Document)) as CreditLedgerDoc | null;
     if (!row) return null;
     return {
       id: String((row as { _id?: unknown })._id ?? ''),
@@ -36,7 +41,7 @@ export const CreditsRepoMongo: CreditsRepoPort = {
   async insertGrant(args) {
     const now = new Date();
     const r = await ledgerCol().insertOne({
-      tenantId: args.tenantId,
+      scopeId: args.scopeId,
       kind: 'grant',
       amount: args.amount,
       reason: args.reason,
@@ -49,7 +54,7 @@ export const CreditsRepoMongo: CreditsRepoPort = {
   async insertBurn(args) {
     const now = new Date();
     const r = await ledgerCol().insertOne({
-      tenantId: args.tenantId,
+      scopeId: args.scopeId,
       kind: 'burn',
       amount: args.amount,
       feature: args.feature,
@@ -59,10 +64,10 @@ export const CreditsRepoMongo: CreditsRepoPort = {
     } as CreditLedgerDoc);
     return { id: String(r.insertedId) };
   },
-  async totalsAvailable(tenantId, now = new Date()) {
+  async totalsAvailable(scopeId, now = new Date()) {
     const agg = await ledgerCol()
       .aggregate<{ _id: null; grants: number; burns: number }>([
-        { $match: { tenantId } },
+        { $match: { scopeId } },
         {
           $group: {
             _id: null,
@@ -84,14 +89,14 @@ export const CreditsRepoMongo: CreditsRepoPort = {
     const burns = agg[0]?.burns ?? 0;
     return { grants, burns, available: grants - burns };
   },
-  async getBalancesByTenantIds(tenantIds: string[], now = new Date()): Promise<Map<string, number>> {
-    if (!tenantIds?.length) return new Map<string, number>();
+  async getBalancesByScopeIds(scopeIds: string[], now = new Date()): Promise<Map<string, number>> {
+    if (!scopeIds?.length) return new Map<string, number>();
     const rows = (await ledgerCol()
       .aggregate([
-        { $match: { tenantId: { $in: tenantIds } } },
+        { $match: { scopeId: { $in: scopeIds } } },
         {
           $group: {
-            _id: "$tenantId",
+            _id: "$scopeId",
             grants: {
               $sum: {
                 $cond: [
@@ -123,7 +128,7 @@ export const CreditsRepoMongo: CreditsRepoPort = {
     for (const r of rows) m.set(String(r._id), r.creditsAvailable ?? 0);
     return m;
   },
-  async totalsGrantsByReason(tenantId, now = new Date()) {
+  async totalsGrantsByReason(scopeId, now = new Date()) {
     const agg = await ledgerCol()
       .aggregate<{
         _id: null;
@@ -131,7 +136,7 @@ export const CreditsRepoMongo: CreditsRepoPort = {
         topupGrants: number;
         otherGrants: number;
       }>([
-        { $match: { tenantId } },
+        { $match: { scopeId } },
         {
           $group: {
             _id: null,
@@ -240,7 +245,7 @@ export const CreditsRepoMongo: CreditsRepoPort = {
    * Combined aggregation for breakdown - returns totals AND grants by reason in a single query.
    * Uses $facet to avoid two separate collection scans.
    */
-  async totalsWithBreakdown(tenantId, now = new Date()) {
+  async totalsWithBreakdown(scopeId, now = new Date()) {
     // Helper conditions for grant expiry check
     const grantNotExpired = {
       $and: [
@@ -254,7 +259,7 @@ export const CreditsRepoMongo: CreditsRepoPort = {
         totals: Array<{ grants: number; burns: number }>;
         byReason: Array<{ subscriptionGrants: number; topupGrants: number; otherGrants: number }>;
       }>([
-        { $match: { tenantId } },
+        { $match: { scopeId } },
         {
           $facet: {
             // First facet: total grants and burns
@@ -350,7 +355,7 @@ export const CreditsRepoMongo: CreditsRepoPort = {
     ];
     const { items, nextCursor } = await seekPageMongoCollection<CreditLedgerDoc, LedgerEntry>({
       collection: ledgerCol(),
-      baseFilter: { tenantId: args.tenantId } as Filter<CreditLedgerDoc>,
+      baseFilter: { scopeId: args.scopeId } as Filter<CreditLedgerDoc>,
       limit: args.limit,
       cursor: args.cursor ?? null,
       sortVec,

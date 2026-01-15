@@ -15,7 +15,7 @@ const ZInappItem = z.object({
   category: z.string(),
   title: z.string(),
   body: z.string(),
-  data: z.any().nullable(),
+  data: z.record(z.string(), z.unknown()).nullable(),
   createdAt: z.string(),
   readAt: z.string().nullable(),
   seenAt: z.string().nullable(),
@@ -150,8 +150,6 @@ export const notifyContract = c.router({
         zodQuery: { importPath: "@unisane/kernel", name: "ZSeekPageQuery" },
         invoke: "object",
         callArgs: [
-          { name: "tenantId", from: "params", key: "tenantId" },
-          { name: "userId", from: "ctx", key: "userId" },
           { name: "limit", from: "query", key: "limit" },
           { name: "cursor", from: "query", key: "cursor", optional: true },
         ],
@@ -186,8 +184,6 @@ export const notifyContract = c.router({
         },
         invoke: "object",
         callArgs: [
-          { name: "tenantId", from: "params", key: "tenantId" },
-          { name: "userId", from: "ctx", key: "userId" },
           { name: "id", from: "body", key: "id" },
         ],
       },
@@ -215,11 +211,7 @@ export const notifyContract = c.router({
       service: {
         importPath: "@unisane/notify",
         fn: "markAllSeen",
-        invoke: "object",
-        callArgs: [
-          { name: "tenantId", from: "params", key: "tenantId" },
-          { name: "userId", from: "ctx", key: "userId" },
-        ],
+        callArgs: [],
       },
     })
   ),
@@ -242,11 +234,7 @@ export const notifyContract = c.router({
       service: {
         importPath: "@unisane/notify",
         fn: "getUnreadCount",
-        invoke: "object",
-        callArgs: [
-          { name: "tenantId", from: "params", key: "tenantId" },
-          { name: "userId", from: "ctx", key: "userId" },
-        ],
+        callArgs: [],
       },
     })
   ),
@@ -279,8 +267,6 @@ export const notifyContract = c.router({
         fn: "deleteNotification",
         invoke: "object",
         callArgs: [
-          { name: "tenantId", from: "params", key: "tenantId" },
-          { name: "userId", from: "ctx", key: "userId" },
           { name: "id", from: "params", key: "id" },
         ],
       },
@@ -310,11 +296,7 @@ export const notifyContract = c.router({
       service: {
         importPath: "@unisane/notify",
         fn: "deleteAllNotifications",
-        invoke: "object",
-        callArgs: [
-          { name: "tenantId", from: "params", key: "tenantId" },
-          { name: "userId", from: "ctx", key: "userId" },
-        ],
+        callArgs: [],
       },
     })
   ),

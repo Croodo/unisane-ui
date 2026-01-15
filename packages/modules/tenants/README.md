@@ -64,7 +64,7 @@ const { items, nextCursor } = await listTenants({
 import { deleteTenant } from '@unisane/tenants';
 
 const result = await deleteTenant({
-  tenantId: 'tenant_123',
+  scopeId: 'tenant_123',
   actorId: 'user_456', // For audit
 });
 
@@ -98,7 +98,7 @@ import { tenantKeys } from '@unisane/tenants';
 import { kv } from '@unisane/kernel';
 
 // Use standardized cache keys
-const cached = await kv.get(tenantKeys.byId(tenantId));
+const cached = await kv.get(tenantKeys.byId(scopeId));
 await kv.del(tenantKeys.bySlug(slug));
 ```
 
@@ -109,11 +109,11 @@ import { events } from '@unisane/kernel';
 import { TENANT_EVENTS } from '@unisane/tenants';
 
 events.on(TENANT_EVENTS.CREATED, async ({ payload }) => {
-  console.log('New tenant:', payload.tenantId);
+  console.log('New tenant:', payload.scopeId);
 });
 
 events.on(TENANT_EVENTS.DELETED, async ({ payload }) => {
-  console.log('Deleted tenant:', payload.tenantId);
+  console.log('Deleted tenant:', payload.scopeId);
   console.log('Cascade results:', payload.cascade);
 });
 ```
@@ -175,7 +175,7 @@ The tenants collection is the **root entity** - it's NOT tenant-scoped:
 
 - Tenants are the top-level organizational unit
 - `tenantFilter()` is N/A for tenant queries
-- Services use `getTenantId()` for context-based operations
+- Services use `getScopeId()` for context-based operations
 
 ### Cascade Deletion
 

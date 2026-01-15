@@ -1,6 +1,5 @@
-import { connectDb, kv, getEnv, randomToken, logger, InternalError } from "@unisane/kernel";
+import { connectDb, kv, getEnv, randomToken, logger, InternalError, Email } from "@unisane/kernel";
 import { AuthCredentialRepo } from "../data/auth.repository";
-import { normalizeEmail } from "@unisane/identity";
 
 export async function resetStart(input: {
   email: string;
@@ -8,7 +7,7 @@ export async function resetStart(input: {
   redirectTo?: string;
 }): Promise<{ sent: boolean }> {
   await connectDb();
-  const emailNorm = normalizeEmail(input.email);
+  const emailNorm = Email.create(input.email).toString();
   const cred = await AuthCredentialRepo.findByEmailNorm(emailNorm);
   if (!cred) return { sent: true }; // do not reveal existence
   const token = randomToken(32);
@@ -23,7 +22,7 @@ export async function resetStart(input: {
       ...(input.redirectTo ? { redirectTo: input.redirectTo } : {}),
     });
     const enq = await OutboxService.enqueue({
-      tenantId: "__system__",
+      scopeId: "__system__",
       kind: "email",
       payload: {
         to: { email: cred.emailNorm },

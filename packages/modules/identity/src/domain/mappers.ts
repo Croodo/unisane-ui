@@ -15,7 +15,7 @@ export function toUserDto(row: MinimalUserRow) {
 }
 
 export type MembershipDoc = {
-  tenantId: string;
+  scopeId: string;
   userId: string;
   roles?: Array<{ roleId: RoleId; grantedAt?: Date }>;
   grants?: Array<{ perm: Permission; effect: GrantEffect }>;
@@ -30,7 +30,7 @@ export function mapMembershipDocToMembership(
 ): Membership | null {
   if (!doc) return null;
   const result: Membership = {
-    tenantId: doc.tenantId,
+    scopeId: doc.scopeId,
     userId: doc.userId,
     roles: doc.roles ?? [],
     grants: doc.grants ?? [],

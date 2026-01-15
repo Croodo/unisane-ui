@@ -5,7 +5,7 @@ import { hooks } from "@/src/sdk/hooks";
 import type { BillingListInvoicesItem } from "@/src/sdk/types";
 import { DataTable } from "@unisane/data-table";
 import type { Column } from "@unisane/data-table";
-import { formatCurrency } from "@/src/shared/currency";
+import { formatCurrency } from "@unisane/kernel/client";
 import { StatusBadge } from "@/src/components/ui/status-badge";
 import { Typography } from "@unisane/ui/components/typography";
 

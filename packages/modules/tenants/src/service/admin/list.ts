@@ -5,38 +5,38 @@ import { getEnv } from "@unisane/kernel";
 import { ZPlanId } from "@unisane/kernel";
 
 /**
- * Enrichment providers for admin tenant list.
+ * Enrichment providers for admin scope list.
  * These are optional and injected at runtime to avoid circular dependencies.
  */
-export interface TenantEnrichmentProviders {
-  getTenantMembershipCounts?: (tenantIds: string[]) => Promise<Map<string, { membersCount: number; adminsCount: number }>>;
-  getTenantApiKeyCounts?: (tenantIds: string[]) => Promise<Map<string, number>>;
-  getTenantOverrideCounts?: (tenantIds: string[]) => Promise<Map<string, number>>;
-  getTenantOpenInvoiceCounts?: (tenantIds: string[]) => Promise<Map<string, number>>;
-  getTenantLatestSubscriptions?: (tenantIds: string[]) => Promise<Map<string, { status?: string | null; quantity?: number | null; currentPeriodEnd?: Date | string | null; planId?: string | null }>>;
-  getTenantLastActivity?: (tenantIds: string[]) => Promise<Map<string, Date | null>>;
-  getTenantFailureCounts?: (tenantIds: string[], since: Date) => Promise<Map<string, number>>;
-  getTenantCreditBalances?: (tenantIds: string[]) => Promise<Map<string, number>>;
+export interface ScopeEnrichmentProviders {
+  getScopeMembershipCounts?: (scopeIds: string[]) => Promise<Map<string, { membersCount: number; adminsCount: number }>>;
+  getScopeApiKeyCounts?: (scopeIds: string[]) => Promise<Map<string, number>>;
+  getScopeOverrideCounts?: (scopeIds: string[]) => Promise<Map<string, number>>;
+  getScopeOpenInvoiceCounts?: (scopeIds: string[]) => Promise<Map<string, number>>;
+  getScopeLatestSubscriptions?: (scopeIds: string[]) => Promise<Map<string, { status?: string | null; quantity?: number | null; currentPeriodEnd?: Date | string | null; planId?: string | null }>>;
+  getScopeLastActivity?: (scopeIds: string[]) => Promise<Map<string, Date | null>>;
+  getScopeFailureCounts?: (scopeIds: string[], since: Date) => Promise<Map<string, number>>;
+  getScopeCreditBalances?: (scopeIds: string[]) => Promise<Map<string, number>>;
 }
 
 // Use global object to share provider state across module instances in Next.js
-const globalForTenantEnrichment = global as unknown as {
-  __tenantEnrichmentProviders?: TenantEnrichmentProviders;
+const globalForScopeEnrichment = global as unknown as {
+  __scopeEnrichmentProviders?: ScopeEnrichmentProviders;
 };
 
 /**
  * Configure enrichment providers for admin functions.
  * Called once at application bootstrap to inject dependencies.
  */
-export function configureTenantEnrichment(providers: TenantEnrichmentProviders): void {
-  globalForTenantEnrichment.__tenantEnrichmentProviders = providers;
+export function configureScopeEnrichment(providers: ScopeEnrichmentProviders): void {
+  globalForScopeEnrichment.__scopeEnrichmentProviders = providers;
 }
 
 /**
  * Get enrichment providers (for internal use by read.ts)
  */
-export function getEnrichmentProviders(): TenantEnrichmentProviders {
-  return globalForTenantEnrichment.__tenantEnrichmentProviders ?? {};
+export function getEnrichmentProviders(): ScopeEnrichmentProviders {
+  return globalForScopeEnrichment.__scopeEnrichmentProviders ?? {};
 }
 
 const { BILLING_PROVIDER } = getEnv();
@@ -111,8 +111,8 @@ export async function listAdminTenants(args: {
   if (typeof args.filters !== "undefined") baseInput.filters = args.filters;
   const base = await TenantsRepo.listPaged(baseInput);
   const items = Array.isArray(base.items) ? base.items : [];
-  const tenantIds = items.map((t) => t.id).filter(Boolean);
-  if (tenantIds.length === 0)
+  const scopeIds = items.map((t) => t.id).filter(Boolean);
+  if (scopeIds.length === 0)
     return {
       items: [],
       ...(base.nextCursor ? { nextCursor: base.nextCursor } : {}),
@@ -125,14 +125,14 @@ export async function listAdminTenants(args: {
   const providers = getEnrichmentProviders();
   const [mMap, apiMap, ovMap, invMap, latestSubMap, actMap, whMap, crMap] =
     await Promise.all([
-      providers.getTenantMembershipCounts?.(tenantIds) ?? Promise.resolve(new Map()),
-      providers.getTenantApiKeyCounts?.(tenantIds) ?? Promise.resolve(new Map()),
-      providers.getTenantOverrideCounts?.(tenantIds) ?? Promise.resolve(new Map()),
-      providers.getTenantOpenInvoiceCounts?.(tenantIds) ?? Promise.resolve(new Map()),
-      providers.getTenantLatestSubscriptions?.(tenantIds) ?? Promise.resolve(new Map()),
-      providers.getTenantLastActivity?.(tenantIds) ?? Promise.resolve(new Map()),
-      providers.getTenantFailureCounts?.(tenantIds, since24h) ?? Promise.resolve(new Map()),
-      providers.getTenantCreditBalances?.(tenantIds) ?? Promise.resolve(new Map()),
+      providers.getScopeMembershipCounts?.(scopeIds) ?? Promise.resolve(new Map()),
+      providers.getScopeApiKeyCounts?.(scopeIds) ?? Promise.resolve(new Map()),
+      providers.getScopeOverrideCounts?.(scopeIds) ?? Promise.resolve(new Map()),
+      providers.getScopeOpenInvoiceCounts?.(scopeIds) ?? Promise.resolve(new Map()),
+      providers.getScopeLatestSubscriptions?.(scopeIds) ?? Promise.resolve(new Map()),
+      providers.getScopeLastActivity?.(scopeIds) ?? Promise.resolve(new Map()),
+      providers.getScopeFailureCounts?.(scopeIds, since24h) ?? Promise.resolve(new Map()),
+      providers.getScopeCreditBalances?.(scopeIds) ?? Promise.resolve(new Map()),
     ]);
 
   const enriched: TenantAdminView[] = items.map((t) => {

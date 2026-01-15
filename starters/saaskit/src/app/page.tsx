@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useSession } from "@/src/hooks/useSession";
+import { useSession } from "@/src/hooks/use-session";
 import { Card } from "@unisane/ui/components/card";
 import { Typography } from "@unisane/ui/components/typography";
 import { Icon } from "@unisane/ui/primitives/icon";
@@ -28,8 +28,8 @@ export default function Home() {
               <QuickCard
                 title="Open workspace"
                 desc={me.tenantName ?? me.tenantSlug ?? "Go to your workspace"}
-                href={me.tenantSlug ? `/w/${me.tenantSlug}/dashboard` : me.tenantId ? "/workspaces" : "/welcome"}
-                cta={me.tenantId ? "Open" : "Create"}
+                href={me.tenantSlug ? `/w/${me.tenantSlug}/dashboard` : me.scopeId ? "/workspaces" : "/welcome"}
+                cta={me.scopeId ? "Open" : "Create"}
               />
               <QuickCard title="Switch workspace" desc="Pick another workspace" href="/workspaces" cta="Choose" />
               <QuickCard title="Create workspace" desc="Start a new workspace" href="/welcome" cta="Create" />

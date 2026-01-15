@@ -48,4 +48,4 @@ export * from './service/replay';
 // Services - Admin
 // ════════════════════════════════════════════════════════════════════════════
 
-export { getTenantFailureCounts } from './service/admin/stats';
+export { getScopeFailureCounts } from './service/admin/stats';

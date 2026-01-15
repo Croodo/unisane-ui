@@ -39,8 +39,8 @@ describe('Health Check Module', () => {
       const result = await healthCheck();
 
       expect(result.status).toBe('healthy');
-      expect(result.checks.db.status).toBe('up');
-      expect(result.checks.cache.status).toBe('up');
+      expect(result.checks.db?.status).toBe('up');
+      expect(result.checks.cache?.status).toBe('up');
       expect(result.uptime).toBeGreaterThanOrEqual(0);
       expect(result.timestamp).toBeDefined();
     });
@@ -71,8 +71,8 @@ describe('Health Check Module', () => {
 
       const result = await healthCheck({ timeoutMs: 100 });
 
-      expect(result.checks.slow.status).toBe('down');
-      expect(result.checks.slow.message).toContain('timeout');
+      expect(result.checks.slow?.status).toBe('down');
+      expect(result.checks.slow?.message).toContain('timeout');
     });
 
     it('respects only filter', async () => {
@@ -100,8 +100,8 @@ describe('Health Check Module', () => {
 
       const result = await healthCheck();
 
-      expect(result.checks.failing.status).toBe('down');
-      expect(result.checks.failing.message).toBe('Check failed');
+      expect(result.checks.failing?.status).toBe('down');
+      expect(result.checks.failing?.message).toBe('Check failed');
     });
   });
 

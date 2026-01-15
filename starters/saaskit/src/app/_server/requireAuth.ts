@@ -15,15 +15,9 @@ export async function requireUser(
   const client = api ?? (await createApi());
   try {
     const res = await client.me.get();
-    console.log("[requireUser] raw res:", JSON.stringify(res));
     const me = (res as { data?: MeGetResponse }).data ?? res;
-    console.log("[requireUser] unwrapped me:", JSON.stringify(me));
 
     if (!me.userId) {
-      console.log(
-        "[requireUser] No userId found, redirecting to login. Next:",
-        nextPath
-      );
       redirect(`/login?next=${encodeURIComponent(nextPath)}`);
     }
     return { api: client, me };
@@ -33,8 +27,6 @@ export async function requireUser(
     if (status === 401 || status === 403) {
       redirect(`/login?next=${encodeURIComponent(nextPath)}`);
     }
-    // Log and rethrow other errors
-    console.error("[requireUser] Error:", e);
     throw e;
   }
 }
