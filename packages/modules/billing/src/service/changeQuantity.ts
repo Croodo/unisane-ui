@@ -15,10 +15,10 @@ export async function changeQuantity(args: {
     throw ERR.validation("Subscription quantity changes are disabled for this deployment.");
   }
   const q = Math.max(1, Math.trunc(args.quantity));
-  const providerSubId = await SubscriptionsRepository.getLatestProviderSubId(args.scopeId);
+  const providerSubId = await SubscriptionsRepository.findLatestProviderSubId(args.scopeId);
   if (!providerSubId) return { ok: false as const, error: 'NO_SUBSCRIPTION' };
   const provider = getBillingProvider();
   await provider.updateSubscriptionQuantity({ scopeId: args.scopeId, providerSubId, quantity: q });
-  await SubscriptionsRepository.setQuantity(args.scopeId, q);
+  await SubscriptionsRepository.updateQuantity(args.scopeId, q);
   return { ok: true as const };
 }

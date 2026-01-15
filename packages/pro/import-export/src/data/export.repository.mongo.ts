@@ -1,10 +1,9 @@
-import { col } from "@unisane/kernel";
-import { ObjectId } from 'mongodb';
+import { col, maybeObjectId, UpdateBuilder, toMongoUpdate } from "@unisane/kernel";
+import type { ObjectId } from 'mongodb';
 import type { Document, Filter, InsertOneResult, UpdateFilter, OptionalId } from 'mongodb';
 import type { JobsRepoPort } from "../domain/ports";
 import type { ImportJobView, ExportJobView } from "../domain/types";
 import type { JobStatus, ExportFormat, ImportFormat } from '@unisane/kernel';
-import { maybeObjectId } from "@unisane/kernel";
 
 type ImportJobDoc = {
   _id?: ObjectId;
@@ -100,24 +99,35 @@ export const JobsRepoMongo: JobsRepoPort = {
     }));
   },
   async markExportRunning(id: string) {
+    const builder = new UpdateBuilder<ExportJobDoc>()
+      .set("status", "running")
+      .set("error", null)
+      .set("updatedAt", new Date());
     await exportCol().updateOne(
       { _id: maybeObjectId(id) as unknown } as Filter<ExportJobDoc>,
-      { $set: { status: "running", error: null, updatedAt: new Date() } } as UpdateFilter<ExportJobDoc>
+      toMongoUpdate(builder.build()) as UpdateFilter<ExportJobDoc>
     );
   },
   async markExportDone(id: string) {
+    const builder = new UpdateBuilder<ExportJobDoc>()
+      .set("status", "done")
+      .set("updatedAt", new Date());
     await exportCol().updateOne(
       { _id: maybeObjectId(id) as unknown } as Filter<ExportJobDoc>,
-      { $set: { status: "done", updatedAt: new Date() } } as UpdateFilter<ExportJobDoc>
+      toMongoUpdate(builder.build()) as UpdateFilter<ExportJobDoc>
     );
   },
   async markExportFailed(id: string, error: string) {
+    const builder = new UpdateBuilder<ExportJobDoc>()
+      .set("status", "failed")
+      .set("error", error)
+      .set("updatedAt", new Date());
     await exportCol().updateOne(
       { _id: maybeObjectId(id) as unknown } as Filter<ExportJobDoc>,
-      { $set: { status: "failed", error, updatedAt: new Date() } } as UpdateFilter<ExportJobDoc>
+      toMongoUpdate(builder.build()) as UpdateFilter<ExportJobDoc>
     );
   },
-  async getExportById(tenantId: string, id: string) {
+  async findExportById(tenantId: string, id: string) {
     const r = await exportCol().findOne({ _id: maybeObjectId(id) as unknown, tenantId } as Filter<ExportJobDoc>);
     if (!r) return null;
     const status = r.status as JobStatus;

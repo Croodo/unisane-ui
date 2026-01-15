@@ -3,6 +3,8 @@ import {
   COLLECTIONS,
   softDeleteFilter,
   clampInt,
+  UpdateBuilder,
+  toMongoUpdate,
   type Document,
   type FlagOverrideScope,
 } from "@unisane/kernel";
@@ -24,7 +26,7 @@ type FeatureFlagOverrideDoc = {
 const ovCol = () => col<FeatureFlagOverrideDoc>(COLLECTIONS.FLAG_OVERRIDES);
 
 export const FlagOverridesRepoMongo: FlagOverridesRepoPort = {
-  async get(env, key, scopeType, scopeId) {
+  async findOverride(env, key, scopeType, scopeId) {
     const row = await ovCol().findOne({
       env,
       key,
@@ -43,17 +45,20 @@ export const FlagOverridesRepoMongo: FlagOverridesRepoPort = {
       scopeType: args.scopeType,
       scopeId: args.scopeId,
     } as const;
+    const now = new Date();
+    const builder = new UpdateBuilder<FeatureFlagOverrideDoc>()
+      .set("value", args.value)
+      .set("expiresAt", args.expiresAt ?? null)
+      .set("deletedAt", null)
+      .set("updatedAt", now)
+      .setOnInsert("env", args.env)
+      .setOnInsert("key", args.key)
+      .setOnInsert("scopeType", args.scopeType)
+      .setOnInsert("scopeId", args.scopeId)
+      .setOnInsert("createdAt", now);
     const r = await ovCol().findOneAndUpdate(
       sel as unknown as Document,
-      {
-        $set: {
-          value: args.value,
-          expiresAt: args.expiresAt ?? null,
-          deletedAt: null,
-          updatedAt: new Date(),
-        },
-        $setOnInsert: { ...sel, createdAt: new Date() },
-      } as Document,
+      toMongoUpdate(builder.build()) as Document,
       { upsert: true, returnDocument: "after" }
     );
     const after =
@@ -64,10 +69,12 @@ export const FlagOverridesRepoMongo: FlagOverridesRepoPort = {
       ? { value: after.value, expiresAt: after.expiresAt ?? null }
       : null;
   },
-  async clear(env, key, scopeType, scopeId) {
+  async softDeleteOverride(env, key, scopeType, scopeId) {
+    const builder = new UpdateBuilder<FeatureFlagOverrideDoc>()
+      .set("deletedAt", new Date());
     await ovCol().updateOne(
       { env, key, scopeType, scopeId } as Document,
-      { $set: { deletedAt: new Date() } } as Document
+      toMongoUpdate(builder.build()) as Document
     );
   },
   async countActiveScopeOverrides(scopeIds: string[], now = new Date()) {

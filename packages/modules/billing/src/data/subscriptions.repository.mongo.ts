@@ -2,6 +2,8 @@ import {
   col,
   COLLECTIONS,
   clampInt,
+  UpdateBuilder,
+  toMongoUpdate,
   type Collection,
   type Document,
   type SubscriptionStatus,
@@ -28,7 +30,7 @@ type SubscriptionDoc = {
 const subsCol = (): Collection<SubscriptionDoc> => col<SubscriptionDoc>(COLLECTIONS.SUBSCRIPTIONS);
 
 export const mongoSubscriptionsRepo: SubscriptionsRepo = {
-  async getLatest(scopeId: string): Promise<SubscriptionView | null> {
+  async findLatest(scopeId: string): Promise<SubscriptionView | null> {
     const doc = await subsCol()
       .find({ scopeId })
       .project({ planId: 1, quantity: 1, status: 1, cancelAtPeriodEnd: 1, currentPeriodEnd: 1 })
@@ -45,7 +47,7 @@ export const mongoSubscriptionsRepo: SubscriptionsRepo = {
       currentPeriodEnd: (doc.currentPeriodEnd as Date | null | undefined) ?? null,
     };
   },
-  async getLatestByScopeIds(scopeIds: string[]) {
+  async findLatestByScopeIds(scopeIds: string[]) {
     if (!scopeIds?.length) return new Map<string, LatestSub>();
     const rows = (await subsCol()
       .aggregate([
@@ -73,7 +75,7 @@ export const mongoSubscriptionsRepo: SubscriptionsRepo = {
     }
     return m;
   },
-  async getLatestProviderSubId(scopeId: string): Promise<string | null> {
+  async findLatestProviderSubId(scopeId: string): Promise<string | null> {
     const doc = await subsCol()
       .find({ scopeId })
       .project({ providerSubId: 1 })
@@ -82,23 +84,32 @@ export const mongoSubscriptionsRepo: SubscriptionsRepo = {
       .next();
     return (doc?.providerSubId && String(doc.providerSubId)) || null;
   },
-  async setCancelAtPeriodEnd(scopeId: string): Promise<void> {
+  async markCancelAtPeriodEnd(scopeId: string): Promise<void> {
     const latest = await subsCol().find({ scopeId }).project({ _id: 1 }).sort({ createdAt: -1 }).limit(1).next();
     if (!latest) return;
-    await subsCol().updateOne({ _id: latest._id }, { $set: { cancelAtPeriodEnd: true, updatedAt: new Date() } });
+    const builder = new UpdateBuilder<SubscriptionDoc>()
+      .set("cancelAtPeriodEnd", true)
+      .set("updatedAt", new Date());
+    await subsCol().updateOne({ _id: latest._id }, toMongoUpdate(builder.build()) as Document);
   },
-  async setCanceledImmediate(scopeId: string): Promise<void> {
+  async cancelImmediately(scopeId: string): Promise<void> {
     const latest = await subsCol().find({ scopeId }).project({ _id: 1 }).sort({ createdAt: -1 }).limit(1).next();
     if (!latest) return;
-    await subsCol().updateOne(
-      { _id: latest._id },
-      { $set: { status: "canceled", cancelAtPeriodEnd: false, currentPeriodEnd: new Date(), updatedAt: new Date() } }
-    );
+    const now = new Date();
+    const builder = new UpdateBuilder<SubscriptionDoc>()
+      .set("status", "canceled")
+      .set("cancelAtPeriodEnd", false)
+      .set("currentPeriodEnd", now)
+      .set("updatedAt", now);
+    await subsCol().updateOne({ _id: latest._id }, toMongoUpdate(builder.build()) as Document);
   },
-  async setQuantity(scopeId: string, quantity: number): Promise<void> {
+  async updateQuantity(scopeId: string, quantity: number): Promise<void> {
     const latest = await subsCol().find({ scopeId }).project({ _id: 1 }).sort({ createdAt: -1 }).limit(1).next();
     if (!latest) return;
-    await subsCol().updateOne({ _id: latest._id }, { $set: { quantity, updatedAt: new Date() } });
+    const builder = new UpdateBuilder<SubscriptionDoc>()
+      .set("quantity", quantity)
+      .set("updatedAt", new Date());
+    await subsCol().updateOne({ _id: latest._id }, toMongoUpdate(builder.build()) as Document);
   },
   async upsertByProviderId(args: {
     scopeId: string;
@@ -112,20 +123,20 @@ export const mongoSubscriptionsRepo: SubscriptionsRepo = {
     currentPeriodEnd?: Date | null;
   }): Promise<void> {
     const now = new Date();
+    const builder = new UpdateBuilder<SubscriptionDoc>()
+      .set("planId", args.planId)
+      .set("quantity", args.quantity)
+      .set("status", args.status)
+      .set("cancelAtPeriodEnd", args.cancelAtPeriodEnd ?? false)
+      .set("currentPeriodEnd", args.currentPeriodEnd ?? null)
+      .set("updatedAt", now)
+      .setOnInsert("createdAt", now);
+    if (args.providerStatus !== undefined) {
+      builder.set("providerStatus", args.providerStatus);
+    }
     await subsCol().updateOne(
       { scopeId: args.scopeId, provider: args.provider, providerSubId: args.providerSubId },
-      {
-        $set: {
-          planId: args.planId,
-          quantity: args.quantity,
-          status: args.status,
-          ...(args.providerStatus !== undefined ? { providerStatus: args.providerStatus } : {}),
-          cancelAtPeriodEnd: args.cancelAtPeriodEnd ?? false,
-          currentPeriodEnd: args.currentPeriodEnd ?? null,
-          updatedAt: now,
-        },
-        $setOnInsert: { createdAt: now },
-      },
+      toMongoUpdate(builder.build()) as Document,
       { upsert: true }
     );
   },

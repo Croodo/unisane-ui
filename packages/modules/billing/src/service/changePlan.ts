@@ -17,8 +17,8 @@ export async function changePlan(args: {
   }
 
   const [currentSub, providerSubId, tenant] = await Promise.all([
-    SubscriptionsRepository.getLatest(args.scopeId).catch(() => null),
-    SubscriptionsRepository.getLatestProviderSubId(args.scopeId),
+    SubscriptionsRepository.findLatest(args.scopeId).catch(() => null),
+    SubscriptionsRepository.findLatestProviderSubId(args.scopeId),
     hasTenantsProvider()
       ? getTenantsProvider().findById(args.scopeId).catch(() => null)
       : Promise.resolve(null),

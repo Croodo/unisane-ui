@@ -22,7 +22,7 @@ export interface TenantsRepoPort {
   // Batch fetch basic tenant rows by ids
   findMany(ids: string[]): Promise<TenantRow[]>;
   // Minimal update helpers used by cross-module services
-  setPlanId(scopeId: string, planId: string): Promise<void>;
+  updatePlanId(scopeId: string, planId: string): Promise<void>;
   // Admin-only: cascade soft-delete tenant and related access state
   deleteCascade(args: { scopeId: string; actorId?: string }): Promise<DeleteTenantCascadeResult>;
   // Admin-only listing with seek pagination (server components)

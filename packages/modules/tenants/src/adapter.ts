@@ -72,7 +72,7 @@ export const tenantsAdapter: TenantsPort = {
   },
 
   async updatePlanId(tenantId, planId) {
-    await TenantsRepo.setPlanId(tenantId, planId);
+    await TenantsRepo.updatePlanId(tenantId, planId);
   },
 
   async updateStatus(tenantId, status) {

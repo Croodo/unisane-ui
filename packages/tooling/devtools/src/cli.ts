@@ -56,6 +56,7 @@ import { ensureCleanWorkingTree } from './utils/git.js';
 import { doctor } from './commands/dev/doctor.js';
 import { routesGen } from './commands/routes/gen.js';
 import { sdkGen } from './commands/sdk/gen.js';
+import { watchContracts, checkStaleness, sync, preBuildCheck } from './commands/generate/index.js';
 import { buildStarter } from './commands/release/build-starter.js';
 import { verifyBuild } from './commands/release/verify.js';
 import { listVersions as listAllVersions, showPublishable } from './commands/release/version.js';
@@ -286,7 +287,6 @@ generate
   .option('--vue', 'Generate Vue composables only')
   .option('--zod', 'Generate Zod schemas only')
   .option('--types', 'Generate TypeScript types only')
-  .option('--admin-hooks', 'Generate admin list params hooks')
   .option('--dry-run', 'Preview changes without writing files')
   .action(async (options) => {
     log.banner('Unisane');
@@ -298,7 +298,6 @@ generate
       vue: options.vue,
       zod: options.zod,
       types: options.types,
-      adminHooks: options.adminHooks,
       dryRun: options.dryRun,
     });
     process.exit(code);
@@ -315,6 +314,27 @@ generate
       types: true,
       dryRun: options.dryRun,
     });
+    process.exit(code);
+  });
+
+generate
+  .command('check')
+  .description('Check if generated files are stale')
+  .action(async () => {
+    log.banner('Unisane');
+    loadEnvLocal();
+    const code = await checkStaleness();
+    process.exit(code);
+  });
+
+generate
+  .command('prebuild')
+  .description('Pre-build check for CI/CD - fails if generated files are stale')
+  .option('--no-strict', 'Warn instead of fail when stale')
+  .action(async (options) => {
+    log.banner('Unisane');
+    loadEnvLocal();
+    const code = await preBuildCheck({ strict: options.strict });
     process.exit(code);
   });
 
@@ -602,25 +622,44 @@ program
 
 program
   .command('sync')
-  .description('Run all generators and doctor --fix')
-  .action(async () => {
+  .description('Run all generators and health checks')
+  .option('--skip-routes', 'Skip routes generation')
+  .option('--skip-sdk', 'Skip SDK generation')
+  .option('--skip-doctor', 'Skip doctor checks')
+  .option('--force', 'Force regeneration even if not stale')
+  .option('--dry-run', 'Preview changes without writing files')
+  .option('--fix', 'Auto-fix doctor issues')
+  .action(async (options) => {
     log.banner('Unisane');
     loadEnvLocal();
-    await ensureCleanWorkingTree();
-    log.warn('sync is not yet implemented');
-    log.info('Run these commands manually:');
-    log.dim('  unisane generate routes');
-    log.dim('  unisane generate sdk');
-    log.dim('  unisane doctor --fix');
+    const code = await sync({
+      skipRoutes: options.skipRoutes,
+      skipSdk: options.skipSdk,
+      skipDoctor: options.skipDoctor,
+      force: options.force,
+      dryRun: options.dryRun,
+      fix: options.fix,
+    });
+    process.exit(code);
   });
 
 program
   .command('watch')
   .description('Watch contracts and regenerate on changes')
-  .action(async () => {
+  .option('--routes-only', 'Only regenerate routes')
+  .option('--sdk-only', 'Only regenerate SDK')
+  .option('--debounce <ms>', 'Debounce delay in milliseconds', '500')
+  .option('--no-initial', 'Skip initial generation')
+  .action(async (options) => {
     log.banner('Unisane');
     loadEnvLocal();
-    log.warn('watch is not yet implemented');
+    const code = await watchContracts({
+      routes: !options.sdkOnly,
+      sdk: !options.routesOnly,
+      debounce: parseInt(options.debounce, 10),
+      initial: options.initial,
+    });
+    process.exit(code);
   });
 
 // ════════════════════════════════════════════════════════════════════════════

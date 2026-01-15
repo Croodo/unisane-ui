@@ -13,13 +13,13 @@ export type LatestSub = {
 };
 
 export interface SubscriptionsRepo {
-  getLatest(scopeId: string): Promise<SubscriptionView | null>;
+  findLatest(scopeId: string): Promise<SubscriptionView | null>;
   // Admin/stats: latest subscription fields grouped by scopeId
-  getLatestByScopeIds(scopeIds: string[]): Promise<Map<string, LatestSub>>;
-  getLatestProviderSubId(scopeId: string): Promise<string | null>;
-  setCancelAtPeriodEnd(scopeId: string): Promise<void>;
-  setCanceledImmediate(scopeId: string): Promise<void>;
-  setQuantity(scopeId: string, quantity: number): Promise<void>;
+  findLatestByScopeIds(scopeIds: string[]): Promise<Map<string, LatestSub>>;
+  findLatestProviderSubId(scopeId: string): Promise<string | null>;
+  markCancelAtPeriodEnd(scopeId: string): Promise<void>;
+  cancelImmediately(scopeId: string): Promise<void>;
+  updateQuantity(scopeId: string, quantity: number): Promise<void>;
   upsertByProviderId(args: {
     scopeId: string;
     provider: BillingProvider;

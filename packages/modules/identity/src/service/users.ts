@@ -236,7 +236,7 @@ export async function deleteUser(args: DeleteUserArgs) {
   const { userId, actorId } = args;
   // Best-effort cascade: soft-delete memberships, then soft-delete/anonymize user
   try {
-    await membershipsRepository.deleteAllForUser(userId);
+    await membershipsRepository.softDeleteAllForUser(userId);
   } catch (err) {
     logger.warn("Failed to delete memberships during user deletion (best-effort)", { err, userId });
   }

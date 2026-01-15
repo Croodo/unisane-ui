@@ -17,8 +17,9 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
+    "@unisane/kernel": "workspace:*",
     "resend": "^4.0.0",
-    "@unisane/kernel": "workspace:*"
+    "zod": "^4.3.5"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",

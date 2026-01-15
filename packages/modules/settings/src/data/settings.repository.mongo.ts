@@ -1,6 +1,8 @@
 import {
   col,
   COLLECTIONS,
+  UpdateBuilder,
+  toMongoUpdate,
   type Document,
 } from "@unisane/kernel";
 import type {
@@ -84,23 +86,20 @@ export const SettingsRepoMongo: SettingsRepo = {
       } as PatchConflict;
     }
     const now = new Date();
-    const update = params.unset
-      ? {
-          $set: { updatedBy: params.actorId, updatedAt: now },
-          $inc: { version: 1 },
-          $unset: { value: "" },
-        }
-      : {
-          $set: {
-            value: params.value,
-            updatedBy: params.actorId,
-            updatedAt: now,
-          },
-          $inc: { version: 1 },
-        };
+    const builder = new UpdateBuilder<SettingsKVDoc>()
+      .set("updatedBy", params.actorId ?? null)
+      .set("updatedAt", now)
+      .inc("version", 1);
+
+    if (params.unset) {
+      builder.unset("value");
+    } else {
+      builder.set("value", params.value);
+    }
+
     const r = await settingsCol().findOneAndUpdate(
       sel as unknown as Document,
-      update as unknown as Document,
+      toMongoUpdate(builder.build()) as unknown as Document,
       { upsert: true, returnDocument: "after" }
     );
     const after =

@@ -9,16 +9,19 @@
     "start": "next start",
     "lint": "next lint",
     "check-types": "tsc --noEmit",
+    "codegen": "npx tsx node_modules/@unisane/devtools/dist/cli.js sync --skip-doctor",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:report": "playwright show-report",
     "devtools": "npx tsx node_modules/@unisane/devtools/dist/cli.js",
-    "routes:gen": "npx tsx node_modules/@unisane/devtools/dist/cli.js routes:gen",
-    "sdk:gen": "npx tsx node_modules/@unisane/devtools/dist/cli.js sdk:gen",
+    "routes:gen": "npx tsx node_modules/@unisane/devtools/dist/cli.js generate routes",
+    "sdk:gen": "npx tsx node_modules/@unisane/devtools/dist/cli.js generate sdk",
     "doctor": "npx tsx node_modules/@unisane/devtools/dist/cli.js doctor",
-    "sync": "npx tsx node_modules/@unisane/devtools/dist/cli.js sync"
+    "sync": "npx tsx node_modules/@unisane/devtools/dist/cli.js sync",
+    "watch": "npx tsx node_modules/@unisane/devtools/dist/cli.js watch",
+    "prebuild:check": "npx tsx node_modules/@unisane/devtools/dist/cli.js generate prebuild"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.946.0",

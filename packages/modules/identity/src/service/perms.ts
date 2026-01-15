@@ -73,7 +73,7 @@ export async function getEffectivePerms(
       return JSON.parse(cached) as Permission[];
     } catch {}
   }
-  const m = await membershipsRepository.get(scopeId, userId);
+  const m = await membershipsRepository.findByScopeAndUser(scopeId, userId);
   const base: Set<Permission> = new Set();
   for (const r of m?.roles ?? []) {
     const bundle = ROLE_PERMS[r.roleId] ?? [];

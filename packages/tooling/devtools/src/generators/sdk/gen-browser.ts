@@ -5,8 +5,11 @@
  * Uses extracted types instead of contract imports to avoid pulling in Node.js-only modules.
  *
  * Structure:
- * - api.domain.operation() - Regular routes
- * - api.admin.domain.operation() - Admin routes (nested under admin namespace)
+ * - clients/generated/
+ *   - shared/          - Shared utilities (fetch, csrf, etc.)
+ *   - domains/         - Per-domain client files
+ *   - browser.ts       - Namespace export: client.domain.operation()
+ *   - index.ts         - Barrel export
  */
 import * as path from 'node:path';
 import { header, pascalCase, extractParamNames } from './utils.js';
@@ -15,7 +18,7 @@ import { writeText, ensureDir } from '../../utils/fs.js';
 import type { RouteGroup, AppRouteEntry } from './types.js';
 
 export interface GenBrowserOptions {
-  /** Output file path */
+  /** Output directory path (e.g., clients/generated) */
   output: string;
   /** App router object */
   appRouter: unknown;
@@ -32,7 +35,7 @@ export interface GenBrowserOptions {
  * - Route name starting with "admin" (e.g., `adminList`, `adminReadOrNull`)
  * - Path containing "/admin/" segment (e.g., `/api/rest/v1/admin/tenants`)
  *
- * Admin routes are grouped separately in the generated SDK under `api.admin.*`
+ * Admin routes are grouped separately in the generated SDK under `client.admin.*`
  * to distinguish them from regular tenant-scoped routes.
  */
 function isAdminRoute(route: AppRouteEntry): boolean {
@@ -77,7 +80,7 @@ function separateRoutes(groups: RouteGroup[]): {
 }
 
 /**
- * Generate browser API client
+ * Generate browser API client (domain-structured)
  */
 export async function genBrowser(options: GenBrowserOptions): Promise<void> {
   const { output, appRouter, routerPath, dryRun } = options;
@@ -85,126 +88,63 @@ export async function genBrowser(options: GenBrowserOptions): Promise<void> {
   const importMap = await parseRouterImports(routerPath);
   const { groups } = await collectRouteGroups(appRouter, importMap);
 
-  const headerComment = header('sdk:gen --clients');
+  if (!dryRun) {
+    await ensureDir(path.join(output, 'shared'));
+    await ensureDir(path.join(output, 'domains'));
+  }
 
-  // Generate type imports from extracted types (instead of contracts)
-  const typeImports = generateExtractedTypeImports(groups);
-
-  // Generate type aliases (simplified, no contract imports)
-  const typeAliases = generateTypeAliases(groups);
-
-  // Generate the browser client code
-  const clientCode = generateBrowserClientCode(groups);
-
-  // Generate API type definitions
-  const apiTypes = generateBrowserApiTypes(groups);
-
-  // Generate the browserApi factory function
-  const browserApiFactory = generateBrowserApiFactory(groups);
-
-  const content = [
-    headerComment,
-    `import { HEADER_NAMES } from '@unisane/gateway/client';`,
-    '',
-    typeImports,
-    '',
-    typeAliases,
-    '',
-    `type DataOf<T> = T extends { data: infer D } ? D : T;`,
-    '',
-    clientCode,
-    '',
-    apiTypes,
-    '',
-    browserApiFactory,
-  ].join('\n');
+  // Generate shared utilities
+  const sharedFetch = generateSharedFetch();
+  const sharedIndex = generateSharedIndex();
 
   if (!dryRun) {
-    await ensureDir(path.dirname(output));
-    await writeText(output, content);
-  }
-}
-
-/**
- * Generate imports from extracted type files
- */
-function generateExtractedTypeImports(groups: RouteGroup[]): string {
-  const imports: string[] = [];
-
-  for (const g of groups) {
-    // Include all routes (including admin) since we use extracted types
-    const routes = g.routes;
-    if (!routes.length) continue;
-
-    const Group = pascalCase(g.name);
-    const typeNames: string[] = [];
-
-    for (const r of routes) {
-      const Op = pascalCase(r.name);
-      typeNames.push(`${Group}${Op}Request`);
-      typeNames.push(`${Group}${Op}Response`);
-    }
-
-    imports.push(`import type {
-  ${typeNames.join(',\n  ')}
-} from '../../types/generated/${g.name}.types';`);
+    await writeText(path.join(output, 'shared/fetch.ts'), sharedFetch);
+    await writeText(path.join(output, 'shared/index.ts'), sharedIndex);
   }
 
-  return imports.join('\n\n');
-}
-
-/**
- * Generate type aliases mapping from extracted types
- */
-function generateTypeAliases(groups: RouteGroup[]): string {
-  const lines: string[] = [];
-
+  // Generate domain files
   for (const g of groups) {
-    // Include all routes (including admin) since we use extracted types
-    const routes = g.routes;
-
-    for (const r of routes) {
-      const Group = pascalCase(g.name);
-      const Op = pascalCase(r.name);
-
-      // T = Full request type (from extracted types)
-      // P = params extraction
-      // Q = query extraction
-      // B = body extraction
-      // R = response type (from extracted types)
-      // PV = first param value (for single-param convenience)
-      const T = `T${Group}${Op}`;
-      const P = `P${Group}${Op}`;
-      const Q = `Q${Group}${Op}`;
-      const B = `B${Group}${Op}`;
-      const R = `R${Group}${Op}`;
-      const PV = `PV${Group}${Op}`;
-
-      // Map to extracted types
-      lines.push(`type ${T} = ${Group}${Op}Request;`);
-      lines.push(`type ${P} = ${T} extends { params: infer X } ? X : never;`);
-      lines.push(`type ${Q} = ${T} extends { query: infer X } ? X : never;`);
-      lines.push(`type ${B} = ${T} extends { body: infer X } ? X : never;`);
-      lines.push(`type ${R} = DataOf<${Group}${Op}Response>;`);
-      lines.push(`type ${PV} = [keyof ${P}] extends [never] ? never : ${P}[keyof ${P}];`);
+    const domainContent = generateDomainClient(g);
+    if (!dryRun) {
+      await writeText(path.join(output, `domains/${g.name}.browser.ts`), domainContent);
     }
   }
 
-  return lines.join('\n');
+  // Generate domains index
+  const domainsIndex = generateDomainsIndex(groups);
+  if (!dryRun) {
+    await writeText(path.join(output, 'domains/index.ts'), domainsIndex);
+  }
+
+  // Generate main browser.ts with namespace pattern
+  const browserMain = generateBrowserMain(groups);
+  if (!dryRun) {
+    await writeText(path.join(output, 'browser.ts'), browserMain);
+  }
+
+  // Generate main index
+  const mainIndex = generateMainIndex();
+  if (!dryRun) {
+    await writeText(path.join(output, 'index.ts'), mainIndex);
+  }
 }
 
 /**
- * Generate core browser client utilities
+ * Generate shared fetch utilities
  */
-function generateBrowserClientCode(groups: RouteGroup[]): string {
-  return `
-function hasHeader(h: Record<string, string>, name: string): boolean {
+function generateSharedFetch(): string {
+  const headerComment = header('sdk:gen --clients');
+
+  return `${headerComment}
+import { HEADER_NAMES } from '@unisane/gateway/client';
+
+export function hasHeader(h: Record<string, string>, name: string): boolean {
   const lower = name.toLowerCase();
   return Object.keys(h).some((k) => k.toLowerCase() === lower);
 }
 
 /** Base64url encode for filter serialization */
-function base64UrlEncode(input: string): string {
+export function base64UrlEncode(input: string): string {
   try {
     if (typeof Buffer !== 'undefined') {
       return Buffer.from(input, 'utf8').toString('base64url');
@@ -214,7 +154,7 @@ function base64UrlEncode(input: string): string {
   } catch { return ''; }
 }
 
-function buildUrl(pathTpl: string, params?: Record<string, unknown>, query?: Record<string, unknown>): string {
+export function buildUrl(pathTpl: string, params?: Record<string, unknown>, query?: Record<string, unknown>): string {
   const base = (process.env.NEXT_PUBLIC_API_BASE_URL ?? '').trim();
   let p = pathTpl;
   if (params && typeof params === 'object') {
@@ -241,7 +181,7 @@ function buildUrl(pathTpl: string, params?: Record<string, unknown>, query?: Rec
   return url.toString();
 }
 
-async function ensureCsrfToken(): Promise<string | undefined> {
+export async function ensureCsrfToken(): Promise<string | undefined> {
   if (typeof document === 'undefined') return undefined;
   const cookie = document.cookie ?? '';
   const token = cookie.split(';').map((s) => s.trim()).find((p) => p.startsWith('csrf_token='))?.split('=')[1];
@@ -310,7 +250,7 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function doFetch<R>(
+export async function doFetch<R>(
   method: string,
   path: string,
   params?: Record<string, unknown>,
@@ -409,54 +349,126 @@ async function doFetch<R>(
   }
 
   return fetchPromise;
-}`;
+}
+
+export { HEADER_NAMES };
+`;
 }
 
 /**
- * Generate BrowserApi type definition with nested admin namespace
+ * Generate shared index
  */
-function generateBrowserApiTypes(groups: RouteGroup[]): string {
-  const { regularGroups, adminGroups } = separateRoutes(groups);
+function generateSharedIndex(): string {
+  const headerComment = header('sdk:gen --clients');
 
-  // Generate regular domain types
-  const regularTypes = regularGroups
-    .map((g) => {
-      const routes = g.routes;
-      if (!routes.length) return '';
+  return `${headerComment}
+export * from "./fetch";
+`;
+}
 
-      const routeTypes = routes
-        .map((r) => generateRouteTypeOverloads(g, r, false))
-        .join('\n');
+/**
+ * Generate a domain client file
+ */
+function generateDomainClient(g: RouteGroup): string {
+  const headerComment = header('sdk:gen --clients');
+  const Group = pascalCase(g.name);
 
-      return `  ${g.name}: {\n${routeTypes}\n  }`;
-    })
-    .filter(Boolean)
-    .join(',\n');
+  const regularRoutes = g.routes.filter((r) => !isAdminRoute(r));
+  const adminRoutes = g.routes.filter((r) => isAdminRoute(r));
 
-  // Generate admin domain types (nested under admin namespace)
-  const adminDomainTypes = adminGroups
-    .map((g) => {
-      const routes = g.routes;
-      if (!routes.length) return '';
+  // Generate type imports from extracted types
+  const typeNames: string[] = [];
+  for (const r of g.routes) {
+    const Op = pascalCase(r.name);
+    typeNames.push(`${Group}${Op}Request`);
+    typeNames.push(`${Group}${Op}Response`);
+  }
 
-      const routeTypes = routes
-        .map((r) => generateRouteTypeOverloads(g, r, true))
-        .join('\n');
+  const typeImport = `import type {
+  ${typeNames.join(',\n  ')}
+} from '../../../types/generated/${g.name}.types';`;
 
-      return `    ${g.name}: {\n${routeTypes}\n    }`;
-    })
-    .filter(Boolean)
-    .join(',\n');
+  // Generate type aliases
+  const typeAliases: string[] = [];
+  for (const r of g.routes) {
+    const Op = pascalCase(r.name);
+    const T = `T${Group}${Op}`;
+    const P = `P${Group}${Op}`;
+    const Q = `Q${Group}${Op}`;
+    const B = `B${Group}${Op}`;
+    const R = `R${Group}${Op}`;
+    const PV = `PV${Group}${Op}`;
 
-  const adminType = adminDomainTypes ? `,\n  admin: {\n${adminDomainTypes}\n  }` : '';
+    typeAliases.push(`type ${T} = ${Group}${Op}Request;`);
+    typeAliases.push(`type ${P} = ${T} extends { params: infer X } ? X : never;`);
+    typeAliases.push(`type ${Q} = ${T} extends { query: infer X } ? X : never;`);
+    typeAliases.push(`type ${B} = ${T} extends { body: infer X } ? X : never;`);
+    typeAliases.push(`type ${R} = DataOf<${Group}${Op}Response>;`);
+    typeAliases.push(`type ${PV} = [keyof ${P}] extends [never] ? never : ${P}[keyof ${P}];`);
+  }
 
-  return `export type BrowserApi = {\n${regularTypes}${adminType}\n};`;
+  // Generate regular route types
+  const regularTypeContent = regularRoutes.length > 0
+    ? regularRoutes.map((r) => generateRouteTypeOverloads(g, r, false, '  ')).join('\n')
+    : '';
+
+  // Generate admin route types
+  const adminTypeContent = adminRoutes.length > 0
+    ? adminRoutes.map((r) => generateRouteTypeOverloads(g, r, true, '    ')).join('\n')
+    : '';
+
+  // Build the type definitions
+  let typeDefinitions = '';
+  if (regularRoutes.length > 0) {
+    typeDefinitions += `export type ${Group}Client = {\n${regularTypeContent}\n};\n\n`;
+  }
+  if (adminRoutes.length > 0) {
+    typeDefinitions += `export type ${Group}AdminClient = {\n${adminTypeContent}\n};\n\n`;
+  }
+
+  // Generate regular route implementations
+  const regularImplContent = regularRoutes.length > 0
+    ? regularRoutes.map((r) => generateRouteImplementation(g, r, false)).join('\n\n')
+    : '';
+
+  // Generate admin route implementations
+  const adminImplContent = adminRoutes.length > 0
+    ? adminRoutes.map((r) => generateRouteImplementation(g, r, true)).join('\n\n')
+    : '';
+
+  // Build factory functions
+  let factoryFunctions = '';
+  if (regularRoutes.length > 0) {
+    factoryFunctions += `export function create${Group}Client(): ${Group}Client {
+  return {
+${regularImplContent}
+  };
+}\n\n`;
+  }
+  if (adminRoutes.length > 0) {
+    factoryFunctions += `export function create${Group}AdminClient(): ${Group}AdminClient {
+  return {
+${adminImplContent}
+  };
+}\n`;
+  }
+
+  return `${headerComment}
+import { doFetch, hasHeader, HEADER_NAMES, ensureCsrfToken } from '../shared/fetch';
+
+${typeImport}
+
+type DataOf<T> = T extends { data: infer D } ? D : T;
+
+${typeAliases.join('\n')}
+
+${typeDefinitions}${factoryFunctions}`;
 }
 
 /**
  * Generate type overloads for a single route
  */
-function generateRouteTypeOverloads(g: RouteGroup, r: AppRouteEntry, isAdmin: boolean): string {
+function generateRouteTypeOverloads(g: RouteGroup, r: AppRouteEntry, isAdmin: boolean, indent: string): string {
   const Group = pascalCase(g.name);
   const Op = pascalCase(r.name);
   const T = `T${Group}${Op}`;
@@ -474,7 +486,6 @@ function generateRouteTypeOverloads(g: RouteGroup, r: AppRouteEntry, isAdmin: bo
 
   // For admin routes, use the stripped operation name
   const opName = isAdmin ? getAdminOpName(r.name) : r.name;
-  const indent = isAdmin ? '      ' : '    ';
 
   const lines: string[] = [];
 
@@ -520,53 +531,10 @@ function generateRouteTypeOverloads(g: RouteGroup, r: AppRouteEntry, isAdmin: bo
 }
 
 /**
- * Generate the browserApi factory function with nested admin namespace
- * Uses memoization to avoid recreating the API client on every call
- */
-function generateBrowserApiFactory(groups: RouteGroup[]): string {
-  const { regularGroups, adminGroups } = separateRoutes(groups);
-
-  // Generate regular route implementations
-  const regularImpls = regularGroups
-    .map((g) => {
-      const routes = g.routes;
-      if (!routes.length) return '';
-      return routes.map((r) => generateRouteImplementation(g, r, false)).join('\n');
-    })
-    .filter(Boolean)
-    .join('\n');
-
-  // Generate admin route implementations (nested under admin namespace)
-  const adminImpls = adminGroups
-    .map((g) => {
-      const routes = g.routes;
-      if (!routes.length) return '';
-      return routes.map((r) => generateRouteImplementation(g, r, true)).join('\n');
-    })
-    .filter(Boolean)
-    .join('\n');
-
-  const adminInit = adminGroups.length > 0 ? `\n  out['admin'] = {};` : '';
-
-  return `// Memoized SDK instance - avoids recreating the API client on every call
-let _cachedBrowserApi: BrowserApi | null = null;
-
-export async function browserApi(): Promise<BrowserApi> {
-  // Return cached instance if available
-  if (_cachedBrowserApi) return _cachedBrowserApi;
-
-  const out: Record<string, unknown> = {};${adminInit}
-${regularImpls}
-${adminImpls}
-  _cachedBrowserApi = out as unknown as BrowserApi;
-  return _cachedBrowserApi;
-}`;
-}
-
-/**
- * Generate implementation for a single route
+ * Generate implementation for a single route (as object property)
  */
 function generateRouteImplementation(g: RouteGroup, r: AppRouteEntry, isAdmin: boolean): string {
+  const Group = pascalCase(g.name);
   const m = r.method.toUpperCase();
   const hasBody = r.hasBody;
   const bodyOptional = r.bodyOptional;
@@ -574,15 +542,10 @@ function generateRouteImplementation(g: RouteGroup, r: AppRouteEntry, isAdmin: b
   const singleParam = paramNames.length === 1;
   const isWrite = ['POST', 'PATCH', 'PUT'].includes(m);
 
-  // For admin routes, use the stripped operation name and nested path
+  // For admin routes, use the stripped operation name
   const opName = isAdmin ? getAdminOpName(r.name) : r.name;
-  const targetPath = isAdmin ? `(out['admin'] as Record<string, unknown>)['${g.name}']` : `out['${g.name}']`;
-  const initPath = isAdmin
-    ? `  (out['admin'] as Record<string, unknown>)['${g.name}'] = (out['admin'] as Record<string, unknown>)['${g.name}'] ?? {};`
-    : `  out['${g.name}'] = out['${g.name}'] ?? {};`;
 
   // Generate argument parsing logic
-  // Note: We cast query assignments to Record<string, unknown> because args[n] is typed as unknown
   let argParsing: string;
   if (!hasBody) {
     if (paramNames.length === 0) {
@@ -608,31 +571,163 @@ function generateRouteImplementation(g: RouteGroup, r: AppRouteEntry, isAdmin: b
     }
   }
 
-  const orNullMethod = m === 'GET' ? `
-  (${targetPath} as Record<string, unknown>)['${opName}OrNull'] = async (...args: unknown[]) => {
-    try {
-      const fn = (${targetPath} as Record<string, unknown>)['${opName}'] as (...a: unknown[]) => Promise<unknown>;
-      return await fn(...args);
-    } catch (e) {
-      if ((e as any)?.status === 404) return null;
-      throw e;
-    }
-  };` : '';
+  // For GET methods, generate OrNull variant as well
+  if (m === 'GET') {
+    return `    ${opName}: (async (...args: unknown[]) => {
+      const first = args[0] as Record<string, unknown> | undefined;
+      const isFull = first && typeof first === 'object' && (('params' in first) || ('query' in first) || ('body' in first) || ('headers' in first));
+      const a = (isFull ? first : {}) as { params?: unknown; query?: unknown; body?: unknown; headers?: Record<string, string> };
+      ${argParsing}
+      const headers = { ...(a.headers ?? {}) } as Record<string, string>;
+      if (!hasHeader(headers, HEADER_NAMES.REQUEST_ID)) headers[HEADER_NAMES.REQUEST_ID] = crypto.randomUUID();
+      return doFetch('${m}', '${r.path}', a.params as Record<string, unknown>, a.body, a.query as Record<string, unknown>, headers);
+    }) as ${Group}${isAdmin ? 'Admin' : ''}Client['${opName}'],
+    ${opName}OrNull: (async (...args: unknown[]) => {
+      try {
+        const first = args[0] as Record<string, unknown> | undefined;
+        const isFull = first && typeof first === 'object' && (('params' in first) || ('query' in first) || ('body' in first) || ('headers' in first));
+        const a = (isFull ? first : {}) as { params?: unknown; query?: unknown; body?: unknown; headers?: Record<string, string> };
+        ${argParsing}
+        const headers = { ...(a.headers ?? {}) } as Record<string, string>;
+        if (!hasHeader(headers, HEADER_NAMES.REQUEST_ID)) headers[HEADER_NAMES.REQUEST_ID] = crypto.randomUUID();
+        return await doFetch('${m}', '${r.path}', a.params as Record<string, unknown>, a.body, a.query as Record<string, unknown>, headers);
+      } catch (e) {
+        if ((e as any)?.status === 404) return null;
+        throw e;
+      }
+    }) as ${Group}${isAdmin ? 'Admin' : ''}Client['${opName}OrNull'],`;
+  }
 
-  return `${initPath}
-  (${targetPath} as Record<string, unknown>)['${opName}'] = async (...args: unknown[]) => {
-    const first = args[0] as Record<string, unknown> | undefined;
-    const isFull = first && typeof first === 'object' && (('params' in first) || ('query' in first) || ('body' in first) || ('headers' in first));
-    const a = (isFull ? first : {}) as { params?: unknown; query?: unknown; body?: unknown; headers?: Record<string, string> };
-    ${argParsing}
-    const headers = { ...(a.headers ?? {}) } as Record<string, string>;
-    if (!hasHeader(headers, HEADER_NAMES.REQUEST_ID)) headers[HEADER_NAMES.REQUEST_ID] = crypto.randomUUID();
-    const isWrite = ${isWrite} || Object.prototype.hasOwnProperty.call(a, 'body');
-    if (isWrite && !hasHeader(headers, HEADER_NAMES.IDEMPOTENCY_KEY)) headers[HEADER_NAMES.IDEMPOTENCY_KEY] = crypto.randomUUID();
-    if (isWrite && !hasHeader(headers, HEADER_NAMES.AUTHORIZATION) && !hasHeader(headers, HEADER_NAMES.CSRF_TOKEN)) {
-      const csrf = await ensureCsrfToken();
-      if (csrf) headers[HEADER_NAMES.CSRF_TOKEN] = csrf;
+  // For non-GET methods
+  return `    ${opName}: (async (...args: unknown[]) => {
+      const first = args[0] as Record<string, unknown> | undefined;
+      const isFull = first && typeof first === 'object' && (('params' in first) || ('query' in first) || ('body' in first) || ('headers' in first));
+      const a = (isFull ? first : {}) as { params?: unknown; query?: unknown; body?: unknown; headers?: Record<string, string> };
+      ${argParsing}
+      const headers = { ...(a.headers ?? {}) } as Record<string, string>;
+      if (!hasHeader(headers, HEADER_NAMES.REQUEST_ID)) headers[HEADER_NAMES.REQUEST_ID] = crypto.randomUUID();
+      const isWrite = ${isWrite} || Object.prototype.hasOwnProperty.call(a, 'body');
+      if (isWrite && !hasHeader(headers, HEADER_NAMES.IDEMPOTENCY_KEY)) headers[HEADER_NAMES.IDEMPOTENCY_KEY] = crypto.randomUUID();
+      if (isWrite && !hasHeader(headers, HEADER_NAMES.AUTHORIZATION) && !hasHeader(headers, HEADER_NAMES.CSRF_TOKEN)) {
+        const csrf = await ensureCsrfToken();
+        if (csrf) headers[HEADER_NAMES.CSRF_TOKEN] = csrf;
+      }
+      return doFetch('${m}', '${r.path}', a.params as Record<string, unknown>, a.body, a.query as Record<string, unknown>, headers);
+    }) as ${Group}${isAdmin ? 'Admin' : ''}Client['${opName}'],`;
+}
+
+/**
+ * Generate domains index
+ */
+function generateDomainsIndex(groups: RouteGroup[]): string {
+  const headerComment = header('sdk:gen --clients');
+
+  const exports = groups.map((g) => `export * from "./${g.name}.browser";`).join('\n');
+
+  return `${headerComment}
+${exports}
+`;
+}
+
+/**
+ * Generate main browser.ts with namespace pattern
+ */
+function generateBrowserMain(groups: RouteGroup[]): string {
+  const headerComment = header('sdk:gen --clients');
+
+  const { regularGroups, adminGroups } = separateRoutes(groups);
+
+  // Generate imports
+  const imports: string[] = [];
+  const allGroups = new Set<string>();
+
+  for (const g of groups) {
+    const Group = pascalCase(g.name);
+    const regularRoutes = g.routes.filter((r) => !isAdminRoute(r));
+    const adminRoutes = g.routes.filter((r) => isAdminRoute(r));
+
+    const importParts: string[] = [];
+    if (regularRoutes.length > 0) {
+      importParts.push(`create${Group}Client`);
+      importParts.push(`${Group}Client`);
     }
-    return doFetch('${m}', '${r.path}', a.params as Record<string, unknown>, a.body, a.query as Record<string, unknown>, headers);
-  };${orNullMethod}`;
+    if (adminRoutes.length > 0) {
+      importParts.push(`create${Group}AdminClient`);
+      importParts.push(`${Group}AdminClient`);
+    }
+
+    if (importParts.length > 0) {
+      imports.push(`import { ${importParts.join(', ')} } from './domains/${g.name}.browser';`);
+      allGroups.add(g.name);
+    }
+  }
+
+  // Generate BrowserApi type
+  const regularTypeProps = regularGroups
+    .map((g) => {
+      const Group = pascalCase(g.name);
+      return `  ${g.name}: ${Group}Client;`;
+    })
+    .join('\n');
+
+  const adminTypeProps = adminGroups
+    .map((g) => {
+      const Group = pascalCase(g.name);
+      return `    ${g.name}: ${Group}AdminClient;`;
+    })
+    .join('\n');
+
+  const adminType = adminGroups.length > 0 ? `\n  admin: {\n${adminTypeProps}\n  };` : '';
+
+  const browserApiType = `export type BrowserApi = {\n${regularTypeProps}${adminType}\n};`;
+
+  // Generate factory
+  const regularInit = regularGroups
+    .map((g) => {
+      const Group = pascalCase(g.name);
+      return `    ${g.name}: create${Group}Client(),`;
+    })
+    .join('\n');
+
+  const adminInit = adminGroups.length > 0
+    ? `    admin: {\n${adminGroups.map((g) => {
+        const Group = pascalCase(g.name);
+        return `      ${g.name}: create${Group}AdminClient(),`;
+      }).join('\n')}\n    },`
+    : '';
+
+  return `${headerComment}
+${imports.join('\n')}
+
+${browserApiType}
+
+// Memoized SDK instance - avoids recreating the API client on every call
+let _cachedBrowserApi: BrowserApi | null = null;
+
+export function browserApi(): BrowserApi {
+  // Return cached instance if available
+  if (_cachedBrowserApi) return _cachedBrowserApi;
+
+  _cachedBrowserApi = {
+${regularInit}
+${adminInit}
+  };
+
+  return _cachedBrowserApi;
+}
+`;
+}
+
+/**
+ * Generate main index
+ */
+function generateMainIndex(): string {
+  const headerComment = header('sdk:gen --clients');
+
+  return `${headerComment}
+export * from "./browser";
+export * from "./server";
+export * from "./shared";
+export * from "./domains";
+`;
 }

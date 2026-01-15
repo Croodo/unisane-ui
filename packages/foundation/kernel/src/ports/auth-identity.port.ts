@@ -6,6 +6,10 @@
  * This eliminates direct coupling between auth and identity modules.
  */
 
+import { setGlobalProvider, getGlobalProvider, hasGlobalProvider } from './global-provider';
+
+const PROVIDER_KEY = 'auth-identity';
+
 /**
  * Minimal user representation returned by identity lookups.
  */
@@ -74,15 +78,12 @@ export interface AuthIdentityPort {
   ): Promise<{ id: string } | null>;
 }
 
-// Provider storage
-let _provider: AuthIdentityPort | null = null;
-
 /**
  * Set the auth-identity provider implementation.
  * Call this at app bootstrap before any auth operations.
  */
 export function setAuthIdentityProvider(provider: AuthIdentityPort): void {
-  _provider = provider;
+  setGlobalProvider(PROVIDER_KEY, provider);
 }
 
 /**
@@ -90,17 +91,18 @@ export function setAuthIdentityProvider(provider: AuthIdentityPort): void {
  * Throws if not configured.
  */
 export function getAuthIdentityProvider(): AuthIdentityPort {
-  if (!_provider) {
+  const provider = getGlobalProvider<AuthIdentityPort>(PROVIDER_KEY);
+  if (!provider) {
     throw new Error(
       "AuthIdentityPort not configured. Call setAuthIdentityProvider() at bootstrap."
     );
   }
-  return _provider;
+  return provider;
 }
 
 /**
  * Check if provider is configured (useful for optional features).
  */
 export function hasAuthIdentityProvider(): boolean {
-  return _provider !== null;
+  return hasGlobalProvider(PROVIDER_KEY);
 }

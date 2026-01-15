@@ -18,7 +18,7 @@ export async function listPage(args: {
 }
 
 export async function getScopeLastActivity(scopeIds: string[]) {
-  return repo.getScopeLastActivity(scopeIds);
+  return repo.findScopeLastActivity(scopeIds);
 }
 
 /** Admin list - all audit logs, optionally filtered by scopeId */

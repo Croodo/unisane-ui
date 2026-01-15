@@ -2,6 +2,8 @@ import {
   col,
   COLLECTIONS,
   Email,
+  UpdateBuilder,
+  toMongoUpdate,
   type Document,
 } from '@unisane/kernel';
 import type { EmailSuppressionRepoPort } from '../domain/ports';
@@ -21,9 +23,15 @@ const supCol = () => col<SuppressionDoc>(COLLECTIONS.EMAIL_SUPPRESSIONS);
 export const EmailSuppressionRepoMongo: EmailSuppressionRepoPort = {
   async upsert(args) {
     const email = Email.create(args.email).toString();
+    const now = new Date();
+    const builder = new UpdateBuilder<SuppressionDoc>()
+      .set("reason", args.reason)
+      .set("provider", args.provider ?? null)
+      .set("updatedAt", now)
+      .setOnInsert("createdAt", now);
     await supCol().updateOne(
       { email, scopeId: args.scopeId ?? null } as Document,
-      { $set: { reason: args.reason, provider: args.provider ?? null, updatedAt: new Date() }, $setOnInsert: { createdAt: new Date() } } as Document,
+      toMongoUpdate(builder.build()) as Document,
       { upsert: true }
     );
   },

@@ -6,5 +6,5 @@ export async function getScopeOpenInvoiceCounts(scopeIds: string[]) {
 }
 
 export async function getScopeLatestSubscriptions(scopeIds: string[]) {
-  return await SubscriptionsRepository.getLatestByScopeIds(scopeIds);
+  return await SubscriptionsRepository.findLatestByScopeIds(scopeIds);
 }

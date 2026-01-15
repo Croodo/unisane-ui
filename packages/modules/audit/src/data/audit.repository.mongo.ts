@@ -6,8 +6,8 @@ import {
   type Filter,
   type Document,
   type WithId,
-  type ObjectId,
 } from "@unisane/kernel";
+import type { ObjectId } from "mongodb";
 import type { AuditRepoPort } from "../domain/ports";
 import type { AuditLogView } from "../domain/types";
 type AuditLogDoc = {
@@ -71,7 +71,7 @@ export const AuditRepoMongo: AuditRepoPort = {
       ...(prevCursor ? { prevCursor } : {}),
     } as const;
   },
-  async getScopeLastActivity(scopeIds: string[]) {
+  async findScopeLastActivity(scopeIds: string[]) {
     if (!scopeIds?.length) return new Map<string, Date | null>();
     const rows = (await auditCol()
       .aggregate([

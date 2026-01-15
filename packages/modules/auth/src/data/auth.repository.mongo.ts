@@ -2,11 +2,13 @@ import {
   col,
   COLLECTIONS,
   maybeObjectId,
-  ObjectId,
+  UpdateBuilder,
+  toMongoUpdate,
   type WithId,
   type Filter,
   type UpdateFilter,
 } from '@unisane/kernel';
+import type { ObjectId } from 'mongodb';
 import type { AuthCredentialView } from '../domain/types';
 import type { AuthCredentialRepoPort } from '../domain/ports';
 
@@ -78,19 +80,17 @@ export const AuthCredentialRepoMongo: AuthCredentialRepoPort = {
   },
   async updatePassword(emailNorm, input) {
     const now = new Date();
+    const builder = new UpdateBuilder<AuthCredentialDoc>()
+      .set('algo', input.algo)
+      .set('salt', input.salt)
+      .set('hash', input.hash)
+      .set('passwordChangedAt', now)
+      .set('failedLogins', 0)
+      .set('lockedUntil', null)
+      .set('updatedAt', now);
     const result = await credCol().findOneAndUpdate(
       { emailNorm } as Filter<AuthCredentialDoc>,
-      {
-        $set: {
-          algo: input.algo,
-          salt: input.salt,
-          hash: input.hash,
-          passwordChangedAt: now,
-          failedLogins: 0,
-          lockedUntil: null,
-          updatedAt: now,
-        },
-      } as UpdateFilter<AuthCredentialDoc>,
+      toMongoUpdate(builder.build()) as UpdateFilter<AuthCredentialDoc>,
       { returnDocument: 'after' }
     );
     // MongoDB driver returns the document directly or via .value depending on version
@@ -98,7 +98,7 @@ export const AuthCredentialRepoMongo: AuthCredentialRepoPort = {
     if (!doc) return null;
     return mapDocToView(doc);
   },
-  async recordFailed(credId, opts = {}) {
+  async recordFailedLoginAttempt(credId, opts = {}) {
     const lockOn = Math.max(1, Math.trunc(opts.lockOnCount ?? 5));
     const lockMs = Math.max(1, Math.trunc(opts.lockForMs ?? 10 * 60 * 1000));
 
@@ -106,17 +106,21 @@ export const AuthCredentialRepoMongo: AuthCredentialRepoPort = {
     if (!current) return null;
 
     const nextFailed = (current.failedLogins ?? 0) + 1;
+    const builder = new UpdateBuilder<AuthCredentialDoc>();
     const updates: Partial<AuthCredentialDoc> = {};
     if (nextFailed >= lockOn) {
       updates.lockedUntil = new Date(Date.now() + lockMs);
       updates.failedLogins = 0;
+      builder.set('lockedUntil', updates.lockedUntil);
+      builder.set('failedLogins', 0);
     } else {
       updates.failedLogins = nextFailed;
+      builder.set('failedLogins', nextFailed);
     }
 
     await credCol().updateOne(
       { _id: maybeObjectId(credId) },
-      { $set: updates } as UpdateFilter<AuthCredentialDoc>
+      toMongoUpdate(builder.build()) as UpdateFilter<AuthCredentialDoc>
     );
 
     // Merge updates with current document for return value
@@ -126,7 +130,13 @@ export const AuthCredentialRepoMongo: AuthCredentialRepoPort = {
     };
     return mapDocToView(merged);
   },
-  async clearFailures(credId: string) {
-    await credCol().updateOne({ _id: maybeObjectId(credId) }, { $set: { failedLogins: 0, lockedUntil: null } } as UpdateFilter<AuthCredentialDoc>);
+  async resetFailedAttempts(credId: string) {
+    const builder = new UpdateBuilder<AuthCredentialDoc>()
+      .set('failedLogins', 0)
+      .set('lockedUntil', null);
+    await credCol().updateOne(
+      { _id: maybeObjectId(credId) },
+      toMongoUpdate(builder.build()) as UpdateFilter<AuthCredentialDoc>
+    );
   },
 };

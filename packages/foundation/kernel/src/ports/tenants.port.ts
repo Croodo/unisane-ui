@@ -8,6 +8,9 @@
 
 import type { PlanId } from '../constants/plan';
 import type { SubscriptionStatus } from '../constants/billing';
+import { setGlobalProvider, getGlobalProvider, hasGlobalProvider } from './global-provider';
+
+const PROVIDER_KEY = 'tenants';
 
 /**
  * Tenant status - uses SSOT pattern
@@ -72,15 +75,12 @@ export interface TenantsPort {
   updateStatus?(tenantId: string, status: TenantStatus): Promise<void>;
 }
 
-// Provider storage
-let _provider: TenantsPort | null = null;
-
 /**
  * Set the tenants provider implementation.
  * Call this at app bootstrap.
  */
 export function setTenantsProvider(provider: TenantsPort): void {
-  _provider = provider;
+  setGlobalProvider(PROVIDER_KEY, provider);
 }
 
 /**
@@ -88,19 +88,20 @@ export function setTenantsProvider(provider: TenantsPort): void {
  * Throws if not configured.
  */
 export function getTenantsProvider(): TenantsPort {
-  if (!_provider) {
+  const provider = getGlobalProvider<TenantsPort>(PROVIDER_KEY);
+  if (!provider) {
     throw new Error(
       "TenantsPort not configured. Call setTenantsProvider() at bootstrap."
     );
   }
-  return _provider;
+  return provider;
 }
 
 /**
  * Check if provider is configured.
  */
 export function hasTenantsProvider(): boolean {
-  return _provider !== null;
+  return hasGlobalProvider(PROVIDER_KEY);
 }
 
 /**

@@ -2,6 +2,8 @@ import {
   col,
   COLLECTIONS,
   softDeleteFilter,
+  UpdateBuilder,
+  toMongoUpdate,
   type Document,
 } from "@unisane/kernel";
 import type { FlagsRepoPort } from "../domain/ports";
@@ -57,24 +59,20 @@ export const FlagsRepoMongo: FlagsRepoPort = {
       }
     }
     const sel = { env: params.env, key: params.key } as const;
+    const now = new Date();
+    const builder = new UpdateBuilder<FeatureFlagDoc>()
+      .set("enabledDefault", params.enabledDefault)
+      .set("rules", params.rules as unknown[])
+      .set("updatedBy", params.actorId)
+      .set("deletedAt", null)
+      .set("updatedAt", now)
+      .inc("snapshotVersion", 1)
+      .setOnInsert("env", params.env)
+      .setOnInsert("key", params.key)
+      .setOnInsert("createdAt", now);
     const r = await flagsCol().findOneAndUpdate(
       sel as unknown as Document,
-      {
-        $set: {
-          enabledDefault: params.enabledDefault,
-          rules: params.rules,
-          updatedBy: params.actorId,
-          deletedAt: null,
-          updatedAt: new Date(),
-        },
-        // snapshotVersion is derived purely via $inc. On first insert it will become 1.
-        $setOnInsert: {
-          env: params.env,
-          key: params.key,
-          createdAt: new Date(),
-        },
-        $inc: { snapshotVersion: 1 },
-      } as Document,
+      toMongoUpdate(builder.build()) as Document,
       { upsert: true, returnDocument: "after" }
     );
     const after =

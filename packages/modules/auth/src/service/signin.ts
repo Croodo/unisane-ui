@@ -12,9 +12,9 @@ export async function signin(input: { email: string; password: string }): Promis
   }
   const ok = await scryptVerifyPassword(input.password, cred.salt, cred.hash);
   if (!ok) {
-    await AuthCredentialRepo.recordFailed(cred.id);
+    await AuthCredentialRepo.recordFailedLoginAttempt(cred.id);
     throw ERR.loginRequired();
   }
-  await AuthCredentialRepo.clearFailures(cred.id);
+  await AuthCredentialRepo.resetFailedAttempts(cred.id);
   return { userId: cred.userId };
 }

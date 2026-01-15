@@ -27,7 +27,9 @@ async function UsersStats({ searchParams }: { searchParams: SearchParams }) {
     ? { filters: { q: currentSearch } }
     : undefined;
 
-  const stats = await api.admin.users.stats(statsFilters).catch(() => undefined);
+  const stats = await api.admin.users
+    .stats(statsFilters)
+    .catch(() => undefined);
 
   const statsItems: StatItem[] = [
     { label: "Total Users", value: stats?.total ?? 0, icon: "group" },

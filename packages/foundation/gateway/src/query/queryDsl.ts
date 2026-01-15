@@ -1,6 +1,27 @@
 import { z } from 'zod';
-import type { FieldDef, Op } from '../registry/types';
 import { base64UrlDecodeUtf8, BadRequestError } from '@unisane/kernel';
+
+// ─── INLINE TYPES (previously from registry/types) ──────────────────────────
+
+/** Supported filter operators */
+export type Op = 'eq' | 'contains' | 'in' | 'gte' | 'lte';
+
+/** Field data types */
+export type FieldType = 'string' | 'date' | 'enum' | 'number';
+
+/** Field definition for filtering/sorting */
+export interface FieldDef {
+  /** Database field key */
+  key: string;
+  /** Data type */
+  type: FieldType;
+  /** Allowed filter operators */
+  ops: Op[];
+  /** For enum types: allowed values */
+  enumValues?: readonly string[];
+  /** For enum types: ranking for sorting */
+  enumRank?: Record<string, number>;
+}
 
 // Maximum allowed size for filters parameter (prevents DoS via large payloads)
 const MAX_FILTERS_SIZE = 10_000; // 10KB

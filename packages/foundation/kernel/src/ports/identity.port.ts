@@ -6,6 +6,10 @@
  * Identity module implements this port, consumers depend on the interface.
  */
 
+import { setGlobalProvider, getGlobalProvider, hasGlobalProvider } from './global-provider';
+
+const PROVIDER_KEY = 'identity';
+
 /**
  * Minimal user view for enrichment (audit logs, etc.)
  */
@@ -27,15 +31,12 @@ export interface IdentityPort {
   findUsersByIds(ids: string[]): Promise<Map<string, UserView>>;
 }
 
-// Provider storage
-let _provider: IdentityPort | null = null;
-
 /**
  * Set the identity provider implementation.
  * Call this at app bootstrap.
  */
 export function setIdentityProvider(provider: IdentityPort): void {
-  _provider = provider;
+  setGlobalProvider(PROVIDER_KEY, provider);
 }
 
 /**
@@ -43,17 +44,18 @@ export function setIdentityProvider(provider: IdentityPort): void {
  * Throws if not configured.
  */
 export function getIdentityProvider(): IdentityPort {
-  if (!_provider) {
+  const provider = getGlobalProvider<IdentityPort>(PROVIDER_KEY);
+  if (!provider) {
     throw new Error(
       "IdentityPort not configured. Call setIdentityProvider() at bootstrap."
     );
   }
-  return _provider;
+  return provider;
 }
 
 /**
  * Check if provider is configured.
  */
 export function hasIdentityProvider(): boolean {
-  return _provider !== null;
+  return hasGlobalProvider(PROVIDER_KEY);
 }

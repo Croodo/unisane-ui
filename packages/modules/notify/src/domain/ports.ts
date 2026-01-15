@@ -60,15 +60,15 @@ export interface InappRepoPort {
   /** Count unread notifications for user */
   countUnread(scopeId: string, userId: string): Promise<number>;
 
-  /** Delete a notification */
-  deleteNotification(
+  /** Soft-delete a notification */
+  softDeleteNotification(
     scopeId: string,
     userId: string,
     notificationId: string
   ): Promise<{ deleted: boolean }>;
 
-  /** Delete all notifications for user */
-  deleteAllNotifications(
+  /** Soft-delete all notifications for user */
+  softDeleteAllNotifications(
     scopeId: string,
     userId: string
   ): Promise<{ count: number }>;

@@ -16,7 +16,7 @@ export const JobsService = {
   markExportRunning: JobsRepo.markExportRunning,
   markExportDone: JobsRepo.markExportDone,
   markExportFailed: JobsRepo.markExportFailed,
-  getExportById: JobsRepo.getExportById,
+  getExportById: JobsRepo.findExportById,
 } as const;
 
 export type { ExportJob };

@@ -3,6 +3,8 @@ import {
   COLLECTIONS,
   seekPageMongoCollection,
   clampInt,
+  UpdateBuilder,
+  toMongoUpdate,
   type Collection,
   type Filter,
   type Document,
@@ -67,9 +69,17 @@ export const mongoInvoicesRepo: InvoicesRepo = {
   },
   async upsertByProviderId(args: { scopeId: string; provider: string; providerInvoiceId: string; amount: number; currency: string; status: InvoiceStatus; issuedAt?: Date | null; url?: string | null }): Promise<void> {
     const now = new Date();
+    const builder = new UpdateBuilder<InvoiceDoc>()
+      .set("amount", args.amount)
+      .set("currency", args.currency)
+      .set("status", args.status)
+      .set("issuedAt", args.issuedAt ?? new Date())
+      .set("url", args.url ?? null)
+      .set("updatedAt", now)
+      .setOnInsert("createdAt", now);
     await invoicesCol().updateOne(
       { scopeId: args.scopeId, provider: args.provider, providerInvoiceId: args.providerInvoiceId },
-      { $set: { amount: args.amount, currency: args.currency, status: args.status, issuedAt: args.issuedAt ?? new Date(), url: args.url ?? null, updatedAt: now }, $setOnInsert: { createdAt: now } },
+      toMongoUpdate(builder.build()),
       { upsert: true }
     );
   },

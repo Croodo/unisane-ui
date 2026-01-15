@@ -45,11 +45,15 @@ export async function genHooks(options: GenHooksOptions): Promise<void> {
   // Generate shared modules
   const sharedTypes = generateSharedTypes();
   const sharedUnwrap = generateSharedUnwrap();
+  const sharedProvider = generateSharedProvider();
+  const sharedUtils = generateSharedUtils();
   const sharedIndex = generateSharedIndex();
 
   if (!dryRun) {
     await writeText(path.join(output, 'shared/types.ts'), sharedTypes);
     await writeText(path.join(output, 'shared/unwrap.ts'), sharedUnwrap);
+    await writeText(path.join(output, 'shared/provider.tsx'), sharedProvider);
+    await writeText(path.join(output, 'shared/utils.ts'), sharedUtils);
     await writeText(path.join(output, 'shared/index.ts'), sharedIndex);
   }
 
@@ -164,6 +168,127 @@ function generateSharedIndex(): string {
   return `${headerComment}
 export * from "./types";
 export * from "./unwrap";
+export * from "./provider";
+export * from "./utils";
+`;
+}
+
+/**
+ * Generate shared Provider component
+ */
+function generateSharedProvider(): string {
+  const headerComment = header('sdk:gen --hooks');
+
+  return `${headerComment}
+"use client";
+/**
+ * Simple React Query provider for SDK hooks.
+ *
+ * The generated hooks use @tanstack/react-query directly
+ * and don't require any custom context - just the standard QueryClientProvider.
+ */
+import { createContext, useContext, useMemo } from 'react';
+import type { QueryClient } from '@tanstack/react-query';
+
+// Simple context for hooks namespace (optional - used for compatibility)
+type Hooks = Record<string, unknown>;
+const HooksCtx = createContext<Hooks | null>(null);
+
+export type HooksProviderProps = {
+  children: React.ReactNode;
+  /** Pre-created hooks object - if provided, it's made available via useApiHooks() */
+  providedHooks?: Hooks;
+};
+
+/**
+ * Provider for SDK hooks.
+ *
+ * For new code, you don't need this - just use QueryClientProvider directly
+ * and import hooks from '@/src/sdk/hooks/generated'.
+ *
+ * This is kept for backwards compatibility with code that uses useApiHooks().
+ */
+export function HooksProvider({ children, providedHooks }: HooksProviderProps) {
+  const value = useMemo(() => providedHooks ?? null, [providedHooks]);
+  return <HooksCtx.Provider value={value}>{children}</HooksCtx.Provider>;
+}
+
+/**
+ * Access hooks via context (legacy pattern).
+ *
+ * For new code, prefer importing hooks directly:
+ * \`\`\`ts
+ * import { hooks } from '@/src/sdk/hooks/generated';
+ * // or
+ * import { useAuthPasswordSignIn } from '@/src/sdk/hooks/generated';
+ * \`\`\`
+ */
+export function useApiHooks<T = Hooks>(): T {
+  const ctx = useContext(HooksCtx);
+  if (!ctx) {
+    throw new Error(
+      'useApiHooks must be used within <HooksProvider>. ' +
+      'For new code, prefer importing hooks directly from @/src/sdk/hooks/generated'
+    );
+  }
+  return ctx as unknown as T;
+}
+
+/**
+ * Create a pre-configured QueryClient with sensible defaults for the SDK.
+ */
+export function createQueryClient(): QueryClient {
+  // Dynamically import to avoid bundling issues
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { QueryClient } = require('@tanstack/react-query') as typeof import('@tanstack/react-query');
+  return new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 1000 * 60, // 1 minute
+        refetchOnWindowFocus: false,
+      },
+    },
+  });
+}
+`;
+}
+
+/**
+ * Generate shared utils
+ */
+function generateSharedUtils(): string {
+  const headerComment = header('sdk:gen --hooks');
+
+  return `${headerComment}
+"use client";
+import { useQueryClient } from '@tanstack/react-query';
+import type { QueryKey } from '@tanstack/react-query';
+
+// Small DX helpers around TanStack Query — pair well with generated \`keys\`.
+
+export function useInvalidate() {
+  const qc = useQueryClient();
+  return {
+    // Invalidate an exact key (e.g., keys.users.list({ query: { limit: 20 } }))
+    invalidate: async (key: readonly unknown[]) => {
+      await qc.invalidateQueries({ queryKey: key as QueryKey, exact: true });
+    },
+    // Invalidate by prefix (e.g., ['users'] or ['users','get'])
+    invalidatePrefix: async (prefix: readonly unknown[]) => {
+      await qc.invalidateQueries({ queryKey: prefix as QueryKey, exact: false });
+    },
+  } as const;
+}
+
+export function usePrefetch() {
+  const qc = useQueryClient();
+  return {
+    // Prefetch a query given a key and a fetcher; storeTimeMs controls cache lifetime
+    prefetch: async <T>(key: readonly unknown[], fetcher: () => Promise<T>, storeTimeMs = 30_000) => {
+      await qc.prefetchQuery({ queryKey: key as QueryKey, queryFn: fetcher, staleTime: storeTimeMs });
+    },
+  } as const;
+}
 `;
 }
 

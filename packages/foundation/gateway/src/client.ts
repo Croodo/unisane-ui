@@ -8,10 +8,6 @@
 // Filter params utilities (browser-safe with inlined base64 encoding)
 export { parseFiltersParam, encodeFiltersParam } from './query/filterParams.client';
 
-// Admin list configurations (now uses client-safe filter parsing)
-export { adminListConfigs } from './registry/admin.lists';
-export type { AdminListConfig } from './registry/admin.lists';
-
 // Rate limit policies (plain object, no Node.js dependencies)
 export { RATE_LIMIT_POLICIES } from './rate-limits';
 export type { OpKey } from './rate-limits';

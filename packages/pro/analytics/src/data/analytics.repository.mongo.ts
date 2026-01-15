@@ -3,7 +3,7 @@ import { subDays, format } from "date-fns";
 import type { AnalyticsRepo } from "../domain/ports";
 
 export const AnalyticsRepoMongo: AnalyticsRepo = {
-  async getRevenueMetrics() {
+  async findRevenueMetrics() {
     await connectDb();
     const now = new Date();
     const thirtyDaysAgo = subDays(now, 30);
@@ -76,7 +76,7 @@ export const AnalyticsRepoMongo: AnalyticsRepo = {
     };
   },
 
-  async getTenantMetrics() {
+  async findTenantMetrics() {
     await connectDb();
     const now = new Date();
     const thirtyDaysAgo = subDays(now, 30);
@@ -137,7 +137,7 @@ export const AnalyticsRepoMongo: AnalyticsRepo = {
     };
   },
 
-  async getChurnMetrics() {
+  async findChurnMetrics() {
     await connectDb();
     const now = new Date();
     const thirtyDaysAgo = subDays(now, 30);
@@ -212,7 +212,7 @@ export const AnalyticsRepoMongo: AnalyticsRepo = {
     };
   },
 
-  async getPlanDistribution() {
+  async findPlanDistribution() {
     await connectDb();
     const distribution = await col("tenants")
       .aggregate([
@@ -232,7 +232,7 @@ export const AnalyticsRepoMongo: AnalyticsRepo = {
     }));
   },
 
-  async getRecentSignups() {
+  async findRecentSignups() {
     await connectDb();
     const users = await col("users")
       .find({})

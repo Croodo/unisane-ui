@@ -22,11 +22,11 @@ export async function getAdminAnalyticsDashboard(): Promise<AnalyticsDashboard> 
     // 2. Compute metrics (parallel)
     const [revenue, activeUsers, churnRate, planDistribution, recentSignups] =
       await Promise.all([
-        analyticsRepository.getRevenueMetrics(),
-        analyticsRepository.getTenantMetrics(),
-        analyticsRepository.getChurnMetrics(),
-        analyticsRepository.getPlanDistribution(),
-        analyticsRepository.getRecentSignups(),
+        analyticsRepository.findRevenueMetrics(),
+        analyticsRepository.findTenantMetrics(),
+        analyticsRepository.findChurnMetrics(),
+        analyticsRepository.findPlanDistribution(),
+        analyticsRepository.findRecentSignups(),
       ]);
 
     // 3. Construct dashboard

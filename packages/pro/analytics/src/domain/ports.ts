@@ -22,9 +22,9 @@ export type RecentSignup = {
 };
 
 export interface AnalyticsRepo {
-  getRevenueMetrics(): Promise<MetricWithHistory>;
-  getTenantMetrics(): Promise<MetricWithHistory>;
-  getChurnMetrics(): Promise<MetricWithHistory>;
-  getPlanDistribution(): Promise<PlanDistribution[]>;
-  getRecentSignups(): Promise<RecentSignup[]>;
+  findRevenueMetrics(): Promise<MetricWithHistory>;
+  findTenantMetrics(): Promise<MetricWithHistory>;
+  findChurnMetrics(): Promise<MetricWithHistory>;
+  findPlanDistribution(): Promise<PlanDistribution[]>;
+  findRecentSignups(): Promise<RecentSignup[]>;
 }

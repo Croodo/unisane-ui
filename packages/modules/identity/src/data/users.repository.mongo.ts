@@ -17,10 +17,14 @@ import {
   decryptField,
   createSearchToken,
   parseEncryptionKey,
-  ObjectId,
+  newEntityId,
+  toNativeId,
+  UpdateBuilder,
+  toMongoUpdate,
   type Collection,
   type GlobalRole,
 } from "@unisane/kernel";
+import type { ObjectId } from "mongodb";
 import type {
   UserCreateInput,
   UserUpdateInput,
@@ -84,7 +88,7 @@ async function create(payload: UserCreateInput) {
   const encryptionKey = getEncryptionKey();
 
   const doc: UserDoc = {
-    _id: new ObjectId(),
+    _id: toNativeId(newEntityId()) as ObjectId,
     email: payload.email,
     emailEncrypted: encryptionKey ? encryptField(payload.email, encryptionKey) : null,
     emailSearchToken: encryptionKey ? createSearchToken(payload.email.toLowerCase(), encryptionKey) : null,
@@ -277,67 +281,70 @@ async function findByIds(ids: string[]) {
 }
 
 async function updateById(id: string, update: UserUpdateInput) {
-  const $set: Record<string, unknown> = { updatedAt: new Date() };
   const encryptionKey = getEncryptionKey();
+  const builder = new UpdateBuilder<UserDoc>();
+
+  // Always set updatedAt
+  builder.set("updatedAt", new Date());
 
   // Standard fields
   if ("email" in (update ?? {})) {
-    $set.email = update!.email;
+    builder.set("email", update!.email as string);
     // Also update encrypted fields if encryption is enabled
     if (encryptionKey && update!.email) {
-      $set.emailEncrypted = encryptField(update!.email, encryptionKey);
-      $set.emailSearchToken = createSearchToken(update!.email.toLowerCase(), encryptionKey);
+      builder.set("emailEncrypted", encryptField(update!.email, encryptionKey));
+      builder.set("emailSearchToken", createSearchToken(update!.email.toLowerCase(), encryptionKey));
     }
   }
   if ("displayName" in (update ?? {}))
-    $set.displayName = update!.displayName ?? null;
-  if ("imageUrl" in (update ?? {})) $set.imageUrl = update!.imageUrl ?? null;
-  if ("username" in (update ?? {})) $set.username = update!.username ?? null;
-  if ("firstName" in (update ?? {})) $set.firstName = update!.firstName ?? null;
-  if ("lastName" in (update ?? {})) $set.lastName = update!.lastName ?? null;
+    builder.set("displayName", update!.displayName ?? null);
+  if ("imageUrl" in (update ?? {})) builder.set("imageUrl", update!.imageUrl ?? null);
+  if ("username" in (update ?? {})) builder.set("username", update!.username ?? null);
+  if ("firstName" in (update ?? {})) builder.set("firstName", update!.firstName ?? null);
+  if ("lastName" in (update ?? {})) builder.set("lastName", update!.lastName ?? null);
   if ("phone" in (update ?? {})) {
-    $set.phone = update!.phone ?? null;
+    builder.set("phone", update!.phone ?? null);
     // Also update encrypted fields if encryption is enabled
     if (encryptionKey && update!.phone) {
-      $set.phoneEncrypted = encryptField(update!.phone, encryptionKey);
-      $set.phoneSearchToken = createSearchToken(update!.phone, encryptionKey);
+      builder.set("phoneEncrypted", encryptField(update!.phone, encryptionKey));
+      builder.set("phoneSearchToken", createSearchToken(update!.phone, encryptionKey));
     } else if (encryptionKey && !update!.phone) {
       // Clear encrypted fields if phone is removed
-      $set.phoneEncrypted = null;
-      $set.phoneSearchToken = null;
+      builder.set("phoneEncrypted", null);
+      builder.set("phoneSearchToken", null);
     }
   }
-  if ("locale" in (update ?? {})) $set.locale = update!.locale ?? null;
-  if ("timezone" in (update ?? {})) $set.timezone = update!.timezone ?? null;
+  if ("locale" in (update ?? {})) builder.set("locale", update!.locale ?? null);
+  if ("timezone" in (update ?? {})) builder.set("timezone", update!.timezone ?? null);
   if ("globalRole" in (update ?? {}))
-    $set.globalRole = update!.globalRole ?? null;
+    builder.set("globalRole", update!.globalRole ?? null);
   if ("authUserId" in (update ?? {}))
-    $set.authUserId = update!.authUserId ?? null;
+    builder.set("authUserId", update!.authUserId ?? null);
 
   // Verification flags (system-set)
   const flagUpdate = update as Partial<
     Pick<UserDoc, "emailVerified" | "phoneVerified">
   >;
   if ("emailVerified" in (update ?? {}))
-    $set.emailVerified = flagUpdate.emailVerified ?? null;
+    builder.set("emailVerified", flagUpdate.emailVerified ?? null);
   if ("phoneVerified" in (update ?? {}))
-    $set.phoneVerified = flagUpdate.phoneVerified ?? null;
+    builder.set("phoneVerified", flagUpdate.phoneVerified ?? null);
 
   // Session management
   const updObj = update as Record<string, unknown> | null | undefined;
   if (updObj && Object.prototype.hasOwnProperty.call(updObj, "sessions")) {
-    $set.sessions = (updObj as Record<string, unknown>).sessions;
+    builder.set("sessions", (updObj as Record<string, unknown>).sessions as Record<string, unknown>);
   }
   if ("sessionsRevokedAt" in (update ?? {}))
-    $set.sessionsRevokedAt = update!.sessionsRevokedAt ?? null;
+    builder.set("sessionsRevokedAt", update!.sessionsRevokedAt ?? null);
 
   // Soft delete fields
-  if ("deletedAt" in (update ?? {})) $set.deletedAt = update!.deletedAt ?? null;
-  if ("deletedBy" in (update ?? {})) $set.deletedBy = update!.deletedBy ?? null;
+  if ("deletedAt" in (update ?? {})) builder.set("deletedAt", update!.deletedAt ?? null);
+  if ("deletedBy" in (update ?? {})) builder.set("deletedBy", update!.deletedBy ?? null);
 
   const r = await usersCol().findOneAndUpdate(
     { _id: maybeObjectId(id) },
-    { $set },
+    toMongoUpdate(builder.build()),
     { returnDocument: "after" }
   );
 

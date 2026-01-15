@@ -8,5 +8,5 @@ export interface JobsRepoPort {
   markExportRunning(id: string): Promise<void>;
   markExportDone(id: string): Promise<void>;
   markExportFailed(id: string, error: string): Promise<void>;
-  getExportById(tenantId: string, id: string): Promise<ExportJobView | null>;
+  findExportById(tenantId: string, id: string): Promise<ExportJobView | null>;
 }

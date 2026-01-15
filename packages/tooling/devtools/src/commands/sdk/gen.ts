@@ -14,7 +14,7 @@ import { genServer } from '../../generators/sdk/gen-server.js';
 import { genHooks } from '../../generators/sdk/gen-hooks.js';
 import { genVue } from '../../generators/sdk/gen-vue.js';
 import { genZod } from '../../generators/sdk/gen-zod.js';
-import { genAdminHooks } from '../../generators/sdk/gen-admin-hooks.js';
+import { genOpenApi } from '../../generators/sdk/gen-openapi.js';
 import type { SdkTarget } from '../../generators/sdk/types.js';
 
 export interface SdkGenOptions {
@@ -28,8 +28,8 @@ export interface SdkGenOptions {
   zod?: boolean;
   /** Generate TypeScript types only */
   types?: boolean;
-  /** Generate admin hooks and registries */
-  adminHooks?: boolean;
+  /** Generate OpenAPI spec only */
+  openapi?: boolean;
   /** Preview changes without writing files */
   dryRun?: boolean;
   /** Working directory */
@@ -46,13 +46,13 @@ export async function sdkGen(options: SdkGenOptions = {}): Promise<number> {
     vue = false,
     zod = false,
     types = false,
-    adminHooks = false,
+    openapi = false,
     dryRun = false,
     cwd = process.cwd(),
   } = options;
 
   // Determine which targets to generate
-  const hasSpecificTarget = clients || hooks || vue || zod || types || adminHooks;
+  const hasSpecificTarget = clients || hooks || vue || zod || types || openapi;
   const targets: SdkTarget[] = hasSpecificTarget
     ? [
         ...(clients ? ['browser', 'server'] as SdkTarget[] : []),
@@ -60,9 +60,9 @@ export async function sdkGen(options: SdkGenOptions = {}): Promise<number> {
         ...(vue ? ['vue'] as SdkTarget[] : []),
         ...(zod ? ['zod'] as SdkTarget[] : []),
         ...(types ? ['types'] as SdkTarget[] : []),
-        ...(adminHooks ? ['admin-hooks'] as SdkTarget[] : []),
+        ...(openapi ? ['openapi'] as SdkTarget[] : []),
       ]
-    : ['browser', 'server', 'types', 'hooks', 'admin-hooks']; // Default targets (includes admin-hooks)
+    : ['browser', 'server', 'types', 'hooks']; // Default targets (openapi not included by default)
 
   const spinner = log.spinner('Loading configuration...');
   spinner.start();
@@ -130,28 +130,28 @@ export async function sdkGen(options: SdkGenOptions = {}): Promise<number> {
       }
     }
 
-    // Generate browser client
+    // Generate browser client (domain-structured)
     if (targets.includes('browser')) {
       spinner.text = 'Generating browser client...';
       try {
-        const browserOutput = path.join(paths.sdkOutput, 'clients/generated/browser.ts');
+        const browserOutput = path.join(paths.sdkOutput, 'clients/generated');
         await genBrowser({
           output: browserOutput,
           appRouter,
           routerPath: paths.routerPath,
           dryRun,
         });
-        generated.push('clients/generated/browser.ts');
+        generated.push('clients/generated/');
       } catch (e) {
         errors.push(`browser: ${e instanceof Error ? e.message : String(e)}`);
       }
     }
 
-    // Generate server client
+    // Generate server client (domain-structured)
     if (targets.includes('server')) {
       spinner.text = 'Generating server client...';
       try {
-        const serverOutput = path.join(paths.sdkOutput, 'clients/generated/server.ts');
+        const serverOutput = path.join(paths.sdkOutput, 'clients/generated');
         await genServer({
           output: serverOutput,
           appRouter,
@@ -231,34 +231,20 @@ export async function sdkGen(options: SdkGenOptions = {}): Promise<number> {
       }
     }
 
-    // Generate admin hooks and grid registries
-    if (targets.includes('admin-hooks' as SdkTarget)) {
-      spinner.text = 'Generating admin hooks...';
+    // Generate OpenAPI spec
+    if (targets.includes('openapi')) {
+      spinner.text = 'Generating OpenAPI spec...';
       try {
-        // Try to load adminListConfigs from @unisane/gateway
-        // This uses dynamic import since gateway is only available in projects that use it
-        let adminListConfigs: unknown[] = [];
-        try {
-          // Dynamic import to avoid compile-time dependency on @unisane/gateway
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const gatewayModule = await (Function('return import("@unisane/gateway")')() as Promise<any>);
-          adminListConfigs = gatewayModule.adminListConfigs || [];
-        } catch {
-          // Gateway may not be available - this is expected in standalone devtools usage
-          log.warn('Could not load @unisane/gateway - skipping admin hooks');
-          log.info('Admin hooks require @unisane/gateway to be installed');
-        }
-
-        if (adminListConfigs.length > 0) {
-          await genAdminHooks({
-            output: paths.sdkOutput,
-            adminListConfigs: adminListConfigs as Parameters<typeof genAdminHooks>[0]['adminListConfigs'],
-            dryRun,
-          });
-          generated.push('admin-hooks/');
-        }
+        const openapiOutput = path.join(paths.sdkOutput, 'openapi.json');
+        await genOpenApi({
+          output: openapiOutput,
+          appRouter,
+          routerPath: paths.routerPath,
+          dryRun,
+        });
+        generated.push('openapi.json');
       } catch (e) {
-        errors.push(`admin-hooks: ${e instanceof Error ? e.message : String(e)}`);
+        errors.push(`openapi: ${e instanceof Error ? e.message : String(e)}`);
       }
     }
 

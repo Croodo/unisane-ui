@@ -17,6 +17,8 @@
 | **Work with events** | `RULES.md` → `REFERENCE/EVENTS.md` |
 | **Review a PR** | `RULES.md` only (it's short) |
 | **Understand architecture** | `ONBOARDING.md` → `RULES.md` → `PATTERNS.md` |
+| **Database switching/migration** | `REFERENCE/DATABASE-PORTABILITY.md` |
+| **Work with repositories** | `PATTERNS.md` → `REFERENCE/DATABASE-PORTABILITY.md` |
 
 ---
 
@@ -66,7 +68,8 @@ ARCHITECTURE/
     ├── PORTS.md                ← All port definitions
     ├── EVENTS.md               ← Event ownership model
     ├── ADAPTERS.md             ← Adapter inventory & status
-    └── MODULES.md              ← Module inventory & status
+    ├── MODULES.md              ← Module inventory & status
+    └── DATABASE-PORTABILITY.md ← Database switching analysis
 ```
 
 ---
@@ -110,6 +113,7 @@ ARCHITECTURE/
 | **EVENTS.md** | Event ownership, schemas, registration | When working with events |
 | **ADAPTERS.md** | 12 adapters, status, resilience | When working with adapters |
 | **MODULES.md** | 15 modules, dependencies, issues | When working with modules |
+| **DATABASE-PORTABILITY.md** | DB switching blockers, migration strategy | When discussing database changes |
 
 ---
 

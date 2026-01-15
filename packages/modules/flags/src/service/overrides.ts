@@ -59,7 +59,7 @@ export async function clearScopeOverride(args: {
     throw ERR.forbidden(`Platform-only flags cannot be overridden at ${args.scopeType} scope`);
   }
   const env = args.env ?? getEnv().APP_ENV;
-  await OverridesRepo.clear(env, args.key, args.scopeType, args.scopeId);
+  await OverridesRepo.softDeleteOverride(env, args.key, args.scopeType, args.scopeId);
   const ck = flagsKeys.overrideByScope(env, args.key, args.scopeType, args.scopeId);
   await kv.del(ck);
   await publish('flag.override.cleared', { env, key: args.key, scopeType: args.scopeType, scopeId: args.scopeId });
@@ -83,7 +83,7 @@ export async function getScopeOverride(args: {
       expiresAt: cached.expiresAt ? new Date(cached.expiresAt) : null,
     } as const;
   }
-  const row = await OverridesRepo.get(env, args.key, args.scopeType, args.scopeId);
+  const row = await OverridesRepo.findOverride(env, args.key, args.scopeType, args.scopeId);
   if (row) {
     await cacheSet(ck, { value: !!row.value, expiresAt: row.expiresAt ?? null }, 60_000);
   }

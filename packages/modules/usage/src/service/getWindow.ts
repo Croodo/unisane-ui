@@ -22,7 +22,7 @@ export async function getWindow(args: GetWindowArgs) {
         0
       )
     );
-    return UsageRepo.getDayCount(scopeId, args.feature, start);
+    return UsageRepo.findDayCount(scopeId, args.feature, start);
   }
   if (args.window === "hour") {
     const start = new Date(
@@ -35,7 +35,7 @@ export async function getWindow(args: GetWindowArgs) {
         0
       )
     );
-    return UsageRepo.getHourCount(scopeId, args.feature, start);
+    return UsageRepo.findHourCount(scopeId, args.feature, start);
   }
   const v = await kv.get(usageKeys.minute(scopeId, args.feature, now));
   return v ? Number(v) : 0;

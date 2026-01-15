@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "generatedAt": "2026-01-15T15:08:09.037Z",
+  "generator": "routes",
+  "sourceHashes": {
+    "/Users/bhaskarbarma/Desktop/TOP/Unisane/unisane-monorepo/starters/saaskit/src/contracts/webhooks.contract.ts": "877c14ed687ed023",
+    "/Users/bhaskarbarma/Desktop/TOP/Unisane/unisane-monorepo/starters/saaskit/src/contracts/users.contract.ts": "0776bb0acf65cc7e",
+    "/Users/bhaskarbarma/Desktop/TOP/Unisane/unisane-monorepo/starters/saaskit/src/contracts/usage.contract.ts": "903f3bc089074c71",
+    "/Users/bhaskarbarma/Desktop/TOP/Unisane/unisane-monorepo/starters/saaskit/src/contracts/tenants.contract.ts": "7090aa15ec1130ca",
+    "/Users/bhaskarbarma/Desktop/TOP/Unisane/unisane-monorepo/starters/saaskit/src/contracts/storage.contract.ts": "fbff7d0c225bd097",
+    "/Users/bhaskarbarma/Desktop/TOP/Unisane/unisane-monorepo/starters/saaskit/src/contracts/settings.contract.ts": "3a3555a85e5e7675",
+    "/Users/bhaskarbarma/Desktop/TOP/Unisane/unisane-monorepo/starters/saaskit/src/contracts/pdf.contract.ts": "7b1707fd10bca8ea",
+    "/Users/bhaskarbarma/Desktop/TOP/Unisane/unisane-monorepo/starters/saaskit/src/contracts/outbox.contract.ts": "d3d095c843da35b4",
+    "/Users/bhaskarbarma/Desktop/TOP/Unisane/unisane-monorepo/starters/saaskit/src/contracts/notify.contract.ts": "a5a6e6484f3b97ca",
+    "/Users/bhaskarbarma/Desktop/TOP/Unisane/unisane-monorepo/starters/saaskit/src/contracts/memberships.contract.ts": "17f18056020017c0",
+    "/Users/bhaskarbarma/Desktop/TOP/Unisane/unisane-monorepo/starters/saaskit/src/contracts/me.contract.ts": "2a88600c7a5816d4",
+    "/Users/bhaskarbarma/Desktop/TOP/Unisane/unisane-monorepo/starters/saaskit/src/contracts/jobs.contract.ts": "e592b47bab0363c6",
+    "/Users/bhaskarbarma/Desktop/TOP/Unisane/unisane-monorepo/starters/saaskit/src/contracts/import-export.contract.ts": "0c2f8f9ec8c74334",
+    "/Users/bhaskarbarma/Desktop/TOP/Unisane/unisane-monorepo/starters/saaskit/src/contracts/flags.contract.ts": "0bad56de027b2e32",
+    "/Users/bhaskarbarma/Desktop/TOP/Unisane/unisane-monorepo/starters/saaskit/src/contracts/entitlements.contract.ts": "018194b86175929f",
+    "/Users/bhaskarbarma/Desktop/TOP/Unisane/unisane-monorepo/starters/saaskit/src/contracts/credits.contract.ts": "121c63bfbaed57c9",
+    "/Users/bhaskarbarma/Desktop/TOP/Unisane/unisane-monorepo/starters/saaskit/src/contracts/billing.contract.ts": "95730508af12abc8",
+    "/Users/bhaskarbarma/Desktop/TOP/Unisane/unisane-monorepo/starters/saaskit/src/contracts/auth.contract.ts": "264d4da0166bfa0c",
+    "/Users/bhaskarbarma/Desktop/TOP/Unisane/unisane-monorepo/starters/saaskit/src/contracts/audit.contract.ts": "6dd2cbfa62791a2f",
+    "/Users/bhaskarbarma/Desktop/TOP/Unisane/unisane-monorepo/starters/saaskit/src/contracts/apikeys.contract.ts": "7a65ef1be2c5ce14",
+    "/Users/bhaskarbarma/Desktop/TOP/Unisane/unisane-monorepo/starters/saaskit/src/contracts/analytics.contract.ts": "b45c2f85b44ebc94",
+    "/Users/bhaskarbarma/Desktop/TOP/Unisane/unisane-monorepo/starters/saaskit/src/contracts/ai.contract.ts": "7032bd8b414d2836"
+  }
+}

@@ -13,7 +13,7 @@ export type ReplayEventArgs = {
 
 export async function replayEvent(args: ReplayEventArgs) {
   const scopeId = getScopeId();
-  const ev = await WebhooksRepo.getById({ scopeId, id: args.id, direction: 'out' });
+  const ev = await WebhooksRepo.findById({ scopeId, id: args.id, direction: 'out' });
   if (!ev) throw ERR.validation('Event not found');
   const url = ev.target;
   if (!url) throw ERR.validation('Event has no target');

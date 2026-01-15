@@ -6,6 +6,10 @@
  * This eliminates direct coupling between modules and the settings module.
  */
 
+import { setGlobalProvider, getGlobalProvider, hasGlobalProvider } from './global-provider';
+
+const PROVIDER_KEY = 'settings';
+
 /**
  * Port interface for reading typed settings.
  */
@@ -45,15 +49,12 @@ export interface SettingsPort {
   }): Promise<{ version: number }>;
 }
 
-// Provider storage
-let _provider: SettingsPort | null = null;
-
 /**
  * Set the settings provider implementation.
  * Call this at app bootstrap before any settings access.
  */
 export function setSettingsProvider(provider: SettingsPort): void {
-  _provider = provider;
+  setGlobalProvider(PROVIDER_KEY, provider);
 }
 
 /**
@@ -61,19 +62,20 @@ export function setSettingsProvider(provider: SettingsPort): void {
  * Throws if not configured.
  */
 export function getSettingsProvider(): SettingsPort {
-  if (!_provider) {
+  const provider = getGlobalProvider<SettingsPort>(PROVIDER_KEY);
+  if (!provider) {
     throw new Error(
       "SettingsPort not configured. Call setSettingsProvider() at bootstrap."
     );
   }
-  return _provider;
+  return provider;
 }
 
 /**
  * Check if provider is configured.
  */
 export function hasSettingsProvider(): boolean {
-  return _provider !== null;
+  return hasGlobalProvider(PROVIDER_KEY);
 }
 
 /**

@@ -139,6 +139,9 @@ importers:
       '@unisane/kernel':
         specifier: workspace:*
         version: link:../../foundation/kernel
+      zod:
+        specifier: ^4.3.5
+        version: 4.3.5
     devDependencies:
       '@types/node':
         specifier: ^20.10.0
@@ -189,6 +192,9 @@ importers:
       resend:
         specifier: ^4.0.0
         version: 4.8.0(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      zod:
+        specifier: ^4.3.5
+        version: 4.3.5
     devDependencies:
       '@types/node':
         specifier: ^20.10.0
@@ -364,6 +370,9 @@ importers:
       '@unisane/kernel':
         specifier: workspace:*
         version: link:../../foundation/kernel
+      zod:
+        specifier: ^4.3.5
+        version: 4.3.5
     devDependencies:
       '@types/node':
         specifier: ^20.10.0
@@ -528,12 +537,6 @@ importers:
       '@anthropic-ai/sdk':
         specifier: ^0.10.0
         version: 0.10.2
-      '@unisane/billing':
-        specifier: workspace:*
-        version: link:../billing
-      '@unisane/flags':
-        specifier: workspace:*
-        version: link:../flags
       '@unisane/gateway':
         specifier: workspace:*
         version: link:../../foundation/gateway
@@ -645,18 +648,12 @@ importers:
 
   packages/modules/billing:
     dependencies:
-      '@unisane/flags':
-        specifier: workspace:*
-        version: link:../flags
       '@unisane/gateway':
         specifier: workspace:*
         version: link:../../foundation/gateway
       '@unisane/kernel':
         specifier: workspace:*
         version: link:../../foundation/kernel
-      '@unisane/settings':
-        specifier: workspace:*
-        version: link:../settings
       '@unisane/tenants':
         specifier: workspace:*
         version: link:../tenants
@@ -1046,9 +1043,6 @@ importers:
       '@unisane/notify':
         specifier: workspace:*
         version: link:../notify
-      '@unisane/settings':
-        specifier: workspace:*
-        version: link:../settings
       '@unisane/tenants':
         specifier: workspace:*
         version: link:../tenants
@@ -1253,6 +1247,9 @@ importers:
 
   packages/tooling/devtools:
     dependencies:
+      '@ts-rest/open-api':
+        specifier: ^3.51.0
+        version: 3.52.1(@ts-rest/core@3.52.1(@types/node@20.19.27)(zod@3.25.76))(zod@3.25.76)
       '@unisane/cli-core':
         specifier: workspace:*
         version: link:../cli-core
@@ -1274,6 +1271,9 @@ importers:
       glob:
         specifier: ^10.3.0
         version: 10.5.0
+      openapi3-ts:
+        specifier: ^4.5.0
+        version: 4.5.0
       ts-morph:
         specifier: ^23.0.0
         version: 23.0.0

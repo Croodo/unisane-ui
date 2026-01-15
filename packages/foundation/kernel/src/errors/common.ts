@@ -39,12 +39,12 @@ export class ValidationError extends DomainError {
    * Create from Zod validation errors.
    * Populates both legacy `details` (for backward compat) and new `fields` array.
    */
-  static fromZod(errors: Array<{ path: (string | number)[]; message: string; code?: string }>): ValidationError {
+  static fromZod(errors: Array<{ path: PropertyKey[]; message: string; code?: string }>): ValidationError {
     const details: Record<string, string> = {};
     const fields: Array<{ field: string; message: string; code?: string }> = [];
 
     for (const err of errors) {
-      const path = err.path.join('.');
+      const path = err.path.map(String).join('.');
       details[path] = err.message;
       fields.push({
         field: path,
@@ -287,11 +287,11 @@ export class ConfigurationError extends DomainError {
    */
   static fromZod(
     adapter: string,
-    errors: Array<{ path: (string | number)[]; message: string }>
+    errors: Array<{ path: PropertyKey[]; message: string }>
   ): ConfigurationError {
     const fields: Record<string, string> = {};
     for (const err of errors) {
-      const path = err.path.join('.');
+      const path = err.path.map(String).join('.');
       fields[path] = err.message;
     }
     const fieldList = Object.entries(fields)

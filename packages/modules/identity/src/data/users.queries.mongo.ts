@@ -8,11 +8,11 @@ import {
   COLLECTIONS,
   seekPageMongoCollection,
   runStatsAggregation,
-  ObjectId,
   type Collection,
   type WithId,
   type SortField,
 } from "@unisane/kernel";
+import type { ObjectId } from "mongodb";
 import { UserSchema } from "../domain/entity";
 import { buildUserFilter, type UserFilterArgs } from "./users.filters";
 

@@ -35,7 +35,7 @@ export type { RemoveMemberArgs };
 export async function addRole(args: AddRoleArgs) {
   const scopeId = getScopeId(); // Throws if not set
   const { userId, roleId, expectedVersion } = args;
-  const existing = await membershipsRepository.get(scopeId, userId);
+  const existing = await membershipsRepository.findByScopeAndUser(scopeId, userId);
   const isNewSeat =
     !existing || !Array.isArray(existing.roles) || existing.roles.length === 0;
   if (isNewSeat) {
@@ -105,7 +105,7 @@ export async function getActiveScopeId(
 
 export async function getMembership(args: GetMembershipArgs) {
   const scopeId = getScopeId(); // Throws if not set
-  return membershipsRepository.get(scopeId, args.userId);
+  return membershipsRepository.findByScopeAndUser(scopeId, args.userId);
 }
 
 export async function removeRole(args: RemoveRoleArgs) {
@@ -187,7 +187,7 @@ export async function listMembers(args: ListMembersArgs) {
 export async function removeMember(args: RemoveMemberArgs) {
   const scopeId = getScopeId(); // Throws if not set
   const { userId, expectedVersion } = args;
-  const res = await membershipsRepository.delete(
+  const res = await membershipsRepository.softDelete(
     scopeId,
     userId,
     expectedVersion

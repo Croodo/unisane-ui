@@ -43,7 +43,7 @@ async function handleTenantCreated(payload: {
 
   try {
     // Check if membership already exists (idempotency)
-    const existing = await membershipsRepository.get(scopeId, ownerId);
+    const existing = await membershipsRepository.findByScopeAndUser(scopeId, ownerId);
 
     if (existing) {
       log.debug('membership already exists for tenant owner', { scopeId, ownerId });

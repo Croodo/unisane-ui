@@ -93,3 +93,12 @@ export * from './ports';
 
 // Contracts (API schemas)
 export * from './contracts';
+
+// Architecture Patterns (service layer, repository patterns)
+export * from './patterns';
+
+// ID Generation (database-agnostic ID generation)
+export * from './id';
+
+// Bootstrap readiness (for Next.js 16 Turbopack timing)
+export * from './bootstrap';

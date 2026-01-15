@@ -12,6 +12,7 @@ import {
   registerHealthCheck,
   createMongoHealthCheck,
   createRedisHealthCheck,
+  signalBootstrapReady,
 } from '@unisane/kernel';
 
 // Type for bootstrap status
@@ -58,6 +59,8 @@ export async function bootstrap() {
   console.log('[bootstrap] ✓ Event handlers registered');
 
   bootstrapped = true;
+  // Signal that bootstrap is complete (unblocks API handlers waiting for readiness)
+  signalBootstrapReady();
   console.log('[bootstrap] ✓ Platform initialization complete');
 }
 

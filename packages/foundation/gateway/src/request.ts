@@ -1,3 +1,4 @@
+import { isValidId } from '@unisane/kernel';
 import { HEADER_NAMES } from './headers';
 
 export function tenantIdFromUrl(req?: Request): string | undefined {
@@ -11,9 +12,9 @@ export function tenantIdFromUrl(req?: Request): string | undefined {
     // stats, export: /admin/tenants/stats, /admin/tenants/export
     const RESERVED_SEGMENTS = ['by-slug', 'stats', 'export'];
     if (!id || RESERVED_SEGMENTS.includes(id)) return undefined;
-    // Only accept valid-looking tenant IDs (24-char hex MongoDB ObjectIds)
+    // Only accept valid IDs according to the configured ID generator
     // This prevents paths like /admin/tenants from extracting random segments
-    if (!/^[a-f0-9]{24}$/i.test(id)) return undefined;
+    if (!isValidId(id)) return undefined;
     return id;
   } catch {
     return undefined;

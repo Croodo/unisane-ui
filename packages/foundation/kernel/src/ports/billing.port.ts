@@ -9,6 +9,9 @@
 
 import type { BillingMode } from "../constants/billing-mode";
 import type { BillingProvider } from "../constants/providers";
+import { setGlobalProvider, getGlobalProvider, hasGlobalProvider } from './global-provider';
+
+const PROVIDER_KEY = 'billing-service';
 
 /**
  * Billing service port interface for hexagonal architecture.
@@ -34,34 +37,32 @@ export interface BillingServicePort {
   findScopeIdByCustomer(provider: BillingProvider, customerId: string): Promise<string | null>;
 }
 
-// Provider storage
-let _billingServiceProvider: BillingServicePort | null = null;
-
 /**
  * Set the billing service provider implementation.
  * Called at app bootstrap.
  */
 export function setBillingServiceProvider(provider: BillingServicePort): void {
-  _billingServiceProvider = provider;
+  setGlobalProvider(PROVIDER_KEY, provider);
 }
 
 /**
  * Get the billing service provider. Throws if not configured.
  */
 export function getBillingServiceProvider(): BillingServicePort {
-  if (!_billingServiceProvider) {
+  const provider = getGlobalProvider<BillingServicePort>(PROVIDER_KEY);
+  if (!provider) {
     throw new Error(
       "BillingServicePort not configured. Call setBillingServiceProvider() at bootstrap."
     );
   }
-  return _billingServiceProvider;
+  return provider;
 }
 
 /**
  * Check if billing service provider is configured.
  */
 export function hasBillingServiceProvider(): boolean {
-  return _billingServiceProvider !== null;
+  return hasGlobalProvider(PROVIDER_KEY);
 }
 
 /**

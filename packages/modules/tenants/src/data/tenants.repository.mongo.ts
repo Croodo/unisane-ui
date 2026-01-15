@@ -3,18 +3,20 @@ import {
   COLLECTIONS,
   connectDb as connectDriverDb,
   logger,
-  buildMongoFilter,
-  escapeRegex,
   softDeleteFilter,
   runStatsAggregation,
   parseSortSpec,
   seekPageMongoCollection,
   maybeObjectId,
-  ObjectId,
+  QueryBuilder,
+  toMongoFilter,
+  UpdateBuilder,
+  toMongoUpdate,
   type Document,
   type Filter as MongoFilter,
   type WithId,
 } from "@unisane/kernel";
+import type { ObjectId } from "mongodb";
 import type {
   TenantsRepoPort,
   TenantFilter,
@@ -31,45 +33,88 @@ type TenantDoc = {
   createdAt?: Date;
   updatedAt?: Date;
   deletedAt?: Date | null;
+  deletedBy?: string | null;
 } & Document;
 
 const tenantsCol = () => col<TenantDoc>(COLLECTIONS.TENANTS);
 
 /**
+ * Tenant entity type for QueryBuilder type safety.
+ */
+interface TenantEntity {
+  slug: string;
+  name: string;
+  planId: string | null;
+  deletedAt: Date | null;
+}
+
+/**
  * Build MongoDB filter for tenants (SSOT).
+ * Uses database-agnostic QueryBuilder pattern.
  * Used by both listPaged() and stats() to ensure consistency.
  */
 function buildTenantFilter(args: {
   filters?: TenantFilter;
 }): Record<string, unknown> {
-  const baseFilter: Record<string, unknown> = {
-    ...softDeleteFilter(),
-  };
+  const query = new QueryBuilder<TenantEntity>();
 
-  if (args.filters) {
-    const { q, ...rest } = args.filters;
+  // Apply soft-delete filter (deletedAt is null)
+  query.whereNull("deletedAt");
 
-    // Use generic builder for standard fields
-    const built = buildMongoFilter(rest);
-    Object.assign(baseFilter, built);
+  if (!args.filters) {
+    return toMongoFilter(query.build());
+  }
 
-    // Handle special "q" search
-    if (q && q.trim().length) {
-      const needle = escapeRegex(q.trim());
-      const existingAnd = (baseFilter["$and"] as unknown[] | undefined) ?? [];
-      baseFilter["$and"] = [
-        ...existingAnd,
-        {
-          $or: [
-            { slug: { $regex: needle, $options: "i" } },
-            { name: { $regex: needle, $options: "i" } },
-          ],
-        },
-      ];
+  const { q, slug, name, planId } = args.filters;
+
+  // Full-text search across slug and name using OR
+  if (q && q.trim().length) {
+    query.whereTextSearch(q.trim(), ["slug", "name"]);
+  }
+
+  // Handle individual field filters
+  if (slug !== undefined) {
+    if (typeof slug === "string") {
+      query.whereEq("slug", slug);
+    } else if (typeof slug === "object" && slug !== null) {
+      // Handle FilterOp<string> style filters
+      const op = slug as { eq?: string; contains?: string; in?: string[] };
+      if (op.eq) query.whereEq("slug", op.eq);
+      else if (op.contains) query.whereContains("slug", op.contains);
+      else if (op.in?.length) query.whereIn("slug", op.in);
     }
   }
 
-  return baseFilter;
+  if (name !== undefined) {
+    if (typeof name === "string") {
+      query.whereEq("name", name);
+    } else if (typeof name === "object" && name !== null) {
+      const op = name as { eq?: string; contains?: string; in?: string[] };
+      if (op.eq) query.whereEq("name", op.eq);
+      else if (op.contains) query.whereContains("name", op.contains);
+      else if (op.in?.length) query.whereIn("name", op.in);
+    }
+  }
+
+  if (planId !== undefined) {
+    if (typeof planId === "string" || planId === null) {
+      query.whereEq("planId", planId);
+    } else if (typeof planId === "object" && planId !== null) {
+      const op = planId as { eq?: string | null; in?: (string | null)[] };
+      if (op.eq !== undefined) query.whereEq("planId", op.eq);
+      else if (op.in?.length) query.whereIn("planId", op.in);
+    }
+  }
+
+  // Build and convert to MongoDB filter
+  const spec = query.build();
+  const mongoFilter = toMongoFilter(spec);
+
+  // Merge with soft-delete filter from kernel (for compatibility)
+  return {
+    ...softDeleteFilter(),
+    ...mongoFilter,
+  };
 }
 
 export const TenantsRepoMongo: TenantsRepoPort = {
@@ -148,11 +193,14 @@ export const TenantsRepoMongo: TenantsRepoPort = {
       planId: t.planId ?? "free",
     }));
   },
-  async setPlanId(scopeId: string, planId: string): Promise<void> {
+  async updatePlanId(scopeId: string, planId: string): Promise<void> {
     await connectDriverDb();
+    const builder = new UpdateBuilder<TenantDoc>()
+      .set("planId", planId)
+      .set("updatedAt", new Date());
     await tenantsCol().updateOne(
       { _id: maybeObjectId(scopeId) },
-      { $set: { planId, updatedAt: new Date() } }
+      toMongoUpdate(builder.build()) as Document
     );
   },
   async deleteCascade(args: { scopeId: string; actorId?: string }) {
@@ -176,9 +224,12 @@ export const TenantsRepoMongo: TenantsRepoPort = {
 
     // 1) Revoke all API keys (security first)
     try {
+      const apiKeysBuilder = new UpdateBuilder<Record<string, unknown>>()
+        .set("revokedAt", now)
+        .set("updatedAt", now);
       const apiKeysResult = await col(COLLECTIONS.API_KEYS).updateMany(
         { scopeId, revokedAt: null } as Document,
-        { $set: { revokedAt: now, updatedAt: now } } as Document
+        toMongoUpdate(apiKeysBuilder.build()) as Document
       );
       cascade.apiKeysRevoked = apiKeysResult.modifiedCount;
     } catch (error) {
@@ -191,9 +242,12 @@ export const TenantsRepoMongo: TenantsRepoPort = {
 
     // 2) Soft delete memberships
     try {
+      const membershipsBuilder = new UpdateBuilder<Record<string, unknown>>()
+        .set("deletedAt", now)
+        .set("updatedAt", now);
       const membershipsResult = await col(COLLECTIONS.MEMBERSHIPS).updateMany(
         { scopeId, ...softDeleteFilter() } as Document,
-        { $set: { deletedAt: now, updatedAt: now } } as Document
+        toMongoUpdate(membershipsBuilder.build()) as Document
       );
       cascade.membershipsDeleted = membershipsResult.modifiedCount;
     } catch (error) {
@@ -206,9 +260,13 @@ export const TenantsRepoMongo: TenantsRepoPort = {
 
     // 3) Mark storage files as deleted (cleanup job handles provider)
     try {
+      const storageBuilder = new UpdateBuilder<Record<string, unknown>>()
+        .set("status", "deleted")
+        .set("deletedAt", now)
+        .set("updatedAt", now);
       const storageResult = await col(COLLECTIONS.FILES).updateMany(
         { scopeId, status: { $ne: "deleted" } } as Document,
-        { $set: { status: "deleted", deletedAt: now, updatedAt: now } } as Document
+        toMongoUpdate(storageBuilder.build()) as Document
       );
       cascade.storageFilesMarked = storageResult.modifiedCount;
     } catch (error) {
@@ -221,9 +279,13 @@ export const TenantsRepoMongo: TenantsRepoPort = {
 
     // 4) Soft delete tenant
     try {
+      const tenantBuilder = new UpdateBuilder<TenantDoc>()
+        .set("deletedAt", now)
+        .set("deletedBy", actorId ?? null)
+        .set("updatedAt", now);
       await tenantsCol().updateOne(
         { _id: maybeObjectId(scopeId) } as Document,
-        { $set: { deletedAt: now, deletedBy: actorId ?? null, updatedAt: now } } as Document
+        toMongoUpdate(tenantBuilder.build()) as Document
       );
     } catch (error) {
       logger.error('tenant.delete.soft_delete_failed', {

@@ -25,6 +25,9 @@
 
 // Re-use types from constants (single source of truth)
 import type { OutboxKind, OutboxStatus } from '../constants/outbox';
+import { setGlobalProvider, getGlobalProvider, hasGlobalProvider } from './global-provider';
+
+const PROVIDER_KEY = 'outbox';
 
 /**
  * Input for enqueueing an outbox item.
@@ -133,28 +136,26 @@ const noopOutboxPort: OutboxPort = {
   purge: async () => {},
 };
 
-let _outboxProvider: OutboxPort = noopOutboxPort;
-
 /**
  * Set the outbox provider implementation.
  * Call this at bootstrap with your adapter (e.g., MongoDB, PostgreSQL).
  */
 export function setOutboxProvider(provider: OutboxPort): void {
-  _outboxProvider = provider;
+  setGlobalProvider(PROVIDER_KEY, provider);
 }
 
 /**
  * Get the current outbox provider.
  */
 export function getOutboxProvider(): OutboxPort {
-  return _outboxProvider;
+  return getGlobalProvider<OutboxPort>(PROVIDER_KEY) ?? noopOutboxPort;
 }
 
 /**
  * Check if a real outbox provider has been configured.
  */
 export function hasOutboxProvider(): boolean {
-  return _outboxProvider !== noopOutboxPort;
+  return hasGlobalProvider(PROVIDER_KEY);
 }
 
 // ─── CONVENIENCE FUNCTIONS ──────────────────────────────────────────────────
@@ -164,7 +165,7 @@ export function hasOutboxProvider(): boolean {
  * Convenience wrapper around getOutboxProvider().enqueue().
  */
 export async function enqueueOutbox(item: OutboxItem): Promise<{ ok: true; id: string }> {
-  return _outboxProvider.enqueue(item);
+  return getOutboxProvider().enqueue(item);
 }
 
 /**
@@ -172,5 +173,5 @@ export async function enqueueOutbox(item: OutboxItem): Promise<{ ok: true; id: s
  * Convenience wrapper around getOutboxProvider().claimBatch().
  */
 export async function claimOutboxBatch(now: Date, limit: number): Promise<OutboxRow[]> {
-  return _outboxProvider.claimBatch(now, limit);
+  return getOutboxProvider().claimBatch(now, limit);
 }

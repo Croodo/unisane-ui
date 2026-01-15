@@ -13,6 +13,9 @@
 5. [Adding a New Module](#pattern-5-adding-a-new-module)
 6. [Bootstrap Wiring](#pattern-6-bootstrap-wiring)
 7. [Testing with Port Mocks](#pattern-7-testing-with-port-mocks)
+8. [Service Layer with BaseService](#pattern-8-service-layer-with-baseservice)
+9. [Repository with QueryBuilder](#pattern-9-repository-with-querybuilder)
+10. [Database-Agnostic ID Generation](#pattern-10-database-agnostic-id-generation)
 
 ---
 
@@ -709,4 +712,431 @@ describe('ai/generate', () => {
 
 ---
 
-> **Last Updated**: 2025-01-15 | **Version**: 2.0
+## Pattern 8: Service Layer with BaseService
+
+**When**: Implementing business logic services with authorization, logging, and validation.
+
+### Step 1: Extend BaseService
+
+```typescript
+// packages/modules/orders/src/service/orders.service.ts
+
+import {
+  BaseService,
+  ServiceContext,
+  BusinessRules,
+  requiresAuth,
+  requiresPermission,
+  PermissionDeniedError,
+} from '@unisane/kernel';
+import { PERM } from '@unisane/kernel';
+import type { Order, CreateOrderInput } from '../domain/types';
+import type { OrderRepository } from '../domain/ports';
+
+export class OrderService extends BaseService {
+  constructor(
+    private readonly orderRepo: OrderRepository,
+    private readonly inventoryRepo: InventoryRepository,
+  ) {
+    super('orders'); // Creates logger with module: 'orders'
+  }
+
+  /**
+   * Create a new order.
+   * Requires authentication and billing:write permission.
+   */
+  @requiresAuth
+  @requiresPermission(PERM.BILLING_WRITE)
+  async create(ctx: ServiceContext, input: CreateOrderInput): Promise<Order> {
+    return this.withLogging('create', async () => {
+      // 1. Business rule validation
+      const rules = new BusinessRules('orders.create');
+
+      rules.check(
+        input.items.length > 0,
+        'Order must have at least one item'
+      );
+
+      rules.check(
+        input.items.every(i => i.quantity > 0),
+        'All items must have positive quantity'
+      );
+
+      // Check inventory availability
+      for (const item of input.items) {
+        const stock = await this.inventoryRepo.getStock(item.productId);
+        rules.check(
+          stock >= item.quantity,
+          `Insufficient stock for ${item.productId}`
+        );
+      }
+
+      rules.throwIfInvalid(); // Throws if any rules failed
+
+      // 2. Calculate totals
+      const total = input.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+      // 3. Create order
+      const order = await this.orderRepo.create({
+        ...input,
+        scopeId: ctx.scopeId,
+        createdBy: ctx.userId!,
+        total,
+        status: 'pending',
+      });
+
+      // 4. Log success
+      this.log('info', 'create', { orderId: order.id, total });
+
+      return order;
+    });
+  }
+
+  /**
+   * Cancel an order.
+   * Users can cancel their own orders; admins can cancel any.
+   */
+  @requiresAuth
+  async cancel(ctx: ServiceContext, orderId: string): Promise<Order> {
+    return this.withLogging('cancel', async () => {
+      const order = await this.orderRepo.findById(orderId);
+
+      if (!order) {
+        throw new Error('Order not found');
+      }
+
+      // Authorization: owner or admin
+      const isOwner = order.createdBy === ctx.userId;
+      const isAdmin = this.hasPermission(ctx, PERM.BILLING_WRITE);
+
+      if (!isOwner && !isAdmin) {
+        throw new PermissionDeniedError(PERM.BILLING_WRITE, ctx.userId);
+      }
+
+      // Business rule: can only cancel pending orders
+      const rules = new BusinessRules('orders.cancel');
+      rules.check(
+        order.status === 'pending',
+        'Only pending orders can be cancelled'
+      );
+      rules.throwIfInvalid();
+
+      return this.orderRepo.update(orderId, { status: 'cancelled' });
+    });
+  }
+}
+```
+
+### Step 2: Build ServiceContext from Auth
+
+```typescript
+// starters/saaskit/src/lib/service-context.ts
+
+import type { ServiceContext } from '@unisane/kernel';
+import type { AuthCtx } from '@unisane/gateway';
+
+/**
+ * Build ServiceContext from gateway AuthCtx.
+ */
+export function buildServiceContext(
+  auth: AuthCtx,
+  requestId?: string
+): ServiceContext {
+  return {
+    scopeId: auth.tenantId ?? '',
+    userId: auth.userId ?? null,
+    requestId,
+    permissions: auth.perms ?? [],
+    isSuperAdmin: auth.isSuperAdmin ?? false,
+  };
+}
+```
+
+### Step 3: Use in Route Handler
+
+```typescript
+// starters/saaskit/src/app/api/rest/v1/orders/route.ts
+
+import { makeHandler } from '@unisane/gateway';
+import { OrderService } from '@unisane/orders';
+import { buildServiceContext } from '@/lib/service-context';
+import { PERM } from '@unisane/kernel';
+
+const orderService = new OrderService(orderRepo, inventoryRepo);
+
+export const POST = makeHandler<typeof ZCreateOrderBody>(
+  { op: 'orders.create', perm: PERM.BILLING_WRITE },
+  async ({ body, ctx, requestId }) => {
+    const serviceCtx = buildServiceContext(ctx, requestId);
+    return orderService.create(serviceCtx, body);
+  }
+);
+```
+
+---
+
+## Pattern 9: Repository with QueryBuilder
+
+**When**: Implementing database-agnostic repositories.
+
+### Step 1: Define Repository Interface
+
+```typescript
+// packages/modules/orders/src/domain/ports.ts
+
+import type { RepositoryPort, PaginatedResult, PaginationOptions } from '@unisane/kernel';
+import type { Order, CreateOrderInput } from './types';
+
+export interface OrderFilters {
+  status?: string;
+  createdBy?: string;
+  minTotal?: number;
+  maxTotal?: number;
+  dateRange?: { from: Date; to: Date };
+}
+
+export interface OrderRepository extends RepositoryPort<Order, string, CreateOrderInput, Partial<Order>> {
+  findByScope(scopeId: string, options?: PaginationOptions, filters?: OrderFilters): Promise<PaginatedResult<Order>>;
+  findByCustomer(scopeId: string, customerId: string): Promise<Order[]>;
+}
+```
+
+### Step 2: Implement with QueryBuilder
+
+```typescript
+// packages/modules/orders/src/data/orders.repository.mongo.ts
+
+import { BaseMongoRepository, QueryBuilder, toMongoFilter, type QuerySpec } from '@unisane/kernel';
+import type { Order, CreateOrderInput } from '../domain/types';
+import type { OrderRepository, OrderFilters } from '../domain/ports';
+
+export class MongoOrderRepository
+  extends BaseMongoRepository<Order>
+  implements OrderRepository
+{
+  constructor() {
+    super('orders');
+  }
+
+  async findByScope(
+    scopeId: string,
+    options?: PaginationOptions,
+    filters?: OrderFilters
+  ): Promise<PaginatedResult<Order>> {
+    // Build database-agnostic query
+    const query = new QueryBuilder<Order>()
+      .whereEq('scopeId', scopeId);
+
+    // Apply optional filters
+    if (filters?.status) {
+      query.whereEq('status', filters.status);
+    }
+
+    if (filters?.createdBy) {
+      query.whereEq('createdBy', filters.createdBy);
+    }
+
+    if (filters?.minTotal !== undefined) {
+      query.whereGte('total', filters.minTotal);
+    }
+
+    if (filters?.maxTotal !== undefined) {
+      query.whereLte('total', filters.maxTotal);
+    }
+
+    if (filters?.dateRange) {
+      query.whereBetween('createdAt', filters.dateRange.from, filters.dateRange.to);
+    }
+
+    // Apply pagination
+    if (options?.sort) {
+      query.sort(options.sort.field as keyof Order & string, options.sort.direction);
+    } else {
+      query.sort('createdAt', 'desc');
+    }
+
+    query.limit(options?.limit ?? 50);
+
+    // Convert to MongoDB filter and execute
+    const spec = query.build();
+    const mongoFilter = toMongoFilter(spec);
+
+    const items = await this.collection
+      .find(mongoFilter)
+      .sort(spec.sort ? { [spec.sort.field]: spec.sort.direction === 'asc' ? 1 : -1 } : {})
+      .limit(spec.limit)
+      .skip(spec.skip)
+      .toArray();
+
+    return {
+      items: items.map(this.toEntity),
+      nextCursor: items.length === spec.limit ? items[items.length - 1]?.id : undefined,
+    };
+  }
+
+  async findByCustomer(scopeId: string, customerId: string): Promise<Order[]> {
+    const query = new QueryBuilder<Order>()
+      .whereEq('scopeId', scopeId)
+      .whereEq('customerId', customerId)
+      .sort('createdAt', 'desc')
+      .build();
+
+    const items = await this.collection
+      .find(toMongoFilter(query))
+      .toArray();
+
+    return items.map(this.toEntity);
+  }
+}
+```
+
+### Step 3: Usage with Complex Queries
+
+```typescript
+// Advanced query example
+
+const query = new QueryBuilder<Product>()
+  .whereEq('scopeId', scopeId)
+  .whereIn('category', ['electronics', 'accessories'])
+  .whereGte('price', 10)
+  .whereLte('price', 100)
+  .whereContains('name', searchTerm)           // Case-insensitive search
+  .whereNull('deletedAt')                      // Not soft-deleted
+  .whereBetween('createdAt', startDate, endDate)
+  .sort('price', 'asc')
+  .limit(20)
+  .skip(40)  // Page 3
+  .build();
+
+// Convert to MongoDB
+const mongoFilter = toMongoFilter(query);
+// Result: {
+//   scopeId: 'tenant_123',
+//   category: { $in: ['electronics', 'accessories'] },
+//   price: { $gte: 10, $lte: 100 },
+//   name: { $regex: 'phone', $options: 'i' },
+//   deletedAt: { $eq: null },
+//   createdAt: { $gte: startDate, $lte: endDate }
+// }
+```
+
+---
+
+## Pattern 10: Database-Agnostic ID Generation
+
+**When**: Creating entities that need unique IDs that work across different databases.
+
+### Step 1: Use the IdGenerator Abstraction
+
+```typescript
+// packages/modules/orders/src/data/orders.repository.mongo.ts
+
+import { newEntityId, toNativeId } from '@unisane/kernel';
+import type { Order } from '../domain/types';
+
+export class MongoOrderRepository {
+  async create(data: Omit<Order, 'id'>): Promise<Order> {
+    // Generate a database-agnostic ID
+    const id = newEntityId();
+
+    const doc = {
+      _id: toNativeId(id), // Converts to ObjectId for MongoDB
+      ...data,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    await this.collection.insertOne(doc);
+
+    return { id, ...data };
+  }
+}
+```
+
+### Step 2: Configure ID Generator at Startup
+
+```typescript
+// starters/saaskit/src/lib/bootstrap.ts
+
+import {
+  autoConfigureIdGenerator,
+  setIdGenerator,
+  UuidGenerator,
+  ObjectIdGenerator,
+} from '@unisane/kernel';
+
+// Option 1: Auto-configure based on DB_TYPE env var
+autoConfigureIdGenerator();
+
+// Option 2: Explicit configuration
+if (process.env.DATABASE_PROVIDER === 'postgres') {
+  setIdGenerator(new UuidGenerator());
+} else {
+  setIdGenerator(new ObjectIdGenerator());
+}
+```
+
+### Step 3: Validate IDs
+
+```typescript
+// In route handlers or services
+
+import { isValidId, getIdMetadata } from '@unisane/kernel';
+
+export async function getOrder(orderId: string) {
+  // Validate ID format
+  if (!isValidId(orderId)) {
+    throw new BadRequestError('Invalid order ID format');
+  }
+
+  // Optional: Get creation time from ID (for ObjectId/ULID)
+  const meta = getIdMetadata(orderId);
+  if (meta?.createdAt) {
+    console.log('Order ID created at:', meta.createdAt);
+  }
+
+  return orderRepo.findById(orderId);
+}
+```
+
+### Available Generators
+
+| Generator | Format | Use Case |
+|-----------|--------|----------|
+| `ObjectIdGenerator` | 24-char hex | MongoDB (default) |
+| `UuidGenerator` | UUID v4 | PostgreSQL, MySQL |
+| `NanoidGenerator` | 21-char URL-safe | Compact, URL-friendly |
+| `CuidGenerator` | ~24-char alphanumeric | Collision-resistant |
+
+### Step 4: Compare IDs Safely
+
+```typescript
+import { idsEqual } from '@unisane/kernel';
+
+// Works with both string and native representations
+if (idsEqual(doc._id, userId)) {
+  // IDs match
+}
+
+// Better than direct comparison which may fail for ObjectId
+// BAD: doc._id === userId (fails if one is ObjectId, one is string)
+// GOOD: idsEqual(doc._id, userId)
+```
+
+### Migration Path
+
+When migrating from direct ObjectId usage:
+
+```typescript
+// BEFORE (MongoDB-specific)
+import { ObjectId } from 'mongodb';
+const id = new ObjectId().toHexString();
+
+// AFTER (Database-agnostic)
+import { newEntityId } from '@unisane/kernel';
+const id = newEntityId();
+```
+
+---
+
+> **Last Updated**: 2025-01-15 | **Version**: 2.2

@@ -1,35 +1,47 @@
+/**
+ * OpenAPI specification generator
+ *
+ * Generates OpenAPI 3.1 spec from ts-rest contracts.
+ * This lives with contracts as it's derived directly from them.
+ */
 import type {
   OpenAPIObject,
   ReferenceObject,
   SecuritySchemeObject,
 } from "openapi3-ts/oas31";
 import { generateOpenApi } from "@ts-rest/open-api";
-import { appRouter } from "@/src/contracts/app.router";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { appRouter } from "./app.router";
 
-function readKitVersion(): { version: string } {
-  try {
-    const p = resolve(process.cwd(), "saaskit.json");
-    const j = JSON.parse(readFileSync(p, "utf8")) as { version?: string };
-    return { version: String(j.version ?? "0.0.0") };
-  } catch {
-    return { version: "0.0.0" };
-  }
+export interface OpenApiOptions {
+  /** API title */
+  title?: string;
+  /** API version */
+  version?: string;
+  /** API description */
+  description?: string;
+  /** Server URLs (comma-separated string or array) */
+  servers?: string | Array<{ url: string; description?: string }>;
 }
 
 /**
  * Generate the OpenAPI spec from ts-rest contracts.
- * Includes security schemes (bearer & apiKey) and stamps the kit version.
+ * Includes security schemes (bearer & apiKey) and CSRF notes.
  */
-export function generateSpec(): OpenAPIObject {
-  const { version } = readKitVersion();
+export function generateSpec(options: OpenApiOptions = {}): OpenAPIObject {
+  const {
+    title = "SaaSKit API",
+    version = "1.0.0",
+    description = "Contract-first REST API. Security: Bearer (JWT) or x-api-key. " +
+      "For cookie-authenticated, state-changing requests, send header `x-csrf-token` matching cookie `csrf_token`.",
+    servers,
+  } = options;
 
-  // Build servers list from env (comma-separated). Fallback to localhost.
-  const serversFromEnv = (() => {
-    const raw = (process.env.OPENAPI_SERVER_URLS ?? "").trim();
-    if (!raw) return null as null | Array<{ url: string }>;
-    const parts = raw
+  // Parse servers from string or use array directly
+  const serversList = (() => {
+    if (!servers) return null;
+    if (Array.isArray(servers)) return servers;
+    // Parse comma-separated string
+    const parts = servers
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
@@ -41,15 +53,13 @@ export function generateSpec(): OpenAPIObject {
     appRouter,
     {
       info: {
-        title: "SaaSKit API",
+        title,
         version,
-        description:
-          "Contract-first REST API. Security: Bearer (JWT) or x-api-key. " +
-          "For cookie-authenticated, state-changing requests, send header `x-csrf-token` matching cookie `csrf_token`.",
+        description,
       },
       servers:
-        serversFromEnv && serversFromEnv.length
-          ? serversFromEnv
+        serversList && serversList.length
+          ? serversList
           : [
               {
                 url: "{baseUrl}",

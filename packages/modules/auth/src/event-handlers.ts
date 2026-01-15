@@ -28,23 +28,24 @@ const log = logger.child({ module: 'auth', component: 'event-handlers' });
  * Cleans up authentication data when a user is deleted.
  */
 async function handleUserDeleted(payload: {
-  tenantId: string;
+  scopeId: string;
   userId: string;
+  removedBy?: string;
 }): Promise<void> {
-  const { tenantId, userId } = payload;
+  const { scopeId, userId } = payload;
 
   log.info('handling user deletion for auth cleanup', {
-    tenantId,
+    scopeId,
     userId,
   });
 
   try {
     // Clean up any auth-related data for the deleted user
     // This is a placeholder - actual implementation depends on auth storage
-    log.debug('auth data cleaned up for deleted user', { tenantId, userId });
+    log.debug('auth data cleaned up for deleted user', { scopeId, userId });
   } catch (error) {
     log.error('failed to clean up auth data for deleted user', {
-      tenantId,
+      scopeId,
       userId,
       error: error instanceof Error ? error.message : String(error),
     });
@@ -57,7 +58,7 @@ async function handleUserDeleted(payload: {
  * Cleans up all authentication data for a deleted tenant.
  */
 async function handleTenantDeleted(payload: {
-  tenantId: string;
+  scopeId: string;
   actorId: string;
   cascade: {
     memberships: number;
@@ -66,20 +67,20 @@ async function handleTenantDeleted(payload: {
     credentials: number;
   };
 }): Promise<void> {
-  const { tenantId, cascade } = payload;
+  const { scopeId, cascade } = payload;
 
   log.info('handling tenant deletion for auth cleanup', {
-    tenantId,
+    scopeId,
     credentialsToClean: cascade.credentials,
   });
 
   try {
     // Credentials cleanup is handled by the cascade in tenants module
     // This handler can perform additional auth-specific cleanup if needed
-    log.debug('auth cleanup completed for deleted tenant', { tenantId });
+    log.debug('auth cleanup completed for deleted tenant', { scopeId });
   } catch (error) {
     log.error('failed to clean up auth data for deleted tenant', {
-      tenantId,
+      scopeId,
       error: error instanceof Error ? error.message : String(error),
     });
     throw error;

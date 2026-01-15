@@ -7,6 +7,9 @@
 
 import type { AppEnv } from "../constants/env";
 import type { PlanId } from "../constants/plan";
+import { setGlobalProvider, getGlobalProvider, hasGlobalProvider } from './global-provider';
+
+const PROVIDER_KEY = 'flags';
 
 /**
  * Context for flag evaluation
@@ -44,34 +47,32 @@ export interface FlagsPort {
   isEnabledForScope(args: IsEnabledForScopeArgs): Promise<boolean>;
 }
 
-// Provider storage
-let _provider: FlagsPort | null = null;
-
 /**
  * Set the flags provider implementation.
  * Called at app bootstrap.
  */
 export function setFlagsProvider(provider: FlagsPort): void {
-  _provider = provider;
+  setGlobalProvider(PROVIDER_KEY, provider);
 }
 
 /**
  * Get the flags provider. Throws if not configured.
  */
 export function getFlagsProvider(): FlagsPort {
-  if (!_provider) {
+  const provider = getGlobalProvider<FlagsPort>(PROVIDER_KEY);
+  if (!provider) {
     throw new Error(
       "FlagsPort not configured. Call setFlagsProvider() at bootstrap."
     );
   }
-  return _provider;
+  return provider;
 }
 
 /**
  * Check if flags provider is configured.
  */
 export function hasFlagsProvider(): boolean {
-  return _provider !== null;
+  return hasGlobalProvider(PROVIDER_KEY);
 }
 
 /**

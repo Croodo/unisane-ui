@@ -114,9 +114,11 @@ export class ApiKey {
     const tokenHash = createHash('sha256').update(plainToken).digest('hex');
 
     try {
+      const hashBuffer = Buffer.from(this.hash, 'hex');
+      const tokenBuffer = Buffer.from(tokenHash, 'hex');
       return timingSafeEqual(
-        Buffer.from(this.hash, 'hex'),
-        Buffer.from(tokenHash, 'hex')
+        new Uint8Array(hashBuffer.buffer, hashBuffer.byteOffset, hashBuffer.byteLength),
+        new Uint8Array(tokenBuffer.buffer, tokenBuffer.byteOffset, tokenBuffer.byteLength)
       );
     } catch {
       // Buffers of different length would throw

@@ -3,6 +3,8 @@ import {
   COLLECTIONS,
   explicitScopeFilter,
   clampInt,
+  UpdateBuilder,
+  toMongoUpdate,
   type Document,
 } from '@unisane/kernel';
 
@@ -36,10 +38,14 @@ export const mongoApiKeysRepository = {
     } as const;
   },
   async revoke(scopeId: string, keyId: string) {
+    const now = new Date();
+    const builder = new UpdateBuilder<Record<string, unknown>>()
+      .set('revokedAt', now)
+      .set('updatedAt', now);
     // Use explicit scopeId parameter
     await col(COLLECTIONS.API_KEYS).updateOne(
       explicitScopeFilter('tenant', scopeId, { _id: keyId }) as unknown as Document,
-      { $set: { revokedAt: new Date(), updatedAt: new Date() } } as unknown as Document
+      toMongoUpdate(builder.build()) as unknown as Document
     );
     return { ok: true as const };
   },

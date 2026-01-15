@@ -2,6 +2,8 @@ import {
   col,
   COLLECTIONS,
   seekPageMongoCollection,
+  UpdateBuilder,
+  toMongoUpdate,
   type Collection,
   type Filter,
   type FindCursor,
@@ -73,8 +75,11 @@ export const mongoPaymentsRepo: PaymentsRepo = {
     };
   },
   async markRefunded(id: string): Promise<void> {
+    const builder = new UpdateBuilder<PaymentDoc>()
+      .set("status", "refunded")
+      .set("updatedAt", new Date());
     const filter = { _id: id as unknown } as Filter<PaymentDoc>;
-    await paymentsCol().updateOne(filter, { $set: { status: "refunded", updatedAt: new Date() } });
+    await paymentsCol().updateOne(filter, toMongoUpdate(builder.build()));
   },
   async upsertByProviderId(args: {
     scopeId: string;
@@ -85,18 +90,21 @@ export const mongoPaymentsRepo: PaymentsRepo = {
     status: PaymentStatus;
     capturedAt?: Date | null;
   }): Promise<void> {
-    const set: Record<string, unknown> = { status: args.status };
-    if (typeof args.amount !== "undefined") set.amount = args.amount;
-    if (typeof args.currency !== "undefined") set.currency = args.currency;
-    set.capturedAt = args.capturedAt ?? new Date();
     const now = new Date();
+    const builder = new UpdateBuilder<PaymentDoc>()
+      .set("status", args.status)
+      .set("capturedAt", args.capturedAt ?? new Date())
+      .set("updatedAt", now)
+      .setOnInsert("createdAt", now);
+    if (typeof args.amount !== "undefined") builder.set("amount", args.amount);
+    if (typeof args.currency !== "undefined") builder.set("currency", args.currency);
     await paymentsCol().updateOne(
       {
         scopeId: args.scopeId,
         provider: args.provider,
         providerPaymentId: args.providerPaymentId,
       },
-      { $set: { ...set, updatedAt: now }, $setOnInsert: { createdAt: now } },
+      toMongoUpdate(builder.build()),
       { upsert: true }
     );
   },

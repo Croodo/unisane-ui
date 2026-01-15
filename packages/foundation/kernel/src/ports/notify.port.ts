@@ -7,6 +7,9 @@
  */
 
 import type { NotificationCategory } from "../constants/notify";
+import { setGlobalProvider, getGlobalProvider, hasGlobalProvider } from './global-provider';
+
+const PROVIDER_KEY = 'notify';
 
 /**
  * Email attachment
@@ -118,15 +121,12 @@ export interface NotifyPort {
   ): Promise<void>;
 }
 
-// Provider storage
-let _notifyProvider: NotifyPort | null = null;
-
 /**
  * Set the notify provider implementation.
  * Call this at app bootstrap.
  */
 export function setNotifyProvider(provider: NotifyPort): void {
-  _notifyProvider = provider;
+  setGlobalProvider(PROVIDER_KEY, provider);
 }
 
 /**
@@ -134,19 +134,20 @@ export function setNotifyProvider(provider: NotifyPort): void {
  * Throws if not configured.
  */
 export function getNotifyProvider(): NotifyPort {
-  if (!_notifyProvider) {
+  const provider = getGlobalProvider<NotifyPort>(PROVIDER_KEY);
+  if (!provider) {
     throw new Error(
       "NotifyPort not configured. Call setNotifyProvider() at bootstrap."
     );
   }
-  return _notifyProvider;
+  return provider;
 }
 
 /**
  * Check if notify provider is configured.
  */
 export function hasNotifyProvider(): boolean {
-  return _notifyProvider !== null;
+  return hasGlobalProvider(PROVIDER_KEY);
 }
 
 /**

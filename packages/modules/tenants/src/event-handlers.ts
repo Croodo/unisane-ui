@@ -47,7 +47,7 @@ async function handleStripeSubscriptionChanged(
     const friendlyPlanId = reverseMapPlanIdFromProvider('stripe', priceId);
 
     if (friendlyPlanId && typeof friendlyPlanId === 'string') {
-      await TenantsRepo.setPlanId(scopeId, friendlyPlanId);
+      await TenantsRepo.updatePlanId(scopeId, friendlyPlanId);
 
       // Invalidate entitlements cache so next request gets fresh data
       await invalidateEntitlements(scopeId).catch((err) => {
@@ -100,7 +100,7 @@ async function handleRazorpaySubscriptionChanged(
     const friendlyPlanId = reverseMapPlanIdFromProvider('razorpay', planId);
 
     if (friendlyPlanId && typeof friendlyPlanId === 'string') {
-      await TenantsRepo.setPlanId(scopeId, friendlyPlanId);
+      await TenantsRepo.updatePlanId(scopeId, friendlyPlanId);
 
       // Invalidate entitlements cache
       await invalidateEntitlements(scopeId).catch((err) => {

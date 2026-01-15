@@ -89,7 +89,7 @@ export const CreditsRepoMongo: CreditsRepoPort = {
     const burns = agg[0]?.burns ?? 0;
     return { grants, burns, available: grants - burns };
   },
-  async getBalancesByScopeIds(scopeIds: string[], now = new Date()): Promise<Map<string, number>> {
+  async findBalancesByScopeIds(scopeIds: string[], now = new Date()): Promise<Map<string, number>> {
     if (!scopeIds?.length) return new Map<string, number>();
     const rows = (await ledgerCol()
       .aggregate([

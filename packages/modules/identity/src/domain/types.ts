@@ -55,7 +55,7 @@ export type MinimalUserRow = {
 };
 
 export type MembershipsApi = {
-  get(scopeId: string, userId: string): Promise<Membership | null>;
+  findByScopeAndUser(scopeId: string, userId: string): Promise<Membership | null>;
   addRole(
     scopeId: string,
     userId: string,
@@ -104,7 +104,7 @@ export type MembershipsApi = {
     limit?: number,
     cursor?: string
   ): Promise<{ items: Membership[]; nextCursor?: string }>;
-  delete(
+  softDelete(
     scopeId: string,
     userId: string,
     expectedVersion?: number
@@ -113,7 +113,7 @@ export type MembershipsApi = {
     | { notFound: true }
     | { conflict: true; expected: number }
   >;
-  deleteAllForUser(userId: string): Promise<{ deletedCount: number }>;
+  softDeleteAllForUser(userId: string): Promise<{ deletedCount: number }>;
 };
 
 export type UserCreateInput = {

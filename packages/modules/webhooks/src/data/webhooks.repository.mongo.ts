@@ -4,7 +4,8 @@ import {
   seekPageMongoCollection,
   maybeObjectId,
   clampInt,
-  ObjectId,
+  newEntityId,
+  toNativeId,
   getTypedSetting,
   type Collection,
   type Filter,
@@ -14,6 +15,7 @@ import {
   type WebhookEventStatus,
   type WebhookProvider,
 } from "@unisane/kernel";
+import type { ObjectId } from "mongodb";
 import type { WebhooksRepoPort } from "../domain/ports";
 import type { WebhookEventDetail, WebhookEventListItem, WebhookEventListPage } from "../domain/types";
 
@@ -78,7 +80,7 @@ export const WebhooksRepoMongo: WebhooksRepoPort = {
     const items = docs;
     return { items, ...(nextCursor ? { nextCursor } : {}), ...(prevCursor ? { prevCursor } : {}) } as const;
   },
-  async getById(args): Promise<WebhookEventDetail | null> {
+  async findById(args): Promise<WebhookEventDetail | null> {
     const filter: Record<string, unknown> = { _id: maybeObjectId(args.id), scopeId: args.scopeId };
     if (args.direction) filter.direction = args.direction;
     const ev = await eventsCol().findOne(filter as Filter<WebhookEventDoc>);
@@ -102,7 +104,7 @@ export const WebhooksRepoMongo: WebhooksRepoPort = {
       const expiresAt = retentionDays > 0 ? new Date(Date.now() + retentionDays * 24 * 60 * 60 * 1000) : null;
       const now = new Date();
       await eventsCol().insertOne({
-        _id: new ObjectId(),
+        _id: toNativeId(newEntityId()) as ObjectId,
         scopeId: args.scopeId,
         direction: "in",
         provider: args.provider,
@@ -124,7 +126,7 @@ export const WebhooksRepoMongo: WebhooksRepoPort = {
   async recordOutbound(args) {
     const now = new Date();
     await eventsCol().insertOne({
-      _id: new ObjectId(),
+      _id: toNativeId(newEntityId()) as ObjectId,
       scopeId: args.scopeId,
       direction: "out",
       provider: null,

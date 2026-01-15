@@ -152,13 +152,13 @@ export type DeleteNotificationArgs = {
 export async function deleteNotification(args: DeleteNotificationArgs) {
   const scopeId = getScopeId();
   const userId = getScopeUserId();
-  const result = await NotificationsRepository.deleteNotification(scopeId, userId, args.id);
+  const result = await NotificationsRepository.softDeleteNotification(scopeId, userId, args.id);
   return result;
 }
 
 export async function deleteAllNotifications() {
   const scopeId = getScopeId();
   const userId = getScopeUserId();
-  const result = await NotificationsRepository.deleteAllNotifications(scopeId, userId);
+  const result = await NotificationsRepository.softDeleteAllNotifications(scopeId, userId);
   return result;
 }

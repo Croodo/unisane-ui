@@ -16,7 +16,7 @@ export async function cancelSubscription(
   if (mode === "topup_only" || mode === "disabled") {
     throw ERR.validation("Subscriptions are disabled for this deployment.");
   }
-  const providerSubId = await SubscriptionsRepository.getLatestProviderSubId(scopeId);
+  const providerSubId = await SubscriptionsRepository.findLatestProviderSubId(scopeId);
   if (!providerSubId) return { ok: false as const, error: "NO_SUBSCRIPTION" };
   try {
     const provider = getBillingProvider();
@@ -24,8 +24,8 @@ export async function cancelSubscription(
   } catch (e) {
     throw e;
   }
-  if (args.atPeriodEnd) await SubscriptionsRepository.setCancelAtPeriodEnd(scopeId);
-  else await SubscriptionsRepository.setCanceledImmediate(scopeId);
+  if (args.atPeriodEnd) await SubscriptionsRepository.markCancelAtPeriodEnd(scopeId);
+  else await SubscriptionsRepository.cancelImmediately(scopeId);
 
   await events.emit(BILLING_EVENTS.SUBSCRIPTION_CANCELLED, {
     scopeId,

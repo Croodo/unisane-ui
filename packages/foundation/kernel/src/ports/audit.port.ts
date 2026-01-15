@@ -6,6 +6,10 @@
  * Audit module implements this port, consumers depend on the interface.
  */
 
+import { setGlobalProvider, getGlobalProvider, hasGlobalProvider } from './global-provider';
+
+const PROVIDER_KEY = 'audit';
+
 /**
  * Actor who performed the action
  */
@@ -87,15 +91,12 @@ export interface AuditPort {
   getById?(id: string): Promise<AuditEntry | null>;
 }
 
-// Provider storage
-let _auditProvider: AuditPort | null = null;
-
 /**
  * Set the audit provider implementation.
  * Call this at app bootstrap.
  */
 export function setAuditProvider(provider: AuditPort): void {
-  _auditProvider = provider;
+  setGlobalProvider(PROVIDER_KEY, provider);
 }
 
 /**
@@ -103,19 +104,20 @@ export function setAuditProvider(provider: AuditPort): void {
  * Throws if not configured.
  */
 export function getAuditProvider(): AuditPort {
-  if (!_auditProvider) {
+  const provider = getGlobalProvider<AuditPort>(PROVIDER_KEY);
+  if (!provider) {
     throw new Error(
       "AuditPort not configured. Call setAuditProvider() at bootstrap."
     );
   }
-  return _auditProvider;
+  return provider;
 }
 
 /**
  * Check if audit provider is configured.
  */
 export function hasAuditProvider(): boolean {
-  return _auditProvider !== null;
+  return hasGlobalProvider(PROVIDER_KEY);
 }
 
 /**

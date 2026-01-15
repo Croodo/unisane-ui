@@ -9,7 +9,7 @@ import { guard } from '../middleware/guard';
 import type { GuardOpts as GuardOptsInternal } from '../middleware/guard';
 import { observeHttp } from "../telemetry";
 import type { OpKey } from "../rate-limits";
-import { runWithScopeContext, type ScopeType } from "@unisane/kernel";
+import { runWithScopeContext, type ScopeType, waitForBootstrap } from "@unisane/kernel";
 import { sanitizeRequestId } from "../middleware/validate";
 
 type HandlerOpts = {
@@ -145,6 +145,9 @@ export function makeHandler<
     let path = "";
 
     try {
+      // Wait for bootstrap to complete (handles Next.js 16 Turbopack timing)
+      await waitForBootstrap();
+
       const setup = await _setupHandler<Body, Params>(req, route, opts);
       requestId = setup.requestId;
       startedAt = setup.startedAt;
@@ -282,6 +285,9 @@ export function makeHandlerRaw<
     let path = "";
 
     try {
+      // Wait for bootstrap to complete (handles Next.js 16 Turbopack timing)
+      await waitForBootstrap();
+
       const setup = await _setupHandler<Body, Params>(req, route, opts);
       requestId = setup.requestId;
       startedAt = setup.startedAt;

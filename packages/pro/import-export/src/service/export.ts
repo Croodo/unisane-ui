@@ -23,7 +23,7 @@ export async function startExport(args: StartExportArgs) {
 
 export async function getExportStatus(args: { jobId: string }) {
   const tenantId = getScopeId();
-  const job = await JobsRepo.getExportById(tenantId, args.jobId);
+  const job = await JobsRepo.findExportById(tenantId, args.jobId);
   if (!job) return { status: "not_found" as const };
   const base = { id: job.id, status: job.status } as const;
   if (job.status === "done") {

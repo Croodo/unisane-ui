@@ -1,6 +1,8 @@
 import {
   col,
   COLLECTIONS,
+  UpdateBuilder,
+  toMongoUpdate,
   type UsageWindow,
   type Document,
 } from '@unisane/kernel';
@@ -19,16 +21,21 @@ type UsageSampleDoc = {
 const usageCol = () => col<UsageSampleDoc>(COLLECTIONS.USAGE_SAMPLES);
 
 export const UsageRepoMongo: UsageRepoPort = {
-  async getDayCount(scopeId, feature, dayStartUtc) {
+  async findDayCount(scopeId, feature, dayStartUtc) {
     const doc = await usageCol().findOne({ scopeId, feature, window: 'day', at: dayStartUtc } as Document);
     return (doc?.count ?? 0) as number;
   },
-  async getHourCount(scopeId, feature, hourStartUtc) {
+  async findHourCount(scopeId, feature, hourStartUtc) {
     const doc = await usageCol().findOne({ scopeId, feature, window: 'hour', at: hourStartUtc } as Document);
     return (doc?.count ?? 0) as number;
   },
   async upsertIncrement(window: UsageWindow, atUtc: Date, scopeId: string, feature: string, inc: number) {
-    await usageCol().updateOne({ scopeId, feature, window, at: atUtc } as Document, { $inc: { count: inc } } as Document, { upsert: true });
+    const builder = new UpdateBuilder<UsageSampleDoc>().inc("count", inc);
+    await usageCol().updateOne(
+      { scopeId, feature, window, at: atUtc } as Document,
+      toMongoUpdate(builder.build()) as Document,
+      { upsert: true }
+    );
   },
   async listHoursInRange(dayStartUtc, nextDayUtc) {
     const rows = await usageCol()

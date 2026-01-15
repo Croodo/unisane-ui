@@ -239,6 +239,33 @@ interface MongoConfig {
 
 **Known Issues**: DM-001 (connection race condition - P1)
 
+**Portability Note**: Currently the only database adapter. See [DATABASE-PORTABILITY.md](./DATABASE-PORTABILITY.md) for analysis of what would be needed to add PostgreSQL or other database adapters.
+
+### Database Abstraction Layer
+
+The kernel provides database-agnostic patterns that should be used in modules:
+
+| Pattern | Location | Purpose |
+|---------|----------|---------|
+| `QueryBuilder` | `@unisane/kernel` | Build database-agnostic queries |
+| `toMongoFilter()` | `@unisane/kernel` | Convert QuerySpec to MongoDB filter |
+| `RepositoryPort` | `@unisane/kernel` | Abstract repository interface |
+
+**Usage**:
+```typescript
+import { QueryBuilder, toMongoFilter } from '@unisane/kernel';
+
+const query = new QueryBuilder<User>()
+  .whereEq('status', 'active')
+  .whereContains('email', '@example.com')
+  .sort('createdAt', 'desc')
+  .build();
+
+const mongoFilter = toMongoFilter(query);
+```
+
+**Important**: New repository code should use `QueryBuilder` instead of raw MongoDB operators. See [PATTERNS.md](../PATTERNS.md#pattern-9-repository-with-querybuilder) for examples.
+
 ---
 
 ## Cache Adapters

@@ -10,7 +10,7 @@ export interface AuditRepoPort {
     nextCursor?: string;
     prevCursor?: string;
   }>;
-  getScopeLastActivity(scopeIds: string[]): Promise<Map<string, Date | null>>;
+  findScopeLastActivity(scopeIds: string[]): Promise<Map<string, Date | null>>;
   /** Admin list - all audit logs, optionally filtered by scopeId */
   listPageAdmin(args: {
     limit: number;

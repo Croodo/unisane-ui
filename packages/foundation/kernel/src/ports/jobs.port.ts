@@ -5,6 +5,10 @@
  * Implementations can use Inngest, BullMQ, or any other job queue.
  */
 
+import { setGlobalProvider, getGlobalProvider, hasGlobalProvider } from './global-provider';
+
+const PROVIDER_KEY = 'jobs';
+
 /**
  * Job event to be sent to the queue
  */
@@ -47,8 +51,6 @@ const noopJobsProvider: JobsPort = {
   },
 };
 
-let _jobsProvider: JobsPort = noopJobsProvider;
-
 /**
  * Set the jobs provider implementation.
  * Call this during app bootstrap to configure background job processing.
@@ -63,21 +65,21 @@ let _jobsProvider: JobsPort = noopJobsProvider;
  * ```
  */
 export function setJobsProvider(provider: JobsPort): void {
-  _jobsProvider = provider;
+  setGlobalProvider(PROVIDER_KEY, provider);
 }
 
 /**
  * Get the current jobs provider.
  */
 export function getJobsProvider(): JobsPort {
-  return _jobsProvider;
+  return getGlobalProvider<JobsPort>(PROVIDER_KEY) ?? noopJobsProvider;
 }
 
 /**
  * Check if a jobs provider has been configured (not noop).
  */
 export function hasJobsProvider(): boolean {
-  return _jobsProvider !== noopJobsProvider;
+  return hasGlobalProvider(PROVIDER_KEY);
 }
 
 /**
@@ -92,12 +94,12 @@ export function hasJobsProvider(): boolean {
  * ```
  */
 export async function sendJob<T = Record<string, unknown>>(event: JobEvent<T>): Promise<{ id?: string }> {
-  return _jobsProvider.send(event);
+  return getJobsProvider().send(event);
 }
 
 /**
  * Convenience function to send multiple job events.
  */
 export async function sendJobBatch<T = Record<string, unknown>>(events: JobEvent<T>[]): Promise<{ ids?: string[] }> {
-  return _jobsProvider.sendBatch(events);
+  return getJobsProvider().sendBatch(events);
 }

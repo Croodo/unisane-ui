@@ -3,8 +3,14 @@
   "ui": "tui",
   "concurrency": "50",
   "tasks": {
-    "build": {
+    "codegen": {
       "dependsOn": ["^build"],
+      "inputs": ["src/contracts/**/*.contract.ts", "devtools.config.ts"],
+      "outputs": ["src/app/api/**/route.ts", "src/sdk/**/*.ts"],
+      "cache": true
+    },
+    "build": {
+      "dependsOn": ["^build", "codegen"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
@@ -12,7 +18,7 @@
       "dependsOn": ["^lint"]
     },
     "check-types": {
-      "dependsOn": ["^check-types"]
+      "dependsOn": ["^check-types", "codegen"]
     },
     "dev": {
       "dependsOn": ["^build"],

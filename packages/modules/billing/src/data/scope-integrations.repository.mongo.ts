@@ -2,6 +2,8 @@ import {
   col,
   COLLECTIONS,
   softDeleteFilter,
+  UpdateBuilder,
+  toMongoUpdate,
   type Collection,
   type Document,
   type FindCursor,
@@ -61,12 +63,16 @@ export const mongoScopeIntegrationsRepo: ScopeIntegrationsRepo = {
     provider: BillingProvider,
     customerId: string
   ): Promise<void> {
+    const now = new Date();
+    const builder = new UpdateBuilder<TenantIntegrationDoc>()
+      .set("customerId", customerId)
+      .set("deletedAt", null)
+      .set("updatedAt", now)
+      .setOnInsert("meta", null)
+      .setOnInsert("createdAt", now);
     await tiCol().updateOne(
       { scopeId, provider },
-      {
-        $set: { customerId, deletedAt: null, updatedAt: new Date() },
-        $setOnInsert: { meta: null, createdAt: new Date() },
-      },
+      toMongoUpdate(builder.build()),
       { upsert: true }
     );
   },
@@ -84,9 +90,13 @@ export const mongoScopeIntegrationsRepo: ScopeIntegrationsRepo = {
     provider: BillingProvider,
     customerId: string
   ): Promise<void> {
+    const now = new Date();
+    const builder = new UpdateBuilder<TenantIntegrationDoc>()
+      .set("deletedAt", now)
+      .set("updatedAt", now);
     await tiCol().updateMany(
       { provider, customerId, ...softDeleteFilter() },
-      { $set: { deletedAt: new Date(), updatedAt: new Date() } }
+      toMongoUpdate(builder.build())
     );
   },
 };

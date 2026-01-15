@@ -22,7 +22,7 @@ export async function totalsAvailable(scopeId: string, now = new Date()): Promis
 }
 
 export async function getBalancesByScopeIds(scopeIds: string[], now = new Date()): Promise<Map<string, number>> {
-  return repo.getBalancesByScopeIds(scopeIds, now);
+  return repo.findBalancesByScopeIds(scopeIds, now);
 }
 
 export async function totalsGrantsByReason(

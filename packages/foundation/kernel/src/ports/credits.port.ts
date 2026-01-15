@@ -7,6 +7,9 @@
  */
 
 import type { CreditKind } from "../constants/credits";
+import { setGlobalProvider, getGlobalProvider, hasGlobalProvider } from './global-provider';
+
+const PROVIDER_KEY = 'credits';
 
 /**
  * Credit balance view
@@ -79,15 +82,12 @@ export interface CreditsPort {
   }): Promise<{ transactions: CreditTransaction[]; total: number }>;
 }
 
-// Provider storage
-let _creditsProvider: CreditsPort | null = null;
-
 /**
  * Set the credits provider implementation.
  * Call this at app bootstrap.
  */
 export function setCreditsProvider(provider: CreditsPort): void {
-  _creditsProvider = provider;
+  setGlobalProvider(PROVIDER_KEY, provider);
 }
 
 /**
@@ -95,19 +95,20 @@ export function setCreditsProvider(provider: CreditsPort): void {
  * Throws if not configured.
  */
 export function getCreditsProvider(): CreditsPort {
-  if (!_creditsProvider) {
+  const provider = getGlobalProvider<CreditsPort>(PROVIDER_KEY);
+  if (!provider) {
     throw new Error(
       "CreditsPort not configured. Call setCreditsProvider() at bootstrap."
     );
   }
-  return _creditsProvider;
+  return provider;
 }
 
 /**
  * Check if credits provider is configured.
  */
 export function hasCreditsProvider(): boolean {
-  return _creditsProvider !== null;
+  return hasGlobalProvider(PROVIDER_KEY);
 }
 
 /**

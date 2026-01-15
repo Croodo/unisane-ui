@@ -7,6 +7,9 @@
  */
 
 import type { UsageWindow } from "../constants/time";
+import { setGlobalProvider, getGlobalProvider, hasGlobalProvider } from './global-provider';
+
+const PROVIDER_KEY = 'usage';
 
 /**
  * Usage record
@@ -97,15 +100,12 @@ export interface UsagePort {
   }): Promise<boolean>;
 }
 
-// Provider storage
-let _usageProvider: UsagePort | null = null;
-
 /**
  * Set the usage provider implementation.
  * Call this at app bootstrap.
  */
 export function setUsageProvider(provider: UsagePort): void {
-  _usageProvider = provider;
+  setGlobalProvider(PROVIDER_KEY, provider);
 }
 
 /**
@@ -113,19 +113,20 @@ export function setUsageProvider(provider: UsagePort): void {
  * Throws if not configured.
  */
 export function getUsageProvider(): UsagePort {
-  if (!_usageProvider) {
+  const provider = getGlobalProvider<UsagePort>(PROVIDER_KEY);
+  if (!provider) {
     throw new Error(
       "UsagePort not configured. Call setUsageProvider() at bootstrap."
     );
   }
-  return _usageProvider;
+  return provider;
 }
 
 /**
  * Check if usage provider is configured.
  */
 export function hasUsageProvider(): boolean {
-  return _usageProvider !== null;
+  return hasGlobalProvider(PROVIDER_KEY);
 }
 
 /**

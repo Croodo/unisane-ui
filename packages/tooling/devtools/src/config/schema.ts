@@ -7,8 +7,9 @@
  * - zod: Zod schema re-exports
  * - types: TypeScript types
  * - admin-hooks: Admin list params hooks and grid registries
+ * - openapi: OpenAPI 3.1 spec (openapi.json)
  */
-export type SdkTarget = 'browser' | 'server' | 'hooks' | 'vue' | 'zod' | 'types' | 'admin-hooks';
+export type SdkTarget = 'browser' | 'server' | 'hooks' | 'vue' | 'zod' | 'types' | 'admin-hooks' | 'openapi';
 
 /**
  * Next.js runtime options

@@ -6,7 +6,7 @@ import { ERR } from "@unisane/gateway";
 export async function getSubscription() {
   const scopeId = getScopeId();
   const [sub, tenant] = await Promise.all([
-    SubscriptionsRepository.getLatest(scopeId).catch(() => null),
+    SubscriptionsRepository.findLatest(scopeId).catch(() => null),
     hasTenantsProvider()
       ? getTenantsProvider().findById(scopeId).catch(() => null)
       : Promise.resolve(null),
@@ -28,7 +28,7 @@ export async function assertActiveSubscriptionForCredits(): Promise<void> {
   const scopeId = getScopeId();
   const mode = await getBillingMode();
   if (mode !== "subscription_with_credits") return;
-  const sub = await SubscriptionsRepository.getLatest(scopeId).catch(() => null);
+  const sub = await SubscriptionsRepository.findLatest(scopeId).catch(() => null);
   const status = sub?.status;
   const isActive = status === "active" || status === "trialing";
   if (!isActive) {

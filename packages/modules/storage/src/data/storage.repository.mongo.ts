@@ -6,13 +6,18 @@ import {
   withScope,
   getScope,
   FILE_STATUS,
-  ObjectId,
+  newEntityId,
+  toNativeId,
+  isValidId,
+  UpdateBuilder,
+  toMongoUpdate,
   type Filter,
   type StorageFolder,
   type FileStatus,
   type AllowedContentType,
   type ScopeType,
 } from "@unisane/kernel";
+import type { ObjectId } from "mongodb";
 import type { StorageFile, CreateFileInput } from "../domain/types";
 import type { StorageRepository } from "../domain/ports";
 
@@ -83,9 +88,9 @@ async function create(input: CreateFileInput): Promise<StorageFile> {
 }
 
 async function findById(id: string): Promise<StorageFile | null> {
-  if (!ObjectId.isValid(id)) return null;
+  if (!isValidId(id)) return null;
   // Use scopedFilter for automatic tenant scoping
-  const doc = await storageCol().findOne(scopedFilter({ _id: new ObjectId(id) }));
+  const doc = await storageCol().findOne(scopedFilter({ _id: toNativeId(id) as ObjectId }));
   return doc ? toDto(doc) : null;
 }
 
@@ -96,32 +101,39 @@ async function findByKey(key: string): Promise<StorageFile | null> {
 }
 
 async function confirmUpload(id: string): Promise<StorageFile | null> {
-  if (!ObjectId.isValid(id)) return null;
+  if (!isValidId(id)) return null;
+  const builder = new UpdateBuilder<StorageFileDoc>()
+    .set("status", FILE_STATUS.ACTIVE)
+    .set("updatedAt", new Date());
   // Use scopedFilter for automatic tenant scoping
   const result = await storageCol().findOneAndUpdate(
-    scopedFilter({ _id: new ObjectId(id), status: FILE_STATUS.PENDING }),
-    { $set: { status: FILE_STATUS.ACTIVE, updatedAt: new Date() } },
+    scopedFilter({ _id: toNativeId(id) as ObjectId, status: FILE_STATUS.PENDING }),
+    toMongoUpdate(builder.build()),
     { returnDocument: "after" }
   );
   return result ? toDto(result) : null;
 }
 
 async function softDelete(id: string): Promise<StorageFile | null> {
-  if (!ObjectId.isValid(id)) return null;
+  if (!isValidId(id)) return null;
   const now = new Date();
+  const builder = new UpdateBuilder<StorageFileDoc>()
+    .set("status", FILE_STATUS.DELETED)
+    .set("deletedAt", now)
+    .set("updatedAt", now);
   // Use scopedFilter for automatic tenant scoping
   const result = await storageCol().findOneAndUpdate(
-    scopedFilter({ _id: new ObjectId(id), status: { $ne: FILE_STATUS.DELETED } }),
-    { $set: { status: FILE_STATUS.DELETED, deletedAt: now, updatedAt: now } },
+    scopedFilter({ _id: toNativeId(id) as ObjectId, status: { $ne: FILE_STATUS.DELETED } }),
+    toMongoUpdate(builder.build()),
     { returnDocument: "after" }
   );
   return result ? toDto(result) : null;
 }
 
 async function hardDelete(id: string): Promise<boolean> {
-  if (!ObjectId.isValid(id)) return false;
+  if (!isValidId(id)) return false;
   // Use scopedFilter for automatic tenant scoping
-  const result = await storageCol().deleteOne(scopedFilter({ _id: new ObjectId(id) }));
+  const result = await storageCol().deleteOne(scopedFilter({ _id: toNativeId(id) as ObjectId }));
   return result.deletedCount > 0;
 }
 
@@ -137,8 +149,8 @@ async function list(
   const baseFilter: Record<string, unknown> = {};
   if (opts.folder) baseFilter.folder = opts.folder;
   if (opts.status) baseFilter.status = opts.status;
-  if (opts.cursor && ObjectId.isValid(opts.cursor)) {
-    baseFilter._id = { $gt: new ObjectId(opts.cursor) };
+  if (opts.cursor && isValidId(opts.cursor)) {
+    baseFilter._id = { $gt: toNativeId(opts.cursor) };
   }
   // Use scopedFilter for automatic tenant scoping
   const docs = await storageCol()

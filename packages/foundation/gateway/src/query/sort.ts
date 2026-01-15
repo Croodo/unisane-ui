@@ -1,8 +1,18 @@
-import type { FieldDef } from '../registry/types';
+/**
+ * Sort utilities for query parsing and comparison.
+ */
+
+/** Field definition for sorting - minimal interface */
+export interface SortFieldDef {
+  /** Database key to sort by */
+  key: string;
+  /** Optional ranking for enum values */
+  enumRank?: Record<string, number>;
+}
 
 export type SortSpec = Array<{ field: string; dir: 'asc' | 'desc' }>;
 
-export function parseSort(input: string | undefined, registry: Record<string, FieldDef>): SortSpec {
+export function parseSort(input: string | undefined, registry: Record<string, SortFieldDef>): SortSpec {
   if (!input) return [];
   const parts = input.split(',').map((s) => s.trim()).filter(Boolean);
   const spec: SortSpec = [];
@@ -26,7 +36,7 @@ export function compareValues(a: unknown, b: unknown): number {
 }
 
 export function makeComparator<T extends Record<string, unknown>>(
-  registry: Record<string, FieldDef>,
+  registry: Record<string, SortFieldDef>,
   sort: SortSpec
 ) {
   return (a: T, b: T) => {

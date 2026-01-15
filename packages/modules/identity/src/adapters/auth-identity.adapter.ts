@@ -121,8 +121,8 @@ export const authIdentityAdapter: AuthIdentityPort = {
     userId: string,
     tenantId: string
   ): Promise<{ id: string } | null> {
-    // membershipsRepository.get takes (scopeId, userId)
-    const membership = await membershipsRepository.get(tenantId, userId);
+    // membershipsRepository.findByScopeAndUser takes (scopeId, userId)
+    const membership = await membershipsRepository.findByScopeAndUser(tenantId, userId);
     if (!membership) return null;
     // Membership uses composite key (scopeId, userId), return scopeId as id
     return { id: membership.scopeId };

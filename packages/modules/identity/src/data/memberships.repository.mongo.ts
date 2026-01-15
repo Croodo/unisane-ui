@@ -6,6 +6,8 @@ import {
   explicitScopeFilterActive,
   seekPageMongoCollection,
   clampInt,
+  UpdateBuilder,
+  toMongoUpdate,
   type RoleId,
   type Permission,
   type GrantEffect,
@@ -29,7 +31,7 @@ function extractMembership(r: unknown): MembershipDoc | null {
 }
 
 export const mongoMembershipsRepository: MembershipsApi = {
-  async get(scopeId: string, userId: string): Promise<Membership | null> {
+  async findByScopeAndUser(scopeId: string, userId: string): Promise<Membership | null> {
     // Use explicit scopeId parameter - NOT from context
     // This is important for auth-time lookups that happen before ctx.run()
     const doc = await mCol().findOne(
@@ -56,14 +58,14 @@ export const mongoMembershipsRepository: MembershipsApi = {
       return { conflict: true as const, expected: current.version ?? 0 };
     }
     const now = new Date();
+    const builder = new UpdateBuilder<MembershipDoc>()
+      .addToSet("roles", { roleId, grantedAt: now })
+      .inc("version", 1)
+      .set("updatedAt", now)
+      .setOnInsert("createdAt", now);
     const r = await mCol().findOneAndUpdate(
       explicitScopeFilter('tenant', scopeId, { userId }) as Document,
-      {
-        $addToSet: { roles: { roleId, grantedAt: now } },
-        $inc: { version: 1 },
-        $set: { updatedAt: now },
-        $setOnInsert: { createdAt: now },
-      } as Document,
+      toMongoUpdate(builder.build()) as Document,
       { upsert: true, returnDocument: "after" }
     );
     return {
@@ -90,13 +92,13 @@ export const mongoMembershipsRepository: MembershipsApi = {
       return { conflict: true as const, expected: current.version ?? 0 };
     }
     const now = new Date();
+    const builder = new UpdateBuilder<MembershipDoc>()
+      .pull("roles", { roleId })
+      .inc("version", 1)
+      .set("updatedAt", now);
     const r = await mCol().findOneAndUpdate(
       explicitScopeFilter('tenant', scopeId, { userId }) as Document,
-      {
-        $pull: { roles: { roleId } },
-        $inc: { version: 1 },
-        $set: { updatedAt: now },
-      } as Document,
+      toMongoUpdate(builder.build()) as Document,
       { returnDocument: "after" }
     );
     return {
@@ -124,14 +126,14 @@ export const mongoMembershipsRepository: MembershipsApi = {
       return { conflict: true as const, expected: current.version ?? 0 };
     }
     const now = new Date();
+    const builder = new UpdateBuilder<MembershipDoc>()
+      .addToSet("grants", { perm, effect })
+      .inc("version", 1)
+      .set("updatedAt", now)
+      .setOnInsert("createdAt", now);
     const r = await mCol().findOneAndUpdate(
       explicitScopeFilter('tenant', scopeId, { userId }) as Document,
-      {
-        $addToSet: { grants: { perm, effect } },
-        $inc: { version: 1 },
-        $set: { updatedAt: now },
-        $setOnInsert: { createdAt: now },
-      } as Document,
+      toMongoUpdate(builder.build()) as Document,
       { upsert: true, returnDocument: "after" }
     );
     return {
@@ -158,13 +160,13 @@ export const mongoMembershipsRepository: MembershipsApi = {
       return { conflict: true as const, expected: current.version ?? 0 };
     }
     const now = new Date();
+    const builder = new UpdateBuilder<MembershipDoc>()
+      .pull("grants", { perm })
+      .inc("version", 1)
+      .set("updatedAt", now);
     const r = await mCol().findOneAndUpdate(
       explicitScopeFilter('tenant', scopeId, { userId }) as Document,
-      {
-        $pull: { grants: { perm } },
-        $inc: { version: 1 },
-        $set: { updatedAt: now },
-      } as Document,
+      toMongoUpdate(builder.build()) as Document,
       { returnDocument: "after" }
     );
     return {
@@ -270,7 +272,7 @@ export const mongoMembershipsRepository: MembershipsApi = {
     return { items, ...(next ? { nextCursor: next } : {}) };
   },
 
-  async delete(scopeId: string, userId: string, expectedVersion?: number) {
+  async softDelete(scopeId: string, userId: string, expectedVersion?: number) {
     // Use explicit scopeId - NOT from context
     const current = await mCol().findOne(
       explicitScopeFilterActive('tenant', scopeId, { userId }) as Document
@@ -299,8 +301,8 @@ export const mongoMembershipsRepository: MembershipsApi = {
   },
 
   // NOTE: Cross-scope operation - intentionally NOT using scopeFilter()
-  // This deletes a user's memberships across ALL scopes (used during user deletion)
-  async deleteAllForUser(userId: string): Promise<{ deletedCount: number }> {
+  // This soft-deletes a user's memberships across ALL scopes (used during user deletion)
+  async softDeleteAllForUser(userId: string): Promise<{ deletedCount: number }> {
     const res = await mCol().updateMany(
       {
         userId,

@@ -81,7 +81,3 @@ export {
 } from './versioning';
 export type { DeprecationInfo } from './versioning';
 
-// Registry types
-export * from './registry/types';
-export { adminListConfigs } from './registry/admin.lists';
-export type { AdminListConfig } from './registry/admin.lists';

@@ -3,6 +3,8 @@ import {
   COLLECTIONS,
   seekPageMongoCollection,
   softDeleteFilter,
+  UpdateBuilder,
+  toMongoUpdate,
   type Document,
   type Filter,
   type WithId,
@@ -109,12 +111,15 @@ export const InappRepoMongo: InappRepoPort = {
     return out;
   },
   async upsertRead(scopeId, userId, id) {
+    const now = new Date();
+    const builder = new UpdateBuilder<InappReceiptDoc>()
+      .set("readAt", now)
+      .set("seenAt", now)
+      .set("updatedAt", now)
+      .setOnInsert("createdAt", now);
     await recCol().updateOne(
       { scopeId, userId, notificationId: id } as Document,
-      {
-        $set: { readAt: new Date(), seenAt: new Date(), updatedAt: new Date() },
-        $setOnInsert: { createdAt: new Date() },
-      } as Document,
+      toMongoUpdate(builder.build()) as Document,
       { upsert: true }
     );
   },
@@ -227,8 +232,9 @@ export const InappRepoMongo: InappRepoPort = {
     return unreadCount;
   },
 
-  async deleteNotification(scopeId, userId, notificationId) {
-    // Soft delete - set deletedAt
+  async softDeleteNotification(scopeId, userId, notificationId) {
+    const builder = new UpdateBuilder<InappNotificationDoc>()
+      .set("deletedAt", new Date());
     const result = await notifCol().updateOne(
       {
         _id: notificationId,
@@ -236,20 +242,21 @@ export const InappRepoMongo: InappRepoPort = {
         userId,
         ...softDeleteFilter(),
       } as Document,
-      { $set: { deletedAt: new Date() } }
+      toMongoUpdate(builder.build()) as Document
     );
     return { deleted: result.modifiedCount > 0 };
   },
 
-  async deleteAllNotifications(scopeId, userId) {
-    // Soft delete all - set deletedAt
+  async softDeleteAllNotifications(scopeId, userId) {
+    const builder = new UpdateBuilder<InappNotificationDoc>()
+      .set("deletedAt", new Date());
     const result = await notifCol().updateMany(
       {
         scopeId,
         userId,
         ...softDeleteFilter(),
       } as Document,
-      { $set: { deletedAt: new Date() } }
+      toMongoUpdate(builder.build()) as Document
     );
     return { count: result.modifiedCount };
   },
