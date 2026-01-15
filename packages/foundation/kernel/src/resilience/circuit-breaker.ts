@@ -37,6 +37,21 @@ import {
 } from './metrics';
 
 /**
+ * Default circuit breaker thresholds.
+ * Use these constants when configuring adapters to ensure consistency.
+ */
+export const CIRCUIT_BREAKER_DEFAULTS = {
+  /** Number of failures before opening circuit */
+  failureThreshold: 5,
+  /** Time in ms before attempting recovery */
+  resetTimeout: 30_000,
+  /** Number of successful calls to close circuit */
+  successThreshold: 2,
+  /** Timeout for individual calls in ms */
+  callTimeout: 10_000,
+} as const;
+
+/**
  * Circuit breaker states.
  */
 export type CircuitState = 'CLOSED' | 'OPEN' | 'HALF_OPEN';
@@ -119,10 +134,10 @@ export class CircuitBreaker {
     public readonly name: string,
     options: CircuitBreakerOptions = {}
   ) {
-    this.failureThreshold = options.failureThreshold ?? 5;
-    this.resetTimeout = options.resetTimeout ?? 30000;
-    this.successThreshold = options.successThreshold ?? 2;
-    this.callTimeout = options.callTimeout ?? 10000;
+    this.failureThreshold = options.failureThreshold ?? CIRCUIT_BREAKER_DEFAULTS.failureThreshold;
+    this.resetTimeout = options.resetTimeout ?? CIRCUIT_BREAKER_DEFAULTS.resetTimeout;
+    this.successThreshold = options.successThreshold ?? CIRCUIT_BREAKER_DEFAULTS.successThreshold;
+    this.callTimeout = options.callTimeout ?? CIRCUIT_BREAKER_DEFAULTS.callTimeout;
     this.onOpen = options.onOpen;
     this.onClose = options.onClose;
     this.onHalfOpen = options.onHalfOpen;

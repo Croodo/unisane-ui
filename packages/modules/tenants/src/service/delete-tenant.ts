@@ -16,7 +16,7 @@ import { TenantsRepo } from "../data/tenants.repository";
 import { TENANT_EVENTS } from "../domain/constants";
 
 export type DeleteTenantArgs = {
-  scopeId: string;
+  tenantId: string;
   actorId?: string;
 };
 
@@ -42,17 +42,17 @@ export type DeleteTenantResult = {
 export async function deleteTenant(
   args: DeleteTenantArgs
 ): Promise<DeleteTenantResult> {
-  const result = await TenantsRepo.deleteCascade(args);
+  const result = await TenantsRepo.deleteCascade({ scopeId: args.tenantId, actorId: args.actorId });
 
   logger.info("tenant.deleted", {
-    scopeId: args.scopeId,
+    scopeId: args.tenantId,
     actorId: args.actorId,
     cascade: result.cascade,
   });
 
   // Emit event for side effects (e.g., cleanup jobs, notifications)
   await events.emit(TENANT_EVENTS.DELETED, {
-    scopeId: args.scopeId,
+    scopeId: args.tenantId,
     actorId: args.actorId,
     cascade: result.cascade,
   });

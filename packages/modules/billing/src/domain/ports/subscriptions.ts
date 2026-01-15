@@ -1,6 +1,16 @@
 import type { SubscriptionView } from '../types';
 import type { BillingProvider, SubscriptionStatus } from '@unisane/kernel';
-import type { LatestSub } from '@unisane/tenants';
+
+/**
+ * Lightweight subscription view for admin/stats aggregation.
+ * Defined locally to avoid cross-module type dependency on @unisane/tenants.
+ */
+export type LatestSub = {
+  planId: string | null;
+  status: string | null;
+  quantity: number | null;
+  currentPeriodEnd: Date | null;
+};
 
 export interface SubscriptionsRepo {
   getLatest(scopeId: string): Promise<SubscriptionView | null>;

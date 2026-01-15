@@ -5,6 +5,7 @@ import {
   maybeObjectId,
   clampInt,
   ObjectId,
+  getTypedSetting,
   type Collection,
   type Filter,
   type Document,
@@ -15,7 +16,6 @@ import {
 } from "@unisane/kernel";
 import type { WebhooksRepoPort } from "../domain/ports";
 import type { WebhookEventDetail, WebhookEventListItem, WebhookEventListPage } from "../domain/types";
-import { getTypedSetting } from "@unisane/settings";
 
 type WebhookEventDoc = {
   _id: string | ObjectId;

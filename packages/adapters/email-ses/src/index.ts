@@ -24,6 +24,7 @@
 
 import { SESv2Client, SendEmailCommand } from '@aws-sdk/client-sesv2';
 import type { EmailProvider, EmailMessage, SendResult } from '@unisane/kernel';
+import { CIRCUIT_BREAKER_DEFAULTS } from '@unisane/kernel';
 
 export interface SESEmailAdapterConfig {
   /** AWS region */
@@ -124,8 +125,8 @@ export function createSESEmailAdapter(config: SESEmailAdapterConfig): EmailProvi
     name: 'email-ses',
     primary: new SESEmailAdapter(config),
     circuitBreaker: {
-      failureThreshold: 10,
-      resetTimeout: 30000,
+      failureThreshold: CIRCUIT_BREAKER_DEFAULTS.failureThreshold,
+      resetTimeout: CIRCUIT_BREAKER_DEFAULTS.resetTimeout,
     },
     retry: {
       maxRetries: 3,

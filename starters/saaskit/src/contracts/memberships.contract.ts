@@ -47,6 +47,7 @@ export const membershipsContract = c.router({
         }),
       },
       summary: "List memberships",
+      description: "List all members of a tenant with their roles and permissions. Supports cursor-based pagination. Requires MEMBERS_WRITE permission.",
     },
     defineOpMeta({
       op: "memberships.list",
@@ -77,6 +78,7 @@ export const membershipsContract = c.router({
         200: z.object({ ok: z.literal(true), data: ZMembershipOut.nullable() }),
       },
       summary: "Get membership",
+      description: "Get a single membership by tenant and user ID. Returns the member's roles, direct permission grants, and version for optimistic concurrency. Returns null if not found.",
     },
     defineOpMeta({
       op: "memberships.getOne",
@@ -106,6 +108,7 @@ export const membershipsContract = c.router({
         200: z.object({ ok: z.literal(true), data: ZMembershipOut }),
       },
       summary: "Add role",
+      description: "Add a role to a member. Supports optimistic concurrency via expectedVersion. Changes are audited. Requires MEMBERS_WRITE permission.",
     },
     defineOpMeta({
       op: "memberships.addRole",
@@ -157,6 +160,7 @@ export const membershipsContract = c.router({
         200: z.object({ ok: z.literal(true), data: ZMembershipOut }),
       },
       summary: "Remove role",
+      description: "Remove a role from a member. Supports optimistic concurrency via expectedVersion. Changes are audited. Requires MEMBERS_WRITE permission.",
     },
     defineOpMeta({
       op: "memberships.removeRole",
@@ -208,6 +212,7 @@ export const membershipsContract = c.router({
         200: z.object({ ok: z.literal(true), data: ZMembershipOut }),
       },
       summary: "Grant permission",
+      description: "Grant a direct permission to a member (allow or deny). Bypasses role-based permissions. Supports optimistic concurrency. Changes are audited. Requires MEMBERS_WRITE permission.",
     },
     defineOpMeta({
       op: "memberships.grantPerm",
@@ -263,6 +268,7 @@ export const membershipsContract = c.router({
         200: z.object({ ok: z.literal(true) }),
       },
       summary: "Remove member from workspace",
+      description: "Remove a member from the tenant completely. The user will lose all access to the workspace. Supports optimistic concurrency. Changes are audited. Requires MEMBERS_WRITE permission.",
     },
     defineOpMeta({
       op: "memberships.remove",
@@ -307,6 +313,7 @@ export const membershipsContract = c.router({
         200: z.object({ ok: z.literal(true), data: ZMembershipOut }),
       },
       summary: "Revoke permission",
+      description: "Revoke a direct permission grant from a member. The member will fall back to role-based permissions. Supports optimistic concurrency. Changes are audited. Requires MEMBERS_WRITE permission.",
     },
     defineOpMeta({
       op: "memberships.revokePerm",

@@ -139,3 +139,9 @@ export { TenantsRepo } from "./data/tenants.repository";
 // ════════════════════════════════════════════════════════════════════════════
 
 export { registerTenantEventHandlers } from "./event-handlers";
+
+// ════════════════════════════════════════════════════════════════════════════
+// Port Adapter (for hexagonal architecture)
+// ════════════════════════════════════════════════════════════════════════════
+
+export { tenantsAdapter } from './adapter';

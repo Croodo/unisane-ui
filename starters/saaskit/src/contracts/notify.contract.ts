@@ -35,6 +35,7 @@ export const notifyContract = c.router({
         }),
       },
       summary: "Enqueue email",
+      description: "Queue an email for delivery. Email will be sent asynchronously via the configured email provider. Idempotent - safe to retry. Returns an ID to track delivery status.",
     },
     defineOpMeta({
       op: "notify.email",
@@ -67,6 +68,7 @@ export const notifyContract = c.router({
         }),
       },
       summary: "Get notify prefs",
+      description: "Get the current user's notification preferences for the tenant. Returns a map of notification categories to enabled/disabled status.",
     },
     defineOpMeta({
       op: "notify.preferences.get",
@@ -97,6 +99,7 @@ export const notifyContract = c.router({
         }),
       },
       summary: "Set notify prefs",
+      description: "Update the current user's notification preferences. Enable or disable specific notification categories. Idempotent - safe to retry.",
     },
     defineOpMeta({
       op: "notify.preferences.update",
@@ -140,6 +143,7 @@ export const notifyContract = c.router({
         }),
       },
       summary: "In-app list",
+      description: "List in-app notifications for the current user. Returns notifications with read/seen status. Supports cursor-based pagination. Newest notifications first.",
     },
     defineOpMeta({
       op: "inapp.list",
@@ -169,6 +173,7 @@ export const notifyContract = c.router({
         }),
       },
       summary: "In-app mark read",
+      description: "Mark a specific in-app notification as read. Updates the readAt timestamp. Idempotent - safe to call multiple times for the same notification.",
     },
     defineOpMeta({
       op: "inapp.markRead",
@@ -202,6 +207,7 @@ export const notifyContract = c.router({
         }),
       },
       summary: "In-app mark all seen",
+      description: "Mark all in-app notifications as seen. Updates the seenAt timestamp for all unseen notifications. Useful for dismissing the notification badge. Idempotent.",
     },
     defineOpMeta({
       op: "inapp.markAllSeen",
@@ -227,6 +233,7 @@ export const notifyContract = c.router({
         }),
       },
       summary: "In-app unread count",
+      description: "Get the count of unread in-app notifications for the current user. Useful for displaying notification badges in the UI.",
     },
     defineOpMeta({
       op: "inapp.unreadCount",
@@ -254,6 +261,7 @@ export const notifyContract = c.router({
         }),
       },
       summary: "Delete in-app notification",
+      description: "Delete a single in-app notification by ID. Permanently removes the notification from the user's inbox. Returns whether the deletion was successful.",
     },
     defineOpMeta({
       op: "inapp.delete",
@@ -285,6 +293,7 @@ export const notifyContract = c.router({
         }),
       },
       summary: "Delete all in-app notifications",
+      description: "Delete all in-app notifications for the current user. Permanently clears the user's notification inbox. Returns the count of deleted notifications.",
     },
     defineOpMeta({
       op: "inapp.deleteAll",

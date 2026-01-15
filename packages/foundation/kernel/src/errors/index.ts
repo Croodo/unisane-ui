@@ -171,4 +171,6 @@ export {
   PreconditionFailedError,
   UnprocessableError,
   ProviderError,
+  ConfigurationError,
+  AdapterError,
 } from './common';

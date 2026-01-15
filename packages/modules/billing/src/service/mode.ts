@@ -1,5 +1,4 @@
-import { getTypedSetting } from "@unisane/settings";
-import { DEFAULT_BILLING_MODE } from "@unisane/kernel";
+import { getTypedSetting, DEFAULT_BILLING_MODE } from "@unisane/kernel";
 import type { BillingMode } from "@unisane/kernel";
 
 export async function getBillingMode(): Promise<BillingMode> {

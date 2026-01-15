@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ZRFC3339, ZIdem } from '@unisane/kernel';
+import { ZRFC3339, ZIdem, ZUsageWindow } from '@unisane/kernel';
 
 export const ZUsageIncrement = z.object({
   feature: z.string().min(1),
@@ -11,6 +11,6 @@ export const ZUsageIncrement = z.object({
 export const ZGetWindow = z.object({
   tenantId: z.string().min(1),
   feature: z.string().min(1),
-  window: z.enum(['minute', 'hour', 'day']),
+  window: ZUsageWindow,
   at: ZRFC3339.optional(),
 });

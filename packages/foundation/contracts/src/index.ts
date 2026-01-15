@@ -7,23 +7,49 @@
 
 import { z } from 'zod';
 
-// Admin stats query
-export const ZAdminStatsQuery = z.object({
+// Date range query (for stats/reports)
+export const ZDateRangeQuery = z.object({
   from: z.string().datetime().optional(),
   to: z.string().datetime().optional(),
   granularity: z.enum(['day', 'week', 'month']).optional(),
 });
 
-export type AdminStatsQuery = z.infer<typeof ZAdminStatsQuery>;
+export type DateRangeQuery = z.infer<typeof ZDateRangeQuery>;
+
+/** @deprecated Use ZDateRangeQuery instead */
+export const ZAdminStatsQuery = ZDateRangeQuery;
+/** @deprecated Use DateRangeQuery instead */
+export type AdminStatsQuery = DateRangeQuery;
 
 // Pagination contracts
+/**
+ * Standard pagination defaults for all list endpoints.
+ * Use these values consistently across all contracts.
+ */
+export const PAGINATION_DEFAULTS = {
+  defaultLimit: 20,
+  maxLimit: 100,
+  defaultOffset: 0,
+} as const;
+
 export const ZPaginationQuery = z.object({
   page: z.coerce.number().int().min(1).optional().default(1),
-  limit: z.coerce.number().int().min(1).max(100).optional().default(20),
+  limit: z.coerce.number().int().min(1).max(PAGINATION_DEFAULTS.maxLimit).optional().default(PAGINATION_DEFAULTS.defaultLimit),
   cursor: z.string().optional(),
 });
 
 export type PaginationQuery = z.infer<typeof ZPaginationQuery>;
+
+/**
+ * Cursor-based pagination query for seek/keyset pagination.
+ * Preferred over offset pagination for large datasets.
+ */
+export const ZCursorPaginationQuery = z.object({
+  cursor: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(PAGINATION_DEFAULTS.maxLimit).optional().default(PAGINATION_DEFAULTS.defaultLimit),
+});
+
+export type CursorPaginationQuery = z.infer<typeof ZCursorPaginationQuery>;
 
 // ID parameter
 export const ZIdParam = z.object({

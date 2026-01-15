@@ -23,10 +23,26 @@
  */
 
 import type { BillingProviderAdapter, CheckoutSession, PortalSession, Subscription } from '@unisane/kernel';
+import { CIRCUIT_BREAKER_DEFAULTS, ConfigurationError } from '@unisane/kernel';
+import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
 
 const STRIPE_API_VERSION = '2024-06-20';
 const BASE_URL = 'https://api.stripe.com';
+
+/**
+ * Zod schema for validating Stripe adapter configuration.
+ * Validates at construction time to catch configuration errors early.
+ */
+export const ZStripeBillingAdapterConfig = z.object({
+  secretKey: z.string().min(1, 'Stripe secret key is required').startsWith('sk_', 'Invalid Stripe secret key format'),
+  portalReturnUrl: z.string().url('portalReturnUrl must be a valid URL'),
+  findCustomerId: z.function().optional(),
+  saveCustomerId: z.function().optional(),
+  getScopeName: z.function().optional(),
+  mapPlanId: z.function().optional(),
+  mapTopupPriceId: z.function().optional(),
+});
 
 export interface StripeBillingAdapterConfig {
   /** Stripe secret key */
@@ -67,9 +83,12 @@ export class StripeBillingAdapter implements BillingProviderAdapter {
   private readonly mapTopupPriceId?: (amount: number, currency: string) => string | undefined;
 
   constructor(config: StripeBillingAdapterConfig) {
-    if (!config.secretKey) {
-      throw new Error('StripeBillingAdapter: config.secretKey is required');
+    // Validate configuration at construction time
+    const result = ZStripeBillingAdapterConfig.safeParse(config);
+    if (!result.success) {
+      throw ConfigurationError.fromZod('stripe', result.error.issues);
     }
+
     this.secretKey = config.secretKey;
     this.portalReturnUrl = config.portalReturnUrl;
     this.findCustomerId = config.findCustomerId;
@@ -144,7 +163,13 @@ export class StripeBillingAdapter implements BillingProviderAdapter {
         await this.saveCustomerId(scopeId, customer.id);
       }
       return customer?.id ?? null;
-    } catch {
+    } catch (err) {
+      // Log the error for debugging but continue - the checkout will either
+      // use an existing customer or create one inline
+      console.error(
+        `[stripe] ensureCustomerId failed for scope ${scopeId}:`,
+        err instanceof Error ? err.message : String(err)
+      );
       return null;
     }
   }
@@ -320,7 +345,11 @@ export class StripeBillingAdapter implements BillingProviderAdapter {
           : undefined,
         cancelAtPeriodEnd: sub.cancel_at_period_end,
       };
-    } catch {
+    } catch (err) {
+      console.error(
+        `[stripe] getSubscription failed for ${subscriptionId}:`,
+        err instanceof Error ? err.message : String(err)
+      );
       return null;
     }
   }
@@ -436,8 +465,8 @@ export function createStripeBillingAdapter(config: StripeBillingAdapterConfig): 
     name: 'stripe',
     primary: new StripeBillingAdapter(config),
     circuitBreaker: {
-      failureThreshold: 5,
-      resetTimeout: 30000,
+      failureThreshold: CIRCUIT_BREAKER_DEFAULTS.failureThreshold,
+      resetTimeout: CIRCUIT_BREAKER_DEFAULTS.resetTimeout,
     },
     retry: {
       maxRetries: 3,

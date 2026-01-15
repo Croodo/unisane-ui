@@ -5,11 +5,16 @@
 
 import { z } from 'zod';
 
-// Admin stats query schema
-export const ZAdminStatsQuery = z.object({
+// Date range query schema (for stats/reports)
+export const ZDateRangeQuery = z.object({
   from: z.string().datetime().optional(),
   to: z.string().datetime().optional(),
   granularity: z.enum(['day', 'week', 'month']).optional(),
 });
 
-export type AdminStatsQuery = z.infer<typeof ZAdminStatsQuery>;
+export type DateRangeQuery = z.infer<typeof ZDateRangeQuery>;
+
+/** @deprecated Use ZDateRangeQuery instead */
+export const ZAdminStatsQuery = ZDateRangeQuery;
+/** @deprecated Use DateRangeQuery instead */
+export type AdminStatsQuery = DateRangeQuery;

@@ -14,6 +14,20 @@ import { HEADER_NAMES } from '../headers';
 import { kv, getEnv, ALL_PERMISSIONS, KV } from '@unisane/kernel';
 import { ERR } from '../errors/errors';
 
+// --- Dev Environment Detection ---
+// Use allowlist approach for dev environments to prevent accidental dev auth
+// in environments like 'production', 'staging-prod', etc.
+const DEV_ENVIRONMENTS = ['dev', 'test', 'development', 'local'] as const;
+type DevEnv = typeof DEV_ENVIRONMENTS[number];
+
+/**
+ * Type guard to check if an environment string is a development environment.
+ * Uses allowlist to ensure safety - unknown environments are treated as production.
+ */
+function isDevEnvironment(env: string | undefined): env is DevEnv {
+  return !!env && DEV_ENVIRONMENTS.includes(env.toLowerCase() as DevEnv);
+}
+
 // --- Auth Context Types ---
 
 export interface AuthCtx {
@@ -206,9 +220,9 @@ async function authFromJwt(
     return { isAuthed: true, userId: sub };
   } catch (e) {
     const error = e as Error;
-    // Only log in non-prod or for unexpected errors
+    // Only log verbose errors in dev environments or for unexpected errors
     const { APP_ENV } = getEnv();
-    if (APP_ENV !== 'prod' || error.name !== 'JWTExpired') {
+    if (isDevEnvironment(APP_ENV) || error.name !== 'JWTExpired') {
       logAuthEvent('warn', 'jwt verification failed', {
         auth_strategy: source,
         error: error.message,
@@ -340,11 +354,10 @@ export async function getAuthCtx(req: Request): Promise<AuthCtx> {
   if (cookieCtx) return cookieCtx;
 
   // 4) Dev-only fallback
-  // Only allow dev auth headers in explicit development environments (dev, test)
-  // This prevents accidental dev auth in staging or production environments
+  // Only allow dev auth headers in explicit development environments
+  // Uses allowlist to prevent accidental dev auth in staging or production environments
   const { APP_ENV } = getEnv();
-  const allowDevAuth = APP_ENV === 'dev' || APP_ENV === 'test';
-  if (!allowDevAuth) {
+  if (!isDevEnvironment(APP_ENV)) {
     return { isAuthed: false };
   }
 

@@ -27,6 +27,73 @@ type HandlerOpts = {
   scopeType?: ScopeType;
 };
 
+/**
+ * Internal context returned from handler setup.
+ * Contains all the common setup work for both makeHandler and makeHandlerRaw.
+ */
+interface HandlerSetupContext<Body, Params> {
+  authCtx: AuthCtx;
+  body: Body;
+  params: Params;
+  rl: { remaining: number; resetAt: number } | null;
+  requestId: string;
+  effectiveScopeId: string | undefined;
+  startedAt: number;
+  path: string;
+}
+
+/**
+ * Shared setup logic for both makeHandler and makeHandlerRaw.
+ * Extracts route params, runs guards, validates scope, etc.
+ */
+async function _setupHandler<Body, Params extends Record<string, unknown>>(
+  req: Request,
+  route: { params: Params },
+  opts: HandlerOpts
+): Promise<HandlerSetupContext<Body, Params>> {
+  // Next.js 16: route.params is a Promise; unwrap once here
+  const routeParams: Params =
+    route?.params &&
+    typeof (route.params as unknown as Promise<unknown>).then === "function"
+      ? await (route.params as unknown as Promise<Params>)
+      : route.params;
+
+  const requestId = sanitizeRequestId(req.headers.get(HEADER_NAMES.REQUEST_ID));
+  const startedAt = Date.now();
+  let path = "";
+  try {
+    path = new URL(req.url).pathname;
+  } catch {}
+
+  const { ctx: authCtx, body, params, rl } = await guard<Body, Params>(
+    req,
+    routeParams,
+    opts as unknown as GuardOptsInternal<Body, Params>
+  );
+
+  // Create scope context from auth context
+  // Prefer URL path tenantId over session tenantId for routes like /tenants/[tenantId]/...
+  const routeTenantId = (params as { tenantId?: string } | undefined)?.tenantId;
+  const effectiveScopeId = routeTenantId || authCtx.tenantId;
+
+  // Validate scope ID is present for protected routes
+  // Super admins can access platform-wide routes without a tenant scope
+  if (!effectiveScopeId && !opts.allowUnauthed && !authCtx.isSuperAdmin) {
+    throw ERR.forbidden('Scope context required');
+  }
+
+  return {
+    authCtx,
+    body: body as Body,
+    params,
+    rl,
+    requestId,
+    effectiveScopeId,
+    startedAt,
+    path,
+  };
+}
+
 // Overload: zod provided → infer Body from schema output
 export function makeHandler<
   Z extends ZodTypeAny,
@@ -72,31 +139,18 @@ export function makeHandler<
   }) => Promise<Result>
 ): (req: Request, route: { params: Params }) => Promise<Response> {
   return async (req: Request, route: { params: Params }) => {
-    // Next.js 16: route.params is a Promise; unwrap once here
-    const routeParams: Params =
-      route?.params &&
-      typeof (route.params as unknown as Promise<unknown>).then === "function"
-        ? await (route.params as unknown as Promise<Params>)
-        : route.params;
-    const requestId = sanitizeRequestId(req.headers.get(HEADER_NAMES.REQUEST_ID));
-    const startedAt = Date.now();
+    // Initialize for error handling scope
+    let requestId = "";
+    let startedAt = Date.now();
     let path = "";
-    try {
-      path = new URL(req.url).pathname;
-    } catch {}
-    try {
-      const { ctx: authCtx, body, params, rl } = await guard<Body, Params>(req, routeParams, opts as unknown as GuardOptsInternal<Body, Params>);
 
-      // Create scope context from auth context
-      // Prefer URL path tenantId over session tenantId for routes like /tenants/[tenantId]/...
-      const routeTenantId = (params as { tenantId?: string } | undefined)?.tenantId;
-      const effectiveScopeId = routeTenantId || authCtx.tenantId;
+    try {
+      const setup = await _setupHandler<Body, Params>(req, route, opts);
+      requestId = setup.requestId;
+      startedAt = setup.startedAt;
+      path = setup.path;
 
-      // Validate scope ID is present for protected routes
-      // Super admins can access platform-wide routes without a tenant scope
-      if (!effectiveScopeId && !opts.allowUnauthed && !authCtx.isSuperAdmin) {
-        throw ERR.forbidden('Scope context required');
-      }
+      const { authCtx, body, params, rl, effectiveScopeId } = setup;
 
       // Run handler within scope context - all downstream code has access to getScope()
       return await runWithScopeContext({
@@ -118,7 +172,7 @@ export function makeHandler<
           userId: authCtx.userId ?? null,
         });
         const exec = async () =>
-          fn({ req, ctx: authCtx, body: body as Body, params, requestId });
+          fn({ req, ctx: authCtx, body, params, requestId });
         const data = opts.idempotent
           ? await withIdem(req.headers.get(HEADER_NAMES.IDEMPOTENCY_KEY), exec, req)
           : await exec();
@@ -222,31 +276,18 @@ export function makeHandlerRaw<
   }) => Promise<Response>
 ): (req: Request, route: { params: Params }) => Promise<Response> {
   return async (req: Request, route: { params: Params }) => {
-    // Next.js 16: route.params is a Promise; unwrap once here
-    const routeParams: Params =
-      route?.params &&
-      typeof (route.params as unknown as Promise<unknown>).then === "function"
-        ? await (route.params as unknown as Promise<Params>)
-        : route.params;
-    const requestId = sanitizeRequestId(req.headers.get(HEADER_NAMES.REQUEST_ID));
-    const startedAt = Date.now();
+    // Initialize for error handling scope
+    let requestId = "";
+    let startedAt = Date.now();
     let path = "";
-    try {
-      path = new URL(req.url).pathname;
-    } catch {}
-    try {
-      const { ctx: authCtx, body, params, rl } = await guard<Body, Params>(req, routeParams, opts as unknown as GuardOptsInternal<Body, Params>);
 
-      // Create scope context from auth context
-      // Prefer URL path tenantId over session tenantId for routes like /tenants/[tenantId]/...
-      const routeTenantId = (params as { tenantId?: string } | undefined)?.tenantId;
-      const effectiveScopeId = routeTenantId || authCtx.tenantId;
+    try {
+      const setup = await _setupHandler<Body, Params>(req, route, opts);
+      requestId = setup.requestId;
+      startedAt = setup.startedAt;
+      path = setup.path;
 
-      // Validate scope ID is present for protected routes
-      // Super admins can access platform-wide routes without a tenant scope
-      if (!effectiveScopeId && !opts.allowUnauthed && !authCtx.isSuperAdmin) {
-        throw ERR.forbidden('Scope context required');
-      }
+      const { authCtx, body, params, rl, effectiveScopeId } = setup;
 
       // Run handler within scope context - all downstream code has access to getScope()
       return await runWithScopeContext({
@@ -268,7 +309,7 @@ export function makeHandlerRaw<
           userId: authCtx.userId ?? null,
         });
         const exec = async () =>
-          fn({ req, ctx: authCtx, body: body as Body, params, requestId });
+          fn({ req, ctx: authCtx, body, params, requestId });
         const res = await (opts.idempotent
           ? withIdem(req.headers.get(HEADER_NAMES.IDEMPOTENCY_KEY), exec, req)
           : exec());

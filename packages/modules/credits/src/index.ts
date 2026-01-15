@@ -50,3 +50,9 @@ export { getScopeCreditBalances } from './service/admin/stats';
 // ════════════════════════════════════════════════════════════════════════════
 
 export { registerCreditEventHandlers } from './event-handlers';
+
+// ════════════════════════════════════════════════════════════════════════════
+// Port Adapter (for hexagonal architecture)
+// ════════════════════════════════════════════════════════════════════════════
+
+export { creditsAdapter } from './adapter';

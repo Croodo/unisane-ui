@@ -1,5 +1,75 @@
-import type { ZodTypeAny } from "zod";
+import { z, type ZodTypeAny } from "zod";
 import type { Permission } from "@unisane/kernel/client";
+
+/**
+ * Zod schema for OpMeta validation.
+ * Used by codegen and optionally at dev-time for stricter validation.
+ */
+const ZZodRef = z.object({
+  importPath: z.string().min(1),
+  name: z.string().min(1),
+});
+
+const ZCallArg = z.object({
+  name: z.string().min(1),
+  from: z.enum(["params", "query", "body", "ctx", "const"]),
+  key: z.string().optional(),
+  optional: z.boolean().optional(),
+  transform: z.enum(["date", "isoDate", "number", "string", "boolean"]).optional(),
+  value: z.unknown().optional(),
+  fallback: z.object({
+    kind: z.enum(["env", "value"]),
+    key: z.string().optional(),
+    value: z.unknown().optional(),
+  }).optional(),
+});
+
+const ZServiceMeta = z.object({
+  importPath: z.string().min(1),
+  fn: z.string().min(1),
+  callExpr: z.string().optional(),
+  zodBody: ZZodRef.optional(),
+  zodQuery: ZZodRef.optional(),
+  requireTenantMatch: z.boolean().optional(),
+  requireSuperAdmin: z.boolean().optional(),
+  raw: z.boolean().optional(),
+  rateKeyExpr: z.string().optional(),
+  extraImports: z.array(z.object({ importPath: z.string(), names: z.array(z.string()) })).optional(),
+  listKind: z.enum(["admin", "tenant", "public"]).optional(),
+  filtersSchema: ZZodRef.optional(),
+  invoke: z.enum(["object", "positional"]).optional(),
+  callArgs: z.array(ZCallArg).optional(),
+  factory: ZZodRef.optional(),
+  audit: z.object({
+    resourceType: z.string(),
+    resourceIdExpr: z.string().optional(),
+    afterExpr: z.string().optional(),
+  }).optional(),
+});
+
+export const ZOpMeta = z.object({
+  op: z.string().min(1),
+  perm: z.string().optional(),
+  requireTenantMatch: z.boolean().optional(),
+  requireSuperAdmin: z.boolean().optional(),
+  requireUser: z.boolean().optional(),
+  allowUnauthed: z.boolean().optional(),
+  idempotent: z.boolean().optional(),
+  queryZod: z.unknown().optional(), // ZodTypeAny at runtime
+  runtime: z.enum(["nodejs", "edge"]).optional(),
+  responseSchema: ZZodRef.optional(),
+  invalidate: z.array(z.union([
+    z.object({ kind: z.literal("prefix"), key: z.tuple([z.string()]).rest(z.unknown()) }),
+    z.object({ kind: z.literal("key"), key: z.tuple([z.string()]).rest(z.unknown()) }),
+    z.object({
+      kind: z.literal("op"),
+      target: z.string(),
+      from: z.enum(["params", "query", "body"]).optional(),
+      pick: z.array(z.string()).optional(),
+    }),
+  ])).optional(),
+  service: ZServiceMeta.optional(),
+}).strict(); // strict() rejects unknown keys
 
 export type OpMeta = {
   op: string;
@@ -62,7 +132,21 @@ export type OpMeta = {
   };
 };
 
+/**
+ * Define operation metadata with compile-time type checking.
+ * In development, also validates against ZOpMeta schema to catch typos.
+ */
 export function defineOpMeta<T extends OpMeta>(meta: T): T {
+  // Validate in development to catch typos and invalid fields early
+  if (process.env.NODE_ENV !== 'production') {
+    const result = ZOpMeta.safeParse(meta);
+    if (!result.success) {
+      console.warn(
+        `[defineOpMeta] Invalid metadata for op "${meta.op}":`,
+        result.error.flatten().fieldErrors
+      );
+    }
+  }
   return meta;
 }
 

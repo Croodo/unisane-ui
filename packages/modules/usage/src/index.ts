@@ -39,3 +39,9 @@ export * from './service/increment';
 export * from './service/getWindow';
 export { rollupHour } from './service/rollupHour';
 export { rollupDay } from './service/rollupDay';
+
+// ════════════════════════════════════════════════════════════════════════════
+// Port Adapter (for hexagonal architecture)
+// ════════════════════════════════════════════════════════════════════════════
+
+export { usageAdapter } from './adapter';

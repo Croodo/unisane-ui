@@ -43,6 +43,7 @@ export const creditsContract = c.router({
       body: ZGrantTokens,
       responses: { 200: z.object({ ok: z.literal(true) }) },
       summary: "Grant credits",
+      description: "Add credits to a tenant's balance. Supports optional expiration date. Idempotent via idem key - duplicate requests with same idem are ignored. Changes are audited. Requires BILLING_WRITE permission.",
     },
     defineOpMeta({
       op: "credits.grant",
@@ -89,6 +90,7 @@ export const creditsContract = c.router({
       body: ZBurnTokens,
       responses: { 200: z.object({ ok: z.literal(true) }) },
       summary: "Burn credits",
+      description: "Consume credits from a tenant's balance for feature usage. Idempotent via idem key. Optionally specify which feature the credits are being used for. Changes are audited. Requires BILLING_WRITE permission.",
     },
     defineOpMeta({
       op: "credits.burn",
@@ -138,6 +140,7 @@ export const creditsContract = c.router({
         }),
       },
       summary: "Credits ledger",
+      description: "List credit transaction history for a tenant. Shows grants, burns, and expirations with timestamps and reasons. Supports cursor-based pagination.",
     },
     defineOpMeta({
       op: "credits.ledger",
@@ -170,6 +173,7 @@ export const creditsContract = c.router({
         }),
       },
       summary: "Credits balance",
+      description: "Get the current available credit balance for a tenant. Returns the total spendable amount after accounting for grants, burns, and expirations.",
     },
     defineOpMeta({
       op: "credits.balance",
@@ -193,6 +197,7 @@ export const creditsContract = c.router({
         }),
       },
       summary: "Credits balance breakdown by source",
+      description: "Get detailed credit balance breakdown by source type (subscription grants, top-ups, other). Shows total grants, burns, and available balance for each category.",
     },
     defineOpMeta({
       op: "credits.breakdown",

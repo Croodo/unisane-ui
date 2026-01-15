@@ -56,10 +56,63 @@ export {
 export {
   type TenantsPort,
   type TenantView,
+  type TenantStatus,
   setTenantsProvider,
   getTenantsProvider,
   hasTenantsProvider,
+  isTenantActiveViaPort,
+  getTenantSubscriptionStatusViaPort,
 } from "./tenants.port";
+
+export {
+  type CreditsPort,
+  type CreditBalance,
+  type CreditTransaction,
+  setCreditsProvider,
+  getCreditsProvider,
+  hasCreditsProvider,
+  consumeCreditsViaPort,
+  hasSufficientCreditsViaPort,
+} from "./credits.port";
+
+export {
+  type AuditPort,
+  type AuditEntry,
+  type AuditEntryInput,
+  type AuditActor,
+  type AuditTarget,
+  type AuditChange,
+  setAuditProvider,
+  getAuditProvider,
+  hasAuditProvider,
+  logAuditViaPort,
+} from "./audit.port";
+
+export {
+  type UsagePort,
+  type UsageRecord,
+  type UsageAggregate,
+  type CurrentUsage,
+  setUsageProvider,
+  getUsageProvider,
+  hasUsageProvider,
+  recordUsageViaPort,
+  getCurrentUsageViaPort,
+} from "./usage.port";
+
+export {
+  type NotifyPort,
+  type EmailAttachment,
+  type EmailResult,
+  type NotificationAction,
+  type InAppResult,
+  type WebhookResult,
+  setNotifyProvider,
+  getNotifyProvider,
+  hasNotifyProvider,
+  sendEmailViaPort,
+  sendInAppViaPort,
+} from "./notify.port";
 
 export {
   type JobsPort,

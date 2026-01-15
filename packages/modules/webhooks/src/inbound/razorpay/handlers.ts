@@ -110,16 +110,19 @@ export async function handleSubscriptionEvent(
 
   eventLog.info('emitting razorpay subscription changed event', { scopeId, subId, statusRaw });
 
-  // Map status for event emission
-  const mappedStatus = mapRazorpaySubStatus(statusRaw) as 'active' | 'pending' | 'halted' | 'cancelled' | 'completed' | 'expired';
+  // Map raw Razorpay status to internal SSOT
+  const rawStatus = (statusRaw ?? 'active') as 'active' | 'pending' | 'halted' | 'cancelled' | 'completed' | 'expired' | 'authenticated';
+  const normalizedStatus = mapRazorpaySubStatus(statusRaw);
   const eventType = mapRazorpayEventType(type);
 
   // Emit subscription changed event for billing module to record
+  // Uses both rawStatus (from Razorpay) and normalizedStatus (internal SSOT)
   await emitTyped('webhook.razorpay.subscription_changed', {
     scopeId,
     subscriptionId: subId,
     planId: planId ?? null,
-    status: mappedStatus,
+    rawStatus,
+    normalizedStatus,
     eventType,
   }, 'webhooks');
 

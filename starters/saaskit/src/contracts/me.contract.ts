@@ -31,6 +31,7 @@ export const meContract = c.router({
     path: '/api/rest/v1/me',
     responses: { 200: z.object({ ok: z.literal(true), data: ZMeOut }) },
     summary: 'Current user summary',
+    description: 'Get the current user session summary including user ID, active tenant context, role, plan, and effective permissions. Returns null values for anonymous users. Useful for bootstrapping client-side state.',
   }, defineOpMeta({
     op: 'me.get',
     allowUnauthed: true,
@@ -48,7 +49,7 @@ export const meContract = c.router({
   memberships: withMeta({
     method: 'GET',
     path: '/api/rest/v1/me/memberships',
-    query: z.object({ cursor: z.string().optional(), limit: z.coerce.number().int().positive().max(500).default(50) }).optional(),
+    query: z.object({ cursor: z.string().optional(), limit: z.coerce.number().int().positive().max(100).default(50) }).optional(),
     responses: {
       200: z.object({
         ok: z.literal(true),
@@ -67,6 +68,7 @@ export const meContract = c.router({
       }),
     },
     summary: 'List my memberships',
+    description: 'List all tenant memberships for the current user. Each membership includes the tenant details and the user\'s assigned roles within that tenant. Supports cursor-based pagination.',
   }, defineOpMeta({ op: 'memberships.listMine', requireUser: true, service: { importPath: '@unisane/identity', fn: 'listMyMemberships', zodQuery: { importPath: '@unisane/kernel', name: 'ZSeekPageQuery' }, invoke: 'object', callArgs: [ { name: 'userId', from: 'ctx', key: 'userId' }, { name: 'limit', from: 'query', key: 'limit' }, { name: 'cursor', from: 'query', key: 'cursor', optional: true } ] } })),
   profileGet: withMeta({
     method: 'GET',
@@ -88,6 +90,7 @@ export const meContract = c.router({
       }).nullable() })
     },
     summary: 'Get my profile',
+    description: 'Get the full profile of the current authenticated user including personal information, contact details, verification status, and locale preferences. Returns null if user not found.',
   }, defineOpMeta({
     op: 'me.profile.get',
     requireUser: true,
@@ -113,6 +116,7 @@ export const meContract = c.router({
       }) })
     },
     summary: 'Update my profile',
+    description: 'Update the current user\'s profile. Supports partial updates - only include fields you want to change. Changes are audited. Email changes may require re-verification.',
   }, defineOpMeta({
     op: 'me.profile.patch',
     requireUser: true,

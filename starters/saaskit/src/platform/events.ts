@@ -12,16 +12,9 @@ import { z } from 'zod';
 import { registerEvents, registerAllEventSchemas } from '@unisane/kernel';
 import { CREDITS_EVENTS } from '@unisane/credits';
 import { IDENTITY_EVENTS } from '@unisane/identity';
-import { TENANT_EVENTS } from '@unisane/tenants';
 import { AUTH_EVENTS } from '@unisane/auth';
-import { BILLING_EVENTS } from '@unisane/billing';
-import { STORAGE_EVENTS } from '@unisane/storage';
-import { NOTIFY_EVENTS } from '@unisane/notify';
 import { AUDIT_EVENTS } from '@unisane/audit';
 import { FLAGS_EVENTS } from '@unisane/flags';
-import { SETTINGS_EVENTS } from '@unisane/settings';
-import { USAGE_EVENTS } from '@unisane/usage';
-import { WEBHOOKS_EVENTS } from '@unisane/webhooks';
 
 let registered = false;
 
@@ -30,8 +23,21 @@ let registered = false;
  * Safe to call multiple times - only registers once.
  *
  * This function:
- * 1. Registers core kernel event schemas (tenant.*, storage.*, credits.*, billing webhook events)
- * 2. Registers additional module-specific event schemas
+ * 1. Registers core kernel event schemas (tenant.*, storage.*, credits.*, billing.*, etc.)
+ * 2. Registers additional module-specific event schemas not in kernel
+ *
+ * IMPORTANT: The kernel's EventSchemas already registers:
+ * - tenant.* (created, updated, deleted, member.*, invitation.*)
+ * - storage.* (upload.*, file.*, cleanup.*)
+ * - billing.* (subscription.*, payment.*)
+ * - credits.* (granted, consumed, expired)
+ * - usage.* (incremented, limit_reached)
+ * - notify.* (sent, read, prefs_updated, email_suppression_requested)
+ * - settings.* (created, updated, deleted)
+ * - webhooks.* (replayed, delivered, failed)
+ * - identity.membership.role_changed, identity.apikey.*
+ *
+ * Only register events here that are NOT in the kernel.
  */
 export async function registerEventSchemas(): Promise<void> {
   if (registered) return;
@@ -43,8 +49,8 @@ export async function registerEventSchemas(): Promise<void> {
   console.log('[events] Kernel core event schemas registered');
 
   // ─── CREDITS EVENT SCHEMAS ───────────────────────────────────────────────────
-  // Note: Core credits events (credits.granted, credits.consumed, credits.expired) are in kernel EventSchemas
-  // Only register the refunded event which is not in kernel
+  // Note: credits.granted, credits.consumed, credits.expired are in kernel
+  // Only register credits.refunded which is not in kernel
   registerEvents({
     [CREDITS_EVENTS.REFUNDED]: z.object({
       scopeId: z.string(),
@@ -55,6 +61,8 @@ export async function registerEventSchemas(): Promise<void> {
   });
 
   // ─── IDENTITY EVENT SCHEMAS ──────────────────────────────────────────────────
+  // Note: identity.membership.role_changed, identity.apikey.* are in kernel
+  // Only register identity.user.* events here
   registerEvents({
     [IDENTITY_EVENTS.USER_CREATED]: z.object({
       userId: z.string(),
@@ -77,6 +85,8 @@ export async function registerEventSchemas(): Promise<void> {
       userId: z.string(),
       phone: z.string(),
     }),
+    // Note: API_KEY_CREATED/REVOKED use 'identity.api_key.*' (with underscore)
+    // but kernel has 'identity.apikey.*' (no underscore) - they're different events
     [IDENTITY_EVENTS.API_KEY_CREATED]: z.object({
       scopeId: z.string(),
       userId: z.string(),
@@ -88,54 +98,10 @@ export async function registerEventSchemas(): Promise<void> {
       keyId: z.string(),
       keyHash: z.string().optional(),
     }),
-    [IDENTITY_EVENTS.MEMBERSHIP_ROLE_CHANGED]: z.object({
-      scopeId: z.string(),
-      userId: z.string(),
-      role: z.string().optional(),
-      action: z.enum(['added', 'removed']).optional(),
-    }),
-  });
-
-  // ─── TENANT EVENT SCHEMAS ────────────────────────────────────────────────────
-  // Note: Core tenant events (tenant.created, tenant.deleted) are in kernel EventSchemas
-  registerEvents({
-    [TENANT_EVENTS.UPDATED]: z.object({
-      scopeId: z.string(),
-      name: z.string().optional(),
-      slug: z.string().optional(),
-    }),
-    [TENANT_EVENTS.MEMBER_ADDED]: z.object({
-      scopeId: z.string(),
-      userId: z.string(),
-      role: z.string(),
-    }),
-    [TENANT_EVENTS.MEMBER_REMOVED]: z.object({
-      scopeId: z.string(),
-      userId: z.string(),
-    }),
-    [TENANT_EVENTS.MEMBER_ROLE_CHANGED]: z.object({
-      scopeId: z.string(),
-      userId: z.string(),
-      oldRole: z.string().optional(),
-      newRole: z.string(),
-    }),
-    [TENANT_EVENTS.INVITATION_CREATED]: z.object({
-      scopeId: z.string(),
-      email: z.string(),
-      role: z.string(),
-    }),
-    [TENANT_EVENTS.INVITATION_ACCEPTED]: z.object({
-      scopeId: z.string(),
-      userId: z.string(),
-      email: z.string(),
-    }),
-    [TENANT_EVENTS.INVITATION_REVOKED]: z.object({
-      scopeId: z.string(),
-      email: z.string(),
-    }),
   });
 
   // ─── AUTH EVENT SCHEMAS ──────────────────────────────────────────────────────
+  // These are not in kernel, register all auth events
   registerEvents({
     [AUTH_EVENTS.SIGNUP_COMPLETED]: z.object({
       userId: z.string(),
@@ -182,80 +148,8 @@ export async function registerEventSchemas(): Promise<void> {
     }),
   });
 
-  // ─── BILLING EVENT SCHEMAS ───────────────────────────────────────────────────
-  // Note: Webhook events (webhook.stripe.*, webhook.razorpay.*) are in kernel BillingEventSchemas
-  registerEvents({
-    [BILLING_EVENTS.SUBSCRIPTION_CREATED]: z.object({
-      scopeId: z.string(),
-      planId: z.string(),
-      provider: z.string(),
-    }),
-    [BILLING_EVENTS.SUBSCRIPTION_UPDATED]: z.object({
-      scopeId: z.string(),
-      planId: z.string(),
-      status: z.string(),
-    }),
-    [BILLING_EVENTS.SUBSCRIPTION_CANCELLED]: z.object({
-      scopeId: z.string(),
-      reason: z.string().optional(),
-    }),
-    [BILLING_EVENTS.PAYMENT_SUCCEEDED]: z.object({
-      scopeId: z.string(),
-      amount: z.number(),
-      currency: z.string(),
-    }),
-    [BILLING_EVENTS.PAYMENT_FAILED]: z.object({
-      scopeId: z.string(),
-      amount: z.number(),
-      currency: z.string(),
-      reason: z.string().optional(),
-    }),
-    [BILLING_EVENTS.REFUND_ISSUED]: z.object({
-      scopeId: z.string(),
-      amount: z.number(),
-      currency: z.string(),
-      reason: z.string().optional(),
-    }),
-  });
-
-  // ─── STORAGE EVENT SCHEMAS ───────────────────────────────────────────────────
-  // Note: Core storage events (storage.upload.requested, storage.upload.confirmed) are in kernel
-  registerEvents({
-    [STORAGE_EVENTS.FILE_DELETED]: z.object({
-      scopeId: z.string(),
-      fileId: z.string(),
-      key: z.string(),
-    }),
-    [STORAGE_EVENTS.CLEANUP_DELETED]: z.object({
-      orphanedCount: z.number(),
-      deletedCount: z.number(),
-    }),
-  });
-
-  // ─── NOTIFY EVENT SCHEMAS ────────────────────────────────────────────────────
-  registerEvents({
-    [NOTIFY_EVENTS.SENT]: z.object({
-      scopeId: z.string().optional(),
-      to: z.string(),
-      template: z.string().optional(),
-    }),
-    [NOTIFY_EVENTS.FAILED]: z.object({
-      scopeId: z.string().optional(),
-      to: z.string(),
-      error: z.string(),
-    }),
-    [NOTIFY_EVENTS.READ]: z.object({
-      scopeId: z.string(),
-      userId: z.string(),
-      notificationId: z.string(),
-    }),
-    [NOTIFY_EVENTS.PREFS_UPDATED]: z.object({
-      scopeId: z.string(),
-      userId: z.string(),
-    }),
-  });
-
   // ─── AUDIT EVENT SCHEMAS ─────────────────────────────────────────────────────
+  // These are not in kernel
   registerEvents({
     [AUDIT_EVENTS.LOG_CREATED]: z.object({
       scopeId: z.string(),
@@ -266,6 +160,7 @@ export async function registerEventSchemas(): Promise<void> {
   });
 
   // ─── FLAGS EVENT SCHEMAS ─────────────────────────────────────────────────────
+  // These are not in kernel
   registerEvents({
     [FLAGS_EVENTS.FLAG_EVALUATED]: z.object({
       key: z.string(),
@@ -284,54 +179,29 @@ export async function registerEventSchemas(): Promise<void> {
     }),
   });
 
-  // ─── SETTINGS EVENT SCHEMAS ──────────────────────────────────────────────────
-  registerEvents({
-    [SETTINGS_EVENTS.UPDATED]: z.object({
-      ns: z.string(),
-      key: z.string(),
-      scopeId: z.string().nullable(),
-    }),
-    [SETTINGS_EVENTS.DELETED]: z.object({
-      ns: z.string(),
-      key: z.string(),
-      scopeId: z.string().nullable(),
-    }),
-  });
-
-  // ─── USAGE EVENT SCHEMAS ─────────────────────────────────────────────────────
-  registerEvents({
-    [USAGE_EVENTS.INCREMENTED]: z.object({
-      scopeId: z.string(),
-      feature: z.string(),
-      amount: z.number(),
-    }),
-    [USAGE_EVENTS.LIMIT_REACHED]: z.object({
-      scopeId: z.string(),
-      feature: z.string(),
-      limit: z.number(),
-      current: z.number(),
-    }),
-  });
-
-  // ─── WEBHOOKS EVENT SCHEMAS ──────────────────────────────────────────────────
-  registerEvents({
-    [WEBHOOKS_EVENTS.DELIVERED]: z.object({
-      scopeId: z.string(),
-      url: z.string(),
-      eventType: z.string(),
-    }),
-    [WEBHOOKS_EVENTS.FAILED]: z.object({
-      scopeId: z.string(),
-      url: z.string(),
-      eventType: z.string(),
-      error: z.string(),
-    }),
-    [WEBHOOKS_EVENTS.REPLAYED]: z.object({
-      scopeId: z.string(),
-      eventId: z.string(),
-      target: z.string(),
-    }),
-  });
+  // ─── EVENTS ALREADY IN KERNEL (DO NOT REGISTER) ─────────────────────────────
+  // The following event types are already registered via registerAllEventSchemas():
+  //
+  // TENANT_EVENTS: tenant.created, tenant.updated, tenant.deleted,
+  //   tenant.member.added, tenant.member.removed, tenant.member.role_changed,
+  //   tenant.invitation.created, tenant.invitation.accepted, tenant.invitation.revoked
+  //
+  // BILLING_EVENTS: billing.subscription.created, billing.subscription.updated,
+  //   billing.subscription.cancelled, billing.payment.succeeded, billing.payment.failed
+  //
+  // STORAGE_EVENTS: storage.upload.requested, storage.upload.confirmed,
+  //   storage.file.deleted, storage.file.purged, storage.cleanup.orphaned, storage.cleanup.deleted
+  //
+  // NOTIFY_EVENTS: notify.sent, notify.read, notify.prefs_updated, notify.email_suppression_requested
+  //
+  // SETTINGS_EVENTS: settings.created, settings.updated, settings.deleted
+  //
+  // USAGE_EVENTS: usage.incremented, usage.limit_reached
+  //
+  // WEBHOOKS_EVENTS: webhooks.replayed, webhooks.delivered, webhooks.failed
+  //
+  // IDENTITY_EVENTS (partial): identity.membership.role_changed,
+  //   identity.apikey.created, identity.apikey.revoked
 
   console.log('[events] All module event schemas registered');
 }

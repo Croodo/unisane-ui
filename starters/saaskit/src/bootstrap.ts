@@ -106,11 +106,34 @@ async function setupRepositories() {
   setIdentityProvider(identityAdapter);
   console.log('[bootstrap]   - Identity port configured (via @unisane/identity-mongodb)');
 
-  // Configure tenants port using adapter (breaks billing -> tenants cycle)
-  const { createTenantsAdapter } = await import('@unisane/tenants-mongodb');
-  const tenantsAdapter = createTenantsAdapter({ tenantsRepository: TenantsRepo });
+  // Configure tenants port using module adapter (breaks billing -> tenants cycle)
+  const { tenantsAdapter } = await import('@unisane/tenants');
   setTenantsProvider(tenantsAdapter);
-  console.log('[bootstrap]   - Tenants port configured (via @unisane/tenants-mongodb)');
+  console.log('[bootstrap]   - Tenants port configured');
+
+  // Configure credits port (breaks ai -> credits cycle)
+  const { setCreditsProvider } = await import('@unisane/kernel');
+  const { creditsAdapter } = await import('@unisane/credits');
+  setCreditsProvider(creditsAdapter);
+  console.log('[bootstrap]   - Credits port configured');
+
+  // Configure audit port (breaks module -> audit cycle)
+  const { setAuditProvider } = await import('@unisane/kernel');
+  const { auditAdapter } = await import('@unisane/audit');
+  setAuditProvider(auditAdapter);
+  console.log('[bootstrap]   - Audit port configured');
+
+  // Configure usage port (breaks billing -> usage cycle)
+  const { setUsageProvider } = await import('@unisane/kernel');
+  const { usageAdapter } = await import('@unisane/usage');
+  setUsageProvider(usageAdapter);
+  console.log('[bootstrap]   - Usage port configured');
+
+  // Configure notify port (breaks auth/billing -> notify cycle)
+  const { setNotifyProvider } = await import('@unisane/kernel');
+  const { notifyAdapter } = await import('@unisane/notify');
+  setNotifyProvider(notifyAdapter);
+  console.log('[bootstrap]   - Notify port configured');
 
   // Configure tenant bootstrap providers (breaks tenants -> identity cycle)
   const { membershipsRepository } = await import('@unisane/identity');

@@ -20,7 +20,7 @@
  * ```
  */
 
-import { logger, onTyped, mapInvoiceStatus, mapPaymentStatus, mapStripeSubStatus, mapRazorpaySubStatus } from '@unisane/kernel';
+import { logger, onTyped, mapInvoiceStatus, mapPaymentStatus, mapStripeSubStatus } from '@unisane/kernel';
 import type { BillingEventPayload } from '@unisane/kernel';
 import { InvoicesRepository } from './data/invoices.repository';
 import { PaymentsRepository } from './data/payments.repository';
@@ -232,20 +232,18 @@ async function handleRazorpayPaymentEvent(
 /**
  * Handle Razorpay subscription changes.
  * Updates subscription record in the database.
+ * Uses normalizedStatus (already mapped to internal SSOT) and rawStatus (original from Razorpay).
  */
 async function handleRazorpaySubscriptionChanged(
   payload: BillingEventPayload<'webhook.razorpay.subscription_changed'>
 ): Promise<void> {
-  const { scopeId, subscriptionId, planId, status, eventType } = payload;
-
-  // Use kernel's status mapping function
-  const canonicalStatus = mapRazorpaySubStatus(status);
+  const { scopeId, subscriptionId, planId, rawStatus, normalizedStatus, eventType } = payload;
 
   log.info('processing razorpay subscription change', {
     scopeId,
     subscriptionId,
-    status,
-    canonicalStatus,
+    rawStatus,
+    normalizedStatus,
     eventType,
   });
 
@@ -256,8 +254,8 @@ async function handleRazorpaySubscriptionChanged(
       providerSubId: subscriptionId,
       planId: planId ?? 'unknown',
       quantity: 1,
-      status: canonicalStatus,
-      providerStatus: status,
+      status: normalizedStatus,
+      providerStatus: rawStatus,
       cancelAtPeriodEnd: false,
       currentPeriodEnd: null,
     });
@@ -265,7 +263,7 @@ async function handleRazorpaySubscriptionChanged(
     log.info('razorpay subscription updated', {
       scopeId,
       subscriptionId,
-      status: canonicalStatus,
+      status: normalizedStatus,
       eventType,
     });
   } catch (error) {

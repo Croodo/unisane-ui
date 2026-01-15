@@ -32,6 +32,7 @@
  * await redis.publish('channel', JSON.stringify({ event: 'data' }));
  */
 
-export { kv } from "./provider";
+export { kv, createMemoryCache, createVercelKVCache, createRedisCache } from "./provider";
+export type { CachePort, CacheSetOpts } from "./provider";
 export { redis } from "./redis";
 export { memoryStore, MemoryStore } from "./memory";

@@ -36,7 +36,7 @@ export const ZAdminListQuery = z.object({
   filters: ZAdminTenantFilters.optional(),
 });
 
-export const ZAdminStatsQuery = z.object({
+export const ZAdminTenantStatsQuery = z.object({
   filters: ZAdminTenantFilters.optional(),
 });
 
@@ -58,6 +58,7 @@ export const tenantsContract = c.router({
       body: ZTenantCreate,
       responses: { 200: z.object({ ok: z.literal(true), data: ZTenantOut }) },
       summary: "Create tenant",
+      description: "Create a new tenant (workspace) and automatically add the current user as an owner. The tenant slug must be unique across the platform. Supports idempotent creation via idempotency-key header.",
     },
     defineOpMeta({
       op: "tenants.create",
@@ -87,6 +88,7 @@ export const tenantsContract = c.router({
       query: ZAdminListQuery,
       responses: { 200: z.any() }, // Binary CSV response - schema not applicable
       summary: "Admin tenants export (CSV)",
+      description: "Export tenants matching the current filters as a CSV file. Requires super admin privileges. Respects the same filters and sorting as the list endpoint. Limited to 50 items per export.",
     },
     defineOpMeta({
       op: "admin.tenants.export",
@@ -129,6 +131,7 @@ export const tenantsContract = c.router({
         }),
       },
       summary: "Admin tenants stats",
+      description: "Get aggregate statistics for tenants including total count and facet breakdowns by plan and subscription status. Supports the same filters as the list endpoint. Requires super admin privileges.",
     },
     defineOpMeta({
       op: "admin.tenants.stats",
@@ -139,7 +142,7 @@ export const tenantsContract = c.router({
         fn: "getAdminTenantsStats",
         zodQuery: {
           importPath: "./tenants.contract",
-          name: "ZAdminStatsQuery",
+          name: "ZAdminTenantStatsQuery",
         },
         filtersSchema: { importPath: "./tenants.contract", name: "ZAdminTenantFilters" },
         invoke: "object",
@@ -159,6 +162,7 @@ export const tenantsContract = c.router({
         200: z.object({ ok: z.literal(true), data: ZTenantOut.nullable() }),
       },
       summary: "Get tenant by slug",
+      description: "Look up a tenant by its unique slug. Returns null if not found. This endpoint is public and does not require authentication, useful for tenant discovery during signup flows.",
     },
     defineOpMeta({
       op: "tenants.findBySlug",
@@ -212,6 +216,7 @@ export const tenantsContract = c.router({
         }),
       },
       summary: "Admin tenants list (enriched)",
+      description: "List all tenants with enriched data including member counts, API keys, credits, subscription status, and activity metrics. Supports cursor-based pagination, sorting, and filtering by slug, name, or plan. Requires super admin privileges.",
     },
     defineOpMeta({
       op: "admin.tenants.list",
@@ -277,6 +282,7 @@ export const tenantsContract = c.router({
         }),
       },
       summary: "Admin tenant read (enriched)",
+      description: "Get detailed information about a single tenant including member counts, API keys, flag overrides, open invoices, failed webhooks, credit balance, and subscription details. Returns null if tenant not found. Requires super admin privileges.",
     },
     defineOpMeta({
       op: "admin.tenants.read",
@@ -312,6 +318,7 @@ export const tenantsContract = c.router({
         }),
       },
       summary: "Admin tenant delete (cascade)",
+      description: "Permanently delete a tenant and all associated data. Cascades to revoke all API keys, remove all memberships, and mark storage files for deletion. This action is irreversible. Requires super admin privileges.",
     },
     defineOpMeta({
       op: "admin.tenants.delete",

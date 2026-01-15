@@ -40,9 +40,9 @@ export async function proxy(req: NextRequest) {
   const cspDirectives = [
     "default-src 'self'",
     isDev
-      ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com"
-      : "script-src 'self' 'unsafe-inline' https://js.stripe.com",
-    "style-src 'self' 'unsafe-inline'",
+      ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://unpkg.com"
+      : "script-src 'self' 'unsafe-inline' https://js.stripe.com https://unpkg.com",
+    "style-src 'self' 'unsafe-inline' https://unpkg.com",
     "img-src 'self' data: https: blob:",
     "font-src 'self' data:",
     "connect-src 'self' https://api.stripe.com",

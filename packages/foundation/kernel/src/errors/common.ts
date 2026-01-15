@@ -256,3 +256,108 @@ export class ProviderError extends DomainError {
     return new ProviderError(provider, cause, { retryable: false, providerCode });
   }
 }
+
+/**
+ * Configuration error.
+ * Use when adapter or service configuration is invalid.
+ * Not retryable as configuration must be fixed before retry.
+ *
+ * @example
+ * ```typescript
+ * const result = ZStripeConfig.safeParse(config);
+ * if (!result.success) {
+ *   throw ConfigurationError.fromZod('stripe', result.error.issues);
+ * }
+ * ```
+ */
+export class ConfigurationError extends DomainError {
+  readonly code = ErrorCode.INTEGRATION_NOT_CONFIGURED;
+  readonly status = 500; // Internal error - configuration should be fixed by developers
+
+  /** Name of the adapter or service with invalid config */
+  readonly adapter: string;
+
+  constructor(adapter: string, message: string, details?: Record<string, unknown>) {
+    super(`${adapter} configuration error: ${message}`, { details, retryable: false });
+    this.adapter = adapter;
+  }
+
+  /**
+   * Create from Zod validation errors.
+   */
+  static fromZod(
+    adapter: string,
+    errors: Array<{ path: (string | number)[]; message: string }>
+  ): ConfigurationError {
+    const fields: Record<string, string> = {};
+    for (const err of errors) {
+      const path = err.path.join('.');
+      fields[path] = err.message;
+    }
+    const fieldList = Object.entries(fields)
+      .map(([k, v]) => `${k}: ${v}`)
+      .join(', ');
+    return new ConfigurationError(adapter, `Invalid config: ${fieldList}`, { fields });
+  }
+
+  /**
+   * Create for a missing required field.
+   */
+  static missingField(adapter: string, field: string): ConfigurationError {
+    return new ConfigurationError(adapter, `Missing required field: ${field}`, { field });
+  }
+}
+
+/**
+ * Base class for adapter-specific errors.
+ * Use this to wrap errors from adapter operations.
+ *
+ * @example
+ * ```typescript
+ * try {
+ *   await stripe.customers.create({ email });
+ * } catch (err) {
+ *   throw new AdapterError('stripe', 'createCustomer', err);
+ * }
+ * ```
+ */
+export class AdapterError extends DomainError {
+  readonly code = ErrorCode.EXTERNAL_API_ERROR;
+  readonly status = 502;
+
+  /** Name of the adapter */
+  readonly adapter: string;
+
+  /** Name of the operation that failed */
+  readonly operation: string;
+
+  constructor(
+    adapter: string,
+    operation: string,
+    cause: unknown,
+    options?: { retryable?: boolean }
+  ) {
+    const message = cause instanceof Error ? cause.message : String(cause);
+    super(`${adapter}.${operation} failed: ${message}`, {
+      cause: cause instanceof Error ? cause : undefined,
+      details: { adapter, operation },
+      retryable: options?.retryable ?? true,
+    });
+    this.adapter = adapter;
+    this.operation = operation;
+  }
+
+  /**
+   * Create a network error (retryable).
+   */
+  static network(adapter: string, operation: string, cause: unknown): AdapterError {
+    return new AdapterError(adapter, operation, cause, { retryable: true });
+  }
+
+  /**
+   * Create a non-retryable error.
+   */
+  static nonRetryable(adapter: string, operation: string, cause: unknown): AdapterError {
+    return new AdapterError(adapter, operation, cause, { retryable: false });
+  }
+}

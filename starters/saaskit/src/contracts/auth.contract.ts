@@ -25,6 +25,9 @@ export const authContract = c.router({
         200: z.object({ ok: z.literal(true), token: z.string().optional() }),
       },
       summary: "Password signup",
+      description:
+        "Create a new user account using email and password. Returns a JWT token on success. " +
+        "Rate limited by email hash to prevent abuse. The token can be used for subsequent authenticated requests.",
     },
     defineOpMeta({
       op: "auth.password.signup",
@@ -58,6 +61,9 @@ export const authContract = c.router({
         200: z.object({ ok: z.literal(true), token: z.string().optional() }),
       },
       summary: "Password signin",
+      description:
+        "Authenticate an existing user with email and password. Returns a JWT token on success. " +
+        "Rate limited by email hash to prevent brute force attacks.",
     },
     defineOpMeta({
       op: "auth.password.signin",
@@ -94,6 +100,9 @@ export const authContract = c.router({
         }),
       },
       summary: "Password reset start",
+      description:
+        "Initiate password reset flow by sending a reset link to the user's email. " +
+        "Always returns success to prevent email enumeration attacks.",
     },
     defineOpMeta({
       op: "auth.password.reset.start",
@@ -127,6 +136,9 @@ export const authContract = c.router({
         200: z.object({ ok: z.literal(true), token: z.string().optional() }),
       },
       summary: "Password reset verify",
+      description:
+        "Complete password reset by verifying the reset token and setting a new password. " +
+        "Returns a JWT token on success, allowing immediate login.",
     },
     defineOpMeta({
       op: "auth.password.reset.verify",
@@ -163,6 +175,9 @@ export const authContract = c.router({
         }),
       },
       summary: "OTP start",
+      description:
+        "Start passwordless authentication by sending a one-time password (OTP) to the user's email. " +
+        "The OTP is valid for a limited time and can be verified with the OTP verify endpoint.",
     },
     defineOpMeta({
       op: "auth.otp.start",
@@ -195,6 +210,9 @@ export const authContract = c.router({
         200: z.object({ ok: z.literal(true), token: z.string().optional() }),
       },
       summary: "OTP verify",
+      description:
+        "Complete passwordless authentication by verifying the OTP sent to the user's email. " +
+        "Returns a JWT token on success. Creates a new user account if one doesn't exist.",
     },
     defineOpMeta({
       op: "auth.otp.verify",
@@ -226,6 +244,9 @@ export const authContract = c.router({
       body: ZPhoneStart,
       responses: { 200: z.object({ ok: z.literal(true), data: z.object({ sent: z.boolean() }) }) },
       summary: "Start phone verification",
+      description:
+        "Send a verification code to the user's phone number via SMS. " +
+        "Requires authentication. Used to verify phone number ownership for account security.",
     },
     defineOpMeta({
       op: "auth.phone.start",
@@ -246,6 +267,9 @@ export const authContract = c.router({
       body: ZPhoneVerify,
       responses: { 200: z.object({ ok: z.literal(true) }) },
       summary: "Verify phone code",
+      description:
+        "Verify the SMS code sent to the user's phone. " +
+        "Requires authentication. Marks the phone number as verified on the user's account.",
     },
     defineOpMeta({
       op: "auth.phone.verify",
@@ -266,6 +290,9 @@ export const authContract = c.router({
       body: z.object({}).optional(),
       responses: { 200: z.object({ ok: z.literal(true) }) },
       summary: "Sign out",
+      description:
+        "Sign out the current user by clearing authentication cookies and invalidating the session. " +
+        "Works for both JWT and cookie-based authentication.",
     },
     defineOpMeta({
       op: "auth.signOut",
@@ -290,6 +317,9 @@ export const authContract = c.router({
         200: z.object({ ok: z.literal(true), token: z.string().optional() }),
       },
       summary: "Provider token exchange",
+      description:
+        "Exchange an OAuth provider token (Google, GitHub, etc.) for a SaaSKit JWT token. " +
+        "Used after OAuth redirect to complete the authentication flow. Rate limited by IP address.",
     },
     defineOpMeta({
       op: "auth.token.exchange",
@@ -317,6 +347,10 @@ export const authContract = c.router({
       path: "/api/auth/csrf",
       responses: { 200: z.object({ ok: z.literal(true), token: z.string() }) },
       summary: "Get CSRF token and cookie",
+      description:
+        "Retrieve a CSRF token for cookie-authenticated requests. " +
+        "The token must be sent in the x-csrf-token header for state-changing requests when using cookie auth. " +
+        "Bearer token and API key authentication do not require CSRF tokens.",
     },
     defineOpMeta({
       op: "auth.csrf",

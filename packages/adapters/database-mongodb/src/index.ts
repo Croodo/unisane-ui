@@ -74,7 +74,7 @@ export class MongoDBAdapter {
 
   private client: MongoClient | null = null;
   private database: Db | null = null;
-  private connectingPromise: Promise<MongoClient> | null = null;
+  private connectingPromise: Promise<void> | null = null;
   private readonly config: MongoDBAdapterConfig;
   private readonly dbName: string;
 
@@ -98,48 +98,60 @@ export class MongoDBAdapter {
       return;
     }
 
-    this.connectingPromise = (async () => {
-      try {
-        // Double-check after acquiring lock
-        if (this.client && this.database) {
-          return this.client;
-        }
+    // Create and store the connection promise
+    // We need to track which promise "owns" the connection attempt to avoid race conditions
+    const connectionAttempt = this._doConnect();
+    this.connectingPromise = connectionAttempt;
 
-        const options: MongoClientOptions = {
-          maxPoolSize: this.config.maxPoolSize ?? 50,
-          minPoolSize: this.config.minPoolSize ?? 5,
-          maxIdleTimeMS: this.config.maxIdleTimeMS ?? 300_000,
-          waitQueueTimeoutMS: 30_000,
-          serverSelectionTimeoutMS: this.config.serverSelectionTimeoutMS ?? 5000,
-          socketTimeoutMS: this.config.socketTimeoutMS ?? 60_000,
-          connectTimeoutMS: this.config.connectTimeoutMS ?? 10_000,
-          retryWrites: this.config.retryWrites ?? true,
-          retryReads: this.config.retryReads ?? true,
-          writeConcern: new WriteConcern('majority', 10000),
-          readConcern: new ReadConcern('majority'),
-          compressors: ['zstd', 'snappy', 'zlib'],
-        };
-
-        const client = new MongoClient(this.config.uri, options);
-        await client.connect();
-
-        // Verify connection is healthy
-        await client.db(this.dbName).command({ ping: 1 });
-
-        this.client = client;
-        this.database = client.db(this.dbName);
-
-        return client;
-      } catch (error) {
-        this.client = null;
-        this.database = null;
-        throw error;
-      } finally {
+    try {
+      await connectionAttempt;
+    } finally {
+      // Only clear if this is still the current promise
+      // Another caller may have started a new attempt after we failed
+      if (this.connectingPromise === connectionAttempt) {
         this.connectingPromise = null;
       }
-    })();
+    }
+  }
 
-    await this.connectingPromise;
+  /**
+   * Internal connection logic - separated for race condition handling
+   */
+  private async _doConnect(): Promise<void> {
+    // Double-check after acquiring lock
+    if (this.client && this.database) {
+      return;
+    }
+
+    try {
+      const options: MongoClientOptions = {
+        maxPoolSize: this.config.maxPoolSize ?? 50,
+        minPoolSize: this.config.minPoolSize ?? 5,
+        maxIdleTimeMS: this.config.maxIdleTimeMS ?? 300_000,
+        waitQueueTimeoutMS: 30_000,
+        serverSelectionTimeoutMS: this.config.serverSelectionTimeoutMS ?? 5000,
+        socketTimeoutMS: this.config.socketTimeoutMS ?? 60_000,
+        connectTimeoutMS: this.config.connectTimeoutMS ?? 10_000,
+        retryWrites: this.config.retryWrites ?? true,
+        retryReads: this.config.retryReads ?? true,
+        writeConcern: new WriteConcern('majority', 10000),
+        readConcern: new ReadConcern('majority'),
+        compressors: ['zstd', 'snappy', 'zlib'],
+      };
+
+      const client = new MongoClient(this.config.uri, options);
+      await client.connect();
+
+      // Verify connection is healthy
+      await client.db(this.dbName).command({ ping: 1 });
+
+      this.client = client;
+      this.database = client.db(this.dbName);
+    } catch (error) {
+      this.client = null;
+      this.database = null;
+      throw error;
+    }
   }
 
   /**

@@ -22,6 +22,7 @@ export const flagsContract = c.router({
         200: z.array(z.object({ key: z.string(), flag: ZFlagOut.nullable() })),
       },
       summary: "List flags by keys",
+      description: "Retrieve multiple feature flags by their keys. Returns flag definitions including default enabled state and targeting rules. Requires FLAGS_READ permission.",
     },
     defineOpMeta({
       op: "flags.list",
@@ -57,6 +58,7 @@ export const flagsContract = c.router({
         200: z.object({ ok: z.literal(true), data: ZFlagOut.nullable() }),
       },
       summary: "Get flag",
+      description: "Get a single feature flag by key. Returns the flag definition with default enabled state and targeting rules, or null if not found. Supports environment override via query param.",
     },
     defineOpMeta({
       op: "flags.get",
@@ -93,6 +95,7 @@ export const flagsContract = c.router({
         200: z.object({ ok: z.literal(true), data: ZFlagOut.nullable() }),
       },
       summary: "Publish flag",
+      description: "Create or update a feature flag. Supports optimistic concurrency via expectedVersion. Changes are audited. Idempotent - safe to retry. Requires FLAGS_WRITE permission.",
     },
     defineOpMeta({
       op: "flags.patch",
@@ -146,6 +149,7 @@ export const flagsContract = c.router({
         200: z.object({ ok: z.literal(true), data: ZOverrideOut.nullable() }),
       },
       summary: "Get tenant scope override",
+      description: "Get a flag override specific to a tenant. Overrides take precedence over global flag rules when evaluating flags for this tenant. Returns null if no override exists.",
     },
     defineOpMeta({
       op: "flags.override.get",
@@ -183,6 +187,7 @@ export const flagsContract = c.router({
       query: z.object({ env: z.string().optional() }).optional(),
       responses: { 200: z.object({ ok: z.literal(true), data: ZOverrideOut }) },
       summary: "Set tenant scope override",
+      description: "Set a flag override for a specific tenant. Can optionally set an expiration date. Overrides take precedence over global rules. Changes are audited. Requires FLAGS_WRITE permission.",
     },
     defineOpMeta({
       op: "flags.override.set",
@@ -253,6 +258,7 @@ export const flagsContract = c.router({
         }),
       },
       summary: "Clear tenant scope override",
+      description: "Remove a flag override for a tenant. The flag will revert to global rules for this tenant. Changes are audited. Requires FLAGS_WRITE permission.",
     },
     defineOpMeta({
       op: "flags.override.clear",
@@ -308,6 +314,7 @@ export const flagsContract = c.router({
         200: z.object({ ok: z.literal(true), data: ZOverrideOut.nullable() }),
       },
       summary: "Get user scope override",
+      description: "Get a flag override specific to a user. User overrides take precedence over tenant and global rules. Returns null if no override exists. Requires FLAGS_READ permission.",
     },
     defineOpMeta({
       op: "flags.userOverride.get",
@@ -346,6 +353,7 @@ export const flagsContract = c.router({
         200: z.object({ ok: z.literal(true), data: ZOverrideOut }),
       },
       summary: "Set user scope override",
+      description: "Set a flag override for a specific user. Can optionally set an expiration date. User overrides have highest precedence. Changes are audited. Requires FLAGS_WRITE permission.",
     },
     defineOpMeta({
       op: "flags.userOverride.set",
@@ -413,6 +421,7 @@ export const flagsContract = c.router({
         }),
       },
       summary: "Clear user scope override",
+      description: "Remove a flag override for a user. The flag will revert to tenant or global rules for this user. Changes are audited. Requires FLAGS_WRITE permission.",
     },
     defineOpMeta({
       op: "flags.userOverride.clear",
@@ -471,6 +480,7 @@ export const flagsContract = c.router({
         }),
       },
       summary: "Evaluate multiple flags with context",
+      description: "Evaluate multiple feature flags with provided context (tenant, user, email, country). Returns a map of flag keys to boolean values. Public endpoint - does not require authentication. Useful for client-side flag evaluation.",
     },
     defineOpMeta({
       op: "flags.evaluate",

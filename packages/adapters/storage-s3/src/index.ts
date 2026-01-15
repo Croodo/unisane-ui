@@ -42,8 +42,20 @@ import type {
   ObjectMetadata,
   UploadOptions,
 } from '@unisane/kernel';
+import { CIRCUIT_BREAKER_DEFAULTS, ConfigurationError } from '@unisane/kernel';
+import { z } from 'zod';
 
-
+/**
+ * Zod schema for validating S3 adapter configuration.
+ */
+export const ZS3AdapterConfig = z.object({
+  bucket: z.string().min(1, 'S3 bucket name is required'),
+  region: z.string().min(1, 'AWS region is required'),
+  accessKeyId: z.string().min(1, 'AWS access key ID is required'),
+  secretAccessKey: z.string().min(1, 'AWS secret access key is required'),
+  endpoint: z.string().url('endpoint must be a valid URL').optional(),
+  forcePathStyle: z.boolean().optional(),
+});
 
 async function streamToBuffer(body: unknown): Promise<Buffer> {
   if (body == null) return Buffer.from([]);
@@ -92,10 +104,11 @@ export class S3StorageAdapter implements StorageProvider {
   private readonly bucket: string;
 
   constructor(config: S3AdapterConfig) {
-    if (!config.bucket) throw new Error('S3StorageAdapter: config.bucket is required');
-    if (!config.region) throw new Error('S3StorageAdapter: config.region is required');
-    if (!config.accessKeyId) throw new Error('S3StorageAdapter: config.accessKeyId is required');
-    if (!config.secretAccessKey) throw new Error('S3StorageAdapter: config.secretAccessKey is required');
+    // Validate configuration at construction time
+    const result = ZS3AdapterConfig.safeParse(config);
+    if (!result.success) {
+      throw ConfigurationError.fromZod('storage-s3', result.error.issues);
+    }
 
     this.bucket = config.bucket;
     this.client = new S3Client({
@@ -259,8 +272,8 @@ export function createS3StorageAdapter(config: S3AdapterConfig): StorageProvider
     name: 'storage-s3',
     primary: new S3StorageAdapter(config),
     circuitBreaker: {
-      failureThreshold: 5,
-      resetTimeout: 30000,
+      failureThreshold: CIRCUIT_BREAKER_DEFAULTS.failureThreshold,
+      resetTimeout: CIRCUIT_BREAKER_DEFAULTS.resetTimeout,
     },
     retry: {
       maxRetries: 3,

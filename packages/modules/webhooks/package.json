@@ -22,7 +22,6 @@
     "@unisane/gateway": "workspace:*",
     "@unisane/kernel": "workspace:*",
     "@unisane/notify": "workspace:*",
-    "@unisane/settings": "workspace:*",
     "@unisane/tenants": "workspace:*",
     "mongodb": "^7.0.0",
     "zod": "^3.23.0"

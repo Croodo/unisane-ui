@@ -24,6 +24,7 @@
  */
 
 import type { BillingProviderAdapter, CheckoutSession, PortalSession, Subscription } from '@unisane/kernel';
+import { CIRCUIT_BREAKER_DEFAULTS } from '@unisane/kernel';
 
 const BASE_URL = 'https://api.razorpay.com/v1';
 
@@ -223,12 +224,15 @@ export class RazorpayBillingAdapter implements BillingProviderAdapter {
     });
   }
 
-  async createPortalSession(_args: {
+  async createPortalSession(args: {
     customerId: string;
     returnUrl: string;
   }): Promise<PortalSession> {
-    // Razorpay does not offer a general customer billing portal
-    throw new Error('Razorpay customer portal is not supported. Use app-side billing page instead.');
+    // Razorpay does not offer a customer billing portal like Stripe
+    // Return a fallback URL that redirects back to the app's billing page
+    return {
+      url: args.returnUrl,
+    };
   }
 
   async getSubscription(subscriptionId: string): Promise<Subscription | null> {
@@ -284,17 +288,23 @@ export class RazorpayBillingAdapter implements BillingProviderAdapter {
     return sub;
   }
 
-  async updateSubscriptionPlan(_args: {
+  async updateSubscriptionPlan(args: {
     scopeId: string;
     providerSubId: string;
     planId?: string;
   }): Promise<Subscription> {
-    // Razorpay subscription plan changes are complex
-    // For now, throw an error and handle via app-side flows
-    throw new Error(
-      'Razorpay subscription plan changes are not directly supported. ' +
-      'Use cancel + recreate subscription flow instead.'
-    );
+    // Use the existing updateSubscription method with plan_id
+    if (!args.planId) {
+      // If no planId provided, just return the current subscription
+      const sub = await this.getSubscription(args.providerSubId);
+      if (!sub) throw new Error('Subscription not found');
+      return sub;
+    }
+
+    // Map the planId if a mapper is configured
+    const mappedPlanId = this.mapPlanId?.(args.planId) ?? args.planId;
+
+    return this.updateSubscription(args.providerSubId, { priceId: mappedPlanId });
   }
 
   async updateSubscriptionQuantity(args: {
@@ -334,8 +344,8 @@ export function createRazorpayBillingAdapter(config: RazorpayBillingAdapterConfi
     name: 'razorpay',
     primary: new RazorpayBillingAdapter(config),
     circuitBreaker: {
-      failureThreshold: 5,
-      resetTimeout: 30000,
+      failureThreshold: CIRCUIT_BREAKER_DEFAULTS.failureThreshold,
+      resetTimeout: CIRCUIT_BREAKER_DEFAULTS.resetTimeout,
     },
     retry: {
       maxRetries: 3,

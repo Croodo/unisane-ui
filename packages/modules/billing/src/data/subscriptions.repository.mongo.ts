@@ -7,9 +7,8 @@ import {
   type SubscriptionStatus,
   type BillingProvider,
 } from "@unisane/kernel";
-import type { SubscriptionsRepo } from "../domain/ports";
+import type { SubscriptionsRepo, LatestSub } from "../domain/ports";
 import type { SubscriptionView } from "../domain/types";
-import type { LatestSub } from "@unisane/tenants";
 
 type SubscriptionDoc = {
   _id: unknown;

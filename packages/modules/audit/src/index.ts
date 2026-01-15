@@ -43,3 +43,9 @@ export { getScopeLastActivity } from "./service/admin/stats";
 // ════════════════════════════════════════════════════════════════════════════
 
 export { registerAuditEventHandlers } from "./event-handlers";
+
+// ════════════════════════════════════════════════════════════════════════════
+// Port Adapter (for hexagonal architecture)
+// ════════════════════════════════════════════════════════════════════════════
+
+export { auditAdapter } from './adapter';

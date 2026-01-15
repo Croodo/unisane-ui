@@ -23,6 +23,7 @@ export const storageContract = c.router({
         200: z.object({ ok: z.literal(true), data: ZUploadUrlResponse }),
       },
       summary: "Request a presigned upload URL",
+      description: "Get a presigned URL for direct-to-storage file upload. Returns a temporary upload URL and file ID. After uploading, call confirm to finalize. Requires STORAGE_WRITE permission.",
     },
     defineOpMeta({
       op: "storage.upload.request",
@@ -57,6 +58,7 @@ export const storageContract = c.router({
         200: z.object({ ok: z.literal(true), data: ZStorageFileResponse }),
       },
       summary: "Confirm upload completed",
+      description: "Confirm that a file upload has completed successfully. Validates the file exists in storage and marks it as confirmed. Must be called after uploading to the presigned URL. Requires STORAGE_WRITE permission.",
     },
     defineOpMeta({
       op: "storage.upload.confirm",
@@ -85,6 +87,7 @@ export const storageContract = c.router({
         200: z.object({ ok: z.literal(true), data: ZDownloadUrlResponse }),
       },
       summary: "Get presigned download URL",
+      description: "Get a temporary presigned URL for downloading a file. The URL expires after a short period. Requires STORAGE_READ permission.",
     },
     defineOpMeta({
       op: "storage.download",
@@ -117,6 +120,7 @@ export const storageContract = c.router({
         }),
       },
       summary: "Delete a file (soft delete)",
+      description: "Mark a file for deletion (soft delete). The file is not immediately removed from storage but will be cleaned up by a background job. Requires STORAGE_DELETE permission.",
     },
     defineOpMeta({
       op: "storage.delete",
@@ -149,6 +153,7 @@ export const storageContract = c.router({
         }),
       },
       summary: "List files",
+      description: "List files for a tenant with optional filtering by folder or status. Supports cursor-based pagination. Returns file metadata including size, type, and upload status. Requires STORAGE_READ permission.",
     },
     defineOpMeta({
       op: "storage.list",

@@ -51,3 +51,9 @@ export * from "./service/suppression";
 // ════════════════════════════════════════════════════════════════════════════
 
 export { registerNotifyEventHandlers } from "./event-handlers";
+
+// ════════════════════════════════════════════════════════════════════════════
+// Port Adapter (for hexagonal architecture)
+// ════════════════════════════════════════════════════════════════════════════
+
+export { notifyAdapter } from './adapter';

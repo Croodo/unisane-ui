@@ -27,12 +27,13 @@ export const ZAdminUserFilters = z.object({
 
 export const ZAdminListQuery = z.object({
   cursor: ZCursor.optional(),
-  limit: z.coerce.number().int().positive().max(500).default(50),
+  // Enforce conservative limits for admin surfaces (max 100, default 50)
+  limit: z.coerce.number().int().positive().max(100).default(50),
   sort: z.string().optional(),
   filters: ZAdminUserFilters.optional(),
 });
 
-export const ZAdminStatsQuery = z.object({
+export const ZAdminUserStatsQuery = z.object({
   filters: ZAdminUserFilters.optional(),
 });
 
@@ -61,6 +62,7 @@ export const usersContract = c.router({
       }),
     },
     summary: 'Admin: memberships for a user',
+    description: 'List all tenant memberships for a specific user. Shows which tenants the user belongs to and their roles in each. Useful for admin user detail pages. Requires super admin privileges.',
   }, defineOpMeta({
     op: 'admin.users.memberships',
     requireUser: true,
@@ -99,6 +101,7 @@ export const usersContract = c.router({
         }),
       },
       summary: "Admin users stats",
+      description: "Get aggregate statistics for users including total count and facet breakdown by global role. Supports the same filters as the list endpoint. Requires super admin privileges.",
     },
     defineOpMeta({
       op: "admin.users.stats",
@@ -109,7 +112,7 @@ export const usersContract = c.router({
         fn: "getAdminUsersStats",
         zodQuery: {
           importPath: "./users.contract",
-          name: "ZAdminStatsQuery",
+          name: "ZAdminUserStatsQuery",
         },
         filtersSchema: { importPath: "./users.contract", name: "ZAdminUserFilters" },
         invoke: "object",
@@ -126,6 +129,7 @@ export const usersContract = c.router({
     path: '/api/rest/v1/admin/users/facets',
     responses: { 200: z.object({ ok: z.literal(true), data: z.object({ hasRole: z.object({ withRole: z.number(), withoutRole: z.number() }), roles: z.record(z.number()) }) }) },
     summary: 'Admin users facets',
+    description: 'Get facet data for users including role distribution. Used to populate filter dropdowns in admin UI. Requires super admin privileges.',
   }, defineOpMeta({
     op: 'admin.users.facets',
     requireUser: true,
@@ -142,6 +146,7 @@ export const usersContract = c.router({
       200: z.object({ ok: z.literal(true), data: z.object({ items: z.array(ZUserOut), nextCursor: z.string().optional(), prevCursor: z.string().optional() }) }),
     },
     summary: 'Admin users list',
+    description: 'List all platform users with pagination, sorting, and filtering. Filter by email, display name, or date range. Supports cursor-based pagination up to 100 items per page. Requires super admin privileges.',
   }, defineOpMeta({
     op: 'admin.users.list',
     requireUser: true,
@@ -196,6 +201,7 @@ export const usersContract = c.router({
       }),
     },
     summary: 'Admin user read (enriched)',
+    description: 'Get detailed information about a specific user including profile, verification status, tenant membership counts, API key counts, and activity timestamps. Returns null if user not found. Requires super admin privileges.',
   }, defineOpMeta({
     op: 'admin.users.read',
     requireUser: true,
@@ -217,6 +223,7 @@ export const usersContract = c.router({
     query: z.object({ value: z.string().min(1) }),
     responses: { 200: z.object({ ok: z.literal(true), data: z.object({ available: z.boolean() }) }) },
     summary: 'Check username availability',
+    description: 'Check if a username is available for registration. Returns true if available, false if already taken. This endpoint is public and does not require authentication.',
   }, defineOpMeta({
     op: 'users.usernameAvailable',
     allowUnauthed: true,
@@ -236,6 +243,7 @@ export const usersContract = c.router({
     query: z.object({ value: z.string().min(1) }),
     responses: { 200: z.object({ ok: z.literal(true), data: z.object({ available: z.boolean() }) }) },
     summary: 'Check phone availability (E.164)',
+    description: 'Check if a phone number is available for registration. Phone must be in E.164 format (e.g., +14155551234). Returns true if available, false if already taken. This endpoint is public.',
   }, defineOpMeta({
     op: 'users.phoneAvailable',
     allowUnauthed: true,

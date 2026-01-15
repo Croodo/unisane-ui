@@ -79,12 +79,13 @@ async function handleStripeSubscriptionChanged(
 async function handleRazorpaySubscriptionChanged(
   payload: BillingEventPayload<'webhook.razorpay.subscription_changed'>
 ): Promise<void> {
-  const { scopeId, planId, status, eventType } = payload;
+  const { scopeId, planId, rawStatus, normalizedStatus, eventType } = payload;
 
   log.info('processing razorpay subscription change', {
     scopeId,
     planId,
-    status,
+    rawStatus,
+    normalizedStatus,
     eventType,
   });
 

@@ -29,6 +29,7 @@ import type {
   ObjectMetadata,
   UploadOptions,
 } from '@unisane/kernel';
+import { CIRCUIT_BREAKER_DEFAULTS } from '@unisane/kernel';
 
 export interface GCSAdapterConfig {
   bucket: string;
@@ -44,6 +45,7 @@ export interface GCSAdapterConfig {
  * Google Cloud Storage implementation of the StorageProvider interface.
  */
 export class GCSStorageAdapter implements StorageProvider {
+  readonly name = 'storage-gcs' as const;
   private readonly storage: Storage;
   private readonly bucket: Bucket;
 
@@ -186,7 +188,21 @@ export class GCSStorageAdapter implements StorageProvider {
 
 /**
  * Create a new GCS storage adapter.
+ * Wrapped with resilience (circuit breaker, retry).
  */
+import { createResilientProxy } from '@unisane/kernel';
+
 export function createGCSStorageAdapter(config: GCSAdapterConfig): StorageProvider {
-  return new GCSStorageAdapter(config);
+  return createResilientProxy({
+    name: 'storage-gcs',
+    primary: new GCSStorageAdapter(config),
+    circuitBreaker: {
+      failureThreshold: CIRCUIT_BREAKER_DEFAULTS.failureThreshold,
+      resetTimeout: CIRCUIT_BREAKER_DEFAULTS.resetTimeout,
+    },
+    retry: {
+      maxRetries: 3,
+      baseDelayMs: 200,
+    },
+  });
 }

@@ -4,9 +4,22 @@
  * Generates Next.js App Router route handlers from ts-rest contracts.
  */
 import * as path from 'node:path';
+import { execSync } from 'node:child_process';
+import { statSync } from 'node:fs';
 import { loadConfig, resolvePaths } from '../../config/index.js';
 import { log } from '../../utils/logger.js';
 import { writeText, ensureDir, existsSync } from '../../utils/fs.js';
+
+/** Check if source file is newer than dist file */
+function isStale(srcPath: string, distPath: string): boolean {
+  try {
+    const srcStat = statSync(srcPath);
+    const distStat = statSync(distPath);
+    return srcStat.mtimeMs > distStat.mtimeMs;
+  } catch {
+    return true; // If we can't stat, assume stale
+  }
+}
 import {
   extractRouteMeta,
   summarizeMeta,
@@ -66,6 +79,23 @@ export async function routesGen(options: RoutesGenOptions = {}): Promise<number>
     if (!existsSync(paths.routerPath)) {
       spinner.fail(`Router file not found: ${paths.routerPath}`);
       return 1;
+    }
+
+    // Auto-build contracts if needed
+    const routerDistPath = paths.routerPath;
+    const routerSrcPath = routerDistPath.replace(/\/dist\//, '/src/').replace(/\.js$/, '.ts');
+    const needsBuild = !existsSync(routerDistPath) || (existsSync(routerSrcPath) && isStale(routerSrcPath, routerDistPath));
+
+    if (needsBuild) {
+      spinner.text = 'Building contracts...';
+      try {
+        // Try to build from the contracts directory
+        const contractsPkgDir = path.dirname(path.dirname(routerDistPath));
+        execSync('pnpm build', { cwd: contractsPkgDir, stdio: 'pipe' });
+        spinner.text = 'Contracts built successfully';
+      } catch (buildErr) {
+        spinner.warn('Failed to auto-build contracts, attempting to load anyway...');
+      }
     }
 
     // Dynamic import of the router

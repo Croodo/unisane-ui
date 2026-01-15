@@ -15,9 +15,9 @@ import {
   cacheGet,
   cacheSet,
   kv,
+  getTypedSetting,
 } from '@unisane/kernel';
 import type { PlanId, FeatureKey, FeaturePolicyMap, TokenCost } from '@unisane/kernel';
-import { getTypedSetting } from '@unisane/settings';
 
 // -------- Token cost policy (per-operation costs + daily freebies) --------
 export type TokenPolicy = {

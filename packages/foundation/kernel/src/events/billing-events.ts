@@ -80,14 +80,21 @@ export const RazorpayPaymentCompletedSchema = z.object({
   credits: z.number().nullable(),
 });
 
+// Razorpay raw subscription statuses (from their API)
+const RAZORPAY_SUBSCRIPTION_STATUS = ['active', 'pending', 'halted', 'cancelled', 'completed', 'expired', 'authenticated'] as const;
+export const ZRazorpaySubscriptionStatus = z.enum(RAZORPAY_SUBSCRIPTION_STATUS);
+
 /**
  * Emitted when a Razorpay subscription changes.
+ * Contains both rawStatus (from Razorpay) and normalizedStatus (mapped to internal SSOT).
+ * Use mapRazorpaySubStatus() from '@unisane/kernel' to convert rawStatus to normalizedStatus.
  */
 export const RazorpaySubscriptionChangedSchema = z.object({
   scopeId: z.string(),
   subscriptionId: z.string(),
   planId: z.string().nullable(),
-  status: z.enum(['active', 'pending', 'halted', 'cancelled', 'completed', 'expired']),
+  rawStatus: ZRazorpaySubscriptionStatus.describe('Raw status from Razorpay API'),
+  normalizedStatus: ZSubscriptionStatus.describe('Status mapped to internal SSOT via mapRazorpaySubStatus'),
   eventType: z.enum(['activated', 'charged', 'completed', 'updated', 'cancelled', 'paused', 'resumed']),
 });
 

@@ -52,6 +52,9 @@ export const billingContract = c.router({
         }),
       },
       summary: "Get billing config (mode + plans)",
+      description:
+        "Retrieve the billing configuration including the billing mode (stripe, razorpay, or none) and available subscription plans. " +
+        "This is a public endpoint that does not require authentication. Use this to display pricing information on public pages.",
     },
     defineOpMeta({
       op: "billing.config",
@@ -75,6 +78,9 @@ export const billingContract = c.router({
         }),
       },
       summary: "Start subscription checkout",
+      description:
+        "Create a checkout session for a new subscription. Returns a URL to redirect the user to the payment provider's checkout page. " +
+        "Requires billing:write permission. The user will be redirected to successUrl or cancelUrl after completing or canceling the checkout.",
     },
     defineOpMeta({
       op: "billing.subscribe",
@@ -116,6 +122,9 @@ export const billingContract = c.router({
         }),
       },
       summary: "Customer portal",
+      description:
+        "Generate a URL to the billing provider's customer portal where users can manage their subscription, " +
+        "update payment methods, view invoices, and download receipts. The portal is hosted by the payment provider (Stripe/Razorpay).",
     },
     defineOpMeta({
       op: "billing.portal",
@@ -145,6 +154,9 @@ export const billingContract = c.router({
         }),
       },
       summary: "Top up credits",
+      description:
+        "Create a one-time payment session to purchase additional credits. Returns a checkout URL. " +
+        "Credits are added to the tenant's balance after successful payment. Use this for pay-as-you-go billing models.",
     },
     defineOpMeta({
       op: "billing.topup",
@@ -189,8 +201,10 @@ export const billingContract = c.router({
           ok: z.literal(true),
         }),
       },
-      summary:
-        "Change subscription plan (upgrades only; downgrades via portal)",
+      summary: "Change subscription plan (upgrades only; downgrades via portal)",
+      description:
+        "Upgrade the current subscription to a higher-tier plan. The change takes effect immediately and " +
+        "is prorated. For downgrades, redirect users to the customer portal instead. This endpoint only supports upgrades.",
     },
     defineOpMeta({
       op: "billing.changePlan",
@@ -223,6 +237,9 @@ export const billingContract = c.router({
       body: ZCancel,
       responses: { 200: z.object({ ok: z.literal(true) }) },
       summary: "Cancel subscription",
+      description:
+        "Cancel the tenant's subscription. Set atPeriodEnd to true to cancel at the end of the current billing period " +
+        "(recommended), or false for immediate cancellation. Immediate cancellation may result in loss of remaining subscription time.",
     },
     defineOpMeta({
       op: "billing.cancel",
@@ -255,6 +272,9 @@ export const billingContract = c.router({
       body: ZRefund,
       responses: { 200: z.object({ ok: z.literal(true) }) },
       summary: "Refund payment",
+      description:
+        "Issue a refund for a payment. Specify the provider payment ID and optionally a partial refund amount. " +
+        "If amount is not specified, a full refund is issued. Refunds are processed through the payment provider.",
     },
     defineOpMeta({
       op: "billing.refund",
@@ -304,6 +324,9 @@ export const billingContract = c.router({
         }),
       },
       summary: "List invoices",
+      description:
+        "Retrieve a paginated list of invoices for the tenant. Invoices include subscription charges and one-time payments. " +
+        "Use the cursor parameter for pagination. Each invoice includes amount, status (draft, open, paid, void, uncollectible), and creation date.",
     },
     defineOpMeta({
       op: "billing.listInvoices",
@@ -345,6 +368,9 @@ export const billingContract = c.router({
         }),
       },
       summary: "List payments",
+      description:
+        "Retrieve a paginated list of payment transactions for the tenant. Includes both successful and failed payment attempts. " +
+        "Payment status can be: pending, succeeded, failed, or refunded. Use cursor for pagination.",
     },
     defineOpMeta({
       op: "billing.listPayments",
@@ -381,6 +407,9 @@ export const billingContract = c.router({
         }),
       },
       summary: "Get subscription",
+      description:
+        "Retrieve the current subscription details for a tenant. Returns the plan ID, subscription status " +
+        "(active, canceled, past_due, trialing, incomplete), whether cancellation is pending, and the current billing period end date.",
     },
     defineOpMeta({
       op: "billing.getSubscription",
@@ -401,6 +430,9 @@ export const billingContract = c.router({
       body: ZChangeQuantity,
       responses: { 200: z.object({ ok: z.literal(true) }) },
       summary: "Change subscription quantity (seats)",
+      description:
+        "Update the number of seats/units for a per-seat subscription. Increasing quantity is charged immediately (prorated). " +
+        "Decreasing quantity takes effect at the next billing cycle. Use this for team-based pricing models.",
     },
     defineOpMeta({
       op: "billing.changeQuantity",

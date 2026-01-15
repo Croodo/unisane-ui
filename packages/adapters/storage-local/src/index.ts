@@ -40,6 +40,24 @@ export interface LocalAdapterConfig {
   baseUrl: string;
   /** Secret key for signing URLs (defaults to random) */
   signingSecret?: string;
+  /** Max retries for transient filesystem errors (default: 3) */
+  maxRetries?: number;
+  /** Base delay between retries in ms (default: 100) */
+  retryDelayMs?: number;
+}
+
+/** Transient filesystem error codes that are worth retrying */
+const TRANSIENT_ERRORS = new Set(['EAGAIN', 'EMFILE', 'ENFILE', 'EBUSY', 'ETIMEDOUT']);
+
+/** Helper to determine if an error is retryable */
+function isTransientError(err: unknown): boolean {
+  const code = (err as { code?: string })?.code;
+  return !!code && TRANSIENT_ERRORS.has(code);
+}
+
+/** Sleep helper */
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 interface FileMetadata {
@@ -55,11 +73,32 @@ export class LocalStorageAdapter implements StorageProvider {
   private readonly basePath: string;
   private readonly baseUrl: string;
   private readonly signingSecret: string;
+  private readonly maxRetries: number;
+  private readonly retryDelayMs: number;
 
   constructor(config: LocalAdapterConfig) {
     this.basePath = config.basePath;
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
     this.signingSecret = config.signingSecret ?? crypto.randomBytes(32).toString('hex');
+    this.maxRetries = config.maxRetries ?? 3;
+    this.retryDelayMs = config.retryDelayMs ?? 100;
+  }
+
+  /** Retry helper for transient filesystem errors */
+  private async withRetry<T>(fn: () => Promise<T>): Promise<T> {
+    let lastError: unknown;
+    for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
+      try {
+        return await fn();
+      } catch (err) {
+        lastError = err;
+        if (!isTransientError(err) || attempt === this.maxRetries) {
+          throw err;
+        }
+        await sleep(this.retryDelayMs * Math.pow(2, attempt));
+      }
+    }
+    throw lastError;
   }
 
   private getFilePath(key: string): string {
@@ -124,8 +163,8 @@ export class LocalStorageAdapter implements StorageProvider {
 
     await this.ensureDir(filePath);
 
-    // Write file
-    await fs.writeFile(filePath, body);
+    // Write file with retry for transient errors
+    await this.withRetry(() => fs.writeFile(filePath, body));
 
     // Write metadata
     const metadata: FileMetadata = {
@@ -133,7 +172,7 @@ export class LocalStorageAdapter implements StorageProvider {
       metadata: options.metadata,
       createdAt: new Date().toISOString(),
     };
-    await fs.writeFile(metaPath, JSON.stringify(metadata, null, 2));
+    await this.withRetry(() => fs.writeFile(metaPath, JSON.stringify(metadata, null, 2)));
   }
 
   async putJson(
@@ -150,7 +189,7 @@ export class LocalStorageAdapter implements StorageProvider {
 
   async getBuffer(key: string): Promise<Buffer> {
     const filePath = this.getFilePath(key);
-    return fs.readFile(filePath);
+    return this.withRetry(() => fs.readFile(filePath));
   }
 
   async getJson<T = unknown>(key: string): Promise<T> {
@@ -218,13 +257,16 @@ export class LocalStorageAdapter implements StorageProvider {
     const destMetaPath = this.getMetadataPath(destKey);
 
     await this.ensureDir(destPath);
-    await fs.copyFile(sourcePath, destPath);
+    await this.withRetry(() => fs.copyFile(sourcePath, destPath));
 
     // Copy metadata if exists
     try {
-      await fs.copyFile(sourceMetaPath, destMetaPath);
-    } catch {
-      // Metadata file doesn't exist, skip
+      await this.withRetry(() => fs.copyFile(sourceMetaPath, destMetaPath));
+    } catch (err) {
+      // Metadata file doesn't exist, skip (but propagate other errors)
+      if ((err as { code?: string })?.code !== 'ENOENT') {
+        throw err;
+      }
     }
   }
 

@@ -18,6 +18,13 @@ export interface ExtractOptions {
   verbose?: boolean;
 }
 
+/** Tracks entries that were skipped during extraction */
+export interface SkippedEntry {
+  file: string;
+  line: number;
+  reason: string;
+}
+
 /**
  * Extract route metadata from all contract files in a directory
  *
@@ -32,6 +39,9 @@ export async function extractRouteMeta(
   const log = verbose
     ? (msg: string, ...args: unknown[]) => console.log(`[meta-extract] ${msg}`, ...args)
     : () => {};
+
+  // Track skipped entries for warning at the end
+  const skipped: SkippedEntry[] = [];
 
   // Find all contract files using glob (supports ** patterns)
   const tsFiles = await globFn(glob, { cwd: contractsDir, absolute: true }).catch(() => [] as string[]);
@@ -72,13 +82,34 @@ export async function extractRouteMeta(
         const arg = call
           .getArguments()[0]
           ?.asKind(SyntaxKind.ObjectLiteralExpression);
-        if (!arg) continue;
+        if (!arg) {
+          skipped.push({
+            file: sf.getFilePath(),
+            line: call.getStartLineNumber(),
+            reason: 'Invalid argument to defineOpMeta - expected object literal',
+          });
+          continue;
+        }
 
         const opKey = getStringProp(arg, 'op') ?? '';
-        if (!opKey) continue;
+        if (!opKey) {
+          skipped.push({
+            file: sf.getFilePath(),
+            line: call.getStartLineNumber(),
+            reason: 'Missing "op" property in defineOpMeta',
+          });
+          continue;
+        }
 
         const entry = parseServiceEntry(arg, opKey);
-        if (!entry) continue;
+        if (!entry) {
+          skipped.push({
+            file: sf.getFilePath(),
+            line: call.getStartLineNumber(),
+            reason: `Failed to parse service entry for op "${opKey}"`,
+          });
+          continue;
+        }
 
         // Record source file for error context
         entry.sourceFile = sf.getFilePath();
@@ -121,6 +152,14 @@ export async function extractRouteMeta(
       }
     } catch (err) {
       log('Failed to process source file:', sf.getFilePath(), err);
+    }
+  }
+
+  // Warn about skipped entries so developers can identify issues
+  if (skipped.length > 0) {
+    console.warn(`⚠️  Skipped ${skipped.length} metadata entries during extraction:`);
+    for (const entry of skipped) {
+      console.warn(`   ${entry.file}:${entry.line} - ${entry.reason}`);
     }
   }
 

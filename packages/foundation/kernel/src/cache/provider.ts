@@ -1,16 +1,45 @@
 import { memoryStore } from './memory';
 import { getEnv } from '../env';
 import { redis } from './redis';
+import { logger } from '../observability/logger';
 
-// KV provider interface
-type SetOpts = { PX?: number; NX?: boolean };
+// ============================================================================
+// Cache Port Interface (decoupled from specific providers)
+// ============================================================================
 
-type KVProvider = {
-  get(key: string): Promise<string | null>;
-  set(key: string, value: string, opts?: SetOpts): Promise<boolean>;
-  incrBy(key: string, by: number, ttlMs?: number): Promise<number>;
-  del(key: string): Promise<void>;
+/**
+ * Options for cache set operations.
+ */
+export type CacheSetOpts = {
+  /** TTL in milliseconds */
+  PX?: number;
+  /** Only set if key does not exist */
+  NX?: boolean;
 };
+
+/**
+ * Cache port interface for key-value operations.
+ * Implementations: Memory (dev), Vercel KV, Redis, etc.
+ *
+ * This interface enables:
+ * 1. Swapping cache providers without code changes
+ * 2. Testing with in-memory implementation
+ * 3. Consistent error handling across providers
+ */
+export interface CachePort {
+  /** Get a value by key. Returns null if not found. */
+  get(key: string): Promise<string | null>;
+  /** Set a value with optional TTL and NX flag. Returns true on success. */
+  set(key: string, value: string, opts?: CacheSetOpts): Promise<boolean>;
+  /** Increment a numeric key by amount. Creates key with value if not exists. */
+  incrBy(key: string, by: number, ttlMs?: number): Promise<number>;
+  /** Delete a key. No-op if key doesn't exist. */
+  del(key: string): Promise<void>;
+}
+
+// Legacy type alias for backward compatibility
+type SetOpts = CacheSetOpts;
+type KVProvider = CachePort;
 
 // In-memory fallback (dev/tests)
 const memoryKV: KVProvider = {
@@ -52,8 +81,9 @@ function createVercelKV(url: string, token: string): KVProvider {
         const out = await http<{ result: unknown }>(`/get/${encodeURIComponent(key)}`);
         const val = (out as { result?: unknown }).result;
         return typeof val === 'string' ? val : val == null ? null : JSON.stringify(val);
-      } catch {
-        return null;
+      } catch (error) {
+        logger.error('KV get failed', { key, error, operation: 'get' });
+        throw error;
       }
     },
     async set(key: string, value: string, opts?: SetOpts): Promise<boolean> {
@@ -67,8 +97,9 @@ function createVercelKV(url: string, token: string): KVProvider {
           body: JSON.stringify({ value }),
         });
         return true;
-      } catch {
-        return false;
+      } catch (error) {
+        logger.error('KV set failed', { key, error, operation: 'set' });
+        throw error;
       }
     },
     async incrBy(key: string, by: number, ttlMs?: number): Promise<number> {
@@ -80,17 +111,18 @@ function createVercelKV(url: string, token: string): KVProvider {
         const out = await http<{ result: unknown }>(`/incr/${encodeURIComponent(key)}?${params}`, { method: 'POST' });
         const n = Number((out as { result?: unknown }).result);
         return Number.isFinite(n) ? n : 0;
-      } catch {
-        // fall back to memory when HTTP fails for any reason
-        return memoryStore.incrBy(key, by, ttlMs);
+      } catch (error) {
+        logger.error('KV incrBy failed - NOT falling back to memory', { key, by, error, operation: 'incrBy' });
+        throw error;
       }
     },
     async del(key: string): Promise<void> {
       try {
         // Vercel KV: POST /del/{key}
         await http(`/del/${encodeURIComponent(key)}`, { method: 'POST' });
-      } catch {
-        // ignore
+      } catch (error) {
+        logger.error('KV del failed', { key, error, operation: 'del' });
+        throw error;
       }
     },
   };
@@ -137,4 +169,32 @@ if (provider === memoryKV) {
   }
 }
 
-export const kv: KVProvider = provider;
+export const kv: CachePort = provider;
+
+// ============================================================================
+// Cache Provider Factory (for custom providers)
+// ============================================================================
+
+/**
+ * Create a memory-based cache provider.
+ * Use for testing or development.
+ */
+export function createMemoryCache(): CachePort {
+  return memoryKV;
+}
+
+/**
+ * Create a Vercel KV REST cache provider.
+ * Requires KV_REST_API_URL and KV_REST_API_TOKEN.
+ */
+export function createVercelKVCache(url: string, token: string): CachePort {
+  return createVercelKV(url, token);
+}
+
+/**
+ * Create a Redis-based cache provider.
+ * Requires REDIS_URL to be configured.
+ */
+export function createRedisCache(): CachePort {
+  return createRedisKV();
+}

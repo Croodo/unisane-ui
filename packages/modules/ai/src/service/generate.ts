@@ -1,8 +1,6 @@
-import { connectDb, enforceTokensAndQuota, FEATURE, FLAG, getScopeId, getScopePlan } from "@unisane/kernel";
+import { connectDb, enforceTokensAndQuota, FEATURE, FLAG, getScopeId, getScopePlan, isEnabledForScope, assertActiveSubscriptionForCreditsViaPort } from "@unisane/kernel";
 import type { PlanId } from "@unisane/kernel";
-import { isEnabledForScope } from "@unisane/flags";
 import { ERR } from "@unisane/gateway";
-import { assertActiveSubscriptionForCredits } from "@unisane/billing";
 
 export type GenerateArgs = {
   idem?: string;
@@ -19,7 +17,7 @@ export async function generate(args: GenerateArgs = {}): Promise<{ output: { tex
   if (!enabled) throw ERR.forbidden('Feature disabled');
   // Ensure DB is connected for usage/credits checks
   await connectDb();
-  await assertActiveSubscriptionForCredits();
+  await assertActiveSubscriptionForCreditsViaPort();
   // Charge one unit for demo feature; guard composes usage increment + credits
   const key =
     args.idem && args.idem.trim().length
