@@ -34,6 +34,10 @@ export type RedisProvider = {
   supportsSubscribe?(): boolean;
   evalsha?(...args: unknown[]): Promise<unknown>; // For @upstash/ratelimit Lua script support
   eval?(script: string, keys: string[], args: (string | number)[]): Promise<unknown>; // For custom Lua scripts
+  // Sorted set operations (for event replay/streaming)
+  zadd?(key: string, item: { score: number; member: string }): Promise<number>;
+  zrangebyscore?(key: string, min: number | string, max: number | string): Promise<string[]>;
+  zremrangebyscore?(key: string, min: number | string, max: number | string): Promise<number>;
   // Health check
   ping(): Promise<string>;
   // Cleanup function for graceful shutdown
@@ -91,6 +95,8 @@ function logRedisError(context: string, error: Error, level: 'warn' | 'error' = 
 function createMemoryRedis(): RedisProvider {
   const memSubscribers = new Map<string, Set<(msg: string) => void>>();
   const published: Array<{ channel: string; message: string; ts: number }> = [];
+  // In-memory sorted sets: key -> Map<member, score>
+  const sortedSets = new Map<string, Map<string, number>>();
 
   return {
     async get(key) {
@@ -161,6 +167,41 @@ function createMemoryRedis(): RedisProvider {
     async evalsha() {
       return null;
     },
+    // Sorted set operations for event replay
+    async zadd(key: string, item: { score: number; member: string }) {
+      if (!sortedSets.has(key)) sortedSets.set(key, new Map());
+      sortedSets.get(key)!.set(item.member, item.score);
+      return 1;
+    },
+    async zrangebyscore(key: string, min: number | string, max: number | string) {
+      const set = sortedSets.get(key);
+      if (!set) return [];
+      const minVal = min === "-inf" ? -Infinity : Number(min);
+      const maxVal = max === "+inf" ? Infinity : Number(max);
+      const results: Array<{ member: string; score: number }> = [];
+      for (const [member, score] of set) {
+        if (score >= minVal && score <= maxVal) {
+          results.push({ member, score });
+        }
+      }
+      // Sort by score ascending
+      results.sort((a, b) => a.score - b.score);
+      return results.map((r) => r.member);
+    },
+    async zremrangebyscore(key: string, min: number | string, max: number | string) {
+      const set = sortedSets.get(key);
+      if (!set) return 0;
+      const minVal = min === "-inf" ? -Infinity : Number(min);
+      const maxVal = max === "+inf" ? Infinity : Number(max);
+      let removed = 0;
+      for (const [member, score] of set) {
+        if (score >= minVal && score <= maxVal) {
+          set.delete(member);
+          removed++;
+        }
+      }
+      return removed;
+    },
     async ping() {
       return 'PONG';
     },
@@ -197,6 +238,10 @@ interface IoRedisInstance {
   ping(): Promise<string>;
   quit(): Promise<void>;
   disconnect(): void;
+  // Sorted set operations
+  zadd(key: string, score: number, member: string): Promise<number>;
+  zrangebyscore(key: string, min: number | string, max: number | string): Promise<string[]>;
+  zremrangebyscore(key: string, min: number | string, max: number | string): Promise<number>;
 }
 
 function createIoRedis(url: string): { provider: RedisProvider; clients: { client: IoRedisInstance; sub: IoRedisInstance } } {
@@ -313,6 +358,16 @@ function createIoRedis(url: string): { provider: RedisProvider; clients: { clien
     },
     supportsSubscribe() {
       return true;
+    },
+    // Sorted set operations
+    async zadd(key: string, item: { score: number; member: string }) {
+      return client.zadd(key, item.score, item.member);
+    },
+    async zrangebyscore(key: string, min: number | string, max: number | string) {
+      return client.zrangebyscore(key, min, max);
+    },
+    async zremrangebyscore(key: string, min: number | string, max: number | string) {
+      return client.zremrangebyscore(key, min, max);
     },
     async ping() {
       return client.ping();

@@ -1,4 +1,4 @@
-import { connectDb, getEnv, getProviderAdapter, getAuthIdentityProvider } from "@unisane/kernel";
+import { connectDb, getEnv, getProviderAdapter, getAuthIdentityProvider, emitTyped } from "@unisane/kernel";
 import { ERR } from "@unisane/gateway";
 import type { OAuthProvider } from "@unisane/kernel";
 import type { ExchangeInput, ExchangeResult } from "../domain/types";
@@ -54,13 +54,17 @@ export async function exchange({
 
   const authUserId = `${p}:${userInfo.id}`;
   const identity = getAuthIdentityProvider();
-  // Ensure user and backfill profile fields if missing
+  // Ensure user exists (synchronous - required for auth flow)
   const userId = await identity.ensureUserByEmail(userInfo.email);
-  try {
-    await identity.updateUserById(userId, {
-      ...(userInfo.name ? { displayName: userInfo.name } : {}),
-      authUserId,
-    });
-  } catch {}
+
+  // Emit event for profile backfill (fire-and-forget, non-blocking)
+  // This decouples the optional profile update from the critical auth flow
+  await emitTyped('auth.oauth.profile_backfill', {
+    userId,
+    provider: p,
+    authUserId,
+    ...(userInfo.name ? { displayName: userInfo.name } : {}),
+  });
+
   return { userId };
 }

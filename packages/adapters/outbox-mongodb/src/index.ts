@@ -414,5 +414,263 @@ export function createMongoOutboxAdapter(config: MongoOutboxAdapterConfig): Outb
   };
 }
 
+// =============================================================================
+// DLQ Adapter
+// =============================================================================
+
+import type {
+  DLQPort,
+  DeadEventEntry,
+  DLQStats,
+  PaginatedDeadEvents,
+  ListDeadEventsOptions,
+  BatchRetryResult,
+} from '@unisane/kernel';
+
+/**
+ * Configuration for the MongoDB DLQ adapter.
+ */
+export interface MongoDLQAdapterConfig {
+  /**
+   * Function that returns the MongoDB collection for outbox/DLQ items.
+   * This should be the SAME collection as the outbox adapter.
+   */
+  collection: () => Collection<OutboxDoc>;
+}
+
+/**
+ * Create a DLQPort adapter using MongoDB.
+ * Uses the same collection as the outbox adapter.
+ *
+ * @param config Configuration options
+ * @returns DLQPort implementation
+ *
+ * @example
+ * ```typescript
+ * import { createMongoDLQAdapter } from '@unisane/outbox-mongodb';
+ * import { setDLQProvider } from '@unisane/kernel';
+ *
+ * setDLQProvider(createMongoDLQAdapter({
+ *   collection: () => db().collection('_outbox'),
+ * }));
+ * ```
+ */
+export function createMongoDLQAdapter(config: MongoDLQAdapterConfig): DLQPort {
+  const { collection } = config;
+  const col = () => collection();
+
+  /**
+   * Convert outbox document to DeadEventEntry.
+   */
+  function toDeadEventEntry(doc: OutboxDoc & { _id: ObjectId }): DeadEventEntry {
+    const payload = doc.payload as { meta?: DeadEventEntry['meta'] };
+    return {
+      id: String(doc._id),
+      type: doc.kind,
+      payload: doc.payload,
+      meta: payload?.meta ?? {
+        eventId: String(doc._id),
+        timestamp: doc.createdAt?.toISOString() ?? new Date().toISOString(),
+        source: 'unknown',
+        scopeId: doc.tenantId ?? undefined,
+      },
+      attempts: doc.attempts,
+      lastError: doc.lastError ?? 'Unknown error',
+      createdAt: doc.createdAt ?? new Date(),
+      lastAttemptAt: doc.updatedAt ?? new Date(),
+      failedAt: doc.updatedAt ?? new Date(),
+    };
+  }
+
+  return {
+    async list(options?: ListDeadEventsOptions): Promise<PaginatedDeadEvents> {
+      const limit = Math.max(1, Math.min(options?.limit ?? 20, 100));
+
+      // Build filter
+      let filter: Document = { status: 'dead' };
+
+      if (options?.type) {
+        filter.kind = options.type;
+      }
+
+      if (options?.scopeId) {
+        filter.tenantId = options.scopeId;
+      }
+
+      if (options?.errorPattern) {
+        filter.lastError = { $regex: options.errorPattern, $options: 'i' };
+      }
+
+      // Handle cursor-based pagination
+      if (options?.cursor) {
+        const decoded = decodePaginationCursor(options.cursor);
+        if (decoded) {
+          filter = {
+            ...filter,
+            $or: [
+              { updatedAt: { $lt: new Date(decoded.updatedAt) } },
+              {
+                updatedAt: new Date(decoded.updatedAt),
+                _id: { $lt: maybeObjectId(decoded._id) },
+              },
+            ],
+          };
+        }
+      }
+
+      const docs = await col()
+        .find(filter)
+        .sort({ updatedAt: -1, _id: -1 })
+        .limit(limit + 1)
+        .toArray();
+
+      const hasMore = docs.length > limit;
+      const items = docs.slice(0, limit);
+
+      // Build next cursor
+      let nextCursor: string | null = null;
+      if (hasMore && items.length > 0) {
+        const last = items[items.length - 1]!;
+        nextCursor = Buffer.from(
+          JSON.stringify({
+            updatedAt: last.updatedAt?.toISOString() ?? null,
+            _id: String(last._id),
+          })
+        ).toString('base64');
+      }
+
+      return {
+        items: items.map((doc) => toDeadEventEntry(doc as OutboxDoc & { _id: ObjectId })),
+        nextCursor,
+      };
+    },
+
+    async getById(id: string): Promise<DeadEventEntry | null> {
+      const doc = await col().findOne({
+        _id: maybeObjectId(id),
+        status: 'dead',
+      } as Document);
+
+      if (!doc) return null;
+      return toDeadEventEntry(doc as OutboxDoc & { _id: ObjectId });
+    },
+
+    async retry(id: string): Promise<boolean> {
+      const result = await col().updateOne(
+        { _id: maybeObjectId(id), status: 'dead' } as Document,
+        {
+          $set: {
+            status: 'queued',
+            attempts: 0,
+            nextAttemptAt: new Date(),
+            lastError: null,
+            updatedAt: new Date(),
+          },
+        } as Document
+      );
+      return result.modifiedCount > 0;
+    },
+
+    async retryBatch(ids: string[]): Promise<BatchRetryResult> {
+      const succeeded: string[] = [];
+      const failed: Array<{ id: string; error: string }> = [];
+
+      for (const id of ids) {
+        try {
+          const success = await this.retry(id);
+          if (success) {
+            succeeded.push(id);
+          } else {
+            failed.push({ id, error: 'Not found or not in dead status' });
+          }
+        } catch (error) {
+          failed.push({ id, error: error instanceof Error ? error.message : String(error) });
+        }
+      }
+
+      return { succeeded, failed };
+    },
+
+    async purge(id: string): Promise<boolean> {
+      const result = await col().deleteOne({
+        _id: maybeObjectId(id),
+        status: 'dead',
+      } as Document);
+      return result.deletedCount > 0;
+    },
+
+    async purgeBatch(ids: string[]): Promise<number> {
+      if (!ids.length) return 0;
+      const objIds = ids.map(maybeObjectId);
+      const result = await col().deleteMany({
+        _id: { $in: objIds },
+        status: 'dead',
+      } as Document);
+      return result.deletedCount;
+    },
+
+    async getStats(): Promise<DLQStats> {
+      // Use aggregation for efficient stats
+      const pipeline = [
+        { $match: { status: 'dead' } },
+        {
+          $group: {
+            _id: null,
+            totalDead: { $sum: 1 },
+            oldestDeadAt: { $min: '$updatedAt' },
+            newestDeadAt: { $max: '$updatedAt' },
+          },
+        },
+      ];
+
+      const [totals] = await col().aggregate(pipeline).toArray();
+
+      // Get counts by type
+      const byTypePipeline = [
+        { $match: { status: 'dead' } },
+        { $group: { _id: '$kind', count: { $sum: 1 } } },
+      ];
+      const byTypeResults = await col().aggregate(byTypePipeline).toArray();
+      const byType: Record<string, number> = {};
+      for (const r of byTypeResults) {
+        if (r._id) byType[String(r._id)] = r.count as number;
+      }
+
+      // Get counts by error (first 50 chars for grouping)
+      const byErrorPipeline = [
+        { $match: { status: 'dead', lastError: { $ne: null } } },
+        {
+          $group: {
+            _id: { $substr: ['$lastError', 0, 50] },
+            count: { $sum: 1 },
+          },
+        },
+        { $limit: 10 }, // Top 10 error patterns
+      ];
+      const byErrorResults = await col().aggregate(byErrorPipeline).toArray();
+      const byError: Record<string, number> = {};
+      for (const r of byErrorResults) {
+        if (r._id) byError[String(r._id)] = r.count as number;
+      }
+
+      return {
+        totalDead: (totals?.totalDead as number) ?? 0,
+        byType,
+        byError,
+        oldestDeadAt: totals?.oldestDeadAt ? new Date(totals.oldestDeadAt as Date) : undefined,
+        newestDeadAt: totals?.newestDeadAt ? new Date(totals.newestDeadAt as Date) : undefined,
+      };
+    },
+
+    async count(options?: { type?: string; scopeId?: string }): Promise<number> {
+      const filter: Document = { status: 'dead' };
+      if (options?.type) filter.kind = options.type;
+      if (options?.scopeId) filter.tenantId = options.scopeId;
+      return col().countDocuments(filter);
+    },
+  };
+}
+
 // Re-export types for convenience
 export type { OutboxPort, OutboxItem, OutboxRow, OutboxDeadAdminRow, OutboxStatus, OutboxKind } from '@unisane/kernel';
+export type { DLQPort, DeadEventEntry, DLQStats, PaginatedDeadEvents, ListDeadEventsOptions, BatchRetryResult } from '@unisane/kernel';

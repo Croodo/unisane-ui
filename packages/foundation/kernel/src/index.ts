@@ -21,6 +21,9 @@ export * from './scope';
 // Events (typed domain event system)
 export * from './events';
 
+// Saga (process manager for multi-step workflows)
+export * from './saga';
+
 // Errors (domain error hierarchy)
 export * from './errors';
 

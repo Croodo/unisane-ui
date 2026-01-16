@@ -1,6 +1,5 @@
-import { getScopeId, connectDb, events } from "@unisane/kernel";
+import { getScopeId, connectDb, emitTypedReliable } from "@unisane/kernel";
 import { StorageRepo } from "../data/storage.repository";
-import { STORAGE_EVENTS } from "../domain/constants";
 import { ERR } from "@unisane/gateway";
 
 export type ConfirmUploadArgs = {
@@ -40,10 +39,12 @@ export async function confirmUpload(args: ConfirmUploadArgs) {
     throw ERR.validation("File already confirmed or deleted");
   }
 
-  await events.emit(STORAGE_EVENTS.UPLOAD_CONFIRMED, {
+  // Use reliable event delivery to ensure media processing and usage tracking completes
+  await emitTypedReliable('storage.upload.confirmed', {
     scopeId,
     fileId: args.fileId,
     key: updated.key,
+    size: updated.sizeBytes,
   });
 
   return updated;

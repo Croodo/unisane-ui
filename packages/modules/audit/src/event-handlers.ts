@@ -14,7 +14,7 @@
  * ```
  */
 
-import { logger, onTyped } from '@unisane/kernel';
+import { logger, onTyped, type MembershipRemovalReason } from '@unisane/kernel';
 import { appendAudit } from './service/append';
 
 const log = logger.child({ module: 'audit', component: 'event-handlers' });
@@ -220,6 +220,28 @@ async function handleStorageFileDeleted(
 }
 
 /**
+ * Log membership removal (with reason)
+ */
+async function handleMembershipRemoved(
+  payload: {
+    membershipId: string;
+    userId: string;
+    scopeId: string;
+    removedBy?: string;
+    reason: MembershipRemovalReason;
+  }
+): Promise<void> {
+  await appendAudit({
+    scopeId: payload.scopeId,
+    actorId: payload.removedBy,
+    action: 'membership.removed',
+    resourceType: 'membership',
+    resourceId: payload.membershipId,
+    after: { userId: payload.userId, reason: payload.reason },
+  });
+}
+
+/**
  * Log settings update
  */
 async function handleSettingsUpdated(
@@ -333,6 +355,13 @@ export function registerAuditEventHandlers(): () => void {
   unsubscribers.push(
     onTyped('settings.updated', async (event) => {
       await handleSettingsUpdated(event.payload);
+    })
+  );
+
+  // Membership events (detailed with reason)
+  unsubscribers.push(
+    onTyped('membership.removed', async (event) => {
+      await handleMembershipRemoved(event.payload);
     })
   );
 

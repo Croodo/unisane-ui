@@ -99,7 +99,6 @@ export const meContract = c.router({
       fn: 'getMyProfile',
       invoke: 'object',
       callArgs: [ { name: 'userId', from: 'ctx', key: 'userId' } ],
-      audit: { resourceType: 'user', resourceIdExpr: 'ctx.userId' },
     },
   })),
   profilePatch: withMeta({
@@ -129,7 +128,6 @@ export const meContract = c.router({
         { name: 'userId', from: 'ctx', key: 'userId' },
         { name: 'patch', from: 'body' },
       ],
-      audit: { resourceType: 'user', resourceIdExpr: 'ctx.userId', afterExpr: 'result' },
     },
   })),
 });

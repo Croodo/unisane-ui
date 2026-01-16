@@ -41,7 +41,7 @@ export const importExportContract = c.router({
         requireTenantMatch: true,
         audit: {
           resourceType: 'import',
-          resourceIdExpr: "(typeof result === 'object' && result && 'jobId' in result ? (result as { jobId?: string }).jobId ?? null : null)",
+          resourceIdExpr: 'result.jobId',
           afterExpr: '{ resource: body.resource, meta: {} }',
         },
       },

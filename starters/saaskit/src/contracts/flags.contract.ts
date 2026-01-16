@@ -232,10 +232,7 @@ export const flagsContract = c.router({
         requireTenantMatch: true,
         audit: {
           resourceType: "flag.override",
-          resourceIdExpr:
-            "`" +
-            "${(await import('@unisane/kernel')).getEnv().APP_ENV}:${params.key}" +
-            "`",
+          resourceIdExpr: "params.key",
           afterExpr: "result",
         },
       },
@@ -291,10 +288,7 @@ export const flagsContract = c.router({
         requireTenantMatch: true,
         audit: {
           resourceType: "flag.override",
-          resourceIdExpr:
-            "`" +
-            "${(await import('@unisane/kernel')).getEnv().APP_ENV}:${params.key}" +
-            "`",
+          resourceIdExpr: "params.key",
         },
       },
     })
@@ -395,10 +389,7 @@ export const flagsContract = c.router({
         ],
         audit: {
           resourceType: "flag.userOverride",
-          resourceIdExpr:
-            "`" +
-            "${(await import('@unisane/kernel')).getEnv().APP_ENV}:${params.key}:user:${params.userId}" +
-            "`",
+          resourceIdExpr: "params.key",
           afterExpr: "result",
         },
       },
@@ -451,10 +442,7 @@ export const flagsContract = c.router({
         ],
         audit: {
           resourceType: "flag.userOverride",
-          resourceIdExpr:
-            "`" +
-            "${(await import('@unisane/kernel')).getEnv().APP_ENV}:${params.key}:user:${params.userId}" +
-            "`",
+          resourceIdExpr: "params.key",
         },
       },
     })

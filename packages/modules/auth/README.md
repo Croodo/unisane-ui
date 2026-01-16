@@ -189,6 +189,36 @@ events.on(AUTH_EVENTS.ACCOUNT_LOCKED, async ({ payload }) => {
 
 ## Architecture
 
+### Auth + Identity Bounded Context
+
+The Auth and Identity modules form a **bounded context** - they are intentionally coupled for user authentication and identity management. This is a deliberate architectural decision.
+
+**Why synchronous coupling?**
+
+Authentication flows require **immediate user resolution**:
+
+| Operation | Why Synchronous? |
+|-----------|------------------|
+| `findUserByEmail()` | Must check if user exists before creating credentials |
+| `createUser()` | Need userId immediately for credential creation |
+| `ensureUserByEmail()` | OAuth/OTP flows need userId for session creation |
+| `findUserByPhone()` | Phone uniqueness must be validated synchronously |
+
+**What's decoupled via events?**
+
+Optional/non-critical operations use events:
+
+| Operation | Event | Handler |
+|-----------|-------|---------|
+| OAuth profile backfill | `auth.oauth.profile_backfill` | Identity updates displayName, authUserId |
+
+**Port-based abstraction:**
+
+Auth uses `AuthIdentityPort` (not direct imports) which:
+- Enables testing with mock identity providers
+- Allows different identity implementations
+- Maintains clean dependency direction (Auth → Identity, never reverse)
+
 ### Tenant Scoping Design
 
 Auth credentials are **NOT tenant-scoped** - this is intentional:

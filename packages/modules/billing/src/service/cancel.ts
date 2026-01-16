@@ -1,8 +1,7 @@
 import { SubscriptionsRepository } from "../data/subscriptions.repository";
-import { getScopeId, getBillingProvider, events } from "@unisane/kernel";
+import { getScopeId, getBillingProvider, emitTypedReliable } from "@unisane/kernel";
 import { getBillingMode } from "./mode";
 import { ERR } from "@unisane/gateway";
-import { BILLING_EVENTS } from "../domain/constants";
 import { logBillingAudit, BILLING_AUDIT_ACTIONS } from "./audit";
 
 export type CancelSubscriptionArgs = {
@@ -43,7 +42,9 @@ export async function cancelSubscription(
     },
   });
 
-  await events.emit(BILLING_EVENTS.SUBSCRIPTION_CANCELLED, {
+  // Use reliable event delivery for subscription cancellation
+  // This ensures tenant downgrade and other cascades are processed
+  await emitTypedReliable('billing.subscription.cancelled', {
     scopeId,
     atPeriodEnd: args.atPeriodEnd,
   });

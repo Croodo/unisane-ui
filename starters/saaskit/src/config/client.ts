@@ -28,8 +28,8 @@ export {
   PLANS,
   PLAN_IDS,
   TOPUP_PACKS,
-} from "./billing";
-export type { PlanId } from "./billing";
+} from "./billing-plans";
+export type { PlanId, TopupKey } from "./billing-plans";
 
 // Re-export client-safe types from @unisane/config
 export type {

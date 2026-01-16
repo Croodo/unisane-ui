@@ -364,6 +364,22 @@ export const PlanChangedSchema = z.object({
 });
 
 // ============================================================================
+// Auth Events (for event-driven side effects)
+// ============================================================================
+
+/**
+ * OAuth profile backfill event.
+ * Emitted when OAuth exchange completes to update user profile fields.
+ * This allows the auth→identity profile update to be event-driven (fire-and-forget).
+ */
+export const AuthOauthProfileBackfillSchema = z.object({
+  userId: z.string(),
+  provider: z.string(),
+  authUserId: z.string(),
+  displayName: z.string().optional(),
+});
+
+// ============================================================================
 // Webhook Events
 // ============================================================================
 
@@ -462,6 +478,9 @@ export const EventSchemas = {
   'user.deleted': UserDeletedSchema,
   'membership.removed': MemberRemovedSchema,
   'plan.changed': PlanChangedSchema,
+
+  // Auth events (for event-driven side effects)
+  'auth.oauth.profile_backfill': AuthOauthProfileBackfillSchema,
 
   // Billing integration events (for event-driven decoupling)
   ...BillingEventSchemas,

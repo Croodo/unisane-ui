@@ -14,6 +14,9 @@ importers:
       '@changesets/cli':
         specifier: ^2.29.8
         version: 2.29.8(@types/node@22.18.12)
+      '@types/node':
+        specifier: ^22.14.1
+        version: 22.18.12
       prettier:
         specifier: ^3.6.0
         version: 3.6.2
@@ -23,6 +26,9 @@ importers:
       turbo:
         specifier: ^2.6.3
         version: 2.6.3
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.2
       vitest:
         specifier: ^4.0.16
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@22.18.12)(happy-dom@20.0.11)(jiti@2.6.1)(jsdom@27.4.0)(lightningcss@1.30.2)(yaml@2.8.2)
@@ -226,6 +232,56 @@ importers:
       zod:
         specifier: ^3.24.1
         version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^20.10.0
+        version: 20.19.27
+      '@unisane/typescript-config':
+        specifier: workspace:*
+        version: link:../../tooling/typescript-config
+      tsup:
+        specifier: ^8.0.0
+        version: 8.5.1(jiti@2.6.1)(postcss@8.5.6)(typescript@5.9.2)(yaml@2.8.2)
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.2
+      vitest:
+        specifier: ^4.0.16
+        version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@20.19.27)(happy-dom@20.0.11)(jiti@2.6.1)(jsdom@27.4.0)(lightningcss@1.30.2)(yaml@2.8.2)
+
+  packages/adapters/event-store-mongodb:
+    dependencies:
+      '@unisane/kernel':
+        specifier: workspace:*
+        version: link:../../foundation/kernel
+      mongodb:
+        specifier: ^7.0.0
+        version: 7.0.0(socks@2.8.7)
+    devDependencies:
+      '@types/node':
+        specifier: ^20.10.0
+        version: 20.19.27
+      '@unisane/typescript-config':
+        specifier: workspace:*
+        version: link:../../tooling/typescript-config
+      tsup:
+        specifier: ^8.0.0
+        version: 8.5.1(jiti@2.6.1)(postcss@8.5.6)(typescript@5.9.2)(yaml@2.8.2)
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.2
+      vitest:
+        specifier: ^4.0.16
+        version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@20.19.27)(happy-dom@20.0.11)(jiti@2.6.1)(jsdom@27.4.0)(lightningcss@1.30.2)(yaml@2.8.2)
+
+  packages/adapters/idempotency-mongodb:
+    dependencies:
+      '@unisane/kernel':
+        specifier: workspace:*
+        version: link:../../foundation/kernel
+      mongodb:
+        specifier: ^7.0.0
+        version: 7.0.0(socks@2.8.7)
     devDependencies:
       '@types/node':
         specifier: ^20.10.0

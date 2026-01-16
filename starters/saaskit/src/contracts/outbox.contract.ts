@@ -86,8 +86,8 @@ export const outboxContract = c.router({
         requireSuperAdmin: true,
         audit: {
           resourceType: 'outbox',
-          resourceIdExpr: "'ids:' + String(body.ids.length ?? 0)",
-          afterExpr: "{ op: 'requeue', count: body.ids.length ?? 0 }",
+          resourceIdExpr: "'batch'",
+          afterExpr: "{ op: 'requeue', ids: body.ids }",
         },
       },
     })
@@ -115,8 +115,8 @@ export const outboxContract = c.router({
         requireSuperAdmin: true,
         audit: {
           resourceType: 'outbox',
-          resourceIdExpr: "'ids:' + String(body.ids.length ?? 0)",
-          afterExpr: "{ op: 'purge', count: body.ids.length ?? 0 }",
+          resourceIdExpr: "'batch'",
+          afterExpr: "{ op: 'purge', ids: body.ids }",
         },
       },
     })

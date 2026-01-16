@@ -118,6 +118,46 @@ async function handleTenantDeleted(payload: {
 }
 
 /**
+ * Handle plan changes.
+ * Invalidates flag cache when plan changes (capacity updates, feature limits).
+ */
+async function handlePlanChanged(payload: {
+  scopeId: string;
+  previousPlan: string;
+  newPlan: string;
+  changeType: 'upgrade' | 'downgrade' | 'lateral';
+  effectiveAt: string;
+}): Promise<void> {
+  const { scopeId, newPlan, previousPlan, changeType } = payload;
+
+  log.info('handling plan change for flags', {
+    scopeId,
+    newPlan,
+    previousPlan,
+    changeType,
+  });
+
+  try {
+    // Invalidate cached flags since plan changed
+    await cacheDelete(`${FLAGS_CACHE_PREFIX}tenant:${scopeId}`);
+
+    log.info('flags cache invalidated for plan change', {
+      scopeId,
+      newPlan,
+      previousPlan,
+      changeType,
+    });
+  } catch (error) {
+    log.error('failed to invalidate flags cache for plan change', {
+      scopeId,
+      newPlan,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    // Don't throw - cache invalidation failures shouldn't block plan updates
+  }
+}
+
+/**
  * Handle settings changes.
  * Invalidates flag cache when relevant settings change.
  */
@@ -186,6 +226,13 @@ export function registerFlagsEventHandlers(): () => void {
   unsubscribers.push(
     onTyped('settings.updated', async (event) => {
       await handleSettingsUpdated(event.payload);
+    })
+  );
+
+  // Handle plan changes (emitted by tenants module after subscription updates)
+  unsubscribers.push(
+    onTyped('plan.changed', async (event) => {
+      await handlePlanChanged(event.payload);
     })
   );
 

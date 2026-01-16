@@ -5,6 +5,15 @@
  * Only runs on an empty database.
  *
  * Note: This is a bootstrap operation without tenant context.
+ *
+ * ## Event-Driven Architecture
+ *
+ * Owner membership creation is handled via events:
+ * 1. This service emits `tenant.created` with ownerId
+ * 2. Identity module's event handler creates the owner membership
+ * 3. The handler has idempotency - safe if called multiple times
+ *
+ * This decouples tenants from identity module (no direct calls).
  */
 
 import {
@@ -12,35 +21,26 @@ import {
   connectDb,
   withTransaction,
   Slug,
-  events,
+  emitTypedReliable,
   isDuplicateKeyError,
 } from "@unisane/kernel";
 import { TenantsRepo } from "../data/tenants.repository";
-import { TENANT_EVENTS } from "../domain/constants";
 
 /**
- * Bootstrap providers for tenant creation.
- * Injected at runtime to avoid circular dependencies with identity package.
+ * @deprecated No longer needed - owner role is now created via events.
+ * Kept for backwards compatibility. Will be removed in a future version.
  */
 export interface TenantBootstrapProviders {
   addOwnerRole?: (scopeId: string, userId: string) => Promise<void>;
 }
 
-// Use global object to share provider state across module instances in Next.js
-const globalForTenantBootstrap = global as unknown as {
-  __tenantBootstrapProviders?: TenantBootstrapProviders;
-};
-
 /**
- * Configure bootstrap providers for tenant functions.
- * Called once at application bootstrap to inject dependencies.
+ * @deprecated No longer needed - owner role is now created via events.
+ * The identity module listens for `tenant.created` and creates the owner membership.
+ * This function is a no-op kept for backwards compatibility.
  */
-export function configureTenantBootstrap(providers: TenantBootstrapProviders): void {
-  globalForTenantBootstrap.__tenantBootstrapProviders = providers;
-}
-
-function getBootstrapProviders(): TenantBootstrapProviders {
-  return globalForTenantBootstrap.__tenantBootstrapProviders ?? {};
+export function configureTenantBootstrap(_providers: TenantBootstrapProviders): void {
+  logger.debug('configureTenantBootstrap is deprecated - owner role is created via tenant.created event');
 }
 
 /**
@@ -102,16 +102,9 @@ export async function bootstrapFirstTenantForUser(
 
     const scopeId = t.id;
 
-    // Add owner role via injected provider
-    const providers = getBootstrapProviders();
-    if (providers.addOwnerRole) {
-      await providers.addOwnerRole(scopeId, userId);
-    } else {
-      logger.warn("tenant.bootstrap.no_owner_provider", { scopeId, userId });
-    }
-
-    // Emit event for side effects
-    await events.emit(TENANT_EVENTS.CREATED, {
+    // Emit tenant.created event - identity module will create owner membership
+    // The event handler has idempotency built-in (checks if membership exists)
+    await emitTypedReliable('tenant.created', {
       scopeId,
       slug,
       name,

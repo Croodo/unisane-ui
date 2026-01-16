@@ -14,6 +14,7 @@
 
 import {
   emitTyped,
+  emitTypedReliable,
   logger,
   reverseMapPlanIdFromProvider,
   resolveEntitlements,
@@ -115,9 +116,9 @@ export async function handleSubscriptionEvent(
   const normalizedStatus = mapRazorpaySubStatus(statusRaw);
   const eventType = mapRazorpayEventType(type);
 
-  // Emit subscription changed event for billing module to record
-  // Uses both rawStatus (from Razorpay) and normalizedStatus (internal SSOT)
-  await emitTyped('webhook.razorpay.subscription_changed', {
+  // Use reliable event delivery for subscription changes
+  // Critical for plan updates, seat capacity changes, and cache invalidation
+  await emitTypedReliable('webhook.razorpay.subscription_changed', {
     scopeId,
     subscriptionId: subId,
     planId: planId ?? null,

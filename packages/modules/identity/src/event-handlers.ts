@@ -202,6 +202,46 @@ async function handleUserDeleted(payload: {
 }
 
 /**
+ * Handle OAuth profile backfill events.
+ * Updates user profile fields from OAuth provider data.
+ * This is fire-and-forget - failures are logged but don't block auth flow.
+ */
+async function handleOauthProfileBackfill(payload: {
+  userId: string;
+  provider: string;
+  authUserId: string;
+  displayName?: string;
+}): Promise<void> {
+  const { userId, provider, authUserId, displayName } = payload;
+
+  log.info('handling oauth profile backfill', {
+    userId,
+    provider,
+    hasDisplayName: !!displayName,
+  });
+
+  try {
+    // Import users repository to update profile
+    const { usersRepository } = await import('./data/repo');
+
+    const updates: Record<string, unknown> = { authUserId };
+    if (displayName) {
+      updates.displayName = displayName;
+    }
+
+    await usersRepository.update(userId, updates);
+    log.info('oauth profile backfilled successfully', { userId, provider });
+  } catch (error) {
+    // Log but don't throw - this is non-critical (monitoring tier)
+    log.warn('failed to backfill oauth profile', {
+      userId,
+      provider,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+
+/**
  * Handle API key revocation requests.
  * Revokes API keys when requested via events.
  */
@@ -274,6 +314,13 @@ export function registerIdentityEventHandlers(): () => void {
   unsubscribers.push(
     onTyped('user.deleted', async (event) => {
       await handleUserDeleted(event.payload);
+    })
+  );
+
+  // Handle OAuth profile backfill (fire-and-forget from auth module)
+  unsubscribers.push(
+    onTyped('auth.oauth.profile_backfill', async (event) => {
+      await handleOauthProfileBackfill(event.payload);
     })
   );
 

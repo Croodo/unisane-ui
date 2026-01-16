@@ -14,6 +14,7 @@
 
 import {
   emitTyped,
+  emitTypedReliable,
   logger,
   creditsForPurchase,
   toMajorNumberCurrency,
@@ -273,7 +274,9 @@ export async function handleSubscriptionEvent(
 
   eventLog.info('subscription event - emitting event', { priceId, statusRaw, status, cancelAtPeriodEnd });
 
-  await emitTyped('webhook.stripe.subscription_changed', {
+  // Use reliable event delivery for subscription changes
+  // Critical for plan updates, seat capacity changes, and cache invalidation
+  await emitTypedReliable('webhook.stripe.subscription_changed', {
     scopeId,
     subscriptionId: subId ?? '',
     priceId: priceId ?? null,

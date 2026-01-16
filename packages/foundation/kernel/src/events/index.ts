@@ -145,3 +145,107 @@ export {
   clearModuleHandlerRegistry,
 } from './module-handlers';
 export type { HandlerRegistrar } from './module-handlers';
+
+// Idempotency helpers for exactly-once event processing
+export {
+  withIdempotency,
+  setIdempotencyProvider,
+  getIdempotencyProvider,
+  isIdempotencyEnabled,
+  clearIdempotencyProvider,
+  checkIdempotency,
+  completeIdempotency,
+  failIdempotency,
+  clearIdempotency,
+  getIdempotencyResult,
+  IdempotencyInProgressError,
+} from './idempotency';
+export type {
+  IdempotencyPort,
+  IdempotencyResult,
+  IdempotencyOptions,
+} from './idempotency';
+
+// Event Store for audit trail and event sourcing
+export {
+  setEventStoreProvider,
+  getEventStoreProvider,
+  isEventStoreEnabled,
+  clearEventStoreProvider,
+  setAutoStoreEnabled,
+  isAutoStoreEnabled,
+  appendToEventStore,
+  queryEventStore,
+  getEventByEventId,
+  getEventsByAggregate,
+  getEventsByCorrelation,
+  getCurrentSequence,
+  replayEvents,
+  countEvents,
+} from './event-store';
+export type {
+  EventStorePort,
+  StoredEvent,
+  EventStoreQueryOptions,
+  ReplayOptions,
+} from './event-store';
+
+// Dead Letter Queue (DLQ) management for failed events
+export {
+  setDLQProvider,
+  getDLQProvider,
+  isDLQEnabled,
+  clearDLQProvider,
+  listDeadEvents,
+  getDeadEvent,
+  retryDeadEvent,
+  retryDeadEventBatch,
+  purgeDeadEvent,
+  purgeDeadEventBatch,
+  getDLQStats,
+  countDeadEvents,
+} from './dlq';
+export type {
+  DLQPort,
+  DeadEventEntry,
+  DLQStats,
+  PaginatedDeadEvents,
+  ListDeadEventsOptions,
+  BatchRetryResult,
+} from './dlq';
+
+// Event metrics and observability
+export {
+  setMetricsEnabled,
+  isMetricsEnabled,
+  getEventMetrics,
+  resetEventMetrics,
+  recordEventEmission,
+  recordHandlerExecution,
+  recordOutboxProcessing,
+  recordSagaExecution,
+  updateOutboxCounts,
+  logMetricsSummary,
+} from './metrics';
+export type {
+  EventSystemMetrics,
+  EventEmissionMetrics,
+  EventHandlerMetrics,
+  OutboxMetrics,
+  SagaMetrics,
+} from './metrics';
+
+// Event handler error handling utilities
+export {
+  withErrorHandling,
+  createCascadeErrorTracker,
+  withEventRetry,
+  RetryPresets,
+} from './error-handling';
+export type {
+  ErrorTier,
+  ErrorHandlingOptions,
+  HandledResult,
+  CascadeErrorTracker,
+  EventRetryOptions,
+} from './error-handling';
