@@ -79,6 +79,8 @@ export * from './utils/csv';
 export * from './utils/ratelimit';
 export * from './utils/jobs';
 export * from './utils/timeout';
+export * from './utils/path-validation';
+export * from './utils/email-validation';
 
 // Storage provider abstraction
 export * from './storage';

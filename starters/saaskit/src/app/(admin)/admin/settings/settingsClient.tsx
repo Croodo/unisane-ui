@@ -202,7 +202,7 @@ function SettingsSection({
 }) {
   const settings = getSettingsByCategory(category);
 
-  const categoryInfo: Record<SettingCategory, { title: string; description: string }> = {
+  const categoryInfo: Partial<Record<SettingCategory, { title: string; description: string }>> = {
     runtime: {
       title: "Runtime Settings",
       description: "Configure application behavior and feature toggles",
@@ -219,9 +219,20 @@ function SettingsSection({
       title: "Webhook Settings",
       description: "Configure outbound event notifications",
     },
+    branding: {
+      title: "Branding Settings",
+      description: "Customize your application appearance",
+    },
+    general: {
+      title: "General Settings",
+      description: "General application configuration",
+    },
   };
 
-  const info = categoryInfo[category];
+  const info = categoryInfo[category] ?? {
+    title: category.charAt(0).toUpperCase() + category.slice(1) + " Settings",
+    description: `Configure ${category} settings`,
+  };
 
   return (
     <section>

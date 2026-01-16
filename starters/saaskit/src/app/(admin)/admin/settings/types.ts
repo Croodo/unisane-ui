@@ -1,8 +1,8 @@
 import { z } from "zod";
+import type { UICategory, UIInputType } from "@unisane/config";
 
-export type SettingCategory = "runtime" | "billing" | "auth" | "webhooks";
-
-export type SettingInputType = "text" | "number" | "boolean" | "select" | "textarea" | "array" | "custom";
+export type SettingCategory = UICategory;
+export type SettingInputType = UIInputType;
 
 export type SettingConfig = {
   namespace: string;
@@ -17,7 +17,7 @@ export type SettingConfig = {
   placeholder?: string;
   min?: number;
   max?: number;
-  customComponent?: string; // Name of custom component to use
+  customComponent?: string;
 };
 
 export type SettingValue = {

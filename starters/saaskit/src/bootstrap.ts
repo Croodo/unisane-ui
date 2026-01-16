@@ -273,7 +273,7 @@ async function setupBillingProviders() {
   const { getEnv, registerBillingProvider, mapPlanIdForProvider } = await import('@unisane/kernel');
   const { ScopeIntegrationsService } = await import('@unisane/billing');
   const { readTenant } = await import('@unisane/tenants');
-  const { mapTopupPriceIdForProvider } = await import('./config/topupMap');
+  const { mapTopupPriceIdForProvider } = await import('./config/billing');
 
   const env = getEnv();
   const { STRIPE_SECRET_KEY, RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, BILLING_PORTAL_RETURN_URL } = env;

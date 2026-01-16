@@ -70,6 +70,7 @@
     "@unisane/billing": "workspace:*",
     "@unisane/billing-razorpay": "workspace:*",
     "@unisane/billing-stripe": "workspace:*",
+    "@unisane/config": "workspace:*",
     "@unisane/contracts": "workspace:*",
     "@unisane/credits": "workspace:*",
     "@unisane/data-table": "workspace:*",
