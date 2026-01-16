@@ -100,6 +100,8 @@ export const COLLECTIONS = {
   // System / Kernel
   // ─────────────────────────────────────────────────────────────────────────
   OUTBOX: "_outbox",
+  /** BOOT-006 FIX: Separate collection for domain events outbox */
+  EVENTS_OUTBOX: "_events_outbox",
   DEAD_LETTER: "_dead_letter",
   MIGRATIONS: "_migrations",
 } as const;

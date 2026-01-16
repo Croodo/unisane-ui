@@ -199,7 +199,8 @@ export { getEffectivePerms, applyGlobalOverlays } from './service/perms';
 // Providers (Dependency Injection)
 // ════════════════════════════════════════════════════════════════════════════
 
-export { configureIdentityProviders } from './providers';
+// IDEN-003 FIX: Export validation functions for bootstrap-time configuration checks
+export { configureIdentityProviders, isIdentityConfigured, validateIdentityConfiguration } from './providers';
 export type { IdentityProviders, TenantsRepoLike } from './providers';
 
 // ════════════════════════════════════════════════════════════════════════════

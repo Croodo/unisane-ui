@@ -41,6 +41,9 @@ export const usageKeys = {
   /** Pattern for scanning all minutes in an hour */
   hourScanPattern: (label: string) =>
     `${KV.USAGE}*:*:${label}[0-5][0-9]` as const,
+  /** USAG-001 FIX: Rate limit key for increment calls per feature */
+  rateLimit: (scopeId: string, feature: string) =>
+    `u_rl:${scopeId}:${feature}` as const,
 } as const;
 
 export type UsageKeyBuilder = typeof usageKeys;

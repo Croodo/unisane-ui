@@ -46,6 +46,23 @@ export class TenantAccessDeniedError extends DomainError {
 }
 
 /**
+ * Thrown when attempting to access a suspended tenant.
+ */
+export class TenantSuspendedError extends DomainError {
+  readonly code = ErrorCode.TENANT_SUSPENDED;
+  readonly status = 403;
+
+  constructor(scopeId: string, reason?: string) {
+    super(
+      reason
+        ? `Workspace has been suspended: ${reason}. Please contact support.`
+        : 'This workspace has been suspended. Please contact support.'
+    );
+    this.name = 'TenantSuspendedError';
+  }
+}
+
+/**
  * Thrown when attempting to delete a tenant that has active subscriptions.
  */
 export class TenantHasActiveSubscriptionError extends DomainError {

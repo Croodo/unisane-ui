@@ -33,6 +33,7 @@
 import type { Collection, WithId, Document } from 'mongodb';
 import { events } from './emitter';
 import type { OutboxEntry, DomainEvent } from './types';
+import { logger } from '../observability/logger';
 
 /**
  * Outbox worker configuration options.
@@ -82,15 +83,15 @@ export interface OutboxWorker {
 }
 
 /**
- * Default logger that uses console.
+ * Default logger using structured logger.
  */
 const defaultLogger = {
   info: (msg: string, data?: Record<string, unknown>) =>
-    console.log(`[outbox-worker] ${msg}`, data || ''),
+    logger.info(msg, { module: 'outbox-worker', ...data }),
   error: (msg: string, data?: Record<string, unknown>) =>
-    console.error(`[outbox-worker] ${msg}`, data || ''),
+    logger.error(msg, { module: 'outbox-worker', ...data }),
   debug: (msg: string, data?: Record<string, unknown>) =>
-    console.debug(`[outbox-worker] ${msg}`, data || ''),
+    logger.debug(msg, { module: 'outbox-worker', ...data }),
 };
 
 /**

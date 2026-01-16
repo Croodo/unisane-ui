@@ -19,6 +19,7 @@ import {
   parseEncryptionKey,
   generateEncryptionKey,
 } from "@unisane/kernel";
+import { mongoUsersRepository } from "../data/users.repository.mongo";
 
 describe("Users Repository - PII Encryption", () => {
   const originalEnvKey = process.env.DATA_ENCRYPTION_KEY;

@@ -39,6 +39,74 @@ function formatZodErrors(error: ZodError): string {
 }
 
 /**
+ * GW-011 FIX: Maximum length for route parameter values.
+ * Prevents DoS via excessively long parameter strings.
+ *
+ * M-002 FIX: Increased from 256 to 512 to support base64-encoded IDs
+ * which can be longer (e.g., MongoDB ObjectId base64 is ~24 chars,
+ * but UUIDs and compound IDs can be longer).
+ */
+const MAX_PARAM_LENGTH = 512;
+
+/**
+ * GW-011 FIX: Pattern for safe route parameter values.
+ * Allows alphanumeric, hyphens, underscores, and periods.
+ * Rejects any characters that could be used for injection.
+ */
+const SAFE_PARAM_PATTERN = /^[a-zA-Z0-9_.-]+$/;
+
+/**
+ * GW-011 FIX: Validate and sanitize a single route parameter value.
+ * Returns the sanitized value or throws if invalid.
+ */
+function validateParamValue(key: string, value: unknown): string {
+  // Must be a string
+  if (typeof value !== 'string') {
+    throw ERR.validation(`Invalid path parameter "${key}": expected string, got ${typeof value}`);
+  }
+
+  // Check length
+  if (value.length === 0) {
+    throw ERR.validation(`Invalid path parameter "${key}": cannot be empty`);
+  }
+  if (value.length > MAX_PARAM_LENGTH) {
+    throw ERR.validation(`Invalid path parameter "${key}": exceeds maximum length of ${MAX_PARAM_LENGTH}`);
+  }
+
+  // Check for unsafe characters
+  if (!SAFE_PARAM_PATTERN.test(value)) {
+    throw ERR.validation(`Invalid path parameter "${key}": contains invalid characters`);
+  }
+
+  return value;
+}
+
+/**
+ * GW-011 FIX: Apply basic validation to all route parameters.
+ * This provides a safety net even when zodParams is not provided.
+ */
+function sanitizeRouteParams<Params extends Record<string, unknown>>(params: Params): Params {
+  if (!params || typeof params !== 'object') {
+    return params;
+  }
+
+  const sanitized: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(params)) {
+    // Only validate string values (which is what route params should be)
+    if (typeof value === 'string') {
+      sanitized[key] = validateParamValue(key, value);
+    } else if (value === undefined || value === null) {
+      // Allow undefined/null to pass through
+      sanitized[key] = value;
+    } else {
+      // Non-string, non-null values are suspicious
+      throw ERR.validation(`Invalid path parameter "${key}": unexpected type ${typeof value}`);
+    }
+  }
+  return sanitized as Params;
+}
+
+/**
  * Validate path parameters against a Zod schema.
  * Throws validation error if validation fails.
  */
@@ -55,10 +123,15 @@ export async function guard<Body = unknown, Params extends Record<string, unknow
   routeParams: Params,
   opts: GuardOpts<Body, Params>
 ): Promise<{ ctx: AuthCtx; body: Body; params: Params; rl: RateResult | null }> {
+  // GW-011 FIX: Always sanitize route params first for basic safety
+  // This catches obvious injection attempts even without explicit zodParams
+  const sanitizedParams = sanitizeRouteParams(routeParams);
+
   // Validate path parameters first (before auth, as this is a request format issue)
+  // If zodParams is provided, use it for additional validation
   const validatedParams = opts.zodParams
-    ? validateParams(routeParams, opts.zodParams)
-    : routeParams;
+    ? validateParams(sanitizedParams, opts.zodParams)
+    : sanitizedParams;
 
   const ctx = await getAuthCtx(req);
   if (!ctx.isAuthed && !opts.allowUnauthed) throw ERR.loginRequired();

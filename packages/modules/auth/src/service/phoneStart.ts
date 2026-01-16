@@ -1,4 +1,4 @@
-import { kv, randomDigits, logger, PhoneE164, getAuthIdentityProvider } from "@unisane/kernel";
+import { kv, randomDigits, logger, PhoneE164, getAuthIdentityProvider, sendSms } from "@unisane/kernel";
 import { ERR } from "@unisane/gateway";
 import { phoneVerifyKey } from "../domain/keys";
 
@@ -19,15 +19,21 @@ export async function phoneStart(args: {
   const payload = JSON.stringify({ phone, code });
   // Save to KV with TTL 10 minutes
   await kv.set(phoneVerifyKey(userId), payload, { PX: 10 * 60 * 1000 });
-  // TODO: integrate SMS provider
-  // In dev, log the code for testing; in prod this should send via SMS provider
-  const { APP_ENV } = await import("@unisane/kernel").then((m) => m.getEnv());
-  if (APP_ENV !== "prod") {
-    logger.info("phoneStart: dev-mode verification code", {
+
+  // Send SMS via configured provider (logs in dev if no provider set)
+  const result = await sendSms({
+    to: phone,
+    message: `Your verification code is: ${code}`,
+    metadata: { userId, type: "phone_verify" },
+  });
+
+  if (!result.success) {
+    logger.warn("phoneStart: SMS send failed", {
       userId,
       phoneMasked: phone.slice(0, 6) + "***",
-      code,
+      error: result.error,
     });
   }
-  return { sent: true };
+
+  return { sent: result.success };
 }

@@ -54,28 +54,31 @@ export async function grantWithExplicitScope(args: GrantCreditsWithScopeArgs) {
 /**
  * Internal implementation shared by both grant functions.
  *
- * **Idempotency Lock Strategy:**
- * Uses a short-lived Redis lock (10s TTL) to prevent duplicate grants.
- * The lock is NOT explicitly released in the finally block - this is intentional:
+ * CRED-003 FIX: Simplified idempotency with database unique constraint as primary defense.
  *
- * 1. **Stampede Prevention:** If we released immediately after success, a retry
- *    arriving in the same millisecond could race past the DB check.
+ * **Idempotency Strategy:**
+ * 1. Redis lock (NX) - Prevents concurrent duplicate attempts
+ * 2. Database unique index on idemKey - Authoritative duplicate prevention
  *
- * 2. **Error Recovery:** If the operation fails, the 10s TTL provides a natural
- *    backoff before retries can proceed, preventing rapid-fire retry storms.
+ * **Why we removed the findByIdem check:**
+ * The previous implementation had a TOCTOU race between the check and insert.
+ * The database unique constraint is the authoritative defense against duplicates,
+ * so the pre-check was redundant and added latency without additional safety.
  *
- * 3. **Idempotent Result:** The DB unique index on idemKey provides the ultimate
- *    safety net - even if the lock expires early, duplicates are caught.
- *
- * The 10-second TTL is chosen to balance retry latency with protection.
+ * **Lock TTL Strategy:**
+ * The 10-second TTL is intentionally NOT released early:
+ * - Prevents stampede from rapid retries on success
+ * - Provides natural backoff on transient failures
+ * - Database constraint catches any duplicates from expired locks
  */
 async function grantCreditsInternal(scopeId: string, args: GrantCreditsArgs) {
-  // NX: only set if not exists, PX: 10-second expiry (see JSDoc above)
+  // CRED-003 FIX: Redis lock prevents concurrent duplicate attempts
   const lock = await redis.set(creditsKeys.idemLock(scopeId, args.idem), '1', { NX: true, PX: 10_000 });
   if (!lock) return { ok: true as const, deduped: true as const };
+
   try {
-    const exists = await findByIdem(scopeId, args.idem);
-    if (exists) return { ok: true as const, deduped: true as const };
+    // CRED-003 FIX: Directly attempt insert - rely on DB unique constraint
+    // No pre-check needed; the constraint is authoritative
     const created = await insertGrant({
       scopeId,
       amount: args.amount,
@@ -83,6 +86,7 @@ async function grantCreditsInternal(scopeId: string, args: GrantCreditsArgs) {
       idemKey: args.idem,
       ...(args.expiresAt !== undefined ? { expiresAt: args.expiresAt } : {}),
     });
+
     // Invalidate cached balance
     await invalidateBalanceCache(scopeId);
 
@@ -94,6 +98,7 @@ async function grantCreditsInternal(scopeId: string, args: GrantCreditsArgs) {
     });
     return { ok: true as const, id: created.id };
   } catch (e: unknown) {
+    // CRED-003 FIX: Duplicate key error (code 11000) means idempotent success
     if (typeof e === 'object' && e !== null && 'code' in e && (e as { code?: number }).code === 11000) {
       return { ok: true as const, deduped: true as const };
     }

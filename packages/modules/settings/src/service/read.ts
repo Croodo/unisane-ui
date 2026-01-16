@@ -33,15 +33,30 @@ export async function getSetting(args: GetSettingArgs) {
   return row ? { value: row.value ?? null, version: row.version ?? 0 } : null;
 }
 
+/**
+ * SETT-002 FIX: Thread-safe subscriber initialization.
+ * Uses synchronous check + flag to prevent double-subscription.
+ * The subscription itself is idempotent if called twice, but we avoid
+ * the duplicate handler registration overhead.
+ */
 let wired = false;
+let wiringInProgress = false;
+
 export function initSettingsSubscriber() {
-  if (wired) return;
-  wired = true;
-  subscribe<unknown>("setting.updated", (evt) => {
-    const parsed = SettingUpdatedEventSchema.safeParse(evt);
-    if (!parsed.success) return;
-    const { env, ns, key, scopeId } = parsed.data;
-    const ck = settingsKeys.setting(env, ns, key, scopeId ?? null);
-    void kv.del(ck);
-  });
+  // SETT-002 FIX: Prevent concurrent initialization
+  if (wired || wiringInProgress) return;
+  wiringInProgress = true;
+
+  try {
+    subscribe<unknown>("setting.updated", (evt) => {
+      const parsed = SettingUpdatedEventSchema.safeParse(evt);
+      if (!parsed.success) return;
+      const { env, ns, key, scopeId } = parsed.data;
+      const ck = settingsKeys.setting(env, ns, key, scopeId ?? null);
+      void kv.del(ck);
+    });
+    wired = true;
+  } finally {
+    wiringInProgress = false;
+  }
 }

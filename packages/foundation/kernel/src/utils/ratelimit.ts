@@ -1,6 +1,7 @@
 import { Ratelimit } from "@upstash/ratelimit";
 import { redis } from "../cache/redis";
 import { getEnv } from "../env";
+import { logger } from "../observability/logger";
 
 // In-memory rate limiter for development/testing
 const memoryLimits = new Map<string, { count: number; resetAt: number }>();
@@ -33,7 +34,7 @@ try {
     prefix: "@upstash/ratelimit",
   });
 } catch {
-  console.warn("[ratelimit] Failed to initialize Upstash ratelimit, using in-memory fallback");
+  logger.warn('Failed to initialize Upstash ratelimit, using in-memory fallback', { module: 'ratelimit' });
 }
 
 export async function checkRateLimit(identifier: string) {
@@ -47,7 +48,10 @@ export async function checkRateLimit(identifier: string) {
     return { success, limit, remaining, reset };
   } catch (e) {
     // Fall back to in-memory on error
-    console.warn("[ratelimit] Redis error, using in-memory fallback:", (e as Error).message);
+    logger.warn('Redis error, using in-memory fallback', {
+      module: 'ratelimit',
+      error: (e as Error).message,
+    });
     return checkMemoryRateLimit(identifier);
   }
 }

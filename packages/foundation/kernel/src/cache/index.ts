@@ -36,3 +36,7 @@ export { kv, createMemoryCache, createVercelKVCache, createRedisCache } from "./
 export type { CachePort, CacheSetOpts } from "./provider";
 export { redis } from "./redis";
 export { memoryStore, MemoryStore } from "./memory";
+
+// Resilient cache wrapper with automatic fallback
+export { ResilientCache, createResilientCache } from "./resilient";
+export type { ResilientCacheConfig, ResilientCacheState } from "./resilient";

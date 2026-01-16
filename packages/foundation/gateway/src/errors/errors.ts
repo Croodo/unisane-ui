@@ -149,6 +149,7 @@ export const ERR = {
 
 import { HEADER_NAMES } from "../headers";
 import { logger } from "../logger";
+import { captureException } from "@unisane/kernel";
 
 function serializeError(err: unknown): Record<string, unknown> {
   try {
@@ -197,12 +198,18 @@ export function toHttp(e: unknown, requestId?: string): Response {
       headers["Retry-After"] = String(Math.ceil(Number(e.details.retryAfter)));
     }
 
-    // Logging based on severity
+    // Logging and error tracking based on severity
     try {
-      if (e.status >= 500)
+      if (e.status >= 500) {
         logger.error(e.message, { code: e.code, requestId: requestIdFinal });
-      else if (e.status === 429)
+        // Track 5xx errors for alerting
+        captureException(new Error(e.message), {
+          tags: { code: e.code, requestId: requestIdFinal },
+          level: 'error',
+        });
+      } else if (e.status === 429) {
         logger.warn(e.message, { code: e.code, requestId: requestIdFinal, details: e.details });
+      }
     } catch {}
 
     // Build response body using DomainError's toJSON
@@ -240,14 +247,20 @@ export function toHttp(e: unknown, requestId?: string): Response {
         headers["X-RateLimit-Reset"] = String(Math.floor(resetAt));
     }
 
-    // Logging based on severity
+    // Logging and error tracking based on severity
     try {
-      if (e.status >= 500)
+      if (e.status >= 500) {
         logger.error(e.message, { code: e.code, requestId: requestIdFinal });
-      else if (e.code === "RATE_LIMITED")
+        // Track 5xx errors for alerting
+        captureException(e, {
+          tags: { code: e.code, requestId: requestIdFinal },
+          level: 'error',
+        });
+      } else if (e.code === "RATE_LIMITED") {
         logger.warn(e.message, { code: e.code, requestId: requestIdFinal, details: e.details });
-      else if (e.code === "CONFLICT_VERSION_MISMATCH")
+      } else if (e.code === "CONFLICT_VERSION_MISMATCH") {
         logger.info(e.message, { code: e.code, requestId: requestIdFinal });
+      }
     } catch {}
 
     // Build response body
@@ -312,6 +325,11 @@ export function toHttp(e: unknown, requestId?: string): Response {
         } as Record<string, string>;
         try {
           logger.error("Database connection failed", { requestId: requestIdFinal, err: serializeError(e) });
+          // Track database errors for alerting
+          captureException(e instanceof Error ? e : new Error(msg || 'Database connection failed'), {
+            tags: { requestId: requestIdFinal, errorType: 'database' },
+            level: 'fatal',
+          });
         } catch {}
         const def = getErrorDef("SERVER_DATABASE_ERROR");
         return new Response(
@@ -332,6 +350,11 @@ export function toHttp(e: unknown, requestId?: string): Response {
   // Fallback: Internal server error
   try {
     logger.error("Unhandled error", { requestId: requestIdFinal, err: serializeError(e) });
+    // Track unhandled errors for alerting
+    captureException(e instanceof Error ? e : new Error(String(e)), {
+      tags: { requestId: requestIdFinal, errorType: 'unhandled' },
+      level: 'error',
+    });
   } catch {}
 
   const def = getErrorDef("SERVER_INTERNAL");

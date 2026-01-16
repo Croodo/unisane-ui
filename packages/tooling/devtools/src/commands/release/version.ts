@@ -160,17 +160,17 @@ export async function listVersions(): Promise<number> {
 
   for (const pkg of result.packages) {
     if (pkg.name.includes('cli') || pkg.name === 'unisane' || pkg.name.startsWith('create-')) {
-      byCategory['CLI Tools'].push(pkg);
+      byCategory['CLI Tools']!.push(pkg);
     } else if (['kernel', 'gateway', 'contracts'].some((n) => pkg.name.includes(n))) {
-      byCategory['Foundation'].push(pkg);
+      byCategory['Foundation']!.push(pkg);
     } else if (pkg.name.includes('ui') || pkg.name.includes('tokens')) {
-      byCategory['UI'].push(pkg);
+      byCategory['UI']!.push(pkg);
     } else if (pkg.path.includes('/pro/')) {
-      byCategory['Pro'].push(pkg);
+      byCategory['Pro']!.push(pkg);
     } else if (pkg.path.includes('/modules/')) {
-      byCategory['Modules'].push(pkg);
+      byCategory['Modules']!.push(pkg);
     } else {
-      byCategory['Other'].push(pkg);
+      byCategory['Other']!.push(pkg);
     }
   }
 

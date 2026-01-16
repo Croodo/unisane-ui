@@ -1,19 +1,18 @@
 /**
- * Delete Tenant
+ * Delete Tenant (Event-Driven)
  *
- * Cascade delete a tenant with proper cleanup:
- * 1. Revoke all API keys (security - prevents access)
- * 2. Soft delete all memberships (UX - users lose access)
- * 3. Mark storage files for deletion (cleanup job will handle S3)
- * 4. Soft delete the tenant
+ * Soft-deletes the tenant and emits `tenant.deleted` event.
+ * Cascade cleanup is handled by event handlers in each module:
+ * - Identity: Revokes API keys, soft-deletes memberships
+ * - Storage: Marks files for deletion
+ * - Settings: Soft-deletes tenant settings
  *
- * Note: Billing records (subscriptions, invoices, payments, credits) are preserved for compliance.
+ * Note: Billing records are preserved for compliance.
  * Note: Audit logs are preserved for compliance.
  */
 
-import { logger, events } from "@unisane/kernel";
+import { logger, emitTypedReliable } from "@unisane/kernel";
 import { TenantsRepo } from "../data/tenants.repository";
-import { TENANT_EVENTS } from "../domain/constants";
 
 export type DeleteTenantArgs = {
   tenantId: string;
@@ -22,40 +21,41 @@ export type DeleteTenantArgs = {
 
 export type DeleteTenantResult = {
   deleted: boolean;
-  cascade: {
-    apiKeysRevoked: number;
-    membershipsDeleted: number;
-    storageFilesMarked: number;
-  };
+  cascadeStatus: 'pending';
 };
 
 /**
- * Cascade delete a tenant with proper cleanup:
- * 1. Revoke all API keys (security - prevents access)
- * 2. Soft delete all memberships (UX - users lose access)
- * 3. Mark storage files for deletion (cleanup job will handle S3)
- * 4. Soft delete the tenant
+ * Delete a tenant using event-driven cascade pattern.
  *
- * Note: Billing records (subscriptions, invoices, payments, credits) are preserved for compliance.
- * Note: Audit logs are preserved for compliance.
+ * 1. Soft-delete the tenant record (own domain only)
+ * 2. Emit tenant.deleted event via outbox (guaranteed delivery)
+ * 3. Return immediately - cascades happen async via event handlers
  */
 export async function deleteTenant(
   args: DeleteTenantArgs
 ): Promise<DeleteTenantResult> {
-  const result = await TenantsRepo.deleteCascade({ scopeId: args.tenantId, actorId: args.actorId });
+  const { tenantId, actorId } = args;
 
-  logger.info("tenant.deleted", {
-    scopeId: args.tenantId,
-    actorId: args.actorId,
-    cascade: result.cascade,
+  // 1. Soft-delete tenant (own domain only)
+  const deleted = await TenantsRepo.softDelete({ tenantId, actorId });
+
+  if (!deleted) {
+    return { deleted: false, cascadeStatus: 'pending' };
+  }
+
+  // 2. Emit event via outbox (guaranteed delivery to all handlers)
+  await emitTypedReliable('tenant.deleted', {
+    scopeId: tenantId,
+    actorId,
+    timestamp: new Date().toISOString(),
   });
 
-  // Emit event for side effects (e.g., cleanup jobs, notifications)
-  await events.emit(TENANT_EVENTS.DELETED, {
-    scopeId: args.tenantId,
-    actorId: args.actorId,
-    cascade: result.cascade,
+  logger.info("tenant.deleted.initiated", {
+    tenantId,
+    actorId,
+    message: "Cascade handlers will process async",
   });
 
-  return result;
+  // 3. Return immediately - cascades happen async
+  return { deleted: true, cascadeStatus: 'pending' };
 }

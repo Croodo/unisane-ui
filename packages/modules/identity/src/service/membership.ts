@@ -1,12 +1,31 @@
 import { usersRepository, membershipsRepository } from "../data/repo";
 import { ERR } from "@unisane/gateway";
 import { invalidatePermsForUser } from "./perms";
-import { getScopeId, resolveEntitlements, events } from "@unisane/kernel";
+import { getScopeId, resolveEntitlements, events, withLock, emitTypedReliable } from "@unisane/kernel";
 import { IDENTITY_EVENTS } from "../domain/constants";
 import { getTenantsRepo } from "../providers";
 import type { RoleId } from "@unisane/kernel";
 import type { Permission } from "@unisane/kernel";
 import type { GrantEffect } from "@unisane/kernel";
+import type { MembershipRemovalReason } from "@unisane/kernel";
+import { z } from "zod";
+
+/**
+ * IDEN-002 FIX: Zod schema for validating membership data from repository.
+ * Ensures type safety without unsafe casting.
+ */
+const ZMembershipFromRepo = z.object({
+  userId: z.string().optional(),
+  scopeId: z.string().optional(),
+  roles: z.array(z.object({ roleId: z.string() })).optional().default([]),
+  grants: z.array(z.object({
+    perm: z.string(),
+    effect: z.enum(['allow', 'deny']),
+  })).optional().default([]),
+  version: z.number().optional().default(0),
+  createdAt: z.date().optional().nullable(),
+  updatedAt: z.date().optional().nullable(),
+});
 
 import type { ListMembersArgs } from "../domain/types";
 export type { ListMembersArgs };
@@ -35,9 +54,15 @@ export type { RemoveMemberArgs };
 export async function addRole(args: AddRoleArgs) {
   const scopeId = getScopeId(); // Throws if not set
   const { userId, roleId, expectedVersion } = args;
+
+  // Check if this would be a new seat (user has no roles yet)
   const existing = await membershipsRepository.findByScopeAndUser(scopeId, userId);
   const isNewSeat =
     !existing || !Array.isArray(existing.roles) || existing.roles.length === 0;
+
+  // If adding a new seat, we need to check the seat limit atomically
+  // Use distributed lock to prevent race conditions where multiple concurrent
+  // requests could all pass the seat check before any completes
   if (isNewSeat) {
     const ent = await resolveEntitlements(scopeId);
     const maxSeatsRaw = (ent.capacities as Record<string, number | undefined>)[
@@ -49,21 +74,66 @@ export async function addRole(args: AddRoleArgs) {
       maxSeatsRaw > 0
         ? maxSeatsRaw
         : undefined;
+
     if (maxSeats !== undefined) {
-      const page = await membershipsRepository.listByScope(
-        scopeId,
-        maxSeats + 1
-      );
-      const activeSeats = page.items.filter(
-        (m) =>
-          Array.isArray((m as { roles?: unknown }).roles) &&
-          (m as { roles: unknown[] }).roles.length > 0
-      ).length;
-      if (activeSeats >= maxSeats) {
-        throw ERR.validation("Seat limit reached for this workspace plan");
+      // Use distributed lock to ensure atomic seat limit checking
+      const lockKey = `seat-limit:${scopeId}`;
+      try {
+        return await withLock(
+          lockKey,
+          {
+            ttlMs: 5000, // Lock expires after 5 seconds
+            retryMs: 100, // Retry every 100ms
+            maxRetries: 50, // Give up after 5 seconds
+          },
+          async () => {
+            // Re-check seat count while holding lock
+            const page = await membershipsRepository.listByScope(
+              scopeId,
+              maxSeats + 1
+            );
+            const activeSeats = page.items.filter(
+              (m) =>
+                Array.isArray((m as { roles?: unknown }).roles) &&
+                (m as { roles: unknown[] }).roles.length > 0
+            ).length;
+
+            if (activeSeats >= maxSeats) {
+              throw ERR.validation(
+                `Seat limit reached for this workspace plan (${activeSeats}/${maxSeats})`
+              );
+            }
+
+            // Add role while still holding lock
+            const res = await membershipsRepository.addRole(
+              scopeId,
+              userId,
+              roleId,
+              expectedVersion
+            );
+            if ("conflict" in res) throw ERR.versionMismatch();
+
+            await invalidatePermsForUser(scopeId, userId);
+            await events.emit(IDENTITY_EVENTS.MEMBERSHIP_ROLE_CHANGED, {
+              scopeId,
+              userId,
+              roleId,
+              action: "added",
+            });
+            return res.membership;
+          }
+        );
+      } catch (error) {
+        // If it's a lock acquisition failure, provide a friendly error
+        if (error instanceof Error && error.message.includes('Unable to acquire lock')) {
+          throw ERR.internal('Unable to add member at this time. Please try again.');
+        }
+        throw error;
       }
     }
   }
+
+  // No seat limit or not a new seat - proceed without lock
   const res = await membershipsRepository.addRole(
     scopeId,
     userId,
@@ -150,32 +220,44 @@ export async function listMembers(args: ListMembersArgs) {
     args.cursor
   );
 
+  // IDEN-002 FIX: Parse and validate membership data with Zod instead of unsafe casting
+  const parsedItems = page.items.map((m) => {
+    const result = ZMembershipFromRepo.safeParse(m);
+    if (!result.success) {
+      // Log but don't fail - return a safe default for invalid items
+      console.warn("[identity/membership] Invalid membership data:", {
+        scopeId,
+        errors: result.error.flatten().fieldErrors,
+      });
+      return null;
+    }
+    return result.data;
+  }).filter((item): item is z.infer<typeof ZMembershipFromRepo> => item !== null);
+
   const userIds = [
     ...new Set(
-      page.items
-        .map((m) => (m as { userId?: string }).userId)
+      parsedItems
+        .map((m) => m.userId)
         .filter((id): id is string => !!id)
     ),
   ];
 
   const userMap = await usersRepository.findByIds(userIds);
 
-  const items = page.items.map((m) => {
-    const userId = (m as { userId?: string }).userId ?? null;
+  const items = parsedItems.map((m) => {
+    const userId = m.userId ?? null;
     const user = userId ? userMap.get(userId) : null;
     return {
       id: `${scopeId}:${userId}`, // Composite key for memberships
-      scopeId: (m as { scopeId?: string }).scopeId ?? scopeId,
+      scopeId: m.scopeId ?? scopeId,
       userId,
       userName: user?.displayName ?? null,
       userEmail: user?.email ?? null,
-      roles: (m as { roles?: { roleId: RoleId }[] }).roles ?? [],
-      grants:
-        (m as { grants?: { perm: Permission; effect: GrantEffect }[] })
-          .grants ?? [],
-      version: (m as { version?: number }).version ?? 0,
-      createdAt: (m as { createdAt?: Date }).createdAt ?? null,
-      updatedAt: (m as { updatedAt?: Date }).updatedAt ?? null,
+      roles: m.roles as { roleId: RoleId }[],
+      grants: m.grants as { perm: Permission; effect: GrantEffect }[],
+      version: m.version,
+      createdAt: m.createdAt ?? null,
+      updatedAt: m.updatedAt ?? null,
     };
   });
   return {
@@ -184,9 +266,9 @@ export async function listMembers(args: ListMembersArgs) {
   } as const;
 }
 
-export async function removeMember(args: RemoveMemberArgs) {
+export async function removeMember(args: RemoveMemberArgs & { removedBy?: string; reason?: MembershipRemovalReason }) {
   const scopeId = getScopeId(); // Throws if not set
-  const { userId, expectedVersion } = args;
+  const { userId, expectedVersion, removedBy, reason = 'removed' } = args;
   const res = await membershipsRepository.softDelete(
     scopeId,
     userId,
@@ -195,6 +277,16 @@ export async function removeMember(args: RemoveMemberArgs) {
   if ("notFound" in res) throw ERR.notFound("Membership not found");
   if ("conflict" in res) throw ERR.versionMismatch();
   await invalidatePermsForUser(scopeId, userId);
+
+  // Emit membership.removed event for cascade handlers
+  await emitTypedReliable('membership.removed', {
+    membershipId: `${scopeId}:${userId}`,
+    userId,
+    scopeId,
+    removedBy,
+    reason,
+  });
+
   return { ok: true };
 }
 

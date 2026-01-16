@@ -6,6 +6,7 @@
  */
 
 import { setGlobalProvider, getGlobalProvider, hasGlobalProvider } from './global-provider';
+import { logger } from '../observability/logger';
 
 const PROVIDER_KEY = 'jobs';
 
@@ -42,11 +43,17 @@ export interface JobsPort {
  */
 const noopJobsProvider: JobsPort = {
   send: async (event) => {
-    console.warn(`[jobs] No jobs provider configured. Event '${event.name}' was not sent.`);
+    logger.warn('No jobs provider configured, event not sent', {
+      module: 'jobs',
+      eventName: event.name,
+    });
     return {};
   },
   sendBatch: async (events) => {
-    console.warn(`[jobs] No jobs provider configured. ${events.length} events were not sent.`);
+    logger.warn('No jobs provider configured, events not sent', {
+      module: 'jobs',
+      eventCount: events.length,
+    });
     return {};
   },
 };

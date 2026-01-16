@@ -20,6 +20,12 @@ export const TenantSchema: EntitySchema = {
     // Enum field - automatically becomes a facet
     planId: { type: "enum", ref: "PlanId" },
 
+    // Tenant status - automatically becomes a facet
+    status: { type: "enum", ref: "TenantStatus", default: "active" },
+    statusReason: { type: "string", nullable: true },
+    statusChangedAt: { type: "date", nullable: true },
+    statusChangedBy: { type: "string", nullable: true },
+
     // Nested object with enum field
     subscription: {
       type: "object",

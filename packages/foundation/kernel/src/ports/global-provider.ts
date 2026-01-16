@@ -7,6 +7,32 @@
  * invisible to route handlers.
  *
  * Uses Symbol.for() to ensure the same symbol is used across all module instances.
+ *
+ * ## KERN-015 Design Note: Service Locator Pattern
+ *
+ * This module implements a service locator pattern, which is generally considered
+ * an anti-pattern because it hides dependencies and makes testing harder.
+ *
+ * **Why we use it anyway:**
+ *
+ * 1. **Next.js Module Isolation**: Turbopack creates separate module instances
+ *    per chunk. Without global storage, providers set in instrumentation.ts
+ *    wouldn't be visible to route handlers.
+ *
+ * 2. **Bootstrapping Order**: Providers need to be available before the DI
+ *    container is fully initialized, creating a chicken-and-egg problem.
+ *
+ * 3. **Test Isolation**: The `clearAllGlobalProviders()` function allows tests
+ *    to reset state between test cases.
+ *
+ * **Mitigations:**
+ *
+ * - Provider keys are explicitly typed and documented
+ * - All providers should be set during app bootstrap (instrumentation.ts)
+ * - Code should prefer DI where possible, falling back to global providers
+ *   only for cross-chunk access
+ *
+ * @see https://martinfowler.com/articles/injection.html#ServiceLocator
  */
 
 // Global storage key

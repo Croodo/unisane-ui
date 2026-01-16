@@ -29,6 +29,41 @@ import { initializeGit } from './git.js';
 const { existsSync, ensureDirSync, writeFileSync, readFileSync } = fse;
 
 // ════════════════════════════════════════════════════════════════════════════
+// DEV-011 FIX: Filesystem safety validation
+// ════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Validates that a project path is safe for filesystem operations.
+ * Prevents path traversal attacks and other filesystem-related issues.
+ */
+function validateFilesystemSafety(projectPath: string): { valid: boolean; error?: string } {
+  // Check for path traversal attempts
+  if (projectPath.includes('..')) {
+    return { valid: false, error: 'Path traversal (..) is not allowed' };
+  }
+
+  // Check for absolute paths (user should specify relative paths)
+  if (path.isAbsolute(projectPath) && !projectPath.startsWith(process.cwd())) {
+    return { valid: false, error: 'Absolute paths outside current directory are not allowed' };
+  }
+
+  // Check for dangerous characters that could cause issues
+  const dangerousChars = /[<>:"|?*\x00-\x1f]/;
+  if (dangerousChars.test(projectPath)) {
+    return { valid: false, error: 'Path contains invalid characters' };
+  }
+
+  // Check that the resolved path is still under cwd
+  const resolved = path.resolve(process.cwd(), projectPath);
+  const cwd = process.cwd();
+  if (!resolved.startsWith(cwd + path.sep) && resolved !== cwd) {
+    return { valid: false, error: 'Resolved path escapes current working directory' };
+  }
+
+  return { valid: true };
+}
+
+// ════════════════════════════════════════════════════════════════════════════
 // Constants
 // ════════════════════════════════════════════════════════════════════════════
 
@@ -57,6 +92,13 @@ const TEMPLATES = {
 } as const;
 
 type TemplateName = keyof typeof TEMPLATES;
+
+/**
+ * DEV-012 FIX: Type guard to validate template name before assertion.
+ */
+function isValidTemplateName(name: unknown): name is TemplateName {
+  return typeof name === 'string' && name in TEMPLATES;
+}
 
 const PACKAGE_MANAGERS = ['pnpm', 'npm', 'yarn', 'bun'] as const;
 type PackageManager = (typeof PACKAGE_MANAGERS)[number];
@@ -135,6 +177,13 @@ async function main() {
     }
   }
 
+  // DEV-011 FIX: Validate filesystem safety first
+  const fsSafety = validateFilesystemSafety(projectPath);
+  if (!fsSafety.valid) {
+    console.log(chalk.red(`\n  Invalid project path: ${fsSafety.error}\n`));
+    process.exit(1);
+  }
+
   // Validate project name
   const validation = validateProjectName(path.basename(projectPath));
   if (!validation.validForNewPackages) {
@@ -155,9 +204,11 @@ async function main() {
     }
   }
 
-  // Get template
-  let template: TemplateName = options.template as TemplateName;
-  if (!template || !TEMPLATES[template]) {
+  // Get template - DEV-012 FIX: Validate before type assertion
+  let template: TemplateName;
+  if (isValidTemplateName(options.template)) {
+    template = options.template;
+  } else if (!options.template) {
     if (options.yes) {
       template = 'saaskit';
     } else {
@@ -179,6 +230,11 @@ async function main() {
       }
       template = response.template;
     }
+  } else {
+    // Invalid template name was provided
+    const validNames = Object.keys(TEMPLATES).join(', ');
+    console.log(chalk.red(`\n  Invalid template: "${options.template}". Valid templates: ${validNames}\n`));
+    process.exit(1);
   }
 
   // Get package manager

@@ -22,6 +22,7 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
+    "@unisane/contracts": "workspace:*",
     "@unisane/kernel": "workspace:*",
     "jose": "^5.0.0",
     "pino": "^9.14.0",

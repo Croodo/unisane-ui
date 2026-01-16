@@ -267,6 +267,7 @@ generate
   .option('--dry-run', 'Preview changes without writing files')
   .option('--rewrite', 'Force rewrite all routes')
   .option('--no-scaffold', 'Skip creating wrapper files')
+  .option('--ignore-build-errors', 'Continue even if contract build fails (not recommended)')
   .action(async (options) => {
     log.banner('Unisane');
     loadEnvLocal();
@@ -275,6 +276,7 @@ generate
       dryRun: options.dryRun,
       rewrite: options.rewrite,
       scaffold: options.scaffold,
+      ignoreBuildErrors: options.ignoreBuildErrors,
     });
     process.exit(code);
   });

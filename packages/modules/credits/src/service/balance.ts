@@ -98,8 +98,10 @@ export async function breakdown(): Promise<CreditsBreakdown> {
     available: subscription.available + topup.available + other.available,
   };
 
-  // Trust the ledger as the source of truth; align total.available if there is minor drift.
-  if (Math.abs(total.available - available) > 0) {
+  // CRED-005 FIX: Trust the ledger as source of truth; only correct drift above threshold
+  // This prevents micro-corrections from floating point rounding or minor timing issues
+  const DRIFT_THRESHOLD = 1; // Only correct if drift > 1 credit
+  if (Math.abs(total.available - available) > DRIFT_THRESHOLD) {
     total.available = available;
   }
 

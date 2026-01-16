@@ -43,7 +43,8 @@ export async function dbIndexes(options: DbIndexesOptions = {}): Promise<number>
 
     // If just listing definitions (no --apply or --list)
     if (!apply && !list) {
-      return showIndexDefinitions(INDEX_DEFINITIONS, collection);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return showIndexDefinitions(INDEX_DEFINITIONS as any, collection);
     }
 
     // Connect to database
@@ -54,14 +55,16 @@ export async function dbIndexes(options: DbIndexesOptions = {}): Promise<number>
 
     // List existing indexes from database
     if (list) {
-      return await showDatabaseIndexes(listIndexes, collection);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return await showDatabaseIndexes(listIndexes as any, collection);
     }
 
     // Apply indexes
     if (apply) {
       if (dryRun) {
         log.warn("[DRY-RUN] Would apply the following indexes:");
-        return showIndexDefinitions(INDEX_DEFINITIONS, collection);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return showIndexDefinitions(INDEX_DEFINITIONS as any, collection);
       }
 
       log.section("Applying Indexes");
@@ -85,7 +88,7 @@ export async function dbIndexes(options: DbIndexesOptions = {}): Promise<number>
  * Show index definitions from code
  */
 function showIndexDefinitions(
-  definitions: Record<string, Array<{ name?: string; key: Record<string, number> }>>,
+  definitions: Record<string, Array<{ name?: string; key: Record<string, unknown> }>>,
   filterCollection?: string
 ): number {
   log.section("Index Definitions");
@@ -127,7 +130,7 @@ function showIndexDefinitions(
  * Show existing indexes from database
  */
 async function showDatabaseIndexes(
-  listIndexes: (name: string) => Promise<Array<{ name: string; key: Record<string, number> }>>,
+  listIndexes: (name: string) => Promise<Array<{ name: string; key: Record<string, unknown> }>>,
   filterCollection?: string
 ): Promise<number> {
   log.section("Database Indexes");

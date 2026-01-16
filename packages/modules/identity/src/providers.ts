@@ -33,9 +33,57 @@ const globalForIdentity = global as unknown as {
 /**
  * Configure identity providers.
  * Called once at application bootstrap to inject dependencies.
+ *
+ * IDEN-003 FIX: Now validates providers at configuration time rather than
+ * waiting for runtime errors.
+ *
+ * @throws Error if required providers are missing
  */
 export function configureIdentityProviders(p: IdentityProviders): void {
+  // IDEN-003 FIX: Validate required providers upfront
+  if (!p.tenantsRepo) {
+    throw new Error(
+      'configureIdentityProviders: tenantsRepo is required. ' +
+      'Pass the tenantsRepository from @unisane/tenants.'
+    );
+  }
+
+  // Validate that tenantsRepo has required methods
+  const repo = p.tenantsRepo;
+  const requiredMethods = ['findById', 'findBySlug', 'findMany', 'create'] as const;
+  for (const method of requiredMethods) {
+    if (typeof repo[method] !== 'function') {
+      throw new Error(
+        `configureIdentityProviders: tenantsRepo.${method} is not a function. ` +
+        'Ensure you pass a valid TenantsRepoLike implementation.'
+      );
+    }
+  }
+
   globalForIdentity.__identityProviders = p;
+}
+
+/**
+ * IDEN-003 FIX: Check if identity providers are configured.
+ * Use this in bootstrap validation to ensure proper setup.
+ */
+export function isIdentityConfigured(): boolean {
+  return !!globalForIdentity.__identityProviders?.tenantsRepo;
+}
+
+/**
+ * IDEN-003 FIX: Validate that all identity providers are configured.
+ * Call this during application bootstrap to catch configuration errors early.
+ *
+ * @throws Error if providers are not configured
+ */
+export function validateIdentityConfiguration(): void {
+  if (!isIdentityConfigured()) {
+    throw new Error(
+      'Identity providers not configured. ' +
+      'Call configureIdentityProviders({ tenantsRepo }) at application bootstrap before using identity services.'
+    );
+  }
 }
 
 /**

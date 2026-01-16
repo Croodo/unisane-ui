@@ -44,10 +44,18 @@ function getBootstrapProviders(): TenantBootstrapProviders {
 }
 
 /**
+ * TENT-002 FIX: Maximum retry attempts for slug collision handling.
+ */
+const MAX_BOOTSTRAP_SLUG_RETRIES = 10;
+
+/**
  * Bootstrap the first tenant for a new user.
  * Only runs on an empty database.
  *
  * Note: This is a bootstrap operation without tenant context.
+ *
+ * TENT-002 FIX: Uses atomic create with retry-on-duplicate pattern.
+ * No longer uses check-then-act which can race.
  */
 export async function bootstrapFirstTenantForUser(
   userId: string,
@@ -62,38 +70,34 @@ export async function bootstrapFirstTenantForUser(
     userEmail.split("@")[0] ||
     "workspace";
   const base = Slug.fromName(domainPart).toString();
-  let slug = base;
-  let n = 0;
-
-  // Ensure unique slug in case of concurrent bootstrap attempts
-  while (true) {
-    const exists = await TenantsRepo.findBySlug(slug);
-    if (!exists) break;
-    n += 1;
-    slug = Slug.fromName(`${base}-${n}`).toString();
-  }
   const name = base.charAt(0).toUpperCase() + base.slice(1);
 
+  // TENT-002 FIX: Use retry loop that relies on unique index for correctness
+  let slug = base;
+  let suffix = 0;
+
   const run = async () => {
-    let t;
-    try {
-      t = await TenantsRepo.create({ slug, name });
-    } catch (e) {
-      // Handle race condition: another request created the same slug
-      if (isDuplicateKeyError(e)) {
-        let retrySlug = slug;
-        let i = n;
-        while (true) {
-          i += 1;
-          retrySlug = Slug.fromName(`${base}-${i}`).toString();
-          const exists = await TenantsRepo.findBySlug(retrySlug);
-          if (!exists) break;
+    let t = null;
+
+    // TENT-002 FIX: Retry loop that catches duplicate key errors
+    for (let attempt = 0; attempt < MAX_BOOTSTRAP_SLUG_RETRIES; attempt++) {
+      try {
+        t = await TenantsRepo.create({ slug, name });
+        break; // Success
+      } catch (e) {
+        if (isDuplicateKeyError(e)) {
+          // Collision, try next suffix
+          suffix += 1;
+          slug = Slug.fromName(`${base}-${suffix}`).toString();
+          continue;
         }
-        t = await TenantsRepo.create({ slug: retrySlug, name });
-        slug = retrySlug;
-      } else {
+        // Non-duplicate error, rethrow
         throw e;
       }
+    }
+
+    if (!t) {
+      throw new Error(`Failed to bootstrap tenant: could not find unique slug after ${MAX_BOOTSTRAP_SLUG_RETRIES} attempts`);
     }
 
     const scopeId = t.id;

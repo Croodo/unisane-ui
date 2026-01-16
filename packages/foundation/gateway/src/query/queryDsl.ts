@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { base64UrlDecodeUtf8, BadRequestError } from '@unisane/kernel';
+// CTR-006 FIX: Import pagination defaults for consistency across packages
+import { PAGINATION_DEFAULTS } from '@unisane/contracts';
 
 // ─── INLINE TYPES (previously from registry/types) ──────────────────────────
 
@@ -71,8 +73,9 @@ export function parseListParams(
   opts?: { defaultLimit?: number; maxLimit?: number; minLimit?: number }
 ) {
   const min = opts?.minLimit ?? 1;
-  const def = opts?.defaultLimit ?? 20;
-  const max = opts?.maxLimit ?? 200;
+  // CTR-006 FIX: Use PAGINATION_DEFAULTS for consistency with contracts
+  const def = opts?.defaultLimit ?? PAGINATION_DEFAULTS.defaultLimit;
+  const max = opts?.maxLimit ?? PAGINATION_DEFAULTS.maxLimit;
   const rawLimit = Number(qp.get('limit') ?? def);
   const limitNum = Number.isFinite(rawLimit) ? rawLimit : def;
   const limit = clampInt(limitNum, min, max);
@@ -224,6 +227,29 @@ function validateValueType(field: string, def: FieldDef, op: Op, value: unknown)
         `Invalid number value for field '${field}'. ` +
         `Received: '${truncate(String(value))}'. ` +
         `Expected: a valid number.`
+      );
+    }
+  }
+
+  // GW-012 FIX: Validate enum values against allowed enumValues
+  // Note: 'in' operator is handled above with early return, so here we only check 'eq'
+  if (def.type === 'enum' && def.enumValues && op === 'eq') {
+    const allowedValues = def.enumValues as readonly string[];
+    if (typeof value !== 'string') {
+      throw queryError(
+        `Enum field '${field}' requires a string value. ` +
+        `Received: ${typeof value}.`
+      );
+    }
+    if (!allowedValues.includes(value)) {
+      const displayedValues = allowedValues.slice(0, 10).map(v => `"${v}"`).join(', ');
+      // M-004 FIX: Include total count when truncating to help users understand full scope
+      const truncationNote = allowedValues.length > 10
+        ? `... (${allowedValues.length} total)`
+        : '';
+      throw queryError(
+        `Invalid value '${truncate(value)}' for enum field '${field}'. ` +
+        `Allowed values: ${displayedValues}${truncationNote}.`
       );
     }
   }

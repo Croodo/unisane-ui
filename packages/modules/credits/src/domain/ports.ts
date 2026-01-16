@@ -4,6 +4,11 @@ export interface CreditsRepoPort {
   findByIdem(scopeId: string, idemKey: string): Promise<LedgerEntry | null>;
   insertGrant(args: { scopeId: string; amount: number; reason: string; idemKey: string; expiresAt?: Date | null }): Promise<{ id: string }>;
   insertBurn(args: { scopeId: string; amount: number; feature: string; reason?: string; idemKey: string }): Promise<{ id: string }>;
+  /**
+   * Insert a burn with transaction session support.
+   * DATA-002 FIX: Allows atomic balance check + burn within a transaction.
+   */
+  insertBurnAtomic(args: { scopeId: string; amount: number; feature: string; reason?: string; idemKey: string; session?: unknown }): Promise<{ id: string }>;
   totalsAvailable(scopeId: string, now?: Date): Promise<{ grants: number; burns: number; available: number }>;
   // Admin/stats: credits available grouped by scopeId
   findBalancesByScopeIds(scopeIds: string[], now?: Date): Promise<Map<string, number>>;

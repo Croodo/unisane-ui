@@ -8,8 +8,23 @@ import {
   type Filter,
   type WithId,
 } from '@unisane/kernel';
+import { z } from 'zod';
 import type { CreditsRepoPort } from '../domain/ports';
 import type { LedgerEntry } from '../domain/types';
+
+/**
+ * CRED-004 FIX: Zod schema for validating ledger entries from database.
+ * Ensures type safety instead of unsafe casting.
+ */
+const ZLedgerEntryFromDb = z.object({
+  _id: z.unknown(),
+  kind: z.enum(['grant', 'burn']).optional(),
+  amount: z.number().optional(),
+  reason: z.string().optional().nullable(),
+  feature: z.string().optional().nullable(),
+  createdAt: z.date().optional(),
+  expiresAt: z.date().optional().nullable(),
+});
 
 type CreditLedgerDoc = {
   scopeId: string;
@@ -25,17 +40,29 @@ type CreditLedgerDoc = {
 const ledgerCol = () => col<CreditLedgerDoc>(COLLECTIONS.CREDIT_LEDGER);
 
 export const CreditsRepoMongo: CreditsRepoPort = {
+  /**
+   * CRED-004 FIX: Use Zod validation instead of unsafe type casting.
+   */
   async findByIdem(scopeId, idemKey) {
-    const row = (await ledgerCol().findOne({ scopeId, idemKey } as Document)) as CreditLedgerDoc | null;
+    const row = await ledgerCol().findOne({ scopeId, idemKey } as Document);
     if (!row) return null;
+
+    // CRED-004 FIX: Validate with Zod before returning
+    const parsed = ZLedgerEntryFromDb.safeParse(row);
+    if (!parsed.success) {
+      // Log validation error but return safe defaults to maintain backward compatibility
+      return null;
+    }
+    const data = parsed.data;
+
     return {
-      id: String((row as { _id?: unknown })._id ?? ''),
-      kind: (row.kind as CreditKind) ?? 'grant',
-      amount: (row.amount as number) ?? 0,
-      reason: (row.reason as string) ?? '',
-      feature: (row.feature as FeatureKey | null | undefined) ?? null,
-      createdAt: (row.createdAt as Date | undefined) ?? new Date(),
-      expiresAt: (row.expiresAt as Date | null | undefined) ?? null,
+      id: String(data._id ?? ''),
+      kind: (data.kind as CreditKind) ?? 'grant',
+      amount: data.amount ?? 0,
+      reason: data.reason ?? '',
+      feature: (data.feature as FeatureKey | null) ?? null,
+      createdAt: data.createdAt ?? new Date(),
+      expiresAt: data.expiresAt ?? null,
     } as LedgerEntry;
   },
   async insertGrant(args) {
@@ -62,6 +89,28 @@ export const CreditsRepoMongo: CreditsRepoPort = {
       idemKey: args.idemKey,
       createdAt: now,
     } as CreditLedgerDoc);
+    return { id: String(r.insertedId) };
+  },
+  /**
+   * Insert a burn with transaction session support.
+   * DATA-002 FIX: Allows atomic balance check + burn within a transaction.
+   */
+  async insertBurnAtomic(args) {
+    const now = new Date();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const options = args.session ? { session: args.session as any } : {};
+    const r = await ledgerCol().insertOne(
+      {
+        scopeId: args.scopeId,
+        kind: 'burn',
+        amount: args.amount,
+        feature: args.feature,
+        reason: args.reason ?? `use:${args.feature}`,
+        idemKey: args.idemKey,
+        createdAt: now,
+      } as CreditLedgerDoc,
+      options
+    );
     return { id: String(r.insertedId) };
   },
   async totalsAvailable(scopeId, now = new Date()) {

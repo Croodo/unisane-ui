@@ -3,9 +3,10 @@ export type FieldType =
   | 'number'
   | 'boolean'
   | 'date'
-  | { 
+  | {
       type: 'enum';
       ref: string; // References ENUM_CONSTANTS key
+      default?: string; // Optional default value
     }
   | { type: 'reference'; collection: string }
   | { type: 'object'; schema: SchemaDefinition };

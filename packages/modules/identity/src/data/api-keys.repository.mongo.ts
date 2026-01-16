@@ -82,4 +82,20 @@ export const mongoApiKeysRepository = {
     if (!doc) return null;
     return { id: String(doc._id), scopeId: String(doc.scopeId ?? ''), scopes: doc.scopes ?? [] } as const;
   },
+
+  /**
+   * Revoke all API keys for a given scope (tenant).
+   * Used during tenant deletion cascade.
+   */
+  async revokeAllForScope(scopeId: string): Promise<{ revokedCount: number }> {
+    const now = new Date();
+    const builder = new UpdateBuilder<Record<string, unknown>>()
+      .set('revokedAt', now)
+      .set('updatedAt', now);
+    const result = await col(COLLECTIONS.API_KEYS).updateMany(
+      { scopeId, revokedAt: null } as unknown as Document,
+      toMongoUpdate(builder.build()) as unknown as Document
+    );
+    return { revokedCount: result.modifiedCount };
+  },
 };

@@ -27,8 +27,15 @@ export async function getDownloadUrl(args: GetDownloadUrlArgs) {
 
   if (args.key) {
     const file = await StorageRepo.findByKey(args.key);
-    if (file) {
-      assertScopeOwnership(file);
+    // STOR-001 FIX: Always require file to exist and verify ownership
+    // Previously, if file wasn't found, the URL was generated without ownership check
+    // This could allow accessing files that don't belong to the current scope
+    if (!file) {
+      throw ERR.notFound("File not found");
+    }
+    assertScopeOwnership(file);
+    if (file.status !== FILE_STATUS.ACTIVE) {
+      throw ERR.validation("File not available");
     }
     const signed = await getSignedDownloadUrl(
       args.key,

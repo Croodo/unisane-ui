@@ -81,7 +81,11 @@ export const GET = makeHandlerRaw<unknown, { provider: string }>(
     const usePkce = provider === 'google' || provider === 'github';
     if (usePkce) setOAuthCookie(headers, 'oauth_pkce', verifier);
     if (provider === 'google') {
-      if (!GOOGLE_CLIENT_ID) return new Response('GOOGLE_CLIENT_ID missing', { status: 500 });
+      // ROUTE-001 FIX: Return JSON error instead of plain text
+      if (!GOOGLE_CLIENT_ID) {
+        const h = new Headers({ 'content-type': 'application/json', 'x-request-id': requestId });
+        return new Response(JSON.stringify({ error: { message: 'GOOGLE_CLIENT_ID missing' } }), { status: 500, headers: h });
+      }
       // Add OIDC nonce for Google
       const nonceBytes = crypto.randomBytes(16);
       const nonce = b64url(nonceBytes);
@@ -100,7 +104,11 @@ export const GET = makeHandlerRaw<unknown, { provider: string }>(
       }
       authUrl = u.toString();
     } else if (provider === 'github') {
-      if (!GITHUB_CLIENT_ID) return new Response('GITHUB_CLIENT_ID missing', { status: 500 });
+      // ROUTE-001 FIX: Return JSON error instead of plain text
+      if (!GITHUB_CLIENT_ID) {
+        const h = new Headers({ 'content-type': 'application/json', 'x-request-id': requestId });
+        return new Response(JSON.stringify({ error: { message: 'GITHUB_CLIENT_ID missing' } }), { status: 500, headers: h });
+      }
       const u = new URL('https://github.com/login/oauth/authorize');
       u.searchParams.set('client_id', GITHUB_CLIENT_ID);
       u.searchParams.set('redirect_uri', redirectUri);
@@ -114,7 +122,9 @@ export const GET = makeHandlerRaw<unknown, { provider: string }>(
     }
     if (!authUrl) {
       try { metrics.inc('auth.oauth.start_unknown_provider', 1, { provider }); } catch {}
-      return new Response('unknown provider', { status: 400, headers: { 'x-request-id': requestId } });
+      // ROUTE-001 FIX: Return JSON error instead of plain text
+      const h = new Headers({ 'content-type': 'application/json', 'x-request-id': requestId });
+      return new Response(JSON.stringify({ error: { message: 'unknown provider' } }), { status: 400, headers: h });
     }
     try { metrics.inc('auth.oauth.start', 1, { provider }); } catch {}
     headers.set('location', authUrl);

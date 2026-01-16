@@ -119,12 +119,14 @@ export async function withIdem<T>(
     await sleep(100);
   }
 
-  // Still not available; ask client to retry shortly (202 Accepted-like).
+  // GW-007 FIX: Return 409 Conflict instead of generic 500 for idempotency timeout
+  // This is semantically more accurate: the request conflicts with an in-progress operation
+  // The Retry-After header hints when to retry (based on our wait time)
   try {
     logger.warn("idempotency still processing; advise retry", { idemKey });
     incIdemWaitTimeout();
   } catch {}
-  throw new AppError("SERVER_INTERNAL", {
-    message: "Request is processing, please retry",
+  throw new AppError("CONFLICT_VERSION_MISMATCH", {
+    message: "Request is still being processed. Please retry after a moment.",
   });
 }

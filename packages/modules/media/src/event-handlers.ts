@@ -39,12 +39,12 @@ const PROCESSABLE_CONTENT_TYPES = [
  * Triggers media processing for image uploads.
  */
 async function handleStorageUploadConfirmed(payload: {
-  tenantId: string;
+  scopeId: string;
   fileId: string;
   key: string;
   size: number;
 }): Promise<void> {
-  const { tenantId, fileId, key } = payload;
+  const { scopeId: tenantId, fileId, key } = payload;
 
   // Check if this is an image that should be processed
   const extension = key.split('.').pop()?.toLowerCase();
@@ -149,20 +149,14 @@ async function handleTenantBrandingUpdateRequested(payload: {
  * Cleans up processed media for deleted tenant.
  */
 async function handleTenantDeleted(payload: {
-  tenantId: string;
-  actorId: string;
-  cascade: {
-    memberships: number;
-    files: number;
-    settings: number;
-    credentials: number;
-  };
+  scopeId: string;
+  actorId?: string;
+  timestamp: string;
 }): Promise<void> {
-  const { tenantId, cascade } = payload;
+  const { scopeId: tenantId } = payload;
 
   log.info('handling tenant deletion for media cleanup', {
     tenantId,
-    files: cascade.files,
   });
 
   try {

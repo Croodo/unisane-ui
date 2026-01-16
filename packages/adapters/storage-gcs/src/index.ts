@@ -29,12 +29,48 @@ import type {
   ObjectMetadata,
   UploadOptions,
 } from '@unisane/kernel';
-import { CIRCUIT_BREAKER_DEFAULTS } from '@unisane/kernel';
+import { CIRCUIT_BREAKER_DEFAULTS, ConfigurationError } from '@unisane/kernel';
+import { z } from 'zod';
+
+/**
+ * Zod schema for validating GCS adapter configuration.
+ * Validates at construction time to catch configuration errors early.
+ *
+ * Either `credentials` (inline) or `keyFilename` (file path) is required,
+ * or environment-based authentication can be used (GOOGLE_APPLICATION_CREDENTIALS).
+ */
+export const ZGCSAdapterConfig = z
+  .object({
+    bucket: z.string().min(1, 'Bucket name is required'),
+    projectId: z.string().min(1).optional(),
+    keyFilename: z.string().min(1).optional(),
+    credentials: z
+      .object({
+        client_email: z.string().email('Invalid service account email format'),
+        private_key: z
+          .string()
+          .min(1, 'Private key is required')
+          .refine(
+            (val: string) => val.includes('-----BEGIN') && val.includes('PRIVATE KEY'),
+            'Private key must be in PEM format'
+          ),
+      })
+      .optional(),
+  })
+  .refine(
+    (data: { credentials?: unknown; keyFilename?: string }) =>
+      data.credentials || data.keyFilename || process.env.GOOGLE_APPLICATION_CREDENTIALS,
+    'Either credentials, keyFilename, or GOOGLE_APPLICATION_CREDENTIALS environment variable is required'
+  );
 
 export interface GCSAdapterConfig {
+  /** GCS bucket name */
   bucket: string;
+  /** GCP project ID (optional if using service account) */
   projectId?: string;
+  /** Path to service account key file */
   keyFilename?: string;
+  /** Inline service account credentials */
   credentials?: {
     client_email: string;
     private_key: string;
@@ -50,6 +86,12 @@ export class GCSStorageAdapter implements StorageProvider {
   private readonly bucket: Bucket;
 
   constructor(config: GCSAdapterConfig) {
+    // Validate configuration at construction time
+    const result = ZGCSAdapterConfig.safeParse(config);
+    if (!result.success) {
+      throw ConfigurationError.fromZod('storage-gcs', result.error.issues);
+    }
+
     this.storage = new Storage({
       projectId: config.projectId,
       keyFilename: config.keyFilename,
@@ -58,8 +100,48 @@ export class GCSStorageAdapter implements StorageProvider {
     this.bucket = this.storage.bucket(config.bucket);
   }
 
+  /**
+   * GCS-001 FIX: Validate and normalize storage keys to prevent path traversal attacks.
+   * Same implementation as the S3 adapter for consistency.
+   */
+  private validateAndNormalizeKey(key: string): string {
+    // Reject empty keys
+    if (!key || key.trim() === '') {
+      throw new Error('Storage key cannot be empty');
+    }
+
+    // Decode any URL-encoded characters to check for traversal
+    let decoded: string;
+    try {
+      decoded = decodeURIComponent(key);
+    } catch {
+      // If decoding fails, use original (might have invalid encoding)
+      decoded = key;
+    }
+
+    // Check for path traversal patterns (before and after decoding)
+    const traversalPatterns = [
+      /\.\.\//g,      // ../
+      /\.\.\\/g,      // ..\
+      /^\.\.$/,       // just ..
+      /^\/|^\\/,      // absolute paths starting with / or \
+      /\0/,           // null bytes
+    ];
+
+    for (const pattern of traversalPatterns) {
+      if (pattern.test(key) || pattern.test(decoded)) {
+        throw new Error('Path traversal detected in storage key');
+      }
+    }
+
+    // Normalize multiple slashes and trim leading/trailing slashes
+    return decoded.replace(/\/+/g, '/').replace(/^\/|\/$/g, '');
+  }
+
   private file(key: string): File {
-    return this.bucket.file(key);
+    // GCS-001 FIX: Validate key before creating file reference
+    const validatedKey = this.validateAndNormalizeKey(key);
+    return this.bucket.file(validatedKey);
   }
 
   async getSignedDownloadUrl(
@@ -140,8 +222,26 @@ export class GCSStorageAdapter implements StorageProvider {
   async head(key: string): Promise<ObjectMetadata | null> {
     try {
       const [metadata] = await this.file(key).getMetadata();
+
+      // GCS-002 FIX: Properly parse and validate size instead of silently defaulting to 0
+      let contentLength = 0;
+      if (metadata.size !== undefined && metadata.size !== null) {
+        const parsed = typeof metadata.size === 'number'
+          ? metadata.size
+          : parseInt(String(metadata.size), 10);
+
+        if (Number.isNaN(parsed) || parsed < 0) {
+          console.warn(
+            `[storage-gcs] Invalid size metadata for key "${key}": ${metadata.size}`
+          );
+          // Use 0 as fallback but warn about the issue
+        } else {
+          contentLength = parsed;
+        }
+      }
+
       return {
-        contentLength: parseInt(metadata.size as string, 10) || 0,
+        contentLength,
         contentType: metadata.contentType ?? 'application/octet-stream',
         lastModified: metadata.updated ? new Date(metadata.updated) : undefined,
         etag: metadata.etag,

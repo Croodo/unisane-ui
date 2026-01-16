@@ -41,13 +41,25 @@ export interface RoutesGenOptions {
   scaffold?: boolean;
   /** Working directory */
   cwd?: string;
+  /**
+   * Continue route generation even if contract build fails.
+   * WARNING: This may generate routes from stale contracts.
+   * Only use this flag when you're certain the existing built contracts are correct.
+   */
+  ignoreBuildErrors?: boolean;
 }
 
 /**
  * Generate routes from contracts
  */
 export async function routesGen(options: RoutesGenOptions = {}): Promise<number> {
-  const { dryRun = false, rewrite = false, scaffold = true, cwd = process.cwd() } = options;
+  const {
+    dryRun = false,
+    rewrite = false,
+    scaffold = true,
+    cwd = process.cwd(),
+    ignoreBuildErrors = false,
+  } = options;
   const spinner = log.spinner('Loading configuration...');
   spinner.start();
 
@@ -94,7 +106,21 @@ export async function routesGen(options: RoutesGenOptions = {}): Promise<number>
         execSync('pnpm build', { cwd: contractsPkgDir, stdio: 'pipe' });
         spinner.text = 'Contracts built successfully';
       } catch (buildErr) {
-        spinner.warn('Failed to auto-build contracts, attempting to load anyway...');
+        const errorMessage = buildErr instanceof Error ? buildErr.message : String(buildErr);
+
+        if (ignoreBuildErrors) {
+          spinner.warn('Contract build failed but --ignore-build-errors is set, continuing with existing build...');
+          log.warn('WARNING: Routes may be generated from stale contracts!');
+          log.warn(`Build error: ${errorMessage}`);
+        } else {
+          spinner.fail('Contract build failed. Fix build errors before generating routes.');
+          log.error(`Build error: ${errorMessage}`);
+          log.info('');
+          log.info('To fix this:');
+          log.info('  1. Run "pnpm build" in the contracts directory and fix any errors');
+          log.info('  2. Or run with --ignore-build-errors to use existing built contracts (not recommended)');
+          return 1;
+        }
       }
     }
 

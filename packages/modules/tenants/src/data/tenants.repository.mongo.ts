@@ -203,100 +203,72 @@ export const TenantsRepoMongo: TenantsRepoPort = {
       toMongoUpdate(builder.build()) as Document
     );
   },
-  async deleteCascade(args: { scopeId: string; actorId?: string }) {
+  async updateStatus(input: {
+    tenantId: string;
+    status: string;
+    reason?: string;
+    actorId: string;
+  }): Promise<TenantRow> {
     await connectDriverDb();
-    const { scopeId, actorId } = args;
+    const { tenantId, status, reason, actorId } = input;
+    const now = new Date();
+
+    const builder = new UpdateBuilder<TenantDoc>()
+      .set("status", status)
+      .set("updatedAt", now);
+
+    // Store status change metadata
+    if (reason) {
+      builder.set("statusReason", reason);
+    }
+    builder.set("statusChangedBy", actorId);
+    builder.set("statusChangedAt", now);
+
+    await tenantsCol().updateOne(
+      { _id: maybeObjectId(tenantId) },
+      toMongoUpdate(builder.build()) as Document
+    );
+
+    // Return updated tenant
+    const updated = await this.findById(tenantId);
+    if (!updated) {
+      throw new Error(`Tenant ${tenantId} not found after status update`);
+    }
+    return updated;
+  },
+
+  async softDelete(args: { tenantId: string; actorId?: string }): Promise<boolean> {
+    await connectDriverDb();
+    const { tenantId, actorId } = args;
     const now = new Date();
 
     // Verify tenant exists and not already deleted
     const tenant = await tenantsCol().findOne({
-      _id: maybeObjectId(scopeId),
+      _id: maybeObjectId(tenantId),
       ...softDeleteFilter(),
     });
     if (!tenant) {
-      return {
-        deleted: false,
-        cascade: { apiKeysRevoked: 0, membershipsDeleted: 0, storageFilesMarked: 0 },
-      } as const;
+      return false;
     }
 
-    const cascade = { apiKeysRevoked: 0, membershipsDeleted: 0, storageFilesMarked: 0 };
+    // Soft-delete tenant (own domain only - cascade handled via events)
+    const builder = new UpdateBuilder<TenantDoc>()
+      .set("deletedAt", now)
+      .set("deletedBy", actorId ?? null)
+      .set("updatedAt", now);
 
-    // 1) Revoke all API keys (security first)
-    try {
-      const apiKeysBuilder = new UpdateBuilder<Record<string, unknown>>()
-        .set("revokedAt", now)
-        .set("updatedAt", now);
-      const apiKeysResult = await col(COLLECTIONS.API_KEYS).updateMany(
-        { scopeId, revokedAt: null } as Document,
-        toMongoUpdate(apiKeysBuilder.build()) as Document
-      );
-      cascade.apiKeysRevoked = apiKeysResult.modifiedCount;
-    } catch (error) {
-      logger.warn('tenant.delete.cascade.apikeys_failed', {
-        scopeId,
-        error: error instanceof Error ? error.message : String(error),
-      });
-      // Continue with deletion - API keys will become orphaned but harmless
-    }
+    const result = await tenantsCol().updateOne(
+      { _id: maybeObjectId(tenantId) },
+      toMongoUpdate(builder.build()) as Document
+    );
 
-    // 2) Soft delete memberships
-    try {
-      const membershipsBuilder = new UpdateBuilder<Record<string, unknown>>()
-        .set("deletedAt", now)
-        .set("updatedAt", now);
-      const membershipsResult = await col(COLLECTIONS.MEMBERSHIPS).updateMany(
-        { scopeId, ...softDeleteFilter() } as Document,
-        toMongoUpdate(membershipsBuilder.build()) as Document
-      );
-      cascade.membershipsDeleted = membershipsResult.modifiedCount;
-    } catch (error) {
-      logger.warn('tenant.delete.cascade.memberships_failed', {
-        scopeId,
-        error: error instanceof Error ? error.message : String(error),
-      });
-      // Continue with deletion - memberships will become orphaned
-    }
+    logger.info("tenant.soft_deleted", {
+      tenantId,
+      actorId,
+      message: "Cascade cleanup will be handled by event handlers",
+    });
 
-    // 3) Mark storage files as deleted (cleanup job handles provider)
-    try {
-      const storageBuilder = new UpdateBuilder<Record<string, unknown>>()
-        .set("status", "deleted")
-        .set("deletedAt", now)
-        .set("updatedAt", now);
-      const storageResult = await col(COLLECTIONS.FILES).updateMany(
-        { scopeId, status: { $ne: "deleted" } } as Document,
-        toMongoUpdate(storageBuilder.build()) as Document
-      );
-      cascade.storageFilesMarked = storageResult.modifiedCount;
-    } catch (error) {
-      logger.warn('tenant.delete.cascade.storage_failed', {
-        scopeId,
-        error: error instanceof Error ? error.message : String(error),
-      });
-      // Continue with deletion - storage cleanup job will handle orphans
-    }
-
-    // 4) Soft delete tenant
-    try {
-      const tenantBuilder = new UpdateBuilder<TenantDoc>()
-        .set("deletedAt", now)
-        .set("deletedBy", actorId ?? null)
-        .set("updatedAt", now);
-      await tenantsCol().updateOne(
-        { _id: maybeObjectId(scopeId) } as Document,
-        toMongoUpdate(tenantBuilder.build()) as Document
-      );
-    } catch (error) {
-      logger.error('tenant.delete.soft_delete_failed', {
-        scopeId,
-        actorId,
-        error: error instanceof Error ? error.message : String(error),
-      });
-      return { deleted: false, cascade } as const;
-    }
-
-    return { deleted: true, cascade } as const;
+    return result.modifiedCount > 0;
   },
   async listPaged(args: {
     limit: number;

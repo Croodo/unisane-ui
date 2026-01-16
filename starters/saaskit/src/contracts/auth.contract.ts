@@ -12,6 +12,8 @@ import {
   ZPhoneStart,
   ZPhoneVerify,
 } from "@unisane/auth/client";
+// CTR-005 FIX: Import standard error responses
+import { ROUTE_ERRORS } from "@unisane/contracts";
 
 const c = initContract();
 
@@ -23,6 +25,8 @@ export const authContract = c.router({
       body: ZPasswordSignup,
       responses: {
         200: z.object({ ok: z.literal(true), token: z.string().optional() }),
+        // CTR-005 FIX: Add error responses for OpenAPI completeness
+        ...ROUTE_ERRORS.public,
       },
       summary: "Password signup",
       description:

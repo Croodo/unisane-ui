@@ -2,8 +2,24 @@ import { connectDb, getEnv, getProviderAdapter, getAuthIdentityProvider } from "
 import { ERR } from "@unisane/gateway";
 import type { OAuthProvider } from "@unisane/kernel";
 import type { ExchangeInput, ExchangeResult } from "../domain/types";
+import { z } from "zod";
 
 export type { ExchangeInput, ExchangeResult };
+
+/**
+ * AUTH-006 FIX: Zod schema for validating OAuth userInfo response.
+ * Validates all critical fields to prevent injection and ensure data integrity.
+ */
+const ZOAuthUserInfo = z.object({
+  // ID is required and must be a non-empty string (max 256 chars to prevent DoS)
+  id: z.string().min(1, "Provider user ID is required").max(256, "Provider user ID too long"),
+  // Email is required for account linking
+  email: z.string().email("Invalid email from provider").max(320, "Email too long"),
+  // Name is optional but should be sanitized if present
+  name: z.string().max(200, "Name too long").optional().nullable(),
+  // Picture URL is optional
+  picture: z.string().url().max(2048).optional().nullable(),
+}).passthrough(); // Allow additional fields from different providers
 
 export async function exchange({
   provider,
@@ -22,8 +38,20 @@ export async function exchange({
   if (!adapter) throw ERR.validation("Unknown provider");
 
   // Get user info using the access token
-  const userInfo = await adapter.getUserInfo({ accessToken: token });
-  if (!userInfo?.email) throw ERR.forbidden("Provider email required");
+  const rawUserInfo = await adapter.getUserInfo({ accessToken: token });
+
+  // AUTH-006 FIX: Validate userInfo with Zod to ensure data integrity
+  const parseResult = ZOAuthUserInfo.safeParse(rawUserInfo);
+  if (!parseResult.success) {
+    // Log the validation error for debugging but don't expose details to client
+    console.warn("[auth/exchange] Invalid userInfo from provider:", {
+      provider: p,
+      errors: parseResult.error.flatten().fieldErrors,
+    });
+    throw ERR.forbidden("Invalid user info from provider");
+  }
+  const userInfo = parseResult.data;
+
   const authUserId = `${p}:${userInfo.id}`;
   const identity = getAuthIdentityProvider();
   // Ensure user and backfill profile fields if missing

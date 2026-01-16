@@ -190,7 +190,7 @@ export async function sync(options: SyncOptions = {}): Promise<number> {
     } else {
       log.info('Doctor: Running health checks...');
       try {
-        const code = await doctor({ fix, cwd });
+        const code = await doctor({ fix });
         results.doctor.success = code === 0;
 
         if (results.doctor.success) {

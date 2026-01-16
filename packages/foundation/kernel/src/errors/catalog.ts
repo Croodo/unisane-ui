@@ -135,6 +135,8 @@ export enum ErrorCode {
   TENANT_LIMIT = 'E4009',
   /** Slug already taken */
   SLUG_TAKEN = 'E4010',
+  /** Tenant is suspended */
+  TENANT_SUSPENDED = 'E4011',
 
   // ============================================
   // Identity/User Errors (E5xxx)
@@ -276,6 +278,7 @@ export const ErrorCatalog: Record<ErrorCode, ErrorCatalogEntry> = {
   [ErrorCode.PERMISSION_DENIED]: { message: 'Permission denied', status: 403 },
   [ErrorCode.TENANT_LIMIT]: { message: 'Organization limit reached', status: 403 },
   [ErrorCode.SLUG_TAKEN]: { message: 'This URL is already taken', status: 409 },
+  [ErrorCode.TENANT_SUSPENDED]: { message: 'This workspace has been suspended', status: 403 },
 
   // Identity (E5xxx)
   [ErrorCode.USER_NOT_FOUND]: { message: 'User not found', status: 404 },

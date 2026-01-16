@@ -23,6 +23,7 @@
 
 import { z } from 'zod';
 import { BillingEventSchemas } from './billing-events';
+import { ZUserDeletionReason, ZMembershipRemovalReason } from '../constants/identity';
 
 // ============================================================================
 // Base Schemas (common patterns)
@@ -58,13 +59,8 @@ export const TenantUpdatedSchema = z.object({
 
 export const TenantDeletedSchema = z.object({
   scopeId: z.string(),
-  actorId: z.string(),
-  cascade: z.object({
-    memberships: z.number(),
-    files: z.number(),
-    settings: z.number(),
-    credentials: z.number(),
-  }),
+  actorId: z.string().optional(),
+  timestamp: z.string(), // ISO 8601
 });
 
 export const TenantMemberAddedSchema = z.object({
@@ -307,6 +303,67 @@ export const SettingDeletedSchema = z.object({
 });
 
 // ============================================================================
+// Cascade Completion Events (Event-Driven Architecture)
+// ============================================================================
+
+/** Emitted when Identity module completes cascade operations */
+export const IdentityCascadeCompletedSchema = z.object({
+  sourceEvent: z.string(),
+  scopeId: z.string(),
+  results: z.object({
+    apiKeysRevoked: z.number(),
+    membershipsDeleted: z.number(),
+  }),
+});
+
+/** Emitted when Storage module completes cascade operations */
+// STOR-004 FIX: Added success and error fields to track cascade failures
+export const StorageCascadeCompletedSchema = z.object({
+  sourceEvent: z.string(),
+  scopeId: z.string(),
+  results: z.object({
+    filesMarked: z.number(),
+    success: z.boolean().optional(),
+    error: z.string().optional(),
+  }),
+});
+
+/** Emitted when Settings module completes cascade operations */
+export const SettingsCascadeCompletedSchema = z.object({
+  sourceEvent: z.string(),
+  scopeId: z.string(),
+  results: z.object({
+    settingsDeleted: z.number(),
+  }),
+});
+
+/** User deleted event for cascade triggers */
+export const UserDeletedSchema = z.object({
+  userId: z.string(),
+  scopeId: z.string().optional(),
+  actorId: z.string().optional(),
+  reason: ZUserDeletionReason,
+});
+
+/** Member removed event for cascade triggers */
+export const MemberRemovedSchema = z.object({
+  membershipId: z.string(),
+  userId: z.string(),
+  scopeId: z.string(),
+  removedBy: z.string().optional(),
+  reason: ZMembershipRemovalReason,
+});
+
+/** Plan changed event for cascade triggers */
+export const PlanChangedSchema = z.object({
+  scopeId: z.string(),
+  previousPlan: z.string(),
+  newPlan: z.string(),
+  changeType: z.enum(['upgrade', 'downgrade', 'lateral']),
+  effectiveAt: z.string(),
+});
+
+// ============================================================================
 // Webhook Events
 // ============================================================================
 
@@ -395,6 +452,16 @@ export const EventSchemas = {
   'webhooks.replayed': WebhookReplayedSchema,
   'webhooks.delivered': WebhookDeliveredSchema,
   'webhooks.failed': WebhookFailedSchema,
+
+  // Cascade completion events (event-driven architecture)
+  'identity.cascade.completed': IdentityCascadeCompletedSchema,
+  'storage.cascade.completed': StorageCascadeCompletedSchema,
+  'settings.cascade.completed': SettingsCascadeCompletedSchema,
+
+  // User lifecycle events
+  'user.deleted': UserDeletedSchema,
+  'membership.removed': MemberRemovedSchema,
+  'plan.changed': PlanChangedSchema,
 
   // Billing integration events (for event-driven decoupling)
   ...BillingEventSchemas,

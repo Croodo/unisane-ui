@@ -31,8 +31,8 @@ export { guard } from './middleware/guard';
 export type { GuardOpts as InternalGuardOpts } from './middleware/guard';
 export { PERM, ROLE_PERMS, hasPerm, requireTenantScope } from './middleware/rbac';
 export type { Permission } from './middleware/rbac';
-// Re-export AuthCtx from auth module (not rbac which has a duplicate definition)
-export type { AuthCtx } from './auth/auth';
+// Re-export AuthCtx and AuthMethod from auth module (not rbac which has a duplicate definition)
+export type { AuthCtx, AuthMethod } from './auth/auth';
 export * from './middleware/validate';
 
 // Request Logging
@@ -81,3 +81,8 @@ export {
 } from './versioning';
 export type { DeprecationInfo } from './versioning';
 
+// Note: client.ts provides browser-safe alternatives for the same functions.
+// Import from '@unisane/gateway/client' for browser environments.
+
+// Webhook utilities (signing, verification)
+export * from './webhooks';

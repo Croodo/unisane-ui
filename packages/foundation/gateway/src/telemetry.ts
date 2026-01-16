@@ -1,47 +1,53 @@
 /**
- * Telemetry stubs for gateway package.
- * These are no-op implementations that can be overridden by the application.
- * In production, configure actual telemetry in your starter/app.
+ * Gateway Telemetry
+ *
+ * Uses kernel's observability metrics directly.
+ * Apps can register exporters via kernel's onMetricsFlush().
  */
 
-// Rate limiting metrics
-export function incRateLimited(_op: string): void {
-  // No-op stub - override in app for actual metrics
+import { observabilityMetrics as metrics } from '@unisane/kernel';
+
+/**
+ * Record rate limit exceeded event.
+ */
+export function incRateLimited(op: string): void {
+  metrics.increment('gateway.rate_limited_total', { labels: { op } });
 }
 
-// Idempotency metrics
+/**
+ * Record idempotency cache replay (request was deduplicated).
+ */
 export function incIdemReplay(): void {
-  // No-op stub
+  metrics.increment('gateway.idempotency_replay_total');
 }
 
+/**
+ * Record idempotency wait timeout (concurrent request timed out waiting).
+ */
 export function incIdemWaitTimeout(): void {
-  // No-op stub
+  metrics.increment('gateway.idempotency_wait_timeout_total');
 }
 
-// HTTP observability
-export function observeHttp(_data: {
+/**
+ * Record HTTP request metrics.
+ */
+export function observeHttp(data: {
   op: string | null;
   method: string;
   status: number;
   ms: number;
 }): void {
-  // No-op stub - override in app for actual metrics
-}
+  const labels: Record<string, string> = {
+    method: data.method,
+    status: String(data.status),
+  };
+  if (data.op) {
+    labels.op = data.op;
+  }
 
-// Telemetry configuration interface for dependency injection
-export interface TelemetryConfig {
-  incRateLimited?: (op: string) => void;
-  incIdemReplay?: () => void;
-  incIdemWaitTimeout?: () => void;
-  observeHttp?: (data: { op: string | null; method: string; status: number; ms: number }) => void;
-}
+  metrics.histogram('gateway.http_duration_ms', data.ms, { labels });
 
-let config: TelemetryConfig = {};
-
-export function configureTelemetry(cfg: TelemetryConfig): void {
-  config = cfg;
-}
-
-export function getTelemetry(): TelemetryConfig {
-  return config;
+  if (data.status >= 500) {
+    metrics.increment('gateway.http_errors_total', { labels });
+  }
 }

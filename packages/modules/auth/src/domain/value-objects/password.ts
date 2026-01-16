@@ -10,6 +10,9 @@ import { z } from 'zod';
 /** Minimum password length */
 const MIN_LENGTH = 8;
 
+/** AUTH-005 FIX: Maximum password length to prevent DoS via bcrypt on very long strings */
+const MAX_LENGTH = 128;
+
 /** Password hasher function type */
 type PasswordHasher = (plaintext: string) => Promise<string>;
 
@@ -51,13 +54,18 @@ export class Password {
     if (!plaintext || plaintext.length < MIN_LENGTH) {
       throw new Error(`Password must be at least ${MIN_LENGTH} characters`);
     }
+    // AUTH-005 FIX: Enforce max length to prevent DoS
+    if (plaintext.length > MAX_LENGTH) {
+      throw new Error(`Password must be at most ${MAX_LENGTH} characters`);
+    }
   }
 
   /**
    * Check if plaintext meets requirements without throwing
    */
   static isValidPlaintext(plaintext: string): boolean {
-    return !!plaintext && plaintext.length >= MIN_LENGTH;
+    // AUTH-005 FIX: Include max length check
+    return !!plaintext && plaintext.length >= MIN_LENGTH && plaintext.length <= MAX_LENGTH;
   }
 
   /**
@@ -96,9 +104,16 @@ export class Password {
  */
 export const ZPasswordPlaintext = z
   .string()
-  .min(MIN_LENGTH, `Password must be at least ${MIN_LENGTH} characters`);
+  .min(MIN_LENGTH, `Password must be at least ${MIN_LENGTH} characters`)
+  // AUTH-005 FIX: Include max length to prevent DoS
+  .max(MAX_LENGTH, `Password must be at most ${MAX_LENGTH} characters`);
 
 /**
  * Minimum password length constant
  */
 export const PASSWORD_MIN_LENGTH = MIN_LENGTH;
+
+/**
+ * AUTH-005 FIX: Maximum password length constant
+ */
+export const PASSWORD_MAX_LENGTH = MAX_LENGTH;

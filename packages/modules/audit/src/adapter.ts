@@ -12,7 +12,7 @@ import type {
   AuditEntryInput,
 } from "@unisane/kernel";
 import { appendAudit } from "./service/append";
-import { listPage } from "./data/audit.repository";
+import { queryWithFilters } from "./data/audit.repository";
 
 /**
  * AuditPort implementation that wraps the audit module services.
@@ -31,39 +31,40 @@ export const auditAdapter: AuditPort = {
     });
   },
 
+  /**
+   * AUDI-001 FIX: Use queryWithFilters to push filtering to database level
+   * instead of filtering in-memory after fetching all records.
+   */
   async query(args) {
-    const { rows } = await listPage({
+    const { rows } = await queryWithFilters({
       scopeId: args.scopeId,
       limit: args.limit ?? 50,
       cursor: args.offset ? String(args.offset) : undefined,
+      filters: args.filters ? {
+        action: args.filters.action,
+        actorId: args.filters.actorId,
+        targetType: args.filters.targetType,
+        targetId: args.filters.targetId,
+        from: args.filters.from,
+        to: args.filters.to,
+      } : undefined,
     });
 
     // Map from internal audit log format to AuditEntry format
-    const entries: AuditEntry[] = rows
-      .filter((r) => {
-        // Apply filters if provided
-        if (args.filters?.action && r.action !== args.filters.action) return false;
-        if (args.filters?.actorId && r.actorId !== args.filters.actorId) return false;
-        if (args.filters?.targetType && r.resourceType !== args.filters.targetType) return false;
-        if (args.filters?.targetId && r.resourceId !== args.filters.targetId) return false;
-        if (args.filters?.from && r.createdAt && r.createdAt < args.filters.from) return false;
-        if (args.filters?.to && r.createdAt && r.createdAt > args.filters.to) return false;
-        return true;
-      })
-      .map((r) => ({
-        id: r.id,
-        scopeId: args.scopeId,
-        action: r.action,
-        actor: {
-          type: "user" as const,
-          id: r.actorId ?? "system",
-        },
-        target: {
-          type: r.resourceType,
-          id: r.resourceId ?? "",
-        },
-        timestamp: r.createdAt ?? new Date(),
-      }));
+    const entries: AuditEntry[] = rows.map((r) => ({
+      id: r.id,
+      scopeId: args.scopeId,
+      action: r.action,
+      actor: {
+        type: "user" as const,
+        id: r.actorId ?? "system",
+      },
+      target: {
+        type: r.resourceType,
+        id: r.resourceId ?? "",
+      },
+      timestamp: r.createdAt ?? new Date(),
+    }));
 
     return { entries, total: entries.length };
   },

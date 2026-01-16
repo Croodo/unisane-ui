@@ -19,10 +19,33 @@ import { z } from 'zod';
 import { createHmac } from 'crypto';
 
 /**
- * Email validation regex.
- * Validates format: local@domain.tld
+ * Email validation regex (RFC 5322 simplified).
+ *
+ * This pattern validates:
+ * - Local part: letters, numbers, and allowed special characters (.!#$%&'*+/=?^_`{|}~-)
+ * - Domain: valid hostname with at least one dot
+ * - TLD: at least 2 characters
+ *
+ * It correctly rejects:
+ * - Emails without proper domain (e.g., "a@b")
+ * - Emails with invalid characters
+ * - Emails with consecutive dots in local part
+ * - Single-character TLDs
+ *
+ * For full RFC 5322 compliance in production, consider using a dedicated library.
  */
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_PATTERN =
+  /^[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
+
+/**
+ * Maximum email length per RFC 5321
+ */
+const MAX_EMAIL_LENGTH = 254;
+
+/**
+ * Maximum local part length per RFC 5321
+ */
+const MAX_LOCAL_PART_LENGTH = 64;
 
 /**
  * Email value object for handling email addresses.
@@ -82,8 +105,25 @@ export class Email {
 
   /**
    * Check if a string is a valid email format.
+   * Validates against RFC 5322 pattern and length constraints.
    */
   private static isValidFormat(email: string): boolean {
+    // Check overall length
+    if (email.length > MAX_EMAIL_LENGTH) {
+      return false;
+    }
+
+    // Check local part length
+    const atIndex = email.indexOf('@');
+    if (atIndex === -1) {
+      return false;
+    }
+    const localPart = email.substring(0, atIndex);
+    if (localPart.length > MAX_LOCAL_PART_LENGTH) {
+      return false;
+    }
+
+    // Check pattern
     return EMAIL_PATTERN.test(email);
   }
 

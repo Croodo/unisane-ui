@@ -47,11 +47,26 @@ export const creditsAdapter: CreditsPort = {
   },
 
   async grant(args) {
+    // DATA-003 FIX: Idempotency key must be deterministic for deduplication to work.
+    // Previously used Date.now() which made every call unique, breaking idempotency.
+    // Now uses scopeId + reason + amount + expiresAt (if provided) for consistent deduplication.
+    // Callers should include unique identifiers in `reason` (e.g., "subscription:sub_123:period_456")
+    const idemComponents = [
+      'grant',
+      args.scopeId,
+      args.reason,
+      String(args.amount),
+    ];
+    if (args.expiresAt) {
+      idemComponents.push(args.expiresAt.toISOString());
+    }
+    const idem = idemComponents.join(':');
+
     const result = await grantWithExplicitScope({
       scopeId: args.scopeId,
       amount: args.amount,
       reason: args.reason,
-      idem: `grant:${args.scopeId}:${args.reason}:${Date.now()}`, // Generate idem key
+      idem,
       expiresAt: args.expiresAt,
     });
 

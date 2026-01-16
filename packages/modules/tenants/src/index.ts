@@ -48,12 +48,17 @@ export {
   deleteTenant,
   bootstrapFirstTenantForUser,
   configureTenantBootstrap,
+  updateTenantStatus,
+  suspendTenant,
+  activateTenant,
 } from "./service";
 
 export type {
   DeleteTenantArgs,
   DeleteTenantResult,
   TenantBootstrapProviders,
+  UpdateTenantStatusInput,
+  UpdateTenantStatusResult,
 } from "./service";
 
 // Admin services
@@ -77,11 +82,16 @@ export type {
 // ════════════════════════════════════════════════════════════════════════════
 
 export {
+  ZTenantStatus,
   ZTenantAdminView,
   ZTenantAdminSubscription,
+  ZUpdateTenantStatusInput,
 } from "./domain/schemas";
 
-export type { TenantAdminViewDto } from "./domain/schemas";
+export type {
+  TenantAdminViewDto,
+  UpdateTenantStatusInput as UpdateTenantStatusInputDto,
+} from "./domain/schemas";
 
 // ════════════════════════════════════════════════════════════════════════════
 // Domain - Errors
@@ -91,6 +101,7 @@ export {
   TenantNotFoundError,
   TenantSlugConflictError,
   TenantAccessDeniedError,
+  TenantSuspendedError,
   TenantHasActiveSubscriptionError,
   MembershipNotFoundError,
   LastOwnerError,

@@ -23,9 +23,30 @@
  */
 
 import type { BillingProviderAdapter, CheckoutSession, PortalSession, Subscription } from '@unisane/kernel';
-import { CIRCUIT_BREAKER_DEFAULTS, ConfigurationError } from '@unisane/kernel';
+import { CIRCUIT_BREAKER_DEFAULTS, ConfigurationError, logger, redis, tryGetScopeContext } from '@unisane/kernel';
 import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
+
+/**
+ * BIL-003 FIX: Get correlation ID from current scope context for request tracing.
+ */
+function getCorrelationId(): string {
+  const context = tryGetScopeContext();
+  return context?.requestId ?? randomUUID();
+}
+
+/**
+ * STR-002 FIX: Lock key for customer ID creation
+ * Used to prevent race conditions when creating Stripe customers
+ *
+ * C-002 FIX: Increased lock TTL and wait time to handle slow Stripe responses
+ */
+const CUSTOMER_LOCK_KEY = (scopeId: string) => `stripe:customer:lock:${scopeId}`;
+const CUSTOMER_LOCK_TTL_MS = 30_000; // 30 second lock (C-002 FIX: increased from 10s)
+const CUSTOMER_LOCK_WAIT_MS = 8_000; // C-002 FIX: Wait 8s before retry (was 500ms)
+const CUSTOMER_LOCK_MAX_RETRIES = 3; // C-002 FIX: Max retries when waiting for lock
+
+const log = logger.child({ adapter: 'stripe' });
 
 const STRIPE_API_VERSION = '2024-06-20';
 const BASE_URL = 'https://api.stripe.com';
@@ -39,6 +60,8 @@ export const ZStripeBillingAdapterConfig = z.object({
   portalReturnUrl: z.string().url('portalReturnUrl must be a valid URL'),
   findCustomerId: z.function().optional(),
   saveCustomerId: z.function().optional(),
+  // STR-005 FIX: Add clearCustomerId to remove stale mappings
+  clearCustomerId: z.function().optional(),
   getScopeName: z.function().optional(),
   mapPlanId: z.function().optional(),
   mapTopupPriceId: z.function().optional(),
@@ -53,6 +76,8 @@ export interface StripeBillingAdapterConfig {
   findCustomerId?: (scopeId: string) => Promise<string | null>;
   /** Optional: Save customer ID mapping */
   saveCustomerId?: (scopeId: string, customerId: string) => Promise<void>;
+  /** STR-005 FIX: Optional: Clear stale customer ID mapping */
+  clearCustomerId?: (scopeId: string) => Promise<void>;
   /** Optional: Get scope name for customer creation */
   getScopeName?: (scopeId: string) => Promise<string | null>;
   /** Optional: Map plan IDs to Stripe price IDs */
@@ -78,6 +103,8 @@ export class StripeBillingAdapter implements BillingProviderAdapter {
   private readonly portalReturnUrl: string;
   private readonly findCustomerId?: (scopeId: string) => Promise<string | null>;
   private readonly saveCustomerId?: (scopeId: string, customerId: string) => Promise<void>;
+  // STR-005 FIX: Add clearCustomerId for stale mapping cleanup
+  private readonly clearCustomerId?: (scopeId: string) => Promise<void>;
   private readonly getScopeName?: (scopeId: string) => Promise<string | null>;
   private readonly mapPlanId?: (planId: string) => string | undefined;
   private readonly mapTopupPriceId?: (amount: number, currency: string) => string | undefined;
@@ -93,6 +120,7 @@ export class StripeBillingAdapter implements BillingProviderAdapter {
     this.portalReturnUrl = config.portalReturnUrl;
     this.findCustomerId = config.findCustomerId;
     this.saveCustomerId = config.saveCustomerId;
+    this.clearCustomerId = config.clearCustomerId;
     this.getScopeName = config.getScopeName;
     this.mapPlanId = config.mapPlanId;
     this.mapTopupPriceId = config.mapTopupPriceId;
@@ -109,9 +137,13 @@ export class StripeBillingAdapter implements BillingProviderAdapter {
   ): Promise<T> {
     const url = `${BASE_URL}${path}`;
     const method = init.method ?? 'POST';
+    // BIL-003 FIX: Include correlation ID for request tracing
+    const correlationId = getCorrelationId();
     const headers: Record<string, string> = {
       Authorization: `Bearer ${this.secretKey}`,
       'Stripe-Version': STRIPE_API_VERSION,
+      // BIL-003 FIX: Add custom header for correlation ID (for logging/debugging)
+      'X-Request-Id': correlationId,
     };
     if (method !== 'GET') {
       headers['Content-Type'] = 'application/x-www-form-urlencoded';
@@ -131,25 +163,99 @@ export class StripeBillingAdapter implements BillingProviderAdapter {
         signal: ctrl.signal,
       }).finally(() => clearTimeout(t));
 
-      const json = (await res.json().catch(() => ({}))) as unknown;
+      // BIL-002 FIX: Handle JSON parse failures explicitly instead of silently returning {}
+      let json: unknown;
+      try {
+        json = await res.json();
+      } catch (parseError) {
+        // If response was successful but body is not JSON, that's unexpected
+        if (res.ok) {
+          throw new Error(`Stripe returned non-JSON response for ${path}`);
+        }
+        // For error responses, include status in the error message
+        throw new Error(`Stripe API error: ${res.status} (non-JSON response)`);
+      }
+
       if (!res.ok) {
         const msg = (json as { error?: { message?: string } }).error?.message ?? '';
         throw new Error(`Stripe API error: ${res.status} ${msg}`);
       }
       return json as T;
     } catch (e) {
+      // BIL-001 FIX: Explicitly propagate abort errors with context
+      // This ensures timeout aborts are properly communicated to callers
+      if (e instanceof Error && e.name === 'AbortError') {
+        const timeoutError = new Error(`Stripe request timed out after ${timeoutMs}ms: ${path}`);
+        timeoutError.name = 'TimeoutError';
+        timeoutError.cause = e;
+        throw timeoutError;
+      }
       throw e instanceof Error ? e : new Error('Stripe request failed');
     }
   }
 
+  /**
+   * STR-002 FIX: Ensure customer ID with distributed lock to prevent race conditions.
+   *
+   * **Race Condition Prevention:**
+   * 1. First check if customer already exists (fast path)
+   * 2. Acquire distributed lock before creating
+   * 3. Re-check after acquiring lock (another request may have created it)
+   * 4. Create customer only if still needed
+   *
+   * This prevents duplicate customer creation when concurrent requests
+   * arrive for the same scopeId.
+   */
   private async ensureCustomerId(scopeId: string): Promise<string | null> {
+    // Fast path: check if customer already exists
     if (this.findCustomerId) {
       const existing = await this.findCustomerId(scopeId);
       if (existing) return existing;
     }
 
+    // STR-002 FIX: Acquire distributed lock before creating customer
+    const lockKey = CUSTOMER_LOCK_KEY(scopeId);
+    const lockAcquired = await redis.set(lockKey, '1', { NX: true, PX: CUSTOMER_LOCK_TTL_MS });
+
+    if (!lockAcquired) {
+      // C-002 FIX: Another request is creating the customer - wait with proper timeout
+      // Use longer wait time (~80% of lock TTL) and retry loop
+      for (let retry = 0; retry < CUSTOMER_LOCK_MAX_RETRIES; retry++) {
+        log.debug('ensureCustomerId: waiting for lock', { scopeId, retry });
+        await new Promise((resolve) => setTimeout(resolve, CUSTOMER_LOCK_WAIT_MS));
+
+        // Re-check after waiting
+        if (this.findCustomerId) {
+          const existing = await this.findCustomerId(scopeId);
+          if (existing) return existing;
+        }
+
+        // Try to acquire lock again
+        const retryLock = await redis.set(lockKey, '1', { NX: true, PX: CUSTOMER_LOCK_TTL_MS });
+        if (retryLock) {
+          log.debug('ensureCustomerId: acquired lock on retry', { scopeId, retry });
+          break; // Got the lock, proceed to create
+        }
+      }
+
+      // If still no customer and no lock after retries, log and proceed
+      // The Stripe idempotency key will prevent duplicates as a final safeguard
+      if (this.findCustomerId) {
+        const existing = await this.findCustomerId(scopeId);
+        if (existing) return existing;
+      }
+      log.debug('ensureCustomerId: lock contention resolved, proceeding', { scopeId });
+    }
+
     // Create a minimal customer on Stripe
     try {
+      // STR-002 FIX: Re-check after acquiring lock
+      // Another concurrent request might have created the customer while we waited for the lock
+      if (this.findCustomerId) {
+        const existing = await this.findCustomerId(scopeId);
+        if (existing) return existing;
+      }
+
       const name = (await this.getScopeName?.(scopeId)) ?? `Scope ${scopeId}`;
       const customer = await this.stripeRequest<{ id: string }>('/v1/customers', {
         method: 'POST',
@@ -157,6 +263,8 @@ export class StripeBillingAdapter implements BillingProviderAdapter {
           name,
           'metadata[scopeId]': scopeId,
         },
+        // STR-002 FIX: Use scopeId as idempotency key to prevent Stripe duplicates
+        idempotencyKey: `customer:create:${scopeId}`,
       });
 
       if (customer?.id && this.saveCustomerId) {
@@ -164,14 +272,18 @@ export class StripeBillingAdapter implements BillingProviderAdapter {
       }
       return customer?.id ?? null;
     } catch (err) {
-      // Log the error for debugging but continue - the checkout will either
-      // use an existing customer or create one inline
-      console.error(
-        `[stripe] ensureCustomerId failed for scope ${scopeId}:`,
-        err instanceof Error ? err.message : String(err)
-      );
+      // Log the error with proper context - the checkout will attempt to
+      // create customer inline via Stripe Checkout, but this failure indicates
+      // a potential issue that should be investigated.
+      log.warn('ensureCustomerId failed', {
+        scopeId,
+        error: err instanceof Error ? err.message : String(err),
+        stack: err instanceof Error ? err.stack : undefined,
+      });
       return null;
     }
+    // Note: Lock is NOT released - it auto-expires after TTL
+    // This provides natural throttling for rapid retries
   }
 
   async createCheckoutSession(args: {
@@ -201,9 +313,22 @@ export class StripeBillingAdapter implements BillingProviderAdapter {
 
     if (customerId) payload.customer = customerId;
 
-    // Add custom metadata
+    // STR-006 FIX: Add custom metadata with validation
     if (args.metadata) {
-      for (const [k, v] of Object.entries(args.metadata)) {
+      const metadataEntries = Object.entries(args.metadata);
+      // Stripe allows max 50 metadata keys
+      if (metadataEntries.length > 50) {
+        throw new Error(`Too many metadata keys: ${metadataEntries.length} (max 50)`);
+      }
+      for (const [k, v] of metadataEntries) {
+        // Stripe metadata key limit: 40 chars
+        if (k.length > 40) {
+          throw new Error(`Metadata key too long: "${k.slice(0, 20)}..." (max 40 chars)`);
+        }
+        // Stripe metadata value limit: 500 chars
+        if (v.length > 500) {
+          throw new Error(`Metadata value too long for key "${k}" (max 500 chars)`);
+        }
         payload[`metadata[${k}]`] = v;
       }
     }
@@ -219,9 +344,15 @@ export class StripeBillingAdapter implements BillingProviderAdapter {
     } catch (e) {
       const msg = (e as Error)?.message ?? '';
       // Handle stale customer mappings - Logic preserved
-      // If we get "No such customer", we try WITHOUT the customer ID. 
+      // If we get "No such customer", we try WITHOUT the customer ID.
       // This is a business logic retry, not a network retry, so it stays.
       if (payload.customer && /No such customer/i.test(msg)) {
+        // STR-005 FIX: Clear stale mapping to prevent repeated failures
+        if (this.clearCustomerId) {
+          await this.clearCustomerId(args.scopeId).catch(() => {
+            // Log but don't fail - best effort cleanup
+          });
+        }
         delete payload.customer;
         session = await this.stripeRequest<SessionOut>('/v1/checkout/sessions', {
           method: 'POST',
@@ -271,7 +402,22 @@ export class StripeBillingAdapter implements BillingProviderAdapter {
     successUrl: string;
     cancelUrl: string;
   }): Promise<CheckoutSession> {
+    // STR-003 FIX: Validate amount is a positive integer within bounds
     const amount = parseInt(args.amountMinorStr, 10);
+    if (isNaN(amount) || amount <= 0) {
+      throw new Error('Amount must be a positive integer');
+    }
+    // Stripe allows amounts up to 99999999 (in minor units)
+    // This is ~$1M USD, more than enough for any reasonable topup
+    const MAX_AMOUNT_MINOR = 99_999_999;
+    if (amount > MAX_AMOUNT_MINOR) {
+      throw new Error(`Amount exceeds maximum allowed (${MAX_AMOUNT_MINOR} minor units)`);
+    }
+    // Validate credits is also reasonable
+    if (args.credits <= 0 || !Number.isInteger(args.credits)) {
+      throw new Error('Credits must be a positive integer');
+    }
+
     const mappedPriceId = this.mapTopupPriceId?.(amount / 100, args.currency);
 
     let payload: Record<string, string>;
@@ -346,10 +492,19 @@ export class StripeBillingAdapter implements BillingProviderAdapter {
         cancelAtPeriodEnd: sub.cancel_at_period_end,
       };
     } catch (err) {
-      console.error(
-        `[stripe] getSubscription failed for ${subscriptionId}:`,
-        err instanceof Error ? err.message : String(err)
-      );
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      // Distinguish between "not found" (expected) and actual errors
+      const isNotFound = /no such subscription|resource_missing/i.test(errorMessage);
+
+      if (isNotFound) {
+        log.debug('subscription not found', { subscriptionId });
+      } else {
+        log.error('getSubscription failed', {
+          subscriptionId,
+          error: errorMessage,
+          stack: err instanceof Error ? err.stack : undefined,
+        });
+      }
       return null;
     }
   }
@@ -381,8 +536,18 @@ export class StripeBillingAdapter implements BillingProviderAdapter {
       method: 'GET',
     });
 
-    const itemId = sub?.items?.data?.[0]?.id;
-    if (!itemId) throw new Error('Stripe subscription item not found');
+    // STR-007 FIX: Validate subscription items array before accessing
+    const items = sub?.items?.data;
+    if (!items || items.length === 0) {
+      throw new Error('Stripe subscription has no items');
+    }
+    if (items.length > 1) {
+      // Log warning but proceed with first item for backwards compatibility
+      // Callers managing multi-item subscriptions should use Stripe API directly
+      console.warn(`[billing-stripe] Subscription ${subscriptionId} has ${items.length} items, updating first item only`);
+    }
+    const itemId = items[0]?.id;
+    if (!itemId) throw new Error('Stripe subscription item ID not found');
 
     const body: Record<string, string> = {
       proration_behavior: 'create_prorations',
@@ -393,9 +558,14 @@ export class StripeBillingAdapter implements BillingProviderAdapter {
       body.quantity = String(Math.max(1, Math.trunc(args.quantity)));
     }
 
+    // STR-004 FIX: Use deterministic idempotency key based on subscription + update content
+    // This prevents duplicate updates if the same operation is retried
+    const idempotencyKey = `sub-update:${subscriptionId}:${args.priceId ?? ''}:${args.quantity ?? ''}`;
+
     await this.stripeRequest(`/v1/subscription_items/${encodeURIComponent(itemId)}`, {
       method: 'POST',
       body,
+      idempotencyKey,
     });
 
     return {
@@ -460,6 +630,53 @@ export class StripeBillingAdapter implements BillingProviderAdapter {
  */
 import { createResilientProxy } from '@unisane/kernel';
 
+/**
+ * M-005 FIX: Classify Stripe errors for intelligent retry behavior.
+ * Retryable: Network timeouts, 5xx errors, rate limits (429)
+ * Non-retryable: 4xx client errors (except 429), validation errors
+ */
+function classifyStripeError(error: unknown): { retryable: boolean; delayMs?: number } {
+  if (!(error instanceof Error)) {
+    return { retryable: false };
+  }
+
+  const message = error.message.toLowerCase();
+
+  // Timeout errors are retryable
+  if (error.name === 'TimeoutError' || message.includes('timed out')) {
+    return { retryable: true, delayMs: 1000 };
+  }
+
+  // Network errors are retryable
+  if (message.includes('network') || message.includes('econnreset') || message.includes('enotfound')) {
+    return { retryable: true, delayMs: 500 };
+  }
+
+  // Parse status code from Stripe error messages
+  const statusMatch = message.match(/stripe api error: (\d{3})/i);
+  if (statusMatch && statusMatch[1]) {
+    const status = parseInt(statusMatch[1], 10);
+
+    // 429 Too Many Requests - retryable with longer delay
+    if (status === 429) {
+      return { retryable: true, delayMs: 2000 };
+    }
+
+    // 5xx Server errors - retryable
+    if (status >= 500 && status < 600) {
+      return { retryable: true, delayMs: 1000 };
+    }
+
+    // 4xx Client errors (except 429) - not retryable
+    if (status >= 400 && status < 500) {
+      return { retryable: false };
+    }
+  }
+
+  // Default: don't retry unknown errors
+  return { retryable: false };
+}
+
 export function createStripeBillingAdapter(config: StripeBillingAdapterConfig): BillingProviderAdapter {
   return createResilientProxy({
     name: 'stripe',
@@ -471,6 +688,8 @@ export function createStripeBillingAdapter(config: StripeBillingAdapterConfig): 
     retry: {
       maxRetries: 3,
       baseDelayMs: 200, // Faster than default because Stripe is usually fast
+      // M-005 FIX: Use error classifier for intelligent retry decisions
+      shouldRetry: (error: unknown) => classifyStripeError(error).retryable,
     },
   });
 }

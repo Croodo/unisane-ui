@@ -26,6 +26,9 @@
 // Re-use types from constants (single source of truth)
 import type { OutboxKind, OutboxStatus } from '../constants/outbox';
 import { setGlobalProvider, getGlobalProvider, hasGlobalProvider } from './global-provider';
+import { BadRequestError } from '../errors/common';
+import { base64UrlDecodeUtf8 } from '../encoding/base64url';
+import { clampInt } from '../utils/dto';
 
 const PROVIDER_KEY = 'outbox';
 
@@ -174,4 +177,105 @@ export async function enqueueOutbox(item: OutboxItem): Promise<{ ok: true; id: s
  */
 export async function claimOutboxBatch(now: Date, limit: number): Promise<OutboxRow[]> {
   return getOutboxProvider().claimBatch(now, limit);
+}
+
+// ─── ADMIN SERVICE FUNCTIONS ────────────────────────────────────────────────
+
+/**
+ * Validate cursor format before using it.
+ * Cursors should be base64url-encoded JSON with expected structure.
+ * Throws BadRequestError for invalid cursors instead of passing garbage to database.
+ */
+function validateOutboxCursor(cursor: string | null | undefined): string | null {
+  if (!cursor) return null;
+
+  try {
+    const decoded = base64UrlDecodeUtf8(cursor);
+    if (!decoded) {
+      throw new BadRequestError('Invalid cursor format: not valid base64url encoding');
+    }
+
+    const parsed = JSON.parse(decoded);
+
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      throw new BadRequestError('Invalid cursor format: expected array with sort values');
+    }
+
+    return cursor;
+  } catch (err) {
+    if (err instanceof BadRequestError) {
+      throw err;
+    }
+    throw new BadRequestError('Invalid cursor format: malformed cursor');
+  }
+}
+
+/**
+ * List dead outbox items for admin with seek pagination.
+ */
+export async function listDeadOutboxAdmin(args: { limit: number; cursor?: string | null }) {
+  const outbox = getOutboxProvider();
+  const limit = clampInt(args.limit, 1, 50);
+  const validatedCursor = validateOutboxCursor(args.cursor);
+  const { items, nextCursor, prevCursor } = await outbox.listDeadAdminPage({
+    limit,
+    cursor: validatedCursor,
+  });
+
+  const rows = items.map((d) => ({
+    id: d.id,
+    kind: d.kind ?? 'unknown',
+    attempts: d.attempts ?? 0,
+    lastError: d.lastError ?? null,
+    updatedAt: d.updatedAt ? d.updatedAt.toISOString() : null,
+  }));
+
+  return { items: rows, ...(nextCursor ? { nextCursor } : {}), ...(prevCursor ? { prevCursor } : {}) } as const;
+}
+
+export type OutboxIdsArgs = { ids: string[] };
+export type OutboxLimitArgs = { limit: number };
+
+/**
+ * Requeue specific dead outbox items by IDs.
+ */
+export async function requeueDeadOutboxAdmin(args: OutboxIdsArgs) {
+  const outbox = getOutboxProvider();
+  const now = new Date();
+  await outbox.requeue(args.ids, now);
+  return { ok: true as const };
+}
+
+/**
+ * Purge specific dead outbox items by IDs.
+ */
+export async function purgeDeadOutboxAdmin(args: OutboxIdsArgs) {
+  const outbox = getOutboxProvider();
+  await outbox.purge(args.ids);
+  return { ok: true as const };
+}
+
+/**
+ * Requeue all dead outbox items (bounded by limit).
+ */
+export async function requeueAllDeadOutboxAdmin(args: OutboxLimitArgs) {
+  const outbox = getOutboxProvider();
+  const n = clampInt(args.limit, 1, 1000);
+  const now = new Date();
+  const items = await outbox.listDead(n);
+  const ids = items.map((x) => x.id);
+  if (ids.length) await outbox.requeue(ids, now);
+  return { ok: true as const, count: ids.length };
+}
+
+/**
+ * Purge all dead outbox items (bounded by limit).
+ */
+export async function purgeAllDeadOutboxAdmin(args: OutboxLimitArgs) {
+  const outbox = getOutboxProvider();
+  const n = clampInt(args.limit, 1, 1000);
+  const items = await outbox.listDead(n);
+  const ids = items.map((x) => x.id);
+  if (ids.length) await outbox.purge(ids);
+  return { ok: true as const, count: ids.length };
 }

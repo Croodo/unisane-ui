@@ -139,7 +139,7 @@ export async function dbSeed(options: DbSeedOptions = {}): Promise<number> {
     ];
 
     for (const [label, count] of stats) {
-      if (count > 0) {
+      if (typeof count === 'number' && count > 0) {
         log.kv(label as string, String(count));
       }
     }
@@ -197,13 +197,18 @@ async function generateDefaultConfig(): Promise<number> {
 /**
  * Get password hashing function
  *
- * Tries to use scrypt from auth module, falls back to a simple hash
+ * Uses kernel's scrypt function which returns {algo, saltB64, hashB64}.
+ * Converts to string format for storage.
  */
 async function getPasswordHasher(): Promise<(password: string) => Promise<string>> {
   try {
-    // Try to import from auth module
-    const { scryptHashPassword } = await import("@unisane/auth");
-    return scryptHashPassword;
+    // Try to import from kernel
+    const { scryptHashPassword } = await import("@unisane/kernel");
+    return async (password: string): Promise<string> => {
+      const result = await scryptHashPassword(password);
+      // Store as JSON so it can be parsed later for verification
+      return JSON.stringify(result);
+    };
   } catch {
     // Fallback: use Node.js crypto scrypt directly
     const { scrypt, randomBytes } = await import("node:crypto");

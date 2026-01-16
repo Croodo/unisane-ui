@@ -60,6 +60,13 @@ export { getDownloadUrl } from "./service/download";
 export { listFiles } from "./service/list";
 
 // ════════════════════════════════════════════════════════════════════════════
+// Services - Usage & Quota
+// ════════════════════════════════════════════════════════════════════════════
+
+export { getStorageUsage, getStorageUsageWithQuota, formatBytes } from "./service/usage";
+export type { StorageUsageWithQuota } from "./service/usage";
+
+// ════════════════════════════════════════════════════════════════════════════
 // Services - Delete & Cleanup
 // ════════════════════════════════════════════════════════════════════════════
 

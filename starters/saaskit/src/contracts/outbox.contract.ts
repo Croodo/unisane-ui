@@ -51,7 +51,7 @@ export const outboxContract = c.router({
       requireUser: true,
       requireSuperAdmin: true,
       service: {
-        importPath: '@/src/platform/outbox/service.admin',
+        importPath: '@unisane/kernel',
         fn: 'listDeadOutboxAdmin',
         zodQuery: { importPath: './outbox.contract', name: 'ZAdminListQuery' },
         invoke: 'object',
@@ -78,7 +78,7 @@ export const outboxContract = c.router({
       requireSuperAdmin: true,
       idempotent: true,
       service: {
-        importPath: '@/src/platform/outbox/service.admin',
+        importPath: '@unisane/kernel',
         fn: 'requeueDeadOutboxAdmin',
         zodBody: { importPath: './outbox.contract', name: 'ZAdminOutboxIdsBody' },
         invoke: 'object',
@@ -107,7 +107,7 @@ export const outboxContract = c.router({
       requireSuperAdmin: true,
       idempotent: true,
       service: {
-        importPath: '@/src/platform/outbox/service.admin',
+        importPath: '@unisane/kernel',
         fn: 'purgeDeadOutboxAdmin',
         zodBody: { importPath: './outbox.contract', name: 'ZAdminOutboxIdsBody' },
         invoke: 'object',
@@ -136,7 +136,7 @@ export const outboxContract = c.router({
       requireSuperAdmin: true,
       idempotent: true,
       service: {
-        importPath: '@/src/platform/outbox/service.admin',
+        importPath: '@unisane/kernel',
         fn: 'requeueAllDeadOutboxAdmin',
         zodBody: { importPath: './outbox.contract', name: 'ZAdminOutboxLimitBody' },
         invoke: 'object',
@@ -165,7 +165,7 @@ export const outboxContract = c.router({
       requireSuperAdmin: true,
       idempotent: true,
       service: {
-        importPath: '@/src/platform/outbox/service.admin',
+        importPath: '@unisane/kernel',
         fn: 'purgeAllDeadOutboxAdmin',
         zodBody: { importPath: './outbox.contract', name: 'ZAdminOutboxLimitBody' },
         invoke: 'object',

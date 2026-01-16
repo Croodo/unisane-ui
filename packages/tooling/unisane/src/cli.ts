@@ -158,16 +158,75 @@ function requireDevtools(projectRoot: string, pm: 'pnpm' | 'npm' | 'yarn' | 'bun
   return true;
 }
 
+/**
+ * Run a command safely by splitting into command and arguments.
+ *
+ * SECURITY FIX (SEC-004): Removed shell: true to prevent command injection.
+ * Commands are now parsed into command + arguments array.
+ *
+ * @param command - The command string (e.g., "npx create-unisane --template saaskit")
+ * @param cwd - Working directory
+ */
 function runCommand(command: string, cwd?: string): Promise<number> {
   return new Promise((resolve) => {
-    const child = spawn(command, [], {
+    // SECURITY FIX (SEC-004): Parse command into parts instead of using shell
+    // This prevents command injection via shell metacharacters
+    const parts = parseCommand(command);
+    if (parts.length === 0) {
+      resolve(1);
+      return;
+    }
+
+    const [cmd, ...args] = parts;
+
+    const child = spawn(cmd!, args, {
       cwd: cwd ?? process.cwd(),
       stdio: 'inherit',
-      shell: true,
+      // shell: true - REMOVED for security
     });
     child.on('close', (code) => resolve(code ?? 0));
     child.on('error', () => resolve(1));
   });
+}
+
+/**
+ * Parse a command string into an array of arguments.
+ * Handles quoted strings properly.
+ *
+ * SECURITY: This is a simple parser that splits on whitespace while respecting quotes.
+ * It does NOT execute any shell metacharacters.
+ */
+function parseCommand(command: string): string[] {
+  const result: string[] = [];
+  let current = '';
+  let inQuote: '"' | "'" | null = null;
+
+  for (let i = 0; i < command.length; i++) {
+    const char = command[i]!;
+
+    if (inQuote) {
+      if (char === inQuote) {
+        inQuote = null;
+      } else {
+        current += char;
+      }
+    } else if (char === '"' || char === "'") {
+      inQuote = char;
+    } else if (char === ' ' || char === '\t') {
+      if (current) {
+        result.push(current);
+        current = '';
+      }
+    } else {
+      current += char;
+    }
+  }
+
+  if (current) {
+    result.push(current);
+  }
+
+  return result;
 }
 
 // ════════════════════════════════════════════════════════════════════════════

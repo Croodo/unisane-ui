@@ -15,10 +15,13 @@
 | **Add/modify a port** | `RULES.md` → `REFERENCE/PORTS.md` |
 | **Add cross-module feature** | `RULES.md` → `PATTERNS.md` → `REFERENCE/PORTS.md` |
 | **Work with events** | `RULES.md` → `REFERENCE/EVENTS.md` |
+| **Implement cascade delete** | `REFERENCE/EVENT-CASCADES.md` → `REFERENCE/EVENTS.md` |
 | **Review a PR** | `RULES.md` only (it's short) |
 | **Understand architecture** | `ONBOARDING.md` → `RULES.md` → `PATTERNS.md` |
 | **Database switching/migration** | `REFERENCE/DATABASE-PORTABILITY.md` |
 | **Work with repositories** | `PATTERNS.md` → `REFERENCE/DATABASE-PORTABILITY.md` |
+| **Production readiness audit** | `AUDIT-2025-01-FINDINGS.md` → `REMEDIATION/` |
+| **Security fixes** | `AUDIT-2025-01-FINDINGS.md` → `REMEDIATION/PHASE-0-SECURITY.md` |
 
 ---
 
@@ -26,17 +29,27 @@
 
 | Metric | Current | Target |
 |--------|---------|--------|
-| **Current Phase** | Phase 6 (Documentation) | Phase 6 (Complete) |
-| **Hexagonal Compliance** | 95% | 100% |
-| **Critical Issues (P0)** | 0 | 0 |
-| **High Priority Issues (P1)** | 0 | 0 |
+| **Current Phase** | Remediation Phase 6 (Polish) | Production Ready |
+| **Hexagonal Compliance** | 100% | 100% |
+| **Critical Issues (P0)** | 2 remaining | 0 |
+| **High Priority Issues (P1)** | 1 remaining | 0 |
+| **Medium Issues (P2)** | 0 | <10 |
 | **Test Coverage** | ~20% | 70% |
 
-### Completed Phases
-- **Phase 0**: Kernel ports created (13 ports)
-- **Phase 1**: P0 critical issues resolved (7 issues)
-- **Phase 2**: Module decoupling complete
-- **Phase 3**: Code quality improvements applied
+### January 2025 Audit Status
+- **Full audit completed**: 5 layers, ~80,000 LOC analyzed
+- **67 issues identified**: 8 P0, 19 P1, 24 P2, 16 P3
+- **Remediation progress**: Phases 1-6 substantially complete
+- **See**: `REMEDIATION/INDEX.md` for current progress
+
+### Remediation Progress
+- ✅ **Phase 0**: Security emergency (5/7 - 2 deferred: secrets rotation, PII encryption)
+- ✅ **Phase 1**: Critical bugs (9/9 complete)
+- ✅ **Phase 2**: Reliability (7/7 complete)
+- 🟡 **Phase 3**: Type safety (4/5 - 1 remaining: type assertions cleanup)
+- 🟡 **Phase 4**: Observability (4/5 - 1 remaining)
+- ✅ **Phase 5**: Completeness (8/8 complete)
+- ✅ **Phase 6**: Polish & docs (8/9 - test coverage deferred)
 
 ---
 
@@ -48,25 +61,37 @@ ARCHITECTURE/
 ├── ONBOARDING.md               ← NEW DEVELOPERS START HERE
 ├── RULES.md                    ← ALWAYS LOAD (hard rules, ~200 lines)
 ├── PATTERNS.md                 ← HOW to implement things
+├── AUDIT-2025-01-FINDINGS.md   ← JANUARY 2025 FULL AUDIT (67 issues)
 │
-├── ISSUES/                     ← WHAT was broken (all resolved)
-│   ├── P0-CRITICAL.md          ← Fix immediately (7 issues)
-│   ├── P1-HIGH.md              ← Fix this sprint (12 issues)
+├── REMEDIATION/                ← CURRENT WORK (fixing audit issues)
+│   ├── INDEX.md                ← Master tracking & progress
+│   ├── PHASE-0-SECURITY.md     ← 🔴 Security emergency (Week 1)
+│   ├── PHASE-1-BUGS.md         ← Critical bugs (Week 2)
+│   ├── PHASE-2-RELIABILITY.md  ← Reliability (Week 3-4)
+│   ├── PHASE-3-TYPESAFETY.md   ← Type safety (Week 5)
+│   ├── PHASE-4-OBSERVABILITY.md← Observability (Week 6)
+│   ├── PHASE-5-COMPLETENESS.md ← Completeness (Week 7-8)
+│   └── PHASE-6-POLISH.md       ← Polish & docs (Week 9)
+│
+├── ISSUES/                     ← HISTORICAL ISSUES (previous audit)
+│   ├── P0-CRITICAL.md          ← Fix immediately (7 issues) - RESOLVED
+│   ├── P1-HIGH.md              ← Fix this sprint (12 issues) - RESOLVED
 │   ├── P2-MEDIUM.md            ← Fix next sprint
 │   └── RESOLVED.md             ← Already fixed (reference)
 │
-├── ROADMAP/                    ← WHEN to fix things
-│   ├── PHASE-0-PREREQUISITES.md  ← CURRENT PHASE
-│   ├── PHASE-1-FOUNDATION.md
-│   ├── PHASE-2-DECOUPLING.md
-│   ├── PHASE-3-QUALITY.md
-│   ├── PHASE-4-OBSERVABILITY.md
-│   ├── PHASE-5-TESTING.md
-│   └── PHASE-6-DOCUMENTATION.md
+├── ROADMAP/                    ← HISTORICAL ROADMAP (architecture phases)
+│   ├── PHASE-0-PREREQUISITES.md  ← Complete
+│   ├── PHASE-1-FOUNDATION.md     ← Complete
+│   ├── PHASE-2-DECOUPLING.md     ← Complete
+│   ├── PHASE-3-QUALITY.md        ← Complete
+│   ├── PHASE-4-OBSERVABILITY.md  ← Skipped (new plan)
+│   ├── PHASE-5-TESTING.md        ← Skipped (new plan)
+│   └── PHASE-6-DOCUMENTATION.md  ← Skipped (new plan)
 │
 └── REFERENCE/                  ← LOOKUP tables
     ├── PORTS.md                ← All port definitions
     ├── EVENTS.md               ← Event ownership model
+    ├── EVENT-CASCADES.md       ← Event-driven cascade patterns
     ├── ADAPTERS.md             ← Adapter inventory & status
     ├── MODULES.md              ← Module inventory & status
     └── DATABASE-PORTABILITY.md ← Database switching analysis
@@ -111,6 +136,7 @@ ARCHITECTURE/
 |----------|----------|--------------|
 | **PORTS.md** | All 13 kernel ports with definitions | When working with ports |
 | **EVENTS.md** | Event ownership, schemas, registration | When working with events |
+| **EVENT-CASCADES.md** | Event-driven cascade patterns, implementation | When implementing cascade deletes |
 | **ADAPTERS.md** | 12 adapters, status, resilience | When working with adapters |
 | **MODULES.md** | 15 modules, dependencies, issues | When working with modules |
 | **DATABASE-PORTABILITY.md** | DB switching blockers, migration strategy | When discussing database changes |
@@ -163,4 +189,4 @@ ARCHITECTURE/
 
 ---
 
-> **Last Updated**: 2025-01-15 | **Version**: 2.0
+> **Last Updated**: 2025-01-16 | **Version**: 2.1

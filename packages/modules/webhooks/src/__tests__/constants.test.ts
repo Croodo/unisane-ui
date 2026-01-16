@@ -53,7 +53,11 @@ describe('WEBHOOKS_DEFAULTS', () => {
     it('should have increasing retry delays', () => {
       const delays = WEBHOOKS_DEFAULTS.RETRY_DELAYS_MS;
       for (let i = 1; i < delays.length; i++) {
-        expect(delays[i]).toBeGreaterThan(delays[i - 1]);
+        const current = delays[i];
+        const previous = delays[i - 1];
+        if (current !== undefined && previous !== undefined) {
+          expect(current).toBeGreaterThan(previous);
+        }
       }
     });
 

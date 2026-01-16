@@ -2,6 +2,7 @@ import { MongoClient, ReadConcern, WriteConcern } from "mongodb";
 import type { Db, Collection, Document } from "mongodb";
 import { getEnv } from "../env";
 import { ProviderError } from "../errors/common";
+import { logger } from "../observability/logger";
 
 // --- MongoDB Node.js driver helper ---
 // Use global object to share connection state across module instances in Next.js/Turbopack
@@ -153,7 +154,10 @@ export async function closeDb(): Promise<void> {
       await state.mongoClient.close();
     } catch (error) {
       // Log but don't throw - we want to reset state even if close fails
-      console.warn("[mongo] Error during close:", (error as Error).message);
+      logger.warn('Error during MongoDB close', {
+        module: 'mongo',
+        error: (error as Error).message,
+      });
     }
     state.mongoClient = null;
     state.mongoDb = null;

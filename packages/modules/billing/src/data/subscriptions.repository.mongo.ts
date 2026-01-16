@@ -84,32 +84,56 @@ export const mongoSubscriptionsRepo: SubscriptionsRepo = {
       .next();
     return (doc?.providerSubId && String(doc.providerSubId)) || null;
   },
+  /**
+   * BILL-002 FIX: Use atomic findOneAndUpdate to avoid TOCTOU race condition.
+   * Previously did find-then-update which could race if multiple requests
+   * tried to cancel the same subscription simultaneously.
+   */
   async markCancelAtPeriodEnd(scopeId: string): Promise<void> {
-    const latest = await subsCol().find({ scopeId }).project({ _id: 1 }).sort({ createdAt: -1 }).limit(1).next();
-    if (!latest) return;
     const builder = new UpdateBuilder<SubscriptionDoc>()
       .set("cancelAtPeriodEnd", true)
       .set("updatedAt", new Date());
-    await subsCol().updateOne({ _id: latest._id }, toMongoUpdate(builder.build()) as Document);
+
+    // BILL-002 FIX: Atomic operation - find latest and update in one step
+    // Using aggregation pipeline with $sort to get latest, then update
+    await subsCol().findOneAndUpdate(
+      { scopeId },
+      toMongoUpdate(builder.build()) as Document,
+      { sort: { createdAt: -1 } }
+    );
   },
+  /**
+   * BILL-002 FIX: Use atomic findOneAndUpdate to avoid TOCTOU race condition.
+   */
   async cancelImmediately(scopeId: string): Promise<void> {
-    const latest = await subsCol().find({ scopeId }).project({ _id: 1 }).sort({ createdAt: -1 }).limit(1).next();
-    if (!latest) return;
     const now = new Date();
     const builder = new UpdateBuilder<SubscriptionDoc>()
       .set("status", "canceled")
       .set("cancelAtPeriodEnd", false)
       .set("currentPeriodEnd", now)
       .set("updatedAt", now);
-    await subsCol().updateOne({ _id: latest._id }, toMongoUpdate(builder.build()) as Document);
+
+    // BILL-002 FIX: Atomic operation
+    await subsCol().findOneAndUpdate(
+      { scopeId },
+      toMongoUpdate(builder.build()) as Document,
+      { sort: { createdAt: -1 } }
+    );
   },
+  /**
+   * BILL-002 FIX: Use atomic findOneAndUpdate to avoid TOCTOU race condition.
+   */
   async updateQuantity(scopeId: string, quantity: number): Promise<void> {
-    const latest = await subsCol().find({ scopeId }).project({ _id: 1 }).sort({ createdAt: -1 }).limit(1).next();
-    if (!latest) return;
     const builder = new UpdateBuilder<SubscriptionDoc>()
       .set("quantity", quantity)
       .set("updatedAt", new Date());
-    await subsCol().updateOne({ _id: latest._id }, toMongoUpdate(builder.build()) as Document);
+
+    // BILL-002 FIX: Atomic operation
+    await subsCol().findOneAndUpdate(
+      { scopeId },
+      toMongoUpdate(builder.build()) as Document,
+      { sort: { createdAt: -1 } }
+    );
   },
   async upsertByProviderId(args: {
     scopeId: string;

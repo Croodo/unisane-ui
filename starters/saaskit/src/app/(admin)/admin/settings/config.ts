@@ -1,5 +1,5 @@
 import type { SettingConfig } from "./types";
-import { getUIDefinitions } from "@/src/shared/settings/definitions";
+import { getUIDefinitions } from "@/src/config/client";
 
 // ============================================================================
 // Settings Configuration (Auto-generated from definitions)

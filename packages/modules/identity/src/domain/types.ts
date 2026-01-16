@@ -1,6 +1,7 @@
 import type { RoleId } from "@unisane/kernel";
 import type { Permission } from "@unisane/kernel";
 import type { GrantEffect } from "@unisane/kernel";
+import type { UserDeletionReason } from "@unisane/kernel";
 
 export type Membership = {
   scopeId: string;
@@ -21,6 +22,37 @@ export type ApiKey = {
   revokedAt?: Date | null;
   createdAt?: Date;
   updatedAt?: Date;
+};
+
+export type ApiKeyCreateDbInput = {
+  scopeId: string;
+  name?: string | null;
+  hash: string;
+  scopes: string[];
+  createdBy?: string | null;
+};
+
+export type ApiKeysApi = {
+  create(input: ApiKeyCreateDbInput): Promise<{
+    id: string;
+    scopes: string[];
+    name: string | null;
+    createdAt: Date;
+  }>;
+  revoke(scopeId: string, keyId: string): Promise<{ ok: true }>;
+  listByScope(scopeId: string, limit?: number): Promise<Array<{
+    id: string;
+    name: string | null;
+    scopes: string[];
+    revokedAt: Date | null;
+    createdAt: Date | null;
+  }>>;
+  findActiveByHash(hash: string): Promise<{
+    id: string;
+    scopeId: string;
+    scopes: string[];
+  } | null>;
+  revokeAllForScope(scopeId: string): Promise<{ revokedCount: number }>;
 };
 
 export type UserRow = {
@@ -114,6 +146,7 @@ export type MembershipsApi = {
     | { conflict: true; expected: number }
   >;
   softDeleteAllForUser(userId: string): Promise<{ deletedCount: number }>;
+  softDeleteAllForScope(scopeId: string): Promise<{ deletedCount: number }>;
 };
 
 export type UserCreateInput = {
@@ -313,6 +346,7 @@ export type UpdateUserArgs = {
 export type DeleteUserArgs = {
   userId: string;
   actorId?: string;
+  reason?: UserDeletionReason;
 };
 
 export type RevokeSessionsArgs = {

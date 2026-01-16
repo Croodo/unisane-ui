@@ -4,6 +4,18 @@
 import type { RouteGenEntry, CallArg } from '../../extraction/types.js';
 
 /**
+ * DEV-010 FIX: Validate that a key is a safe JavaScript identifier.
+ * This prevents code injection through malicious keys like "foo']; evil(); //".
+ */
+const SAFE_IDENTIFIER_REGEX = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/;
+
+function assertSafeKey(key: string | undefined | null, context: string): void {
+  if (key && !SAFE_IDENTIFIER_REGEX.test(key)) {
+    throw new Error(`Unsafe key '${key}' in ${context}: must be a valid identifier`);
+  }
+}
+
+/**
  * Extracts all param keys used in callArgs and audit expressions
  */
 export function collectParamKeys(cfg: RouteGenEntry): string[] {
@@ -65,6 +77,9 @@ export function generateValueAccessor(
   hasBody: boolean
 ): string {
   const { from, key } = arg;
+
+  // DEV-010 FIX: Validate key is a safe identifier before using in generated code
+  assertSafeKey(key, `generateValueAccessor(${from})`);
 
   if (from === 'const') {
     return 'undefined'; // Will be overridden by JSON.stringify of value

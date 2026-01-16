@@ -1,7 +1,7 @@
-import { getEnv, decodeBase64UrlJson } from "@unisane/kernel";
+import { getEnv, decodeBase64UrlJson, logger } from "@unisane/kernel";
 import { decodeJwt } from "jose";
 import { exchange } from "@unisane/auth";
-import { getAuthConfig } from "@/src/platform/auth/config";
+import { getAuthConfig } from "@/src/config";
 import { signJwtRS256 } from "@unisane/gateway";
 import { buildAccessTokenCookie, parseCookies } from "@unisane/gateway";
 import { makeHandlerRaw } from "@unisane/gateway";
@@ -9,6 +9,9 @@ import { ipFrom } from "@unisane/gateway";
 import { metrics } from "@/src/platform/telemetry";
 import { appendAudit } from "@unisane/audit";
 export const runtime = "nodejs";
+
+// ROUTE-003 FIX: Create logger for error tracking
+const log = logger.child({ module: "auth", route: "oauth-callback" });
 
 function readOAuthCookie(
   cookieHeader: string | null | undefined,
@@ -70,7 +73,9 @@ export const GET = makeHandlerRaw<unknown, { provider: string }>(
       try {
         metrics.inc("auth.oauth.callback_invalid", 1, { provider });
       } catch {}
-      return new Response("Missing code/state", { status: 400 });
+      // ROUTE-001 FIX: Return JSON error instead of plain text
+      const h = new Headers({ "content-type": "application/json", "x-request-id": String(requestId) });
+      return new Response(JSON.stringify({ error: { message: "Missing code/state" } }), { status: 400, headers: h });
     }
 
     // Validate state via cookie
@@ -82,7 +87,9 @@ export const GET = makeHandlerRaw<unknown, { provider: string }>(
       try {
         metrics.inc("auth.oauth.callback_state", 1, { provider });
       } catch {}
-      return new Response("Invalid state", { status: 400 });
+      // ROUTE-001 FIX: Return JSON error instead of plain text
+      const h = new Headers({ "content-type": "application/json", "x-request-id": String(requestId) });
+      return new Response(JSON.stringify({ error: { message: "Invalid state" } }), { status: 400, headers: h });
     }
 
     const { PUBLIC_BASE_URL } = getEnv();
@@ -101,8 +108,11 @@ export const GET = makeHandlerRaw<unknown, { provider: string }>(
       GITHUB_CLIENT_SECRET,
       JWT_PRIVATE_KEY,
     } = getEnv();
-    if (!JWT_PRIVATE_KEY)
-      return new Response("JWT private key not configured", { status: 500 });
+    // ROUTE-001 FIX: Return JSON error instead of plain text
+    if (!JWT_PRIVATE_KEY) {
+      const h = new Headers({ "content-type": "application/json", "x-request-id": String(requestId) });
+      return new Response(JSON.stringify({ error: { message: "JWT private key not configured" } }), { status: 500, headers: h });
+    }
     const authCfg = getAuthConfig();
 
     let providerToken: string | null = null;
@@ -164,9 +174,17 @@ export const GET = makeHandlerRaw<unknown, { provider: string }>(
           throw new Error("github access_token missing");
         providerToken = payload.access_token;
       } else {
-        return new Response("Unknown provider", { status: 400 });
+        // ROUTE-001 FIX: Return JSON error instead of plain text
+        const h = new Headers({ "content-type": "application/json", "x-request-id": String(requestId) });
+        return new Response(JSON.stringify({ error: { message: "Unknown provider" } }), { status: 400, headers: h });
       }
-    } catch {
+    } catch (err) {
+      // ROUTE-003 FIX: Log error details before redirecting
+      log.error("oauth token exchange failed", {
+        provider,
+        requestId,
+        error: err instanceof Error ? err.message : String(err),
+      });
       try {
         metrics.inc("auth.oauth.exchange_failed", 1, { provider });
       } catch {}
@@ -183,7 +201,13 @@ export const GET = makeHandlerRaw<unknown, { provider: string }>(
     try {
       const out = await exchange({ provider, token: providerToken! });
       userId = out.userId;
-    } catch {
+    } catch (err) {
+      // ROUTE-003 FIX: Log error details before redirecting
+      log.error("oauth user link/login failed", {
+        provider,
+        requestId,
+        error: err instanceof Error ? err.message : String(err),
+      });
       try {
         metrics.inc("auth.oauth.link_failed", 1, { provider });
       } catch {}

@@ -6,6 +6,7 @@ import type { PlanId } from "@unisane/kernel";
 import { PLAN_META } from "@unisane/kernel";
 import { getEnv } from "@unisane/kernel";
 import { ERR } from "@unisane/gateway";
+import { logBillingAudit, BILLING_AUDIT_ACTIONS } from "./audit";
 
 export async function changePlan(args: {
   scopeId: string;
@@ -63,6 +64,24 @@ export async function changePlan(args: {
     scopeId: args.scopeId,
     providerSubId,
     planId: providerPlanId,
+  });
+
+  // Audit log the plan change
+  await logBillingAudit({
+    scopeId: args.scopeId,
+    action: BILLING_AUDIT_ACTIONS.PLAN_CHANGED,
+    targetType: 'subscription',
+    targetId: providerSubId,
+    changes: [
+      { field: 'planId', from: currentPlanId, to: args.planId },
+      { field: 'price', from: currentPrice, to: nextPrice },
+    ],
+    metadata: {
+      providerSubId,
+      provider: BILLING_PROVIDER ?? 'stripe',
+      providerPlanId,
+      changeType: 'upgrade',
+    },
   });
 
   // Do not mutate local subscription row here; Stripe webhooks will upsert the new plan/status.

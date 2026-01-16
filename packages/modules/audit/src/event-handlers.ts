@@ -54,15 +54,15 @@ async function handleTenantUpdated(
  * Log tenant deletion
  */
 async function handleTenantDeleted(
-  payload: { scopeId: string; actorId: string; cascade: Record<string, number> }
+  payload: { scopeId: string; actorId?: string; timestamp: string }
 ): Promise<void> {
   await appendAudit({
     scopeId: payload.scopeId,
-    actorId: payload.actorId,
+    actorId: payload.actorId ?? 'system',
     action: 'tenant.deleted',
     resourceType: 'tenant',
     resourceId: payload.scopeId,
-    after: { cascade: payload.cascade },
+    after: { deletedAt: payload.timestamp },
   });
 }
 

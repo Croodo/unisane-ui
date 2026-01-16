@@ -1,6 +1,6 @@
 import type { Permission } from "@unisane/gateway";
 import { ROLE_PERMS, PERM } from "@unisane/gateway";
-import { kv } from "@unisane/kernel";
+import { kv, logger } from "@unisane/kernel";
 import { KV } from "@unisane/kernel";
 import {
   usersRepository,
@@ -8,6 +8,8 @@ import {
 } from "../data/repo";
 import { connectDb } from "@unisane/kernel";
 import { getUserGlobalRole } from "./users";
+
+const log = logger.child({ module: 'identity/perms' });
 
 /**
  * Build cache key for user permissions.
@@ -67,12 +69,43 @@ export async function getEffectivePerms(
 ): Promise<Permission[]> {
   await connectDb();
   const cacheKey = permCacheKeyForUser(scopeId, userId);
-  const cached = await kv.get(cacheKey);
-  if (cached) {
-    try {
-      return JSON.parse(cached) as Permission[];
-    } catch {}
+
+  // Try to read from cache
+  try {
+    const cached = await kv.get(cacheKey);
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        // Validate the parsed value is an array of strings
+        if (Array.isArray(parsed) && parsed.every((p) => typeof p === 'string')) {
+          return parsed as Permission[];
+        }
+        // Invalid format - log and invalidate
+        log.warn('permission cache invalid format', { scopeId, userId, cacheKey });
+        await kv.del(cacheKey);
+      } catch (parseError) {
+        // JSON parse failed - log and invalidate corrupted entry
+        log.error('permission cache parse failed', {
+          scopeId,
+          userId,
+          cacheKey,
+          error: parseError instanceof Error ? parseError.message : String(parseError),
+        });
+        // Delete corrupted cache entry to prevent repeated failures
+        await kv.del(cacheKey);
+      }
+    }
+  } catch (cacheReadError) {
+    // Cache read failed - log but continue to fetch from database
+    log.warn('permission cache read failed', {
+      scopeId,
+      userId,
+      cacheKey,
+      error: cacheReadError instanceof Error ? cacheReadError.message : String(cacheReadError),
+    });
   }
+
+  // Fetch fresh permissions from database
   const m = await membershipsRepository.findByScopeAndUser(scopeId, userId);
   const base: Set<Permission> = new Set();
   for (const r of m?.roles ?? []) {
@@ -84,9 +117,20 @@ export async function getEffectivePerms(
     else base.delete(g.perm as Permission);
   }
   const perms = Array.from(base);
+
+  // Try to cache the result
   try {
     await kv.set(cacheKey, JSON.stringify(perms), { PX: 60_000 });
-  } catch {}
+  } catch (cacheWriteError) {
+    // Cache write failed - log but return permissions (non-critical)
+    log.warn('permission cache write failed', {
+      scopeId,
+      userId,
+      cacheKey,
+      error: cacheWriteError instanceof Error ? cacheWriteError.message : String(cacheWriteError),
+    });
+  }
+
   return perms;
 }
 
@@ -119,8 +163,12 @@ export async function applyGlobalOverlays(
       const merged = new Set<Permission>([...perms, ...SUPPORT_ADMIN_OVERLAY]);
       return { perms: Array.from(merged), isSuperAdmin: false };
     }
-  } catch {
-    // Silently fail - user just won't get global overlays
+  } catch (error) {
+    // Log the failure - user won't get global overlays but we want visibility
+    log.warn('failed to apply global overlays', {
+      userId,
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
   return { perms, isSuperAdmin: false };
 }

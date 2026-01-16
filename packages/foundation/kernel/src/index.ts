@@ -78,6 +78,7 @@ export * from './utils/dto';
 export * from './utils/csv';
 export * from './utils/ratelimit';
 export * from './utils/jobs';
+export * from './utils/timeout';
 
 // Storage provider abstraction
 export * from './storage';
@@ -102,3 +103,12 @@ export * from './id';
 
 // Bootstrap readiness (for Next.js 16 Turbopack timing)
 export * from './bootstrap';
+
+// Distributed Locking
+export * from './locks';
+
+// Adapter Utilities (metrics wrapper, circuit breaker helpers)
+export * from './adapters';
+
+// SMS (port-based abstraction for SMS providers)
+export * from './sms';

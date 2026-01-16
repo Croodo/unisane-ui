@@ -27,7 +27,7 @@ describe("Settings Schemas", () => {
       });
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error.issues[0].path).toEqual(["ns"]);
+        expect(result.error.issues[0]?.path).toEqual(["ns"]);
       }
     });
 
@@ -38,7 +38,7 @@ describe("Settings Schemas", () => {
       });
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error.issues[0].path).toEqual(["key"]);
+        expect(result.error.issues[0]?.path).toEqual(["key"]);
       }
     });
 

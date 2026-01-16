@@ -11,7 +11,7 @@ import { sha256Hex } from '@unisane/kernel';
 import { readApiKeyToken, readBearerToken, tenantIdFromUrl, readBearerFromCookie } from '../request';
 import { logger, withRequest } from '../logger';
 import { HEADER_NAMES } from '../headers';
-import { kv, getEnv, ALL_PERMISSIONS, KV } from '@unisane/kernel';
+import { kv, getEnv, ALL_PERMISSIONS, KV, ZPermission } from '@unisane/kernel';
 import { ERR } from '../errors/errors';
 
 // --- Dev Environment Detection ---
@@ -28,10 +28,61 @@ function isDevEnvironment(env: string | undefined): env is DevEnv {
   return !!env && DEV_ENVIRONMENTS.includes(env.toLowerCase() as DevEnv);
 }
 
+/**
+ * H-007 FIX: Pre-compute ALL_PERMISSIONS set for O(1) lookup.
+ * This is created once at module load time for efficient validation.
+ */
+const ALL_PERMISSIONS_SET = new Set(ALL_PERMISSIONS);
+
+/**
+ * GW-009 FIX: Validate API key scopes against known permissions.
+ * Filters out invalid scopes and logs warnings for unrecognized values.
+ * This prevents privilege escalation via malformed scope injection.
+ *
+ * H-007 FIX: Now also cross-references against ALL_PERMISSIONS constant
+ * to ensure scopes are not only valid Zod types but also actually defined
+ * in the permission catalog.
+ */
+function validateScopes(scopes: unknown[], source: string): Permission[] {
+  if (!Array.isArray(scopes)) {
+    return [];
+  }
+
+  const validPerms: Permission[] = [];
+  for (const scope of scopes) {
+    if (typeof scope !== 'string') {
+      logger.warn('Invalid scope type in ' + source, { scopeType: typeof scope });
+      continue;
+    }
+
+    // First, validate against Zod schema
+    const result = ZPermission.safeParse(scope);
+    if (!result.success) {
+      logger.warn('Unrecognized scope in ' + source + ' (Zod validation failed)', { scope });
+      continue;
+    }
+
+    // H-007 FIX: Cross-reference against ALL_PERMISSIONS catalog
+    // This catches cases where a scope passes Zod but isn't in the actual permission set
+    if (!ALL_PERMISSIONS_SET.has(result.data)) {
+      logger.warn('Unrecognized scope in ' + source + ' (not in ALL_PERMISSIONS)', { scope });
+      continue;
+    }
+
+    validPerms.push(result.data);
+  }
+  return validPerms;
+}
+
 // --- Auth Context Types ---
+
+/** Method used to authenticate the request */
+export type AuthMethod = 'cookie' | 'bearer' | 'apikey' | 'dev';
 
 export interface AuthCtx {
   isAuthed: boolean;
+  /** The authentication method used for this request */
+  authMethod?: AuthMethod;
   userId?: string;
   apiKeyId?: string;
   tenantId?: string;
@@ -111,6 +162,43 @@ function logAuthEvent(
   }
 }
 
+// --- GW-006 FIX: Timeout Configuration ---
+
+/**
+ * GW-006 FIX: Timeout for database calls in auth.
+ *
+ * Auth operations should fail fast to prevent blocking request threads.
+ * These timeouts ensure that slow database/cache operations don't hang
+ * the entire auth flow.
+ */
+const AUTH_DB_TIMEOUT_MS = 5000; // 5 seconds for DB lookups
+const AUTH_CACHE_TIMEOUT_MS = 2000; // 2 seconds for cache operations
+
+/**
+ * GW-006 FIX: Wrap a promise with a timeout.
+ */
+function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  operation: string
+): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error(`${operation} timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+
+    promise
+      .then((result) => {
+        clearTimeout(timer);
+        resolve(result);
+      })
+      .catch((error) => {
+        clearTimeout(timer);
+        reject(error);
+      });
+  });
+}
+
 // --- JSON Parsing with Validation ---
 
 interface CachedApiKey {
@@ -183,21 +271,28 @@ async function authFromJwt(
 
     if (!sub) return null;
 
-    await repos.connectDb();
+    // GW-006 FIX: Apply timeout to database connection
+    await withTimeout(repos.connectDb(), AUTH_DB_TIMEOUT_MS, 'connectDb');
 
     // Check if sessions were revoked
-    const user = await repos.findUserById(sub);
+    // SECURITY FIX (SEC-002): Use >= to reject tokens issued at exact revocation time
+    // This prevents race conditions where a token issued at the same millisecond as revocation
+    // could still be accepted
+    // GW-006 FIX: Apply timeout to user lookup
+    const user = await withTimeout(repos.findUserById(sub), AUTH_DB_TIMEOUT_MS, 'findUserById');
     const revokedAt = user?.sessionsRevokedAt ?? null;
-    if (revokedAt && tokenIatSec && revokedAt.getTime() > tokenIatSec * 1000) {
+    if (revokedAt && tokenIatSec && revokedAt.getTime() >= tokenIatSec * 1000) {
       throw ERR.loginRequired();
     }
 
     if (tenantId) {
-      const perms = await repos.getEffectivePerms(tenantId, sub);
-      const { perms: finalPerms, isSuperAdmin } = await repos.applyGlobalOverlays(sub, perms);
+      // GW-006 FIX: Apply timeout to permission lookups
+      const perms = await withTimeout(repos.getEffectivePerms(tenantId, sub), AUTH_DB_TIMEOUT_MS, 'getEffectivePerms');
+      const { perms: finalPerms, isSuperAdmin } = await withTimeout(repos.applyGlobalOverlays(sub, perms), AUTH_DB_TIMEOUT_MS, 'applyGlobalOverlays');
 
       const baseCtx: AuthCtx = {
         isAuthed: true,
+        authMethod: source,
         userId: sub,
         tenantId,
         ...(isSuperAdmin ? { isSuperAdmin: true } : {}),
@@ -208,16 +303,18 @@ async function authFromJwt(
     }
 
     // No tenant - global context
-    const { perms: finalPerms, isSuperAdmin } = await repos.applyGlobalOverlays(sub, []);
+    // GW-006 FIX: Apply timeout to overlay lookup
+    const { perms: finalPerms, isSuperAdmin } = await withTimeout(repos.applyGlobalOverlays(sub, []), AUTH_DB_TIMEOUT_MS, 'applyGlobalOverlays');
     if (isSuperAdmin) {
       return {
         isAuthed: true,
+        authMethod: source,
         userId: sub,
         perms: finalPerms,
         isSuperAdmin: true,
       };
     }
-    return { isAuthed: true, userId: sub };
+    return { isAuthed: true, authMethod: source, userId: sub };
   } catch (e) {
     const error = e as Error;
     // Only log verbose errors in dev environments or for unexpected errors
@@ -235,16 +332,42 @@ async function authFromJwt(
 
 // --- API Key Authentication ---
 
-// Cache TTL: 60 seconds for valid keys, 30 seconds for "not found"
-const API_KEY_CACHE_TTL_MS = 60_000;
-const API_KEY_NOT_FOUND_CACHE_TTL_MS = 30_000;
+// Cache TTL configuration
+// SECURITY: Keep cache TTL short to minimize revocation lag
+// - Valid keys: 10 seconds (balance between performance and security)
+// - Not found: 5 seconds (shorter to allow quick recovery from typos)
+const API_KEY_CACHE_TTL_MS = 10_000;  // Reduced from 60s to 10s for faster revocation
+const API_KEY_NOT_FOUND_CACHE_TTL_MS = 5_000;  // Reduced from 30s to 5s
+
+// Global revocation timestamp - when set, all cached keys older than this are invalid
+// This allows instant invalidation of all API keys without clearing each one
+let globalRevocationTimestamp: number | null = null;
+
+/**
+ * Set a global revocation timestamp. All API key cache entries created before
+ * this timestamp will be considered invalid on next lookup.
+ * Use this for security emergencies (e.g., suspected breach).
+ */
+export function setGlobalApiKeyRevocation(timestamp: number = Date.now()): void {
+  globalRevocationTimestamp = timestamp;
+  logAuthEvent('warn', 'global API key revocation set', { timestamp });
+}
+
+/**
+ * Clear the global revocation timestamp (after all keys have been rotated).
+ */
+export function clearGlobalApiKeyRevocation(): void {
+  globalRevocationTimestamp = null;
+  logAuthEvent('info', 'global API key revocation cleared', {});
+}
 
 async function cacheApiKeyLookup(hash: string): Promise<ApiKeyRecord | null> {
   const repos = getRepos();
   const cacheKey = `${KV.AK}${hash}`;
 
   // Try to get from cache
-  const cached = await kv.get(cacheKey);
+  // GW-006 FIX: Apply timeout to cache lookup
+  const cached = await withTimeout(kv.get(cacheKey), AUTH_CACHE_TIMEOUT_MS, 'kv.get').catch(() => null);
   if (cached) {
     const parsed = parseJsonSafe(cached, isValidCachedApiKey);
     if (parsed) {
@@ -253,22 +376,57 @@ async function cacheApiKeyLookup(hash: string): Promise<ApiKeyRecord | null> {
         return null;
       }
 
-      // Validate cache isn't too old (defense in depth)
-      const age = Date.now() - parsed.cachedAt;
-      if (age < API_KEY_CACHE_TTL_MS * 2) {
-        return {
-          id: parsed.id,
-          scopeId: parsed.scopeId,
-          scopes: parsed.scopes,
-        };
+      // SECURITY: Check global revocation timestamp
+      // If cache entry was created before global revocation, treat as invalid
+      if (globalRevocationTimestamp && parsed.cachedAt < globalRevocationTimestamp) {
+        logAuthEvent('info', 'api key cache invalidated by global revocation', {
+          cacheKey,
+          cachedAt: parsed.cachedAt,
+          revokedAt: globalRevocationTimestamp,
+        });
+        // Fall through to fresh lookup
+      } else {
+        // Validate cache isn't too old (defense in depth)
+        // SECURITY FIX (SEC-003): Use actual TTL, not 2x TTL
+        // This ensures revoked API keys are rejected within the configured TTL (10s)
+        // rather than potentially being accepted for up to 20s
+        const age = Date.now() - parsed.cachedAt;
+        if (age < API_KEY_CACHE_TTL_MS) {
+          return {
+            id: parsed.id,
+            scopeId: parsed.scopeId,
+            scopes: parsed.scopes,
+          };
+        }
+        // Cache too old, fall through to fresh lookup
       }
-      // Cache too old, fall through to fresh lookup
     }
     // Invalid cache entry, will be overwritten below
   }
 
   // Fresh lookup from database
-  const row = await repos.findApiKeyByHash(hash);
+  // GW-006 FIX: Apply timeout to database lookup
+  const row = await withTimeout(repos.findApiKeyByHash(hash), AUTH_DB_TIMEOUT_MS, 'findApiKeyByHash');
+
+  // SECURITY: Check if the key has been revoked
+  // The repository should return null or include revokedAt for revoked keys
+  if (row?.revokedAt) {
+    logAuthEvent('info', 'api key lookup returned revoked key', {
+      apiKeyId: row.id,
+      revokedAt: row.revokedAt,
+    });
+    // Cache the "not found" result to prevent repeated DB lookups
+    const notFoundEntry: CachedApiKey = {
+      id: '',
+      scopeId: '',
+      scopes: [],
+      cachedAt: Date.now(),
+      notFound: true,
+    };
+    // GW-006 FIX: Apply timeout to cache write (fire-and-forget on timeout)
+    await withTimeout(kv.set(cacheKey, JSON.stringify(notFoundEntry), { PX: API_KEY_NOT_FOUND_CACHE_TTL_MS }), AUTH_CACHE_TIMEOUT_MS, 'kv.set').catch(() => {});
+    return null;
+  }
 
   // Cache the result
   const cacheEntry: CachedApiKey = row
@@ -287,15 +445,31 @@ async function cacheApiKeyLookup(hash: string): Promise<ApiKeyRecord | null> {
       };
 
   const ttl = row ? API_KEY_CACHE_TTL_MS : API_KEY_NOT_FOUND_CACHE_TTL_MS;
-  await kv.set(cacheKey, JSON.stringify(cacheEntry), { PX: ttl });
+  // GW-006 FIX: Apply timeout to cache write (fire-and-forget on timeout)
+  await withTimeout(kv.set(cacheKey, JSON.stringify(cacheEntry), { PX: ttl }), AUTH_CACHE_TIMEOUT_MS, 'kv.set').catch(() => {});
 
   return row;
 }
 
-// Invalidate API key cache (call when key is revoked/deleted)
+/**
+ * Invalidate a specific API key cache entry.
+ * Call this when a key is revoked or deleted.
+ *
+ * IMPORTANT: This should be called from the API key revocation handler
+ * to ensure immediate invalidation.
+ */
 export async function invalidateApiKeyCache(hash: string): Promise<void> {
   const cacheKey = `${KV.AK}${hash}`;
-  await kv.del(cacheKey);
+  try {
+    // GW-006 FIX: Apply timeout to cache deletion
+    await withTimeout(kv.del(cacheKey), AUTH_CACHE_TIMEOUT_MS, 'kv.del');
+    logAuthEvent('info', 'api key cache invalidated', { cacheKey });
+  } catch (error) {
+    logAuthEvent('error', 'failed to invalidate api key cache', {
+      cacheKey,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
 }
 
 function deriveTenantIdFromTokenOrUrl(payload: Record<string, unknown> | null | undefined, req: Request): string | undefined {
@@ -318,7 +492,8 @@ export async function getAuthCtx(req: Request): Promise<AuthCtx> {
   if (apiKeyToken) {
     try {
       const repos = getRepos();
-      await repos.connectDb();
+      // GW-006 FIX: Apply timeout to database connection
+      await withTimeout(repos.connectDb(), AUTH_DB_TIMEOUT_MS, 'connectDb');
       const hash = sha256Hex(apiKeyToken);
       const key = await cacheApiKeyLookup(hash);
       if (key) {
@@ -329,9 +504,11 @@ export async function getAuthCtx(req: Request): Promise<AuthCtx> {
         });
         return {
           isAuthed: true,
+          authMethod: 'apikey',
           apiKeyId: String(key.id),
           tenantId: key.scopeId, // Map scopeId to tenantId for AuthCtx compatibility
-          perms: (key.scopes ?? []) as Permission[],
+          // GW-009 FIX: Validate scopes against known permissions
+          perms: validateScopes(key.scopes ?? [], 'api_key'),
         };
       }
       logAuthEvent('warn', 'api key not found', { auth_strategy: 'api_key' });
@@ -369,7 +546,7 @@ export async function getAuthCtx(req: Request): Promise<AuthCtx> {
       const decoded = decodeJwt(cookieToken);
       const sub = decoded && typeof decoded.sub === 'string' ? decoded.sub : undefined;
       if (sub) {
-        return { isAuthed: true, userId: sub };
+        return { isAuthed: true, authMethod: 'dev', userId: sub };
       }
     }
   } catch (e) {
@@ -384,10 +561,11 @@ export async function getAuthCtx(req: Request): Promise<AuthCtx> {
   const plan = req.headers.get('x-plan') ?? 'pro';
   const platformOwnerHeader = req.headers.get('x-platform-owner') ?? undefined;
   const permsHdr = req.headers.get('x-perms') ?? '';
-  const perms = permsHdr
-    .split(',')
-    .map((p) => p.trim())
-    .filter(Boolean) as Permission[];
+  // GW-009 FIX: Validate dev header scopes against known permissions
+  const perms = validateScopes(
+    permsHdr.split(',').map((p) => p.trim()).filter(Boolean),
+    'x-perms header'
+  );
 
   // Log warning when dev auth headers are used
   const hasDevHeaders = tenantId || userIdHeader || role || platformOwnerHeader || perms.length > 0;
@@ -404,6 +582,7 @@ export async function getAuthCtx(req: Request): Promise<AuthCtx> {
   const isAuthed = Boolean(readBearerToken(req.headers) || readApiKeyToken(req.headers));
   const ctx: AuthCtx = {
     isAuthed,
+    authMethod: 'dev',
     ...(tenantId ? { tenantId } : {}),
     ...(userIdHeader ? { userId: userIdHeader } : {}),
     ...(role ? { role } : {}),

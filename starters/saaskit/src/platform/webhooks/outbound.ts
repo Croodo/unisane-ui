@@ -1,4 +1,4 @@
-import { hmacSHA256Hex } from '@/src/platform/webhooks/signing';
+import { hmacSHA256Hex } from '@unisane/gateway';
 import { recordOutbound } from '@unisane/webhooks';
 import { HEADER_NAMES } from '@unisane/gateway';
 import { getTypedSetting } from '@unisane/settings';

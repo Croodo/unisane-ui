@@ -4,7 +4,7 @@ import { registerSettingDefinition } from "@unisane/kernel";
 import { validateEnvOrThrow } from "./env";
 import { registerEventSchemas } from "./events";
 import { initCacheInvalidation } from "./cache-invalidation";
-import { getAllDefinitions } from "@/src/shared/settings/definitions";
+import { getAllDefinitions } from "@/src/config";
 
 let initialized = false;
 

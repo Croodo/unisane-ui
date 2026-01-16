@@ -14,9 +14,10 @@
  * ```
  */
 
-import { logger, onTyped } from '@unisane/kernel';
+import { logger, onTyped, emitTypedReliable } from '@unisane/kernel';
 import type { BillingEventPayload, SubscriptionStatus } from '@unisane/kernel';
 import { patchSetting } from './service/patch';
+import { SettingsRepo } from './data/settings.repository';
 
 // Subscription statuses considered "active" for seat capacity updates
 // These are a subset of SUBSCRIPTION_STATUS from kernel/constants/billing.ts
@@ -77,6 +78,50 @@ async function handleStripeSubscriptionChanged(
 }
 
 /**
+ * Handle tenant deletion by cleaning up settings.
+ * Hard-deletes all settings for the tenant.
+ * Emits completion event for tracking.
+ */
+async function handleTenantDeleted(payload: {
+  scopeId: string;
+  actorId?: string;
+  timestamp: string;
+}): Promise<void> {
+  const { scopeId, actorId } = payload;
+
+  log.info('settings: handling tenant deletion cascade', { scopeId, actorId });
+
+  let settingsDeleted = 0;
+
+  // Delete all settings for the tenant (hard delete - no retention needed)
+  try {
+    const result = await SettingsRepo.deleteAllForScope(scopeId);
+    settingsDeleted = result.deletedCount;
+    log.info('settings: deleted tenant settings', { scopeId, count: settingsDeleted });
+  } catch (error) {
+    log.error('settings: failed to delete tenant settings', {
+      scopeId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    // Continue - don't fail the entire cascade
+  }
+
+  // Emit completion event
+  await emitTypedReliable('settings.cascade.completed', {
+    sourceEvent: 'tenant.deleted',
+    scopeId,
+    results: {
+      settingsDeleted,
+    },
+  });
+
+  log.info('settings: tenant deletion cascade complete', {
+    scopeId,
+    settingsDeleted,
+  });
+}
+
+/**
  * Register all settings event handlers.
  * Call this during application bootstrap.
  *
@@ -86,6 +131,13 @@ export function registerSettingsEventHandlers(): () => void {
   log.info('registering settings event handlers');
 
   const unsubscribers: Array<() => void> = [];
+
+  // Handle tenant deletion
+  unsubscribers.push(
+    onTyped('tenant.deleted', async (event) => {
+      await handleTenantDeleted(event.payload);
+    })
+  );
 
   // Stripe subscription events for seat capacity
   unsubscribers.push(

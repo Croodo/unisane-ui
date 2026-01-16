@@ -14,10 +14,19 @@ export type RenderOutput = { subject: string; html: string; text: string };
 
 type Renderer = (args: RenderInput & { brand: { name: string } }) => RenderOutput;
 
+/**
+ * SAAS-004 FIX: Export known template names for validation.
+ */
+export const TEMPLATE_NAMES = {
+  WELCOME: 'welcome',
+  AUTH_VERIFY_EMAIL: 'auth_verify_email',
+  AUTH_PASSWORD_RESET: 'auth_password_reset',
+} as const;
+
 const registry: Record<string, Renderer> = {
-  welcome: ({ brand, props }) => renderWelcome({ brand, ...(props ? { props } : {}) }),
-  auth_verify_email: ({ brand, props }) => renderAuthVerifyEmail({ brand, ...(props ? { props: props as { url?: string } } : {}) }),
-  auth_password_reset: ({ brand, props }) => renderAuthPasswordReset({ brand, ...(props ? { props: props as { url?: string } } : {}) }),
+  [TEMPLATE_NAMES.WELCOME]: ({ brand, props }) => renderWelcome({ brand, ...(props ? { props } : {}) }),
+  [TEMPLATE_NAMES.AUTH_VERIFY_EMAIL]: ({ brand, props }) => renderAuthVerifyEmail({ brand, ...(props ? { props: props as { url?: string } } : {}) }),
+  [TEMPLATE_NAMES.AUTH_PASSWORD_RESET]: ({ brand, props }) => renderAuthPasswordReset({ brand, ...(props ? { props: props as { url?: string } } : {}) }),
 };
 
 export async function renderEmail(input: RenderInput): Promise<RenderOutput> {

@@ -98,37 +98,59 @@ export const AuthCredentialRepoMongo: AuthCredentialRepoPort = {
     if (!doc) return null;
     return mapDocToView(doc);
   },
+  /**
+   * AUTH-003 FIX: Use atomic findOneAndUpdate to prevent race condition.
+   *
+   * Previously, this function used find + update which could cause lost updates
+   * when multiple failed login attempts occurred concurrently.
+   *
+   * Now uses a two-phase approach:
+   * 1. Atomically increment failedLogins and return the updated document
+   * 2. If threshold reached, atomically set lock and reset counter
+   */
   async recordFailedLoginAttempt(credId, opts = {}) {
     const lockOn = Math.max(1, Math.trunc(opts.lockOnCount ?? 5));
     const lockMs = Math.max(1, Math.trunc(opts.lockForMs ?? 10 * 60 * 1000));
 
-    const current = await credCol().findOne({ _id: maybeObjectId(credId) });
-    if (!current) return null;
-
-    const nextFailed = (current.failedLogins ?? 0) + 1;
-    const builder = new UpdateBuilder<AuthCredentialDoc>();
-    const updates: Partial<AuthCredentialDoc> = {};
-    if (nextFailed >= lockOn) {
-      updates.lockedUntil = new Date(Date.now() + lockMs);
-      updates.failedLogins = 0;
-      builder.set('lockedUntil', updates.lockedUntil);
-      builder.set('failedLogins', 0);
-    } else {
-      updates.failedLogins = nextFailed;
-      builder.set('failedLogins', nextFailed);
-    }
-
-    await credCol().updateOne(
-      { _id: maybeObjectId(credId) },
-      toMongoUpdate(builder.build()) as UpdateFilter<AuthCredentialDoc>
+    // AUTH-003 FIX: Atomically increment failed login count
+    const incrementResult = await credCol().findOneAndUpdate(
+      { _id: maybeObjectId(credId) } as Filter<AuthCredentialDoc>,
+      {
+        $inc: { failedLogins: 1 },
+        $set: { updatedAt: new Date() },
+      } as UpdateFilter<AuthCredentialDoc>,
+      { returnDocument: 'after' }
     );
 
-    // Merge updates with current document for return value
-    const merged: WithId<AuthCredentialDoc> = {
-      ...current,
-      ...updates,
-    };
-    return mapDocToView(merged);
+    const doc = incrementResult as WithId<AuthCredentialDoc> | null;
+    if (!doc) return null;
+
+    // Check if we've reached the lock threshold
+    if (doc.failedLogins >= lockOn) {
+      // AUTH-003 FIX: Atomically set lock and reset counter
+      // Use conditional update to prevent race with concurrent requests
+      const lockResult = await credCol().findOneAndUpdate(
+        {
+          _id: maybeObjectId(credId),
+          failedLogins: { $gte: lockOn }, // Only lock if still at/above threshold
+        } as Filter<AuthCredentialDoc>,
+        {
+          $set: {
+            lockedUntil: new Date(Date.now() + lockMs),
+            failedLogins: 0,
+            updatedAt: new Date(),
+          },
+        } as UpdateFilter<AuthCredentialDoc>,
+        { returnDocument: 'after' }
+      );
+
+      const lockedDoc = lockResult as WithId<AuthCredentialDoc> | null;
+      if (lockedDoc) {
+        return mapDocToView(lockedDoc);
+      }
+    }
+
+    return mapDocToView(doc);
   },
   async resetFailedAttempts(credId: string) {
     const builder = new UpdateBuilder<AuthCredentialDoc>()

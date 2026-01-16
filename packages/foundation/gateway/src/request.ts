@@ -21,9 +21,20 @@ export function tenantIdFromUrl(req?: Request): string | undefined {
   }
 }
 
+// GW-003 FIX: Max length for authorization-related headers to prevent DoS
+// JWTs are typically 500-2000 bytes, API keys ~50 bytes
+// 8KB allows for large JWTs while preventing excessive memory usage
+const MAX_AUTH_HEADER_LENGTH = 8192;
+
 export function readApiKeyToken(headers: Headers): string {
   const authz = headers.get(HEADER_NAMES.AUTHORIZATION) ?? '';
   const direct = headers.get('x-api-key') ?? '';
+
+  // GW-003 FIX: Reject oversized headers early
+  if (authz.length > MAX_AUTH_HEADER_LENGTH || direct.length > MAX_AUTH_HEADER_LENGTH) {
+    return '';
+  }
+
   if (direct) return direct.trim();
   const m = authz.match(/^\s*ApiKey\s+(.+)$/i);
   return m ? (m[1]?.trim() ?? '') : '';
@@ -31,6 +42,12 @@ export function readApiKeyToken(headers: Headers): string {
 
 export function readBearerToken(headers: Headers): string {
   const authz = headers.get(HEADER_NAMES.AUTHORIZATION) ?? '';
+
+  // GW-003 FIX: Reject oversized headers early
+  if (authz.length > MAX_AUTH_HEADER_LENGTH) {
+    return '';
+  }
+
   const m = authz.match(/^\s*Bearer\s+(.+)$/i);
   return m ? (m[1]?.trim() ?? '') : '';
 }

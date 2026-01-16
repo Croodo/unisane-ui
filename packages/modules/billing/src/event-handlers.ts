@@ -20,7 +20,7 @@
  * ```
  */
 
-import { logger, onTyped, mapInvoiceStatus, mapPaymentStatus, mapStripeSubStatus } from '@unisane/kernel';
+import { logger, onTyped, mapInvoiceStatus, mapPaymentStatus, mapStripeSubStatus, retry, isRetryable } from '@unisane/kernel';
 import type { BillingEventPayload } from '@unisane/kernel';
 import { InvoicesRepository } from './data/invoices.repository';
 import { PaymentsRepository } from './data/payments.repository';
@@ -30,8 +30,20 @@ import { upsertCustomerMapping, softDeleteCustomerMapping } from './data/scope-i
 const log = logger.child({ module: 'billing', component: 'event-handlers' });
 
 /**
+ * BILL-003 FIX: Retry options for event handlers.
+ * Use exponential backoff for transient database/network failures.
+ */
+const EVENT_HANDLER_RETRY_OPTIONS = {
+  maxRetries: 3,
+  baseDelayMs: 500,
+  maxDelayMs: 5000,
+  shouldRetry: (error: Error) => isRetryable(error),
+};
+
+/**
  * Handle Stripe invoice events.
  * Records or updates invoice in the database.
+ * BILL-003 FIX: Added retry logic for transient failures.
  */
 async function handleStripeInvoiceEvent(
   payload: BillingEventPayload<'webhook.stripe.invoice_event'>
@@ -46,15 +58,21 @@ async function handleStripeInvoiceEvent(
   });
 
   try {
-    await InvoicesRepository.upsertByProviderId({
-      scopeId,
-      provider: 'stripe',
-      providerInvoiceId: invoiceId,
-      amount,
-      currency,
-      status: mapInvoiceStatus(status),
-      url: url ?? null,
-    });
+    // BILL-003 FIX: Use retry for transient database failures
+    await retry(
+      async () => {
+        await InvoicesRepository.upsertByProviderId({
+          scopeId,
+          provider: 'stripe',
+          providerInvoiceId: invoiceId,
+          amount,
+          currency,
+          status: mapInvoiceStatus(status),
+          url: url ?? null,
+        });
+      },
+      { ...EVENT_HANDLER_RETRY_OPTIONS, operationName: 'stripe_invoice_upsert' }
+    );
 
     log.info('stripe invoice recorded', { scopeId, invoiceId, status });
   } catch (error) {
@@ -70,6 +88,7 @@ async function handleStripeInvoiceEvent(
 /**
  * Handle Stripe payment events.
  * Records or updates payment in the database.
+ * BILL-003 FIX: Added retry logic for transient failures.
  */
 async function handleStripePaymentEvent(
   payload: BillingEventPayload<'webhook.stripe.payment_event'>
@@ -83,15 +102,21 @@ async function handleStripePaymentEvent(
   });
 
   try {
-    await PaymentsRepository.upsertByProviderId({
-      scopeId,
-      provider: 'stripe',
-      providerPaymentId: paymentIntentId,
-      amount,
-      currency,
-      status: mapPaymentStatus(status),
-      capturedAt: status === 'succeeded' ? new Date() : null,
-    });
+    // BILL-003 FIX: Use retry for transient database failures
+    await retry(
+      async () => {
+        await PaymentsRepository.upsertByProviderId({
+          scopeId,
+          provider: 'stripe',
+          providerPaymentId: paymentIntentId,
+          amount,
+          currency,
+          status: mapPaymentStatus(status),
+          capturedAt: status === 'succeeded' ? new Date() : null,
+        });
+      },
+      { ...EVENT_HANDLER_RETRY_OPTIONS, operationName: 'stripe_payment_upsert' }
+    );
 
     log.info('stripe payment recorded', { scopeId, paymentIntentId, status });
   } catch (error) {
@@ -107,6 +132,7 @@ async function handleStripePaymentEvent(
 /**
  * Handle Stripe subscription changes.
  * Updates subscription record in the database.
+ * BILL-003 FIX: Added retry logic for transient failures.
  */
 async function handleStripeSubscriptionChanged(
   payload: BillingEventPayload<'webhook.stripe.subscription_changed'>
@@ -130,17 +156,23 @@ async function handleStripeSubscriptionChanged(
   });
 
   try {
-    await SubscriptionsRepository.upsertByProviderId({
-      scopeId,
-      provider: 'stripe',
-      providerSubId: subscriptionId,
-      planId: priceId ?? 'unknown',
-      quantity: quantity ?? 1,
-      status: mapStripeSubStatus(status),
-      providerStatus: status,
-      cancelAtPeriodEnd,
-      currentPeriodEnd: currentPeriodEnd ? new Date(currentPeriodEnd) : null,
-    });
+    // BILL-003 FIX: Use retry for transient database failures
+    await retry(
+      async () => {
+        await SubscriptionsRepository.upsertByProviderId({
+          scopeId,
+          provider: 'stripe',
+          providerSubId: subscriptionId,
+          planId: priceId ?? 'unknown',
+          quantity: quantity ?? 1,
+          status: mapStripeSubStatus(status),
+          providerStatus: status,
+          cancelAtPeriodEnd,
+          currentPeriodEnd: currentPeriodEnd ? new Date(currentPeriodEnd) : null,
+        });
+      },
+      { ...EVENT_HANDLER_RETRY_OPTIONS, operationName: 'stripe_subscription_upsert' }
+    );
 
     log.info('stripe subscription updated', {
       scopeId,
@@ -161,6 +193,7 @@ async function handleStripeSubscriptionChanged(
 /**
  * Handle Stripe customer mapping events.
  * Creates or deletes tenant-to-customer mappings.
+ * BILL-003 FIX: Added retry logic for transient failures.
  */
 async function handleStripeCustomerMapping(
   payload: BillingEventPayload<'webhook.stripe.customer_mapping'>
@@ -174,13 +207,19 @@ async function handleStripeCustomerMapping(
   });
 
   try {
-    if (action === 'upsert') {
-      await upsertCustomerMapping(scopeId, 'stripe', customerId);
-      log.info('stripe customer mapping created', { scopeId, customerId });
-    } else if (action === 'delete') {
-      await softDeleteCustomerMapping('stripe', customerId);
-      log.info('stripe customer mapping deleted', { customerId });
-    }
+    // BILL-003 FIX: Use retry for transient database failures
+    await retry(
+      async () => {
+        if (action === 'upsert') {
+          await upsertCustomerMapping(scopeId, 'stripe', customerId);
+          log.info('stripe customer mapping created', { scopeId, customerId });
+        } else if (action === 'delete') {
+          await softDeleteCustomerMapping('stripe', customerId);
+          log.info('stripe customer mapping deleted', { customerId });
+        }
+      },
+      { ...EVENT_HANDLER_RETRY_OPTIONS, operationName: 'stripe_customer_mapping' }
+    );
   } catch (error) {
     log.error('failed to handle stripe customer mapping', {
       scopeId,
@@ -195,6 +234,7 @@ async function handleStripeCustomerMapping(
 /**
  * Handle Razorpay payment events.
  * Records or updates payment in the database.
+ * BILL-003 FIX: Added retry logic for transient failures.
  */
 async function handleRazorpayPaymentEvent(
   payload: BillingEventPayload<'webhook.razorpay.payment_event'>
@@ -208,15 +248,21 @@ async function handleRazorpayPaymentEvent(
   });
 
   try {
-    await PaymentsRepository.upsertByProviderId({
-      scopeId,
-      provider: 'razorpay',
-      providerPaymentId: paymentId,
-      amount,
-      currency,
-      status: mapPaymentStatus(status),
-      capturedAt: status === 'succeeded' ? new Date() : null,
-    });
+    // BILL-003 FIX: Use retry for transient database failures
+    await retry(
+      async () => {
+        await PaymentsRepository.upsertByProviderId({
+          scopeId,
+          provider: 'razorpay',
+          providerPaymentId: paymentId,
+          amount,
+          currency,
+          status: mapPaymentStatus(status),
+          capturedAt: status === 'succeeded' ? new Date() : null,
+        });
+      },
+      { ...EVENT_HANDLER_RETRY_OPTIONS, operationName: 'razorpay_payment_upsert' }
+    );
 
     log.info('razorpay payment recorded', { scopeId, paymentId, status });
   } catch (error) {
@@ -233,6 +279,7 @@ async function handleRazorpayPaymentEvent(
  * Handle Razorpay subscription changes.
  * Updates subscription record in the database.
  * Uses normalizedStatus (already mapped to internal SSOT) and rawStatus (original from Razorpay).
+ * BILL-003 FIX: Added retry logic for transient failures.
  */
 async function handleRazorpaySubscriptionChanged(
   payload: BillingEventPayload<'webhook.razorpay.subscription_changed'>
@@ -248,17 +295,23 @@ async function handleRazorpaySubscriptionChanged(
   });
 
   try {
-    await SubscriptionsRepository.upsertByProviderId({
-      scopeId,
-      provider: 'razorpay',
-      providerSubId: subscriptionId,
-      planId: planId ?? 'unknown',
-      quantity: 1,
-      status: normalizedStatus,
-      providerStatus: rawStatus,
-      cancelAtPeriodEnd: false,
-      currentPeriodEnd: null,
-    });
+    // BILL-003 FIX: Use retry for transient database failures
+    await retry(
+      async () => {
+        await SubscriptionsRepository.upsertByProviderId({
+          scopeId,
+          provider: 'razorpay',
+          providerSubId: subscriptionId,
+          planId: planId ?? 'unknown',
+          quantity: 1,
+          status: normalizedStatus,
+          providerStatus: rawStatus,
+          cancelAtPeriodEnd: false,
+          currentPeriodEnd: null,
+        });
+      },
+      { ...EVENT_HANDLER_RETRY_OPTIONS, operationName: 'razorpay_subscription_upsert' }
+    );
 
     log.info('razorpay subscription updated', {
       scopeId,

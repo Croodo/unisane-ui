@@ -17,6 +17,21 @@ export async function insertBurn(args: { scopeId: string; amount: number; featur
   return repo.insertBurn(args);
 }
 
+/**
+ * Insert a burn with transaction session support.
+ * DATA-002 FIX: This allows atomic balance check + burn within a transaction.
+ */
+export async function insertBurnAtomic(args: {
+  scopeId: string;
+  amount: number;
+  feature: string;
+  reason?: string;
+  idemKey: string;
+  session?: unknown;
+}): Promise<{ id: string }> {
+  return repo.insertBurnAtomic(args);
+}
+
 export async function totalsAvailable(scopeId: string, now = new Date()): Promise<{ grants: number; burns: number; available: number }> {
   return repo.totalsAvailable(scopeId, now);
 }

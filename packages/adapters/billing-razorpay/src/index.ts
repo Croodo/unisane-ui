@@ -24,12 +24,40 @@
  */
 
 import type { BillingProviderAdapter, CheckoutSession, PortalSession, Subscription } from '@unisane/kernel';
-import { CIRCUIT_BREAKER_DEFAULTS } from '@unisane/kernel';
+import { CIRCUIT_BREAKER_DEFAULTS, ConfigurationError, tryGetScopeContext } from '@unisane/kernel';
+import { z } from 'zod';
 
 const BASE_URL = 'https://api.razorpay.com/v1';
 
+/**
+ * BIL-003 FIX: Get correlation ID from current scope context for request tracing.
+ */
+function getCorrelationId(): string {
+  const context = tryGetScopeContext();
+  return context?.requestId ?? crypto.randomUUID();
+}
+
+/**
+ * Zod schema for validating Razorpay adapter configuration.
+ * Validates at construction time to catch configuration errors early.
+ *
+ * Razorpay Key ID format: starts with 'rzp_live_' or 'rzp_test_'
+ * Key Secret: non-empty string
+ */
+export const ZRazorpayBillingAdapterConfig = z.object({
+  keyId: z
+    .string()
+    .min(1, 'Razorpay key ID is required')
+    .refine(
+      (val: string) => val.startsWith('rzp_live_') || val.startsWith('rzp_test_'),
+      'Razorpay key ID must start with "rzp_live_" or "rzp_test_"'
+    ),
+  keySecret: z.string().min(1, 'Razorpay key secret is required'),
+  mapPlanId: z.function().optional(),
+});
+
 export interface RazorpayBillingAdapterConfig {
-  /** Razorpay Key ID */
+  /** Razorpay Key ID (must start with rzp_live_ or rzp_test_) */
   keyId: string;
   /** Razorpay Key Secret */
   keySecret: string;
@@ -41,6 +69,18 @@ export interface RazorpayBillingAdapterConfig {
 
 /**
  * Razorpay implementation of the BillingProviderAdapter interface.
+ *
+ * **Supported Operations:**
+ * - Subscriptions: Full support via Razorpay Subscriptions API
+ * - One-time payments: Use `createTopupCheckout()` (via Payment Links API)
+ *
+ * **Limitations:**
+ * - `createCheckoutSession()` only supports `mode: 'subscription'`
+ * - `createCheckoutSession()` with `mode: 'payment'` will throw an error
+ *   (Razorpay Payment Links require an explicit amount, not a price ID)
+ * - No customer billing portal (Razorpay doesn't offer this feature)
+ *
+ * For one-time payments, use `createTopupCheckout()` which accepts the amount directly.
  */
 export class RazorpayBillingAdapter implements BillingProviderAdapter {
   readonly name = 'razorpay' as const;
@@ -50,12 +90,12 @@ export class RazorpayBillingAdapter implements BillingProviderAdapter {
   private readonly mapPlanId?: (planId: string) => string | undefined;
 
   constructor(config: RazorpayBillingAdapterConfig) {
-    if (!config.keyId) {
-      throw new Error('RazorpayBillingAdapter: config.keyId is required');
+    // Validate configuration at construction time
+    const result = ZRazorpayBillingAdapterConfig.safeParse(config);
+    if (!result.success) {
+      throw ConfigurationError.fromZod('razorpay', result.error.issues);
     }
-    if (!config.keySecret) {
-      throw new Error('RazorpayBillingAdapter: config.keySecret is required');
-    }
+
     this.keyId = config.keyId;
     this.keySecret = config.keySecret;
     this.mapPlanId = config.mapPlanId;
@@ -66,28 +106,59 @@ export class RazorpayBillingAdapter implements BillingProviderAdapter {
     return `Basic ${token}`;
   }
 
+  /**
+   * RZP-002 FIX: Generate idempotency key for POST operations.
+   * Uses crypto.randomUUID() prefixed with context for traceability.
+   * Razorpay idempotency keys must be unique per request intent.
+   */
+  private generateIdempotencyKey(context: string): string {
+    return `${context}_${crypto.randomUUID()}`;
+  }
+
   private async rzpRequest<T = unknown>(
     path: string,
-    init: { method?: string; body?: unknown; timeoutMs?: number } = {}
+    init: { method?: string; body?: unknown; timeoutMs?: number; idempotencyKey?: string } = {}
   ): Promise<T> {
     const timeoutMs = Math.max(1000, init.timeoutMs ?? 10_000);
 
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), timeoutMs);
 
+    // BIL-003 FIX: Include correlation ID for request tracing
+    const correlationId = getCorrelationId();
+    // RZP-002 FIX: Include idempotency key header for POST requests
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      Authorization: this.authHeader(),
+      // BIL-003 FIX: Add custom header for correlation ID (for logging/debugging)
+      'X-Request-Id': correlationId,
+    };
+
+    if (init.idempotencyKey) {
+      headers['X-Idempotency-Key'] = init.idempotencyKey;
+    }
+
     try {
       const res = await fetch(`${BASE_URL}${path}`, {
         method: init.method ?? 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: this.authHeader(),
-        },
+        headers,
         ...(init.body !== undefined ? { body: JSON.stringify(init.body) } : {}),
         signal: ctrl.signal,
       }).finally(() => clearTimeout(t));
 
+      // BIL-002 FIX: Handle JSON parse failures explicitly instead of silently returning {}
       type RazorpayError = { error?: { description?: string } };
-      const json = (await res.json().catch(() => ({}))) as unknown;
+      let json: unknown;
+      try {
+        json = await res.json();
+      } catch (parseError) {
+        // If response was successful but body is not JSON, that's unexpected
+        if (res.ok) {
+          throw new Error(`Razorpay returned non-JSON response for ${path}`);
+        }
+        // For error responses, include status in the error message
+        throw new Error(`Razorpay API error: ${res.status} (non-JSON response)`);
+      }
 
       if (!res.ok) {
         const err = json as RazorpayError;
@@ -96,6 +167,14 @@ export class RazorpayBillingAdapter implements BillingProviderAdapter {
       }
       return json as T;
     } catch (e) {
+      // BIL-001 FIX: Explicitly propagate abort errors with context
+      // This ensures timeout aborts are properly communicated to callers
+      if (e instanceof Error && e.name === 'AbortError') {
+        const timeoutError = new Error(`Razorpay request timed out after ${timeoutMs}ms: ${path}`);
+        timeoutError.name = 'TimeoutError';
+        timeoutError.cause = e;
+        throw timeoutError;
+      }
       throw e instanceof Error ? e : new Error('Razorpay request failed');
     }
   }
@@ -111,14 +190,17 @@ export class RazorpayBillingAdapter implements BillingProviderAdapter {
     metadata?: Record<string, string>;
   }): Promise<CheckoutSession> {
     if (args.mode === 'payment') {
-      // Use payment link for one-time payments
-      return this.createPaymentLink({
-        scopeId: args.scopeId,
-        amount: 0, // Would need actual amount
-        currency: 'INR',
-        description: 'Payment',
-        successUrl: args.successUrl,
-      });
+      // Razorpay payment links require an explicit amount, but createCheckoutSession
+      // only receives a priceId (which in Stripe contains the amount, but Razorpay
+      // doesn't have equivalent price objects for one-time payments).
+      //
+      // For one-time payments with Razorpay, use createTopupCheckout() instead,
+      // which accepts the amount directly.
+      throw new Error(
+        'Razorpay createCheckoutSession does not support payment mode. ' +
+        'Use createTopupCheckout() for one-time payments with Razorpay, ' +
+        'or use Stripe for payment mode checkout sessions.'
+      );
     }
 
     // Create subscription
@@ -133,9 +215,14 @@ export class RazorpayBillingAdapter implements BillingProviderAdapter {
       },
     };
 
+    // RZP-002 FIX: Add idempotency key for subscription creation
     const sub = await this.rzpRequest<{ id: string; short_url?: string }>(
       '/subscriptions',
-      { method: 'POST', body: payload }
+      {
+        method: 'POST',
+        body: payload,
+        idempotencyKey: this.generateIdempotencyKey(`sub_${args.scopeId}`),
+      }
     );
 
     return {
@@ -193,9 +280,14 @@ export class RazorpayBillingAdapter implements BillingProviderAdapter {
       },
     };
 
+    // RZP-002 FIX: Add idempotency key for payment link creation
     const pl = await this.rzpRequest<{ id: string; short_url?: string }>(
       '/payment_links',
-      { method: 'POST', body: payload }
+      {
+        method: 'POST',
+        body: payload,
+        idempotencyKey: this.generateIdempotencyKey(`plink_${input.scopeId}`),
+      }
     );
 
     return {
@@ -212,7 +304,21 @@ export class RazorpayBillingAdapter implements BillingProviderAdapter {
     successUrl: string;
     cancelUrl: string;
   }): Promise<CheckoutSession> {
+    // RZP-005 FIX: Validate amount is a positive integer within bounds
     const amount = parseInt(args.amountMinorStr, 10);
+    if (isNaN(amount) || amount <= 0) {
+      throw new Error('Amount must be a positive integer');
+    }
+    // Razorpay allows amounts up to 50,000,000 paise (500,000 INR)
+    // For international, limit to reasonable topup amounts
+    const MAX_AMOUNT_MINOR = 50_000_000;
+    if (amount > MAX_AMOUNT_MINOR) {
+      throw new Error(`Amount exceeds maximum allowed (${MAX_AMOUNT_MINOR} minor units)`);
+    }
+    // Validate credits is also reasonable
+    if (args.credits <= 0 || !Number.isInteger(args.credits)) {
+      throw new Error('Credits must be a positive integer');
+    }
 
     return this.createPaymentLink({
       scopeId: args.scopeId,
@@ -251,15 +357,24 @@ export class RazorpayBillingAdapter implements BillingProviderAdapter {
           ? new Date(sub.current_end * 1000)
           : undefined,
       };
-    } catch {
-      return null;
+    } catch (err) {
+      // RZP-003 FIX: Only return null for "not found" errors, propagate others
+      const msg = (err as Error)?.message ?? '';
+      // Razorpay returns 404 or "not found" for missing subscriptions
+      if (/not found|404/i.test(msg)) {
+        return null;
+      }
+      // Propagate network errors, auth errors, etc.
+      throw err;
     }
   }
 
   async cancelSubscription(subscriptionId: string, immediately = false): Promise<void> {
+    // RZP-002 FIX: Add idempotency key for subscription cancellation
     await this.rzpRequest(`/subscriptions/${encodeURIComponent(subscriptionId)}/cancel`, {
       method: 'POST',
       body: { cancel_at_cycle_end: !immediately },
+      idempotencyKey: this.generateIdempotencyKey(`cancel_${subscriptionId}`),
     });
   }
 
@@ -277,9 +392,11 @@ export class RazorpayBillingAdapter implements BillingProviderAdapter {
       body.plan_id = args.priceId;
     }
 
+    // RZP-002 FIX: Add idempotency key for subscription update
     await this.rzpRequest(`/subscriptions/${encodeURIComponent(subscriptionId)}`, {
       method: 'POST',
       body,
+      idempotencyKey: this.generateIdempotencyKey(`update_${subscriptionId}`),
     });
 
     const sub = await this.getSubscription(subscriptionId);
@@ -326,9 +443,14 @@ export class RazorpayBillingAdapter implements BillingProviderAdapter {
       body.amount = parseInt(args.amountMinorStr, 10);
     }
 
+    // RZP-002 FIX: Add idempotency key for refund operation
     await this.rzpRequest(
       `/payments/${encodeURIComponent(args.providerPaymentId)}/refund`,
-      { method: 'POST', body }
+      {
+        method: 'POST',
+        body,
+        idempotencyKey: this.generateIdempotencyKey(`refund_${args.providerPaymentId}`),
+      }
     );
   }
 }

@@ -11,6 +11,19 @@ import { observeHttp } from "../telemetry";
 import type { OpKey } from "../rate-limits";
 import { runWithScopeContext, type ScopeType, waitForBootstrap } from "@unisane/kernel";
 import { sanitizeRequestId } from "../middleware/validate";
+import { createRequestLogger, type RequestLogData } from "../middleware/requestLogger";
+
+/**
+ * GW-008 FIX: Explicit scope ID for unauthenticated/public requests.
+ *
+ * This is used when:
+ * 1. `opts.allowUnauthed` is true (public routes)
+ * 2. User is a super admin with platform-wide access
+ *
+ * Protected routes will throw ERR.forbidden before reaching this fallback.
+ * Using a constant makes it easier to track and audit public scope usage.
+ */
+const PUBLIC_SCOPE_ID = '__public__';
 
 type HandlerOpts = {
   op?: OpKey;
@@ -40,6 +53,7 @@ interface HandlerSetupContext<Body, Params> {
   effectiveScopeId: string | undefined;
   startedAt: number;
   path: string;
+  reqLogger: ReturnType<typeof createRequestLogger>;
 }
 
 /**
@@ -82,6 +96,19 @@ async function _setupHandler<Body, Params extends Record<string, unknown>>(
     throw ERR.forbidden('Scope context required');
   }
 
+  // Create structured request logger
+  const reqLogger = createRequestLogger({
+    requestId,
+    method: req.method,
+    path,
+    op: opts.op ?? null,
+    tenantId: effectiveScopeId ?? null,
+    userId: authCtx.userId ?? null,
+  });
+
+  // Log request start (if configured)
+  reqLogger.start(body);
+
   return {
     authCtx,
     body: body as Body,
@@ -91,6 +118,7 @@ async function _setupHandler<Body, Params extends Record<string, unknown>>(
     effectiveScopeId,
     startedAt,
     path,
+    reqLogger,
   };
 }
 
@@ -153,11 +181,11 @@ export function makeHandler<
       startedAt = setup.startedAt;
       path = setup.path;
 
-      const { authCtx, body, params, rl, effectiveScopeId } = setup;
+      const { authCtx, body, params, rl, effectiveScopeId, reqLogger } = setup;
 
       // Run handler within scope context - all downstream code has access to getScope()
       return await runWithScopeContext({
-        scope: { type: opts.scopeType ?? 'tenant', id: effectiveScopeId || '__anonymous__' },
+        scope: { type: opts.scopeType ?? 'tenant', id: effectiveScopeId || PUBLIC_SCOPE_ID },
         requestId,
         userId: authCtx.userId,
         metadata: {
@@ -166,14 +194,6 @@ export function makeHandler<
           op: opts.op,
         },
       }, async () => {
-        const log = withRequest({
-          requestId,
-          method: req.method,
-          path,
-          op: opts.op ?? null,
-          tenantId: effectiveScopeId ?? null,
-          userId: authCtx.userId ?? null,
-        });
         const exec = async () =>
           fn({ req, ctx: authCtx, body, params, requestId });
         const data = opts.idempotent
@@ -188,13 +208,19 @@ export function makeHandler<
           headers[HEADER_NAMES.RATE_RESET] = String(Math.floor(rl.resetAt));
         }
         const statusOk = opts.successStatus ?? 200;
-        const ms = Date.now() - startedAt;
         try {
-          log.info("request completed", { status: statusOk, ms, idempotent: Boolean(opts.idempotent), perm: opts.perm ?? null });
-        } catch {}
+          // Use structured request logger for completion
+          reqLogger.complete({ status: statusOk, body: data });
+        } catch (logErr) {
+          // GW-005 FIX: Fallback to console on logging failure
+          console.error('[httpHandler] Request logging failed:', logErr);
+        }
         try {
-          observeHttp({ op: opts.op ?? null, method: req.method, status: statusOk, ms });
-        } catch {}
+          observeHttp({ op: opts.op ?? null, method: req.method, status: statusOk, ms: Date.now() - startedAt });
+        } catch (obsErr) {
+          // GW-005 FIX: Fallback to console on metrics failure
+          console.error('[httpHandler] Metrics observation failed:', obsErr);
+        }
         return new Response(JSON.stringify({ ok: true, data }), {
           status: statusOk,
           headers,
@@ -203,11 +229,21 @@ export function makeHandler<
     } catch (e) {
       const res = toHttp(e, requestId);
       try {
-        const ms = Date.now() - startedAt;
-        const log2 = withRequest({ requestId, method: req.method, path, op: opts.op ?? null });
-        log2.info("request errored", { status: res.status, ms });
-        observeHttp({ op: opts.op ?? null, method: req.method, status: res.status, ms });
-      } catch {}
+        // Use structured request logger for errors (if available from setup)
+        const errorLogger = createRequestLogger({
+          requestId,
+          method: req.method,
+          path,
+          op: opts.op ?? null,
+        });
+        // Update startedAt for correct duration calculation
+        (errorLogger.data as { startedAt: number }).startedAt = startedAt;
+        errorLogger.error(e, res.status);
+        observeHttp({ op: opts.op ?? null, method: req.method, status: res.status, ms: Date.now() - startedAt });
+      } catch (logErr) {
+        // GW-005 FIX: Fallback to console on error logging failure
+        console.error('[httpHandler] Error logging failed:', logErr, 'Original error:', e);
+      }
       return res;
     }
   };
@@ -293,11 +329,11 @@ export function makeHandlerRaw<
       startedAt = setup.startedAt;
       path = setup.path;
 
-      const { authCtx, body, params, rl, effectiveScopeId } = setup;
+      const { authCtx, body, params, rl, effectiveScopeId, reqLogger } = setup;
 
       // Run handler within scope context - all downstream code has access to getScope()
       return await runWithScopeContext({
-        scope: { type: opts.scopeType ?? 'tenant', id: effectiveScopeId || '__anonymous__' },
+        scope: { type: opts.scopeType ?? 'tenant', id: effectiveScopeId || PUBLIC_SCOPE_ID },
         requestId,
         userId: authCtx.userId,
         metadata: {
@@ -306,14 +342,6 @@ export function makeHandlerRaw<
           op: opts.op,
         },
       }, async () => {
-        const log = withRequest({
-          requestId,
-          method: req.method,
-          path,
-          op: opts.op ?? null,
-          tenantId: effectiveScopeId ?? null,
-          userId: authCtx.userId ?? null,
-        });
         const exec = async () =>
           fn({ req, ctx: authCtx, body, params, requestId });
         const res = await (opts.idempotent
@@ -330,20 +358,32 @@ export function makeHandlerRaw<
           headers.set(HEADER_NAMES.RATE_RESET, String(Math.floor(rl.resetAt)));
         }
         try {
-          const ms = Date.now() - startedAt;
-          log.info("request completed", { status: res.status, ms, idempotent: Boolean(opts.idempotent), perm: opts.perm ?? null });
-          observeHttp({ op: opts.op ?? null, method: req.method, status: res.status, ms });
-        } catch {}
+          // Use structured request logger for completion
+          reqLogger.complete({ status: res.status });
+          observeHttp({ op: opts.op ?? null, method: req.method, status: res.status, ms: Date.now() - startedAt });
+        } catch (logErr) {
+          // GW-005 FIX: Fallback to console on logging failure
+          console.error('[httpHandler] Raw request logging failed:', logErr);
+        }
         return new Response(res.body, { status: res.status, headers });
       });
     } catch (e) {
       const res = toHttp(e, requestId);
       try {
-        const ms = Date.now() - startedAt;
-        const log2 = withRequest({ requestId, method: req.method, path, op: opts.op ?? null });
-        log2.info("request errored", { status: res.status, ms });
-        observeHttp({ op: opts.op ?? null, method: req.method, status: res.status, ms });
-      } catch {}
+        // Use structured request logger for errors
+        const errorLogger = createRequestLogger({
+          requestId,
+          method: req.method,
+          path,
+          op: opts.op ?? null,
+        });
+        (errorLogger.data as { startedAt: number }).startedAt = startedAt;
+        errorLogger.error(e, res.status);
+        observeHttp({ op: opts.op ?? null, method: req.method, status: res.status, ms: Date.now() - startedAt });
+      } catch (logErr) {
+        // GW-005 FIX: Fallback to console on error logging failure
+        console.error('[httpHandler] Raw error logging failed:', logErr, 'Original error:', e);
+      }
       return res;
     }
   };

@@ -6,6 +6,65 @@ import { metrics } from "@unisane/kernel";
 
 const BATCH_CONCURRENCY = 5;
 
+/**
+ * STOR-003 FIX: Retry configuration for S3 deletion.
+ */
+const S3_DELETE_MAX_RETRIES = 3;
+const S3_DELETE_BASE_DELAY_MS = 500;
+
+/**
+ * STOR-003 FIX: Sleep helper for retry delays.
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * STOR-003 FIX: Delete S3 object with exponential backoff retry.
+ * Returns true if deletion succeeded, false if all retries failed.
+ */
+async function deleteS3ObjectWithRetry(
+  key: string,
+  fileId: string
+): Promise<{ success: boolean; attempts: number; lastError?: string }> {
+  let lastError: string | undefined;
+
+  for (let attempt = 1; attempt <= S3_DELETE_MAX_RETRIES; attempt++) {
+    try {
+      await deleteObject(key);
+      return { success: true, attempts: attempt };
+    } catch (err) {
+      lastError = err instanceof Error ? err.message : String(err);
+
+      // Don't retry on certain errors (e.g., object doesn't exist is success)
+      if (lastError.includes('NoSuchKey') || lastError.includes('NotFound')) {
+        // Object doesn't exist - treat as success
+        logger.debug('storage.cleanup.s3_object_not_found', { fileId, key });
+        return { success: true, attempts: attempt };
+      }
+
+      if (attempt < S3_DELETE_MAX_RETRIES) {
+        // Exponential backoff with jitter (10%)
+        const delayMs = S3_DELETE_BASE_DELAY_MS * Math.pow(2, attempt - 1);
+        const jitter = delayMs * 0.1 * Math.random();
+        await sleep(delayMs + jitter);
+
+        logger.debug('storage.cleanup.s3_delete_retry', {
+          fileId,
+          key,
+          attempt,
+          nextAttempt: attempt + 1,
+          delayMs: Math.round(delayMs + jitter),
+          error: lastError,
+        });
+      }
+    }
+  }
+
+  // All retries exhausted
+  return { success: false, attempts: S3_DELETE_MAX_RETRIES, lastError };
+}
+
 async function processBatch<T>(
   items: T[],
   processor: (item: T) => Promise<boolean>,
@@ -69,21 +128,24 @@ export async function cleanupDeletedFiles(): Promise<{
 
   let s3Errors = 0;
 
+  // STOR-003 FIX: Use retry helper with exponential backoff
   const { success, failed } = await processBatch(deleted, async (file) => {
-    try {
-      await deleteObject(file.key);
-      // Only delete DB record if S3 delete succeeds
-      return StorageRepo.hardDelete(file.id);
-    } catch (err) {
+    const result = await deleteS3ObjectWithRetry(file.key, file.id);
+
+    if (!result.success) {
       s3Errors++;
       logger.warn('storage.cleanup.s3_delete_failed', {
         fileId: file.id,
         key: file.key,
-        error: err instanceof Error ? err.message : String(err),
+        attempts: result.attempts,
+        error: result.lastError,
       });
       // Keep DB record to retry on next cleanup run
       return false;
     }
+
+    // S3 delete succeeded (or object didn't exist), delete DB record
+    return StorageRepo.hardDelete(file.id);
   });
 
   metrics.increment("storage.cleanup.deleted", {

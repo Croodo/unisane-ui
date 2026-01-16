@@ -129,10 +129,43 @@ export {
   type OutboxItem,
   type OutboxRow,
   type OutboxDeadAdminRow,
+  type OutboxIdsArgs,
+  type OutboxLimitArgs,
   // Note: OutboxKind and OutboxStatus are exported from constants/outbox.ts
   setOutboxProvider,
   getOutboxProvider,
   hasOutboxProvider,
   enqueueOutbox,
   claimOutboxBatch,
+  // Admin service functions
+  listDeadOutboxAdmin,
+  requeueDeadOutboxAdmin,
+  purgeDeadOutboxAdmin,
+  requeueAllDeadOutboxAdmin,
+  purgeAllDeadOutboxAdmin,
 } from "./outbox.port";
+
+export {
+  type ErrorTrackerPort,
+  type ErrorContext,
+  type Breadcrumb,
+  setErrorTrackerProvider,
+  getErrorTrackerProvider,
+  hasErrorTrackerProvider,
+  captureException,
+  captureMessage,
+  noopErrorTracker,
+} from "./error-tracker.port";
+
+export {
+  type MetricsPort,
+  setMetricsProvider,
+  getMetricsProvider,
+  hasMetricsProvider,
+  incrementMetric,
+  setGaugeMetric,
+  recordHistogramMetric,
+  recordTimingMetric,
+  noopMetrics,
+  ADAPTER_METRICS,
+} from "./metrics.port";

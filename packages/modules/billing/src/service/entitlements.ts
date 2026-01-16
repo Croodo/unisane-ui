@@ -16,6 +16,7 @@ import {
   cacheSet,
   kv,
   getTypedSetting,
+  logger,
 } from '@unisane/kernel';
 import type { PlanId, FeatureKey, FeaturePolicyMap, TokenCost } from '@unisane/kernel';
 
@@ -76,17 +77,29 @@ function baseEntitlementsForPlan(planId: PlanId): Entitlements {
   return deepMergeEntitlements(def.entitlements as Entitlements, {});
 }
 
+const log = logger.child({ module: 'billing', component: 'entitlements' });
+
 /**
  * Get tenant plan from tenant provider
  * Uses the kernel port to avoid direct module dependency
+ * BILL-004 FIX: Log failures instead of silently returning undefined
  */
 async function getTenantPlan(tenantId: string): Promise<PlanId | undefined> {
   try {
     const { getTenantsProvider } = await import('@unisane/kernel');
     const tenantsProvider = getTenantsProvider();
     const tenant = await tenantsProvider.findById(tenantId);
+    if (!tenant) {
+      // BILL-004 FIX: Log when tenant not found - this could indicate a data issue
+      log.warn('tenant not found for plan lookup, defaulting to free', { tenantId });
+    }
     return tenant?.planId as PlanId | undefined;
-  } catch {
+  } catch (error) {
+    // BILL-004 FIX: Log error details instead of silently swallowing
+    log.error('failed to lookup tenant plan, defaulting to free', {
+      tenantId,
+      error: error instanceof Error ? error.message : String(error),
+    });
     return undefined;
   }
 }

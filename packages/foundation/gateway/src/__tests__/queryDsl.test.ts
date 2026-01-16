@@ -12,8 +12,8 @@ import {
   validateRange,
   extractDateRange,
   type Filter,
+  type FieldDef,
 } from '../query/queryDsl';
-import type { FieldDef } from '../registry/types';
 
 // Test field registry
 const testRegistry: Record<string, FieldDef> = {

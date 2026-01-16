@@ -1,5 +1,5 @@
 import { healthCheck, readinessCheck, getRegisteredChecks } from "@unisane/kernel";
-import { KIT_ID, KIT_CHANNEL, KIT_VERSION } from "@/src/shared/kitVersion";
+import { KIT_ID, KIT_CHANNEL, KIT_VERSION } from "@/src/config";
 import {
   StatsCards,
   type StatItem,

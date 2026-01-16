@@ -39,8 +39,39 @@ export async function resetStart(input: {
       // best-effort; leave queued for job-based delivery
       logger.warn("resetStart: immediate email send failed, falling back to job", { err });
     }
-  } catch {}
+  } catch (err) {
+    // AUTH-004 FIX: Log outbox enqueueing errors instead of silently swallowing them.
+    // We still return { sent: true } to avoid revealing whether the email exists,
+    // but we log the error so operators can detect and fix issues.
+    logger.error("resetStart: failed to enqueue password reset email", {
+      err,
+      emailNorm,
+      // Don't log token for security reasons
+    });
+  }
   return { sent: true };
+}
+
+/**
+ * AUTH-008 FIX: Validate redirectTo parameter to prevent open redirect attacks.
+ *
+ * Validates that:
+ * 1. Absolute URLs must have origin in ALLOWED_ORIGINS
+ * 2. Relative paths must start with / and not contain .. or //
+ * 3. No query strings or fragments in relative paths (we add our own params)
+ */
+function isValidRedirectPath(path: string): boolean {
+  // Must start with /
+  if (!path.startsWith('/')) return false;
+  // No path traversal
+  if (path.includes('..')) return false;
+  // No double slashes (protocol-relative URL attempt)
+  if (path.includes('//')) return false;
+  // No query strings or fragments - we add our own params
+  if (path.includes('?') || path.includes('#')) return false;
+  // Only allow alphanumeric, dash, underscore, and forward slash
+  if (!/^[a-zA-Z0-9\-_/]+$/.test(path)) return false;
+  return true;
 }
 
 function buildResetUrl(args: {
@@ -55,8 +86,17 @@ function buildResetUrl(args: {
   if (!args.redirectTo || /^https?:\/\//i.test(args.redirectTo)) {
     if (!u.pathname || u.pathname === "/") u.pathname = "/forgot-password";
   } else {
-    // relative path
-    u.pathname = args.redirectTo;
+    // AUTH-008 FIX: Validate relative path to prevent open redirect
+    const relativePath = args.redirectTo;
+    if (isValidRedirectPath(relativePath)) {
+      u.pathname = relativePath;
+    } else {
+      // Invalid relative path - use default
+      logger.warn("resetStart: invalid redirectTo path, using default", {
+        redirectTo: relativePath,
+      });
+      u.pathname = "/forgot-password";
+    }
   }
   u.searchParams.set("token", args.token);
   u.searchParams.set("email", args.email);

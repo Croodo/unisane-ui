@@ -4,6 +4,7 @@
 
 import { memoryStore } from "./memory";
 import { getEnv } from "../env";
+import { logger } from "../observability/logger";
 
 type SetOpts = { PX?: number; NX?: boolean };
 
@@ -32,6 +33,7 @@ export type RedisProvider = {
   ): Promise<void>;
   supportsSubscribe?(): boolean;
   evalsha?(...args: unknown[]): Promise<unknown>; // For @upstash/ratelimit Lua script support
+  eval?(script: string, keys: string[], args: (string | number)[]): Promise<unknown>; // For custom Lua scripts
   // Health check
   ping(): Promise<string>;
   // Cleanup function for graceful shutdown
@@ -67,11 +69,21 @@ function logRedisError(context: string, error: Error, level: 'warn' | 'error' = 
 
   // In production, always log errors (they're important)
   // In non-prod, log with full stack traces for debugging
-  const message = `[redis] ${context}: ${error.name} - ${error.message}`;
   if (level === 'error') {
-    console.error(message, isProd ? '' : error.stack);
+    logger.error('Redis error', {
+      module: 'redis',
+      context,
+      errorName: error.name,
+      error: error.message,
+      stack: isProd ? undefined : error.stack,
+    });
   } else if (!isProd || context.includes('critical')) {
-    console.warn(message);
+    logger.warn('Redis warning', {
+      module: 'redis',
+      context,
+      errorName: error.name,
+      error: error.message,
+    });
   }
 }
 
@@ -313,7 +325,15 @@ function createIoRedis(url: string): { provider: RedisProvider; clients: { clien
           sub.quit().catch(() => sub.disconnect()),
         ]);
       } catch (e) {
-        logRedisError("close error", e as Error);
+        // KERN-005 FIX: Ensure clients are forcibly disconnected even if quit fails
+        // This prevents resource leaks when graceful shutdown fails
+        logRedisError("close error - forcing disconnect", e as Error);
+        try {
+          client.disconnect();
+        } catch { /* ignore disconnect errors */ }
+        try {
+          sub.disconnect();
+        } catch { /* ignore disconnect errors */ }
       }
     },
   };
@@ -356,7 +376,7 @@ function initializeRedisProvider(): RedisGlobalState {
   }
 
   if (!ioredisClients && providerReason) {
-    console.warn(`[redis] falling back to memory store (${providerReason})`);
+    logger.warn('Falling back to memory store', { module: 'redis', reason: providerReason });
   }
 
   return {

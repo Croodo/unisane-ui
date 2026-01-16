@@ -23,6 +23,143 @@ import {
   applyFallback,
 } from './params.js';
 
+/**
+ * SEC-006 FIX: Sanitize strings before interpolation into generated code.
+ * This prevents code injection via malicious configuration values.
+ */
+function sanitizeStringLiteral(value: string): string {
+  // Escape characters that could break out of string literals or inject code
+  return value
+    .replace(/\\/g, '\\\\')      // Escape backslashes first
+    .replace(/'/g, "\\'")        // Escape single quotes
+    .replace(/"/g, '\\"')        // Escape double quotes
+    .replace(/`/g, '\\`')        // Escape backticks
+    .replace(/\$/g, '\\$')       // Escape $ to prevent template literal injection
+    .replace(/\n/g, '\\n')       // Escape newlines
+    .replace(/\r/g, '\\r')       // Escape carriage returns
+    .replace(/\t/g, '\\t')       // Escape tabs
+    .replace(/[\x00-\x1f\x7f]/g, ''); // Remove other control characters
+}
+
+/**
+ * SEC-006 FIX: Validate that an identifier is safe for code generation.
+ * Only allows valid JavaScript identifiers and property access chains.
+ */
+function validateIdentifier(value: string, context: string): string {
+  // Allow valid JS identifiers and property access (e.g., PERM.READ_USERS)
+  const identifierPattern = /^[A-Za-z_$][A-Za-z0-9_$]*(\.[A-Za-z_$][A-Za-z0-9_$]*)*$/;
+  if (!identifierPattern.test(value)) {
+    throw new Error(
+      `[gen-routes] Invalid identifier in ${context}: "${value}". Only valid JavaScript identifiers are allowed.`
+    );
+  }
+  return value;
+}
+
+/**
+ * SEC-006 FIX: Validate that an expression doesn't contain dangerous patterns.
+ * This is a basic sanity check for code expressions that must be interpolated.
+ * It blocks obvious attack vectors but allows legitimate code.
+ */
+function validateExpression(value: string, context: string): string {
+  const trimmed = value.trim();
+
+  // Block obviously dangerous patterns
+  const dangerousPatterns = [
+    /\beval\s*\(/i,           // eval()
+    /\bFunction\s*\(/i,       // Function constructor
+    /\bimport\s*\(/i,         // dynamic import
+    /\brequire\s*\(/i,        // require
+    /\b__proto__\b/i,         // prototype pollution
+    /\bconstructor\s*\[/i,    // constructor access
+    /\bprocess\s*\.\s*exit/i, // process.exit
+    /\bchild_process\b/i,     // child_process
+    /\bexec\s*\(/i,           // exec()
+    /\bspawn\s*\(/i,          // spawn()
+  ];
+
+  for (const pattern of dangerousPatterns) {
+    if (pattern.test(trimmed)) {
+      throw new Error(
+        `[gen-routes] Potentially dangerous expression in ${context}: "${value}". This pattern is not allowed.`
+      );
+    }
+  }
+
+  return value;
+}
+
+/**
+ * DEV-005 FIX: Validate resourceIdExpr format more strictly.
+ *
+ * resourceIdExpr is used to extract a resource ID for audit logging.
+ * It must follow one of these safe patterns:
+ * - 'null' (literal null)
+ * - params.xxx (route parameter access)
+ * - body.xxx or bodySafe.xxx (body field access)
+ * - result.xxx (service call result access)
+ * - A string literal ('...', "...", `...`)
+ * - A template literal with params/body/result interpolation
+ *
+ * This prevents arbitrary code execution through the resourceIdExpr config.
+ */
+function validateResourceIdExpr(value: string, context: string): string {
+  const trimmed = value.trim();
+
+  // Allow 'null' literal
+  if (trimmed === 'null') {
+    return value;
+  }
+
+  // Run general dangerous pattern check first
+  validateExpression(value, context);
+
+  // Safe patterns for resourceIdExpr
+  const safePatterns = [
+    /^params\.[a-zA-Z_][a-zA-Z0-9_]*$/,                   // params.id
+    /^body\.[a-zA-Z_][a-zA-Z0-9_]*$/,                     // body.id
+    /^bodySafe\.[a-zA-Z_][a-zA-Z0-9_]*$/,                 // bodySafe.id
+    /^result\.[a-zA-Z_][a-zA-Z0-9_.]*$/,                  // result.id or result.data.id
+    /^'[^']*'$/,                                          // 'string literal'
+    /^"[^"]*"$/,                                          // "string literal"
+    /^`[^`]*`$/,                                          // `template literal`
+    /^`\$\{(params|body|bodySafe|result)\.[a-zA-Z0-9_.]+\}`$/, // `${params.id}`
+  ];
+
+  // Check if it matches any safe pattern
+  const isSafeSimple = safePatterns.some(p => p.test(trimmed));
+  if (isSafeSimple) {
+    return value;
+  }
+
+  // For complex template literals, validate the interpolations
+  // Pattern: `prefix${body.field}suffix` or similar with multiple interpolations
+  if (trimmed.startsWith('`') && trimmed.endsWith('`')) {
+    // Extract all ${...} interpolations
+    const interpolations = trimmed.match(/\$\{[^}]+\}/g) || [];
+
+    // Each interpolation must be a safe property access
+    const safeInterpolation = /^\$\{(params|body|bodySafe|result)\.[a-zA-Z0-9_.]+\}$/;
+
+    for (const interp of interpolations) {
+      if (!safeInterpolation.test(interp)) {
+        throw new Error(
+          `[gen-routes] Unsafe interpolation in ${context}: "${interp}". ` +
+          `Only params.*, body.*, bodySafe.*, or result.* property access is allowed.`
+        );
+      }
+    }
+
+    return value;
+  }
+
+  // If none of the safe patterns match, reject
+  throw new Error(
+    `[gen-routes] Invalid resourceIdExpr format in ${context}: "${value}". ` +
+    `Must be null, a string literal, or a property access (params.x, body.x, result.x).`
+  );
+}
+
 export interface RenderOptions {
   /** Use @unisane/* package imports (true) or @/src/modules/* (false) */
   usePackages?: boolean;
@@ -107,16 +244,20 @@ export async function renderRouteHandler(args: {
 
   // Build guard configuration
   const guardBits: string[] = [];
-  guardBits.push(`op: "${cfg.op ?? opKey}"`);
+  // SEC-006 FIX: Sanitize operation name to prevent code injection
+  const safeOp = sanitizeStringLiteral(cfg.op ?? opKey);
+  guardBits.push(`op: "${safeOp}"`);
   if (cfg.allowUnauthed) guardBits.push('allowUnauthed: true');
   if (cfg.requireUser) guardBits.push('requireUser: true');
   if (cfg.requireTenantMatch) guardBits.push('requireTenantMatch: true');
   if (cfg.requireSuperAdmin) guardBits.push('requireSuperAdmin: true');
 
   // Add permission (as identifier, not string)
+  // SEC-006 FIX: Validate perm is a valid identifier to prevent code injection
   if (cfg.perm) {
-    guardBits.push(`perm: ${cfg.perm}`);
-    if (cfg.perm.startsWith('PERM.')) {
+    const safePerm = validateIdentifier(cfg.perm, `${opKey}.perm`);
+    guardBits.push(`perm: ${safePerm}`);
+    if (safePerm.startsWith('PERM.')) {
       imports.add(opts.rbacPath, 'PERM');
     }
   }
@@ -209,11 +350,17 @@ export async function renderRouteHandler(args: {
     cfg.callArgs.some((a) => a.from === 'query');
 
   if (isAdminList) {
+    // DEV-008 FIX: Add size limit before base64 decoding to prevent DoS
     beforeCall.push(
       `const url = new URL(req.url);`,
       `const { limit, cursor, sort, filtersRaw } = parseListParams(url.searchParams, { defaultLimit: 50, maxLimit: 50 });`,
       `let filters: unknown;`,
       `if (filtersRaw) {`,
+      `  // DEV-008 FIX: Limit filters string size to prevent DoS`,
+      `  const MAX_FILTERS_SIZE = 8192;`,
+      `  if (filtersRaw.length > MAX_FILTERS_SIZE) {`,
+      `    throw new Error('filters parameter too large');`,
+      `  }`,
       `  try {`,
       `    filters = JSON.parse(filtersRaw);`,
       `  } catch {`,
@@ -231,11 +378,17 @@ export async function renderRouteHandler(args: {
     );
   } else if (needsFilterParsing && hasQuery) {
     // Non-list endpoint with filters (e.g., stats) - parse filters from query param
+    // DEV-008 FIX: Add size limit before base64 decoding to prevent DoS
     beforeCall.push(
       `const url = new URL(req.url);`,
       `const filtersRaw = url.searchParams.get('filters');`,
       `let filters: unknown;`,
       `if (filtersRaw) {`,
+      `  // DEV-008 FIX: Limit filters string size to prevent DoS`,
+      `  const MAX_FILTERS_SIZE = 8192;`,
+      `  if (filtersRaw.length > MAX_FILTERS_SIZE) {`,
+      `    throw new Error('filters parameter too large');`,
+      `  }`,
       `  try {`,
       `    filters = JSON.parse(filtersRaw);`,
       `  } catch {`,
@@ -301,9 +454,11 @@ export async function renderRouteHandler(args: {
     beforeCall.push(...argDecls);
 
     // Capture audit "before" state BEFORE service call
+    // SEC-006 FIX: Validate beforeExpr to prevent code injection
     if (cfg.audit && cfg.audit.beforeExpr) {
+      const safeBeforeExpr = validateExpression(cfg.audit.beforeExpr, `${opKey}.audit.beforeExpr`);
       beforeCall.push(
-        `const __auditBefore = await Promise.resolve(${cfg.audit.beforeExpr});`
+        `const __auditBefore = await Promise.resolve(${safeBeforeExpr});`
       );
     }
 
@@ -331,12 +486,16 @@ export async function renderRouteHandler(args: {
       `const result = await (${factoryIdent}({ req, ctx, ...(params ? { params: params as Record<string, unknown> } : {})${passBody}${passQuery}, requestId } as Parameters<typeof ${factoryIdent}>[0]));`
     );
   } else if (isValidCallExpr(cfg.callExpr)) {
-    beforeCall.push(`const result = await (${cfg.callExpr});`);
+    // SEC-006 FIX: Validate callExpr to prevent code injection
+    const safeCallExpr = validateExpression(cfg.callExpr, `${opKey}.callExpr`);
+    beforeCall.push(`const result = await (${safeCallExpr});`);
   }
 
   // Audit handling
   if (cfg.audit) {
+    // DEV-005 FIX: Use strict resourceIdExpr validation instead of general expression validation
     const ridExpr = cfg.audit.resourceIdExpr ?? 'null';
+    validateResourceIdExpr(ridExpr, `${opKey}.audit.resourceIdExpr`);
     const trimmedRid = ridExpr.trim();
 
     let rid: string;
@@ -376,11 +535,14 @@ export async function renderRouteHandler(args: {
     const afterExpr = cfg.audit.afterExpr;
     const beforeRef = cfg.audit.beforeExpr ? '__auditBefore' : 'undefined';
 
+    // SEC-006 FIX: Sanitize audit action and resourceType to prevent code injection
+    const safeAction = sanitizeStringLiteral(opKey);
+    const safeResourceType = sanitizeStringLiteral(cfg.audit.resourceType);
     const auditParts: string[] = [
       `scopeId: __params?.tenantId ?? ctx.tenantId ?? '-'`,
       `...(ctx.userId ? { actorId: ctx.userId } : {})`,
-      `action: '${opKey}'`,
-      `resourceType: '${cfg.audit.resourceType}'`,
+      `action: '${safeAction}'`,
+      `resourceType: '${safeResourceType}'`,
       `resourceId: ${rid}`,
     ];
 
@@ -391,12 +553,14 @@ export async function renderRouteHandler(args: {
     }
 
     if (afterExpr) {
-      const trimmedAfter = afterExpr.trim();
+      // SEC-006 FIX: Validate afterExpr to prevent code injection
+      const safeAfterExpr = validateExpression(afterExpr, `${opKey}.audit.afterExpr`);
+      const trimmedAfter = safeAfterExpr.trim();
       if (trimmedAfter.startsWith('{')) {
-        auditParts.push(`after: ${afterExpr}`);
+        auditParts.push(`after: ${safeAfterExpr}`);
       } else {
         auditParts.push(
-          `...(${afterExpr} !== undefined ? { after: ${afterExpr} } : {})`
+          `...(${safeAfterExpr} !== undefined ? { after: ${safeAfterExpr} } : {})`
         );
       }
     }
@@ -441,7 +605,9 @@ export async function renderRouteHandler(args: {
     const rawGuardBits = [...guardBits];
     if (hasBody) rawGuardBits.push(`zod: ${bodyAlias}`);
     if (hasParams) rawGuardBits.push(`zodParams: ${paramsAlias}`);
-    const rawGuard = `({ ${rawGuardBits.join(', ')}${cfg.rateKeyExpr ? `, rateKey: ({ req, ctx, body, params }) => (${cfg.rateKeyExpr})` : ''} })`;
+    // SEC-006 FIX: Validate rateKeyExpr to prevent code injection
+    const safeRateKeyExpr = cfg.rateKeyExpr ? validateExpression(cfg.rateKeyExpr, `${opKey}.rateKeyExpr`) : null;
+    const rawGuard = `({ ${rawGuardBits.join(', ')}${safeRateKeyExpr ? `, rateKey: ({ req, ctx, body, params }) => (${safeRateKeyExpr})` : ''} })`;
 
     const rawBody = `export const ${handlerName} = makeHandlerRaw${hasBody ? `<typeof ${bodyAlias}>` : '<unknown>'}(
   ${rawGuard},

@@ -277,12 +277,35 @@ export const EnvSchema = BaseEnvSchema.superRefine((v, ctx) => {
 
 export type Env = z.infer<typeof EnvSchema> & { ALLOWED_ORIGINS: string[] };
 
+/**
+ * Get and validate environment configuration.
+ *
+ * KERN-014 FIX: Wraps Zod parsing with improved error handling to prevent
+ * cryptic stack traces during bootstrap. Logs specific validation errors
+ * to help developers quickly identify configuration issues.
+ *
+ * @throws Error with detailed message listing invalid/missing env vars
+ */
 export function getEnv(): Env {
-  const parsed = EnvSchema.parse(process.env);
-  const ALLOWED_ORIGINS = parsed.ALLOWED_ORIGINS.split(",")
-    .map((o) => o.trim())
-    .filter(Boolean);
-  return { ...parsed, ALLOWED_ORIGINS } as Env;
+  try {
+    const parsed = EnvSchema.parse(process.env);
+    const ALLOWED_ORIGINS = parsed.ALLOWED_ORIGINS.split(",")
+      .map((o) => o.trim())
+      .filter(Boolean);
+    return { ...parsed, ALLOWED_ORIGINS } as Env;
+  } catch (error) {
+    // KERN-014 FIX: Provide helpful error messages for env validation failures
+    if (error instanceof z.ZodError) {
+      const issues = error.issues
+        .map((issue) => `  - ${issue.path.join('.')}: ${issue.message}`)
+        .join('\n');
+      throw new Error(
+        `Environment configuration invalid:\n${issues}\n\n` +
+        `Check your .env file or environment variables.`
+      );
+    }
+    throw error;
+  }
 }
 
 /**

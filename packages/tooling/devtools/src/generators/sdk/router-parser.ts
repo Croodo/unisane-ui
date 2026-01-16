@@ -1,44 +1,74 @@
 /**
  * Router parsing utilities for SDK generation
+ *
+ * Uses ts-morph for proper TypeScript AST parsing instead of regex,
+ * which handles all import patterns including:
+ * - Multiple named imports
+ * - Multi-line imports
+ * - Default imports
+ * - Namespace imports
+ * - Aliased imports
  */
 import * as path from 'node:path';
 import { promises as fs } from 'node:fs';
+import { Project } from 'ts-morph';
 import type { ImportMapEntry, RouteGroup, AppRouteEntry, AliasEntry } from './types.js';
 import { parseOpKey } from './utils.js';
 
 /**
- * Parse import statements from router file
+ * Parse import statements from router file using ts-morph AST parsing.
+ * Properly handles all import patterns including multi-line and aliased imports.
  */
 export async function parseRouterImports(routerPath: string): Promise<Record<string, ImportMapEntry>> {
   const src = await fs.readFile(routerPath, 'utf8');
-  const importRe = /import\s+\{\s*(\w+)\s*\}\s+from\s+['"](.+?)['"];?/g;
+
+  // Use ts-morph for proper AST-based import parsing
+  const project = new Project({ useInMemoryFileSystem: true });
+  const sourceFile = project.createSourceFile('router.ts', src);
+
   const varToPath: Record<string, string> = {};
 
   // Determine the contracts directory from router path
-  // e.g., /path/to/src/contracts/app.router.ts -> @/src/contracts
   const routerDir = path.dirname(routerPath);
   const contractsAlias = '@/src/contracts';
 
-  let m: RegExpExecArray | null;
-  while ((m = importRe.exec(src))) {
-    let importPath = m[2] as string;
+  // Parse all imports using AST
+  for (const importDecl of sourceFile.getImportDeclarations()) {
+    let importPath = importDecl.getModuleSpecifierValue();
+
     // Convert relative imports to @/src/contracts/* absolute imports
-    // This ensures SDK files in clients/generated/ can resolve them
     if (importPath.startsWith('./') || importPath.startsWith('../')) {
-      // Resolve the relative path and convert to alias
       const resolvedPath = path.resolve(routerDir, importPath);
-      // Extract the filename without extension and preserve .contract suffix
       const filename = path.basename(resolvedPath);
       importPath = `${contractsAlias}/${filename}`;
     }
-    varToPath[m[1] as string] = importPath;
+
+    // Handle default import: import foo from 'bar'
+    const defaultImport = importDecl.getDefaultImport();
+    if (defaultImport) {
+      varToPath[defaultImport.getText()] = importPath;
+    }
+
+    // Handle namespace import: import * as foo from 'bar'
+    const namespaceImport = importDecl.getNamespaceImport();
+    if (namespaceImport) {
+      varToPath[namespaceImport.getText()] = importPath;
+    }
+
+    // Handle named imports: import { foo, bar, baz as qux } from 'bar'
+    for (const namedImport of importDecl.getNamedImports()) {
+      // Use alias if present, otherwise use the original name
+      const localName = namedImport.getAliasNode()?.getText() ?? namedImport.getName();
+      varToPath[localName] = importPath;
+    }
   }
 
-  // Extract router body
+  // Extract router body to map group names to import variables
   const body = src.split('c.router(')[1]?.split(');')[0] ?? '';
   const pairRe = /(\w+)\s*:\s*(\w+)\s*,?/g;
   const out: Record<string, ImportMapEntry> = {};
 
+  let m: RegExpExecArray | null;
   while ((m = pairRe.exec(body))) {
     const group = m[1] as string;
     const v = m[2] as string;

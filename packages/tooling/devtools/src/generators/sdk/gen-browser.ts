@@ -154,11 +154,20 @@ export function base64UrlEncode(input: string): string {
   } catch { return ''; }
 }
 
+/**
+ * DEV-009 FIX: Escape regex special characters in key to prevent regex injection.
+ * Without this, a key like "id$" or ".*" could cause unexpected regex behavior.
+ */
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^\${}()|\\x5B\\x5D\\\\]/g, '\\\\$&');
+}
+
 export function buildUrl(pathTpl: string, params?: Record<string, unknown>, query?: Record<string, unknown>): string {
   const base = (process.env.NEXT_PUBLIC_API_BASE_URL ?? '').trim();
   let p = pathTpl;
   if (params && typeof params === 'object') {
-    for (const [k, v] of Object.entries(params)) p = p.replace(new RegExp(':'+k+'(?![a-zA-Z0-9_])','g'), encodeURIComponent(String(v)));
+    // DEV-009 FIX: Escape regex special characters in key
+    for (const [k, v] of Object.entries(params)) p = p.replace(new RegExp(':'+escapeRegex(k)+'(?![a-zA-Z0-9_])','g'), encodeURIComponent(String(v)));
   }
   const urlStr = (base ? base + p : p);
   const origin = (typeof window !== 'undefined' && window.location?.origin) ? window.location.origin : 'http://localhost';

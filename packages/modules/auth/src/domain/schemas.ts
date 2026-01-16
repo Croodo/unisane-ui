@@ -4,7 +4,8 @@ import { ZEmailString, ZUsernameString, ZPhoneE164String } from '@unisane/kernel
 
 export const ZPasswordSignup = z.object({
   email: ZEmailString,
-  password: z.string().min(8),
+  // AUTH-005 FIX: Added max length (128) to prevent DoS via bcrypt on very long strings
+  password: z.string().min(8).max(128, 'Password too long (max 128 characters)'),
   displayName: z.string().optional(),
   username: ZUsernameString.optional(),
   firstName: z.string().trim().max(80).optional(),
@@ -14,9 +15,20 @@ export const ZPasswordSignup = z.object({
   timezone: z.string().trim().optional(),
 });
 
+/**
+ * AUTH-005 FIX: Align signin password validation with signup (8 chars minimum).
+ *
+ * While some argue signin should accept any password to avoid leaking policy,
+ * this approach is problematic:
+ * 1. Attackers already know the policy from the signup form
+ * 2. Accepting short passwords wastes server resources on bcrypt verification
+ * 3. Consistent validation simplifies error handling
+ *
+ * Also added max length (128 chars) to prevent DoS via bcrypt on very long strings.
+ */
 export const ZPasswordSignin = z.object({
   email: ZEmailString,
-  password: z.string().min(1),
+  password: z.string().min(8, 'Invalid credentials').max(128, 'Invalid credentials'),
 });
 
 export const ZOtpStart = z.object({
@@ -36,7 +48,8 @@ export const ZResetStart = z.object({
 export const ZResetVerify = z.object({
   email: ZEmailString,
   token: z.string().min(16),
-  password: z.string().min(8),
+  // AUTH-005 FIX: Added max length (128) to prevent DoS via bcrypt on very long strings
+  password: z.string().min(8).max(128, 'Password too long (max 128 characters)'),
 });
 
 export const ZTokenExchange = z.object({

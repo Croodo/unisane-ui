@@ -19,7 +19,7 @@ import {
 } from "@unisane/kernel";
 import type { ObjectId } from "mongodb";
 import type { StorageFile, CreateFileInput } from "../domain/types";
-import type { StorageRepository } from "../domain/ports";
+import type { StorageRepository, StorageUsage } from "../domain/ports";
 
 /**
  * MongoDB document type - internal to this adapter.
@@ -185,6 +185,47 @@ async function findDeletedOlderThan(ms: number): Promise<StorageFile[]> {
 }
 
 /**
+ * Get aggregate storage usage for the current scope.
+ * Only counts ACTIVE files (excludes pending uploads and soft-deleted files).
+ */
+async function getStorageUsage(): Promise<StorageUsage> {
+  const pipeline = [
+    { $match: scopedFilter({ status: FILE_STATUS.ACTIVE }) },
+    {
+      $group: {
+        _id: null,
+        totalBytes: { $sum: "$sizeBytes" },
+        fileCount: { $sum: 1 },
+      },
+    },
+  ];
+  const result = await storageCol().aggregate(pipeline).toArray();
+  const stats = result[0] as { totalBytes?: number; fileCount?: number } | undefined;
+  return {
+    totalBytes: stats?.totalBytes ?? 0,
+    fileCount: stats?.fileCount ?? 0,
+  };
+}
+
+/**
+ * Mark all files for a scope as deleted.
+ * Used during tenant deletion cascade.
+ * Does NOT delete from S3 - cleanup job handles that.
+ */
+async function markAllDeletedForScope(scopeId: string): Promise<{ markedCount: number }> {
+  const now = new Date();
+  const builder = new UpdateBuilder<StorageFileDoc>()
+    .set("status", FILE_STATUS.DELETED)
+    .set("deletedAt", now)
+    .set("updatedAt", now);
+  const result = await storageCol().updateMany(
+    { scopeId, status: { $ne: FILE_STATUS.DELETED } } as Filter<StorageFileDoc>,
+    toMongoUpdate(builder.build())
+  );
+  return { markedCount: result.modifiedCount };
+}
+
+/**
  * MongoDB implementation of StorageRepository.
  * Implements the port interface defined in domain/ports.ts.
  */
@@ -198,6 +239,8 @@ export const StorageRepoMongo: StorageRepository = {
   list,
   findPendingOlderThan,
   findDeletedOlderThan,
+  getStorageUsage,
+  markAllDeletedForScope,
 };
 
 // Alias for backward compatibility

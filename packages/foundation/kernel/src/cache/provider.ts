@@ -164,8 +164,7 @@ if (provider === memoryKV) {
   if (env === "prod") {
     throw new Error(`KV misconfigured: ${providerReason ?? "no provider selected"}`);
   } else if (providerReason) {
-     
-    console.warn(`[kv] falling back to memory store (${providerReason})`);
+    logger.warn('KV falling back to memory store', { module: 'kv', reason: providerReason });
   }
 }
 
@@ -184,10 +183,42 @@ export function createMemoryCache(): CachePort {
 }
 
 /**
+ * KERN-011 FIX: URL validation for Vercel KV.
+ */
+function isValidKVUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    // Must be HTTPS in production
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+      return false;
+    }
+    // Must have a host
+    if (!parsed.host) {
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Create a Vercel KV REST cache provider.
  * Requires KV_REST_API_URL and KV_REST_API_TOKEN.
+ *
+ * KERN-011 FIX: Validates URL format before creating provider.
  */
 export function createVercelKVCache(url: string, token: string): CachePort {
+  // KERN-011 FIX: Validate URL format
+  if (!url || !isValidKVUrl(url)) {
+    throw new Error(
+      `Invalid KV_REST_API_URL: "${url}". Must be a valid HTTP(S) URL.`
+    );
+  }
+  // KERN-011 FIX: Validate token is present
+  if (!token || token.trim().length === 0) {
+    throw new Error('KV_REST_API_TOKEN is required and cannot be empty.');
+  }
   return createVercelKV(url, token);
 }
 

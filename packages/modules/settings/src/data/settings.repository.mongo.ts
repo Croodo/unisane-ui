@@ -58,6 +58,11 @@ export const SettingsRepoMongo: SettingsRepo = {
     return mapDocToSettingRow(doc);
   },
 
+  /**
+   * SETT-001 FIX: Use atomic conditional update to prevent TOCTOU race condition.
+   * Previously did find-then-update which could race on concurrent requests.
+   * Now uses single findOneAndUpdate with version in the filter.
+   */
   async upsertPatch(params: {
     env: string;
     scopeId: string | null;
@@ -68,23 +73,13 @@ export const SettingsRepoMongo: SettingsRepo = {
     expectedVersion?: number;
     actorId?: string;
   }): Promise<PatchResult> {
-    const sel = {
+    const baseSel = {
       env: params.env,
       scopeId: params.scopeId,
       namespace: params.ns,
       key: params.key,
     } as const;
-    const current = await settingsCol().findOne(sel as unknown as Document);
-    if (
-      current &&
-      params.expectedVersion !== undefined &&
-      current.version !== params.expectedVersion
-    ) {
-      return {
-        conflict: true as const,
-        expected: current.version,
-      } as PatchConflict;
-    }
+
     const now = new Date();
     const builder = new UpdateBuilder<SettingsKVDoc>()
       .set("updatedBy", params.actorId ?? null)
@@ -97,15 +92,34 @@ export const SettingsRepoMongo: SettingsRepo = {
       builder.set("value", params.value);
     }
 
+    // SETT-001 FIX: If expectedVersion is specified, include it in the filter
+    // This makes the version check atomic with the update
+    const sel = params.expectedVersion !== undefined
+      ? { ...baseSel, version: params.expectedVersion }
+      : baseSel;
+
     const r = await settingsCol().findOneAndUpdate(
       sel as unknown as Document,
       toMongoUpdate(builder.build()) as unknown as Document,
-      { upsert: true, returnDocument: "after" }
+      { upsert: params.expectedVersion === undefined, returnDocument: "after" }
     );
+
     const after =
       (r as unknown as { value?: SettingsKVDoc | null }).value ??
       (r as unknown as SettingsKVDoc | null) ??
       null;
+
+    // SETT-001 FIX: If expectedVersion was specified and no document matched,
+    // it means version conflict (document exists with different version)
+    if (params.expectedVersion !== undefined && !after) {
+      // Fetch current version to return in conflict response
+      const current = await settingsCol().findOne(baseSel as unknown as Document);
+      return {
+        conflict: true as const,
+        expected: current?.version ?? 0,
+      } as PatchConflict;
+    }
+
     return {
       ok: true as const,
       setting: {
@@ -116,5 +130,15 @@ export const SettingsRepoMongo: SettingsRepo = {
         version: after?.version ?? 0,
       },
     } as PatchOk;
+  },
+
+  /**
+   * Delete all settings for a scope (tenant).
+   * Used during tenant deletion cascade.
+   * Hard-deletes settings since they have no value after tenant is deleted.
+   */
+  async deleteAllForScope(scopeId: string): Promise<{ deletedCount: number }> {
+    const result = await settingsCol().deleteMany({ scopeId } as Document);
+    return { deletedCount: result.deletedCount };
   },
 };

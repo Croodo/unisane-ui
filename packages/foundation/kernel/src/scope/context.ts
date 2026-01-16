@@ -77,8 +77,17 @@ const globalForLoaders = global as unknown as {
  * Set the plan loader function (called during app bootstrap).
  * This allows the scope context to lazy-load plans without circular deps.
  * Pass null to clear the loader.
+ *
+ * KERN-012 FIX: Logs warning on double-registration to detect potential issues.
  */
 export function setScopePlanLoader(loader: PlanLoader | null): void {
+  // KERN-012 FIX: Warn on double-registration (unless clearing)
+  if (loader !== null && globalForLoaders.__kernelScopePlanLoader !== undefined) {
+    console.warn(
+      '[scope] setScopePlanLoader called twice - this may indicate a bootstrap issue. ' +
+      'Previous loader will be replaced.'
+    );
+  }
   globalForLoaders.__kernelScopePlanLoader = loader;
 }
 
@@ -86,8 +95,17 @@ export function setScopePlanLoader(loader: PlanLoader | null): void {
  * Set the flags loader function (called during app bootstrap).
  * This allows the scope context to lazy-load feature flags without circular deps.
  * Pass null to clear the loader.
+ *
+ * KERN-012 FIX: Logs warning on double-registration to detect potential issues.
  */
 export function setScopeFlagsLoader(loader: FlagsLoader | null): void {
+  // KERN-012 FIX: Warn on double-registration (unless clearing)
+  if (loader !== null && globalForLoaders.__kernelScopeFlagsLoader !== undefined) {
+    console.warn(
+      '[scope] setScopeFlagsLoader called twice - this may indicate a bootstrap issue. ' +
+      'Previous loader will be replaced.'
+    );
+  }
   globalForLoaders.__kernelScopeFlagsLoader = loader;
 }
 

@@ -29,6 +29,8 @@
  * ```
  */
 
+import { logger } from '../observability/logger';
+
 /**
  * Type for event handler registration function.
  * Returns a cleanup function to unsubscribe handlers.
@@ -71,9 +73,10 @@ export function registerModuleEventHandlers(
   registrar: HandlerRegistrar
 ): void {
   if (moduleHandlers.has(moduleName)) {
-    console.warn(
-      `[events] Module '${moduleName}' event handlers already registered, skipping duplicate`
-    );
+    logger.warn('Module event handlers already registered, skipping duplicate', {
+      module: 'events',
+      moduleName,
+    });
     return;
   }
   moduleHandlers.set(moduleName, registrar);
@@ -98,7 +101,7 @@ export function registerModuleEventHandlers(
  */
 export function initAllModuleEventHandlers(): () => void {
   if (initialized) {
-    console.warn('[events] Module event handlers already initialized');
+    logger.warn('Module event handlers already initialized', { module: 'events' });
     return () => {
       // Return existing cleanup
       for (const cleanup of activeCleanups) {
@@ -110,30 +113,40 @@ export function initAllModuleEventHandlers(): () => void {
   }
 
   const moduleNames = Array.from(moduleHandlers.keys());
-  console.log(
-    `[events] Initializing event handlers for ${moduleNames.length} modules: ${moduleNames.join(', ')}`
-  );
+  logger.info('Initializing event handlers', {
+    module: 'events',
+    count: moduleNames.length,
+    modules: moduleNames,
+  });
 
   activeCleanups = [];
   for (const [moduleName, registrar] of moduleHandlers) {
     try {
       const cleanup = registrar();
       activeCleanups.push(cleanup);
-      console.log(`[events]   - ${moduleName} handlers registered`);
+      logger.debug('Module handlers registered', { module: 'events', moduleName });
     } catch (error) {
-      console.error(`[events] Failed to register ${moduleName} handlers:`, error);
+      logger.error('Failed to register module handlers', {
+        module: 'events',
+        moduleName,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
     }
   }
 
   initialized = true;
 
   return () => {
-    console.log('[events] Cleaning up all module event handlers');
+    logger.info('Cleaning up all module event handlers', { module: 'events' });
     for (const cleanup of activeCleanups) {
       try {
         cleanup();
       } catch (error) {
-        console.error('[events] Error during handler cleanup:', error);
+        logger.error('Error during handler cleanup', {
+          module: 'events',
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
     }
     activeCleanups = [];

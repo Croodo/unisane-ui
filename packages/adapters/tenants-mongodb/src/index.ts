@@ -16,20 +16,12 @@
  */
 
 import type { TenantsPort, TenantView } from '@unisane/kernel';
+// TN-001 FIX: Import types from @unisane/tenants instead of defining locally
+import type { TenantRow } from '@unisane/tenants';
 
 /**
- * Tenant row interface expected from the tenants repository.
- * This matches the TenantRow type from @unisane/tenants.
- */
-export interface TenantRow {
-  id: string;
-  slug?: string;
-  name?: string;
-  planId?: string | null;
-}
-
-/**
- * Tenants repository interface expected by this adapter.
+ * TN-001 FIX: Use a minimal interface that matches what findById returns.
+ * This allows flexibility while ensuring type safety.
  */
 export interface TenantsRepositoryLike {
   findById(id: string): Promise<TenantRow | null>;
@@ -72,3 +64,5 @@ export function createTenantsAdapter(config: TenantsAdapterConfig): TenantsPort 
 
 // Re-export types for convenience
 export type { TenantsPort, TenantView } from '@unisane/kernel';
+// TN-001 FIX: Re-export TenantRow from tenants module
+export type { TenantRow } from '@unisane/tenants';

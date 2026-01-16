@@ -34,4 +34,31 @@ export const ExposuresRepoMongo = {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- MongoDB document casting
     } as any);
   },
+
+  /**
+   * FLAG-001 FIX: Batch log multiple exposures in a single database operation.
+   *
+   * This reduces N database writes to 1 when evaluating multiple flags.
+   * Uses insertMany with ordered: false for best performance.
+   */
+  async logBatch(exposures: Exposure[]) {
+    if (exposures.length === 0) return;
+
+    const docs = exposures.map((exposure) => ({
+      env: exposure.env,
+      flagKey: exposure.flagKey,
+      value: exposure.value,
+      reason: exposure.reason,
+      ...(exposure.ruleIndex !== undefined
+        ? { ruleIndex: exposure.ruleIndex }
+        : {}),
+      ...(exposure.userId ? { userId: exposure.userId } : {}),
+      ...(exposure.tenantId ? { scopeId: exposure.tenantId } : {}),
+      timestamp: new Date(exposure.timestamp),
+    }));
+
+    // Use ordered: false for better performance - allows parallel inserts
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- MongoDB document casting
+    await exposuresCol().insertMany(docs as any[], { ordered: false });
+  },
 };

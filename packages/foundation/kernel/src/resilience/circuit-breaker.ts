@@ -176,17 +176,26 @@ export class CircuitBreaker {
 
   /**
    * Execute with call timeout.
+   * Uses proper cleanup to prevent timer memory leaks.
    */
   private async executeWithTimeout<T>(fn: () => Promise<T>): Promise<T> {
-    return Promise.race([
-      fn(),
-      new Promise<T>((_, reject) =>
-        setTimeout(
-          () => reject(new Error(`Circuit '${this.name}' call timeout after ${this.callTimeout}ms`)),
-          this.callTimeout
-        )
-      ),
-    ]);
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    const timeoutPromise = new Promise<T>((_, reject) => {
+      timeoutId = setTimeout(
+        () => reject(new Error(`Circuit '${this.name}' call timeout after ${this.callTimeout}ms`)),
+        this.callTimeout
+      );
+    });
+
+    try {
+      return await Promise.race([fn(), timeoutPromise]);
+    } finally {
+      // Always clear the timeout to prevent memory leaks
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    }
   }
 
   /**

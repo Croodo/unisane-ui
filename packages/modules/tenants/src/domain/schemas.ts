@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+/**
+ * Tenant status values.
+ */
+export const ZTenantStatus = z.enum(["active", "suspended", "deleted"]);
+
 export const ZTenantAdminSubscription = z.object({
   status: z.string().nullable(),
   quantity: z.number().nullable(),
@@ -11,6 +16,9 @@ export const ZTenantAdminView = z.object({
   slug: z.string(),
   name: z.string(),
   planId: z.string(),
+  status: ZTenantStatus,
+  statusReason: z.string().optional(),
+  statusChangedAt: z.string().optional(),
   membersCount: z.number(),
   adminsCount: z.number(),
   apiKeysCount: z.number(),
@@ -23,4 +31,14 @@ export const ZTenantAdminView = z.object({
 });
 
 export type TenantAdminViewDto = z.infer<typeof ZTenantAdminView>;
+
+/**
+ * Input for updating tenant status.
+ */
+export const ZUpdateTenantStatusInput = z.object({
+  status: ZTenantStatus,
+  reason: z.string().max(500).optional(),
+});
+
+export type UpdateTenantStatusInput = z.infer<typeof ZUpdateTenantStatusInput>;
 

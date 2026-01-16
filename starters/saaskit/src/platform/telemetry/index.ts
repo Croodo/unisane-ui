@@ -3,6 +3,9 @@
  *
  * Uses kernel observability metrics with StatsD export for production monitoring.
  * Configure via STATSD_HOST, STATSD_PORT, STATSD_PREFIX env vars.
+ *
+ * Gateway automatically records HTTP metrics via kernel.
+ * Use this module's `metrics` facade for app-specific metrics.
  */
 
 import { metrics as kernelMetrics, onMetricsFlush, type MetricValue } from '@unisane/kernel';
@@ -111,35 +114,3 @@ export const metrics = {
     return kernelMetrics.flush();
   },
 };
-
-// Helper functions for common metrics
-export function observeHttp(opts: {
-  op?: string | null;
-  method: string;
-  status: number;
-  ms: number;
-}) {
-  const tags: Tags = {
-    method: opts.method,
-    status: opts.status,
-  };
-  if (opts.op) tags.op = opts.op;
-
-  metrics.timing('http.server.duration_ms', opts.ms, tags);
-
-  if (opts.status >= 500) {
-    metrics.inc('http.server.errors_total', 1, tags);
-  }
-}
-
-export function incRateLimited(op?: string | null) {
-  metrics.inc('rate_limited_total', 1, op ? { op } : undefined);
-}
-
-export function incIdemReplay() {
-  metrics.inc('idempotency_replay_total');
-}
-
-export function incIdemWaitTimeout() {
-  metrics.inc('idempotency_wait_timeout_total');
-}

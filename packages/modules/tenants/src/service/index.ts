@@ -16,3 +16,14 @@ export {
   configureTenantBootstrap,
 } from "./bootstrap-tenant";
 export type { TenantBootstrapProviders } from "./bootstrap-tenant";
+
+// Status management
+export {
+  updateTenantStatus,
+  suspendTenant,
+  activateTenant,
+} from "./update-tenant-status";
+export type {
+  UpdateTenantStatusInput,
+  UpdateTenantStatusResult,
+} from "./update-tenant-status";

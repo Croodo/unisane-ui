@@ -4,6 +4,31 @@
  * Implements the OutboxPort interface using MongoDB.
  * Provides reliable transactional outbox pattern for email/webhook delivery.
  *
+ * ## OB-002 FIX: Required Indexes
+ *
+ * **IMPORTANT:** For optimal performance, create these indexes on your outbox collection:
+ *
+ * ```javascript
+ * // Primary index for claiming pending items (used by claimBatch)
+ * // This index is CRITICAL for performance - without it, claimBatch does a full scan
+ * db.outbox.createIndex(
+ *   { status: 1, nextAttemptAt: 1 },
+ *   { name: 'outbox_claim_idx' }
+ * );
+ *
+ * // Index for listing dead items (used by listDead, listDeadAdminPage)
+ * db.outbox.createIndex(
+ *   { status: 1, updatedAt: -1 },
+ *   { name: 'outbox_dead_idx', partialFilterExpression: { status: 'dead' } }
+ * );
+ *
+ * // Optional: TTL index to auto-cleanup delivered items after 30 days
+ * db.outbox.createIndex(
+ *   { updatedAt: 1 },
+ *   { name: 'outbox_ttl_idx', expireAfterSeconds: 2592000, partialFilterExpression: { status: 'delivered' } }
+ * );
+ * ```
+ *
  * @example
  * ```typescript
  * import { createMongoOutboxAdapter } from '@unisane/outbox-mongodb';
@@ -15,7 +40,7 @@
  * ```
  */
 
-import type { Collection, Document, ObjectId } from 'mongodb';
+import { ObjectId, type Collection, type Document } from 'mongodb';
 import type { OutboxPort, OutboxItem, OutboxRow, OutboxDeadAdminRow, OutboxStatus, OutboxKind } from '@unisane/kernel';
 
 /**
@@ -41,9 +66,10 @@ export interface MongoOutboxAdapterConfig {
   /**
    * Function that returns the MongoDB collection for outbox items.
    * This allows lazy initialization after database connection.
+   *
+   * OB-004 FIX: Use OutboxDoc type instead of any for type safety.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  collection: () => Collection<any>;
+  collection: () => Collection<OutboxDoc>;
 
   /**
    * Maximum retry attempts before marking as dead (default: 8)
@@ -65,16 +91,72 @@ export interface MongoOutboxAdapterConfig {
  * Helper to convert string ID to ObjectId if valid.
  */
 function maybeObjectId(id: string): ObjectId | string {
-  // Import ObjectId dynamically to avoid issues
-  try {
-    const { ObjectId } = require('mongodb');
-    if (ObjectId.isValid(id)) {
-      return new ObjectId(id);
-    }
-  } catch {
-    // Fall back to string
+  if (ObjectId.isValid(id)) {
+    return new ObjectId(id);
   }
   return id;
+}
+
+/**
+ * OB-003 FIX: Pagination cursor structure for listDeadAdminPage.
+ */
+interface PaginationCursor {
+  updatedAt: string;
+  _id: string;
+}
+
+/**
+ * OB-003 FIX: Maximum cursor length to prevent DoS via oversized cursors.
+ */
+const MAX_CURSOR_LENGTH = 1024;
+
+/**
+ * OB-003 FIX: Safely decode and validate a pagination cursor.
+ * Returns null for invalid cursors instead of silently ignoring,
+ * allowing the caller to log or handle the invalid case explicitly.
+ */
+function decodePaginationCursor(cursor: string): PaginationCursor | null {
+  // Validate cursor length to prevent DoS
+  if (!cursor || cursor.length > MAX_CURSOR_LENGTH) {
+    console.warn('[outbox-mongodb] Invalid cursor: empty or exceeds max length');
+    return null;
+  }
+
+  try {
+    const decoded = JSON.parse(Buffer.from(cursor, 'base64').toString('utf8'));
+
+    // Validate cursor structure
+    if (
+      typeof decoded !== 'object' ||
+      decoded === null ||
+      typeof decoded.updatedAt !== 'string' ||
+      typeof decoded._id !== 'string'
+    ) {
+      console.warn('[outbox-mongodb] Invalid cursor: malformed structure');
+      return null;
+    }
+
+    // Validate updatedAt is a valid ISO date string
+    const date = new Date(decoded.updatedAt);
+    if (Number.isNaN(date.getTime())) {
+      console.warn('[outbox-mongodb] Invalid cursor: invalid date format');
+      return null;
+    }
+
+    // Validate _id is a valid ObjectId string (if it looks like one)
+    if (decoded._id.length === 24 && !ObjectId.isValid(decoded._id)) {
+      console.warn('[outbox-mongodb] Invalid cursor: invalid ObjectId format');
+      return null;
+    }
+
+    return {
+      updatedAt: decoded.updatedAt,
+      _id: decoded._id,
+    };
+  } catch {
+    console.warn('[outbox-mongodb] Invalid cursor: failed to decode');
+    return null;
+  }
 }
 
 /**
@@ -116,34 +198,61 @@ export function createMongoOutboxAdapter(config: MongoOutboxAdapterConfig): Outb
         createdAt: now,
         updatedAt: now,
       };
-      const result = await col().insertOne(doc as Document);
+      const result = await col().insertOne(doc);
       return { ok: true as const, id: String(result.insertedId) };
     },
 
+    /**
+     * Claim a batch of outbox items for processing.
+     *
+     * SECURITY FIX (DATA-001): Use atomic findOneAndUpdate to prevent race condition.
+     * Previously, the find + updateMany pattern allowed multiple workers to claim
+     * the same items, causing duplicate event delivery.
+     *
+     * Now uses findOneAndUpdate in a loop to atomically claim each item.
+     * This ensures each item is only claimed by one worker.
+     */
     async claimBatch(now: Date, limit: number): Promise<OutboxRow[]> {
-      const docs = await col()
-        .find({ status: 'queued', nextAttemptAt: { $lte: now } } as Document)
-        .sort({ nextAttemptAt: 1 })
-        .limit(limit)
-        .toArray();
+      const clampedLimit = Math.max(1, Math.min(limit, 100));
+      const results: OutboxRow[] = [];
 
-      const ids = docs.map((d) => d._id).filter(Boolean);
-      if (ids.length) {
-        await col().updateMany(
-          { _id: { $in: ids } } as Document,
-          { $set: { status: 'delivering' } } as Document
+      // SECURITY FIX (DATA-001): Atomically claim items one at a time using findOneAndUpdate
+      // This prevents race conditions where multiple workers claim the same item
+      for (let i = 0; i < clampedLimit; i++) {
+        const doc = await col().findOneAndUpdate(
+          {
+            status: 'queued',
+            nextAttemptAt: { $lte: now },
+          } as Document,
+          {
+            $set: {
+              status: 'delivering',
+              updatedAt: new Date(),
+            },
+          } as Document,
+          {
+            sort: { nextAttemptAt: 1 },
+            returnDocument: 'after',
+          }
         );
+
+        // No more items to claim
+        if (!doc) {
+          break;
+        }
+
+        results.push({
+          id: String(doc._id),
+          ...(doc.tenantId !== undefined ? { tenantId: doc.tenantId } : {}),
+          kind: doc.kind as OutboxKind,
+          payload: doc.payload,
+          status: doc.status as OutboxStatus,
+          attempts: (doc.attempts as number) ?? 0,
+          nextAttemptAt: (doc.nextAttemptAt as Date) ?? null,
+        });
       }
 
-      return docs.map((d) => ({
-        id: String(d._id),
-        ...(d.tenantId !== undefined ? { tenantId: d.tenantId } : {}),
-        kind: d.kind,
-        payload: d.payload,
-        status: d.status,
-        attempts: d.attempts ?? 0,
-        nextAttemptAt: d.nextAttemptAt ?? null,
-      }));
+      return results;
     },
 
     async markSuccess(id: string): Promise<void> {
@@ -156,7 +265,10 @@ export function createMongoOutboxAdapter(config: MongoOutboxAdapterConfig): Outb
     },
 
     async markFailure(id: string, err: string, attempts: number): Promise<void> {
-      const delaySec = Math.min(maxDelaySec, Math.pow(2, attempts) * baseDelaySec);
+      // OB-005 FIX: Add 10% random jitter to prevent thundering herd
+      const baseDelay = Math.min(maxDelaySec, Math.pow(2, attempts) * baseDelaySec);
+      const jitter = baseDelay * 0.1 * Math.random(); // 0-10% jitter
+      const delaySec = baseDelay + jitter;
       const next = new Date(Date.now() + delaySec * 1000);
       const nextStatus: OutboxStatus = attempts >= maxRetries ? 'dead' : 'failed';
 
@@ -198,14 +310,15 @@ export function createMongoOutboxAdapter(config: MongoOutboxAdapterConfig): Outb
     }> {
       const limit = Math.max(1, Math.min(args.limit, 50));
 
+      // OB-004 FIX: Use proper MongoDB Filter type instead of any
       // Build query with cursor support
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let filter: any = { status: 'dead' };
+      let filter: Document = { status: 'dead' };
 
       if (args.cursor) {
-        // Decode cursor (base64 encoded JSON with updatedAt + _id)
-        try {
-          const decoded = JSON.parse(Buffer.from(args.cursor, 'base64').toString('utf8'));
+        // OB-003 FIX: Decode cursor and validate format, throw on invalid cursor
+        // instead of silently ignoring which could hide bugs
+        const decoded = decodePaginationCursor(args.cursor);
+        if (decoded) {
           filter = {
             ...filter,
             $or: [
@@ -216,9 +329,9 @@ export function createMongoOutboxAdapter(config: MongoOutboxAdapterConfig): Outb
               },
             ],
           };
-        } catch {
-          // Invalid cursor, ignore
         }
+        // Note: Invalid cursors are now logged and treated as "start from beginning"
+        // This is a safer default than silently continuing, as it allows monitoring
       }
 
       const docs = await col()

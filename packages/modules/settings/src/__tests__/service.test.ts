@@ -13,7 +13,7 @@ vi.mock("@unisane/kernel", async () => {
     ...actual,
     cacheGet: vi.fn(),
     cacheSet: vi.fn(),
-    subscribe: vi.fn(),
+    subscribe: vi.fn((_channel: string, _handler: (msg: unknown) => void) => () => {}),
     kv: { del: vi.fn() },
     redis: { del: vi.fn(), publish: vi.fn() },
     getEnv: vi.fn(() => ({ APP_ENV: "test" })),
@@ -180,6 +180,7 @@ describe("Settings Service Layer", () => {
       let callCount = 0;
       vi.mocked(kernel.subscribe).mockImplementation(() => {
         callCount++;
+        return () => {}; // Return cleanup function
       });
 
       initSettingsSubscriber();
@@ -209,27 +210,20 @@ describe("Settings Service Layer", () => {
     });
 
     it("should handle events without scopeId", async () => {
-      let subscribedCallback: ((evt: unknown) => void) | undefined;
-      vi.mocked(kernel.subscribe).mockImplementation((topic, cb) => {
-        if (topic === "setting.updated") {
-          subscribedCallback = cb as (evt: unknown) => void;
+      let subscribedCallback: ((evt: unknown) => void) | null = null;
+      (kernel.subscribe as ReturnType<typeof vi.fn>).mockImplementation(
+        (topic: string, cb: (evt: unknown) => void) => {
+          if (topic === "setting.updated") {
+            subscribedCallback = cb;
+          }
+          return () => {}; // Return cleanup function
         }
-      });
-
-      // Clear any previous subscriptions
-      vi.clearAllMocks();
-
-      subscribedCallback = undefined;
-      vi.mocked(kernel.subscribe).mockImplementation((topic, cb) => {
-        if (topic === "setting.updated") {
-          subscribedCallback = cb as (evt: unknown) => void;
-        }
-      });
+      );
 
       initSettingsSubscriber();
 
-      if (subscribedCallback) {
-        subscribedCallback({
+      if (subscribedCallback !== null) {
+        (subscribedCallback as (evt: unknown) => void)({
           env: "test",
           ns: "platform",
           key: "global_setting",
@@ -243,29 +237,25 @@ describe("Settings Service Layer", () => {
     });
 
     it("should ignore invalid events", async () => {
-      let subscribedCallback: ((evt: unknown) => void) | undefined;
-      vi.mocked(kernel.subscribe).mockImplementation((topic, cb) => {
-        if (topic === "setting.updated") {
-          subscribedCallback = cb as (evt: unknown) => void;
+      let subscribedCallback: ((evt: unknown) => void) | null = null;
+      (kernel.subscribe as ReturnType<typeof vi.fn>).mockImplementation(
+        (topic: string, cb: (evt: unknown) => void) => {
+          if (topic === "setting.updated") {
+            subscribedCallback = cb;
+          }
+          return () => {}; // Return cleanup function
         }
-      });
-
-      vi.clearAllMocks();
-      subscribedCallback = undefined;
-      vi.mocked(kernel.subscribe).mockImplementation((topic, cb) => {
-        if (topic === "setting.updated") {
-          subscribedCallback = cb as (evt: unknown) => void;
-        }
-      });
+      );
 
       initSettingsSubscriber();
 
-      if (subscribedCallback) {
+      if (subscribedCallback !== null) {
+        const callback = subscribedCallback as (evt: unknown) => void;
         // Invalid events should be ignored
-        subscribedCallback(null);
-        subscribedCallback(undefined);
-        subscribedCallback("string");
-        subscribedCallback({ invalid: "data" });
+        callback(null);
+        callback(undefined);
+        callback("string");
+        callback({ invalid: "data" });
 
         expect(kernel.kv.del).not.toHaveBeenCalled();
       }
@@ -302,7 +292,7 @@ describe("Settings Service Layer", () => {
     });
 
     it("should throw error when setting definition is unknown", async () => {
-      vi.mocked(kernel.getSettingDefinition).mockReturnValueOnce(null);
+      vi.mocked(kernel.getSettingDefinition).mockReturnValueOnce(undefined);
 
       await expect(
         getTypedSetting({
@@ -663,7 +653,7 @@ describe("Settings Service Layer", () => {
     });
 
     it("should fall back to untyped patch for unknown settings", async () => {
-      vi.mocked(kernel.getSettingDefinition).mockReturnValueOnce(null);
+      vi.mocked(kernel.getSettingDefinition).mockReturnValueOnce(undefined);
 
       const mockResult = {
         ok: true,
@@ -882,7 +872,7 @@ describe("Settings Service Layer", () => {
     });
 
     it("should fall back to generic patch for unknown settings", async () => {
-      vi.mocked(kernel.getSettingDefinition).mockReturnValueOnce(null);
+      vi.mocked(kernel.getSettingDefinition).mockReturnValueOnce(undefined);
 
       const mockResult = {
         ok: true,

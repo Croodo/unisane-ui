@@ -19,7 +19,7 @@
  * ```
  */
 
-import { logger, onTyped } from '@unisane/kernel';
+import { logger, onTyped, emitTypedReliable } from '@unisane/kernel';
 import { apiKeysRepository, membershipsRepository } from './data/repo';
 
 const log = logger.child({ module: 'identity', component: 'event-handlers' });
@@ -70,30 +70,63 @@ async function handleTenantCreated(payload: {
 
 /**
  * Handle tenant deletion events.
- * Logs cleanup - actual cascade is handled by the tenants module.
+ * Performs Identity module cascade cleanup:
+ * - Revokes all API keys for the tenant
+ * - Soft-deletes all memberships for the tenant
+ * - Emits completion event for tracking
  */
 async function handleTenantDeleted(payload: {
   scopeId: string;
-  actorId: string;
-  cascade: {
-    memberships: number;
-    files: number;
-    settings: number;
-    credentials: number;
-  };
+  actorId?: string;
+  timestamp: string;
 }): Promise<void> {
-  const { scopeId, cascade } = payload;
+  const { scopeId, actorId } = payload;
 
-  log.info('handling tenant deletion for identity cleanup', { scopeId });
+  log.info('identity: handling tenant deletion cascade', { scopeId, actorId });
 
-  // Note: The actual cascade deletion of memberships and API keys is handled
-  // by the tenants module during deletion. This handler is for logging and
-  // any additional identity-specific cleanup that may be needed.
+  let apiKeysRevoked = 0;
+  let membershipsDeleted = 0;
 
-  log.info('identity cleanup acknowledged for deleted tenant', {
+  // 1. Revoke all API keys (security first)
+  try {
+    const result = await apiKeysRepository.revokeAllForScope(scopeId);
+    apiKeysRevoked = result.revokedCount;
+    log.info('identity: revoked API keys', { scopeId, count: apiKeysRevoked });
+  } catch (error) {
+    log.error('identity: failed to revoke API keys', {
+      scopeId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    // Continue - don't fail the entire cascade
+  }
+
+  // 2. Soft-delete all memberships
+  try {
+    const result = await membershipsRepository.softDeleteAllForScope(scopeId);
+    membershipsDeleted = result.deletedCount;
+    log.info('identity: soft-deleted memberships', { scopeId, count: membershipsDeleted });
+  } catch (error) {
+    log.error('identity: failed to soft-delete memberships', {
+      scopeId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    // Continue - don't fail the entire cascade
+  }
+
+  // 3. Emit completion event
+  await emitTypedReliable('identity.cascade.completed', {
+    sourceEvent: 'tenant.deleted',
     scopeId,
-    cascadedMemberships: cascade.memberships,
-    cascadedCredentials: cascade.credentials,
+    results: {
+      apiKeysRevoked,
+      membershipsDeleted,
+    },
+  });
+
+  log.info('identity: tenant deletion cascade complete', {
+    scopeId,
+    apiKeysRevoked,
+    membershipsDeleted,
   });
 }
 
@@ -131,6 +164,41 @@ async function handleSubscriptionUpdated(payload: {
     });
     throw error;
   }
+}
+
+/**
+ * Handle user deletion events.
+ * Soft-deletes all memberships for the user across all scopes.
+ */
+async function handleUserDeleted(payload: {
+  userId: string;
+  scopeId?: string;
+  actorId?: string;
+  reason: string;
+}): Promise<void> {
+  const { userId, actorId, reason } = payload;
+
+  log.info('identity: handling user deletion cascade', { userId, actorId, reason });
+
+  let membershipsDeleted = 0;
+
+  // Soft-delete all memberships for this user (across all scopes)
+  try {
+    const result = await membershipsRepository.softDeleteAllForUser(userId);
+    membershipsDeleted = result.deletedCount;
+    log.info('identity: soft-deleted user memberships', { userId, count: membershipsDeleted });
+  } catch (error) {
+    log.error('identity: failed to soft-delete user memberships', {
+      userId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    // Continue - don't fail the entire cascade
+  }
+
+  log.info('identity: user deletion cascade complete', {
+    userId,
+    membershipsDeleted,
+  });
 }
 
 /**
@@ -199,6 +267,13 @@ export function registerIdentityEventHandlers(): () => void {
   unsubscribers.push(
     onTyped('identity.apikey.revoked', async (event) => {
       await handleApiKeyRevocationRequested(event.payload);
+    })
+  );
+
+  // Handle user deletion
+  unsubscribers.push(
+    onTyped('user.deleted', async (event) => {
+      await handleUserDeleted(event.payload);
     })
   );
 

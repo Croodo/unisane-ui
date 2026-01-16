@@ -9,6 +9,7 @@ import { generateId } from '../utils/ids';
 import { tryGetScopeContext } from '../scope/context';
 import { getEventSchema } from './registry';
 import type { DomainEvent, EventHandler, EventMeta, OutboxEntry } from './types';
+import { logger } from '../observability/logger';
 
 /**
  * Error thrown when emitting an unregistered event type.
@@ -50,22 +51,50 @@ interface EventEmitterState {
   maxHandlersPerType: number;
   // If true, throw error when max handlers reached instead of just warning
   strictMode: boolean;
+  // KERN-004 FIX: Last time we logged a handler accumulation warning
+  lastAccumulationWarningAt: number;
+  // KERN-004 FIX: Interval between accumulation warnings (5 minutes)
+  accumulationWarningIntervalMs: number;
 }
 
 const globalForEvents = global as unknown as { __eventEmitterState?: EventEmitterState };
 
 if (!globalForEvents.__eventEmitterState) {
+  // KERN-004 FIX: Auto-enable strictMode in production
+  // This ensures handler leaks cause visible errors rather than silent degradation
+  const isProduction = typeof process !== 'undefined' && process.env?.NODE_ENV === 'production';
+
   globalForEvents.__eventEmitterState = {
     handlers: new Map(),
     globalHandlers: new Set(),
     outboxAccessor: null,
     registrationCount: 0,
     maxHandlersPerType: 100, // Reasonable default, can be configured
-    strictMode: false, // Default to warning only, enable in production for safety
+    strictMode: isProduction, // KERN-004 FIX: Enable strict mode in production
+    lastAccumulationWarningAt: 0,
+    accumulationWarningIntervalMs: 5 * 60 * 1000, // 5 minutes
   };
 }
 
 const state = globalForEvents.__eventEmitterState;
+
+/**
+ * KERN-013 FIX: Registration guard to detect concurrent modifications.
+ * While Node.js is single-threaded, async handlers during emit could
+ * theoretically trigger new registrations. This counter helps detect issues.
+ */
+let registrationLockDepth = 0;
+let emitInProgress = false;
+
+function warnIfConcurrentRegistration(operation: string): void {
+  if (emitInProgress) {
+    logger.warn(`Event handler ${operation} during emit - may cause inconsistent behavior`, {
+      module: 'events',
+      operation,
+      lockDepth: registrationLockDepth,
+    });
+  }
+}
 
 /**
  * Interface for outbox collection operations.
@@ -77,9 +106,30 @@ interface OutboxCollection {
 /**
  * Set the outbox collection accessor.
  * Called during app bootstrap to enable reliable event emission.
+ *
+ * KERN-016 FIX: This must be called during bootstrap before using emitReliable().
+ * Use isReliableEventsEnabled() to check if outbox is configured.
  */
 export function setOutboxAccessor(accessor: () => OutboxCollection): void {
   state.outboxAccessor = accessor;
+}
+
+/**
+ * KERN-016 FIX: Check if reliable events (outbox) is configured.
+ * Use this to conditionally enable features that depend on reliable events.
+ *
+ * @example
+ * ```typescript
+ * if (events.isReliableEventsEnabled()) {
+ *   await events.emitReliable('order.created', order);
+ * } else {
+ *   // Fall back to standard emit or skip
+ *   await events.emit('order.created', order);
+ * }
+ * ```
+ */
+export function isReliableEventsEnabled(): boolean {
+  return state.outboxAccessor !== null;
 }
 
 /**
@@ -146,6 +196,67 @@ export function hasHandlerLeakRisk(): boolean {
 }
 
 /**
+ * KERN-004 FIX: Log a warning if handler counts are approaching the limit.
+ * Called periodically (throttled) to avoid log spam.
+ * Logs at 50%, 70%, and 90% of the limit.
+ */
+function checkAndLogAccumulation(): void {
+  const now = Date.now();
+  if (now - state.lastAccumulationWarningAt < state.accumulationWarningIntervalMs) {
+    return; // Throttle logging
+  }
+
+  const stats = getHandlerStats();
+  const threshold50 = state.maxHandlersPerType * 0.5;
+  const threshold70 = state.maxHandlersPerType * 0.7;
+  const threshold90 = state.maxHandlersPerType * 0.9;
+
+  // Find event types with high handler counts
+  const highTypes: Array<{ type: string; count: number; severity: 'warning' | 'high' | 'critical' }> = [];
+
+  for (const [type, count] of Object.entries(stats.byType)) {
+    if (count >= threshold90) {
+      highTypes.push({ type, count, severity: 'critical' });
+    } else if (count >= threshold70) {
+      highTypes.push({ type, count, severity: 'high' });
+    } else if (count >= threshold50) {
+      highTypes.push({ type, count, severity: 'warning' });
+    }
+  }
+
+  // Check global handlers too
+  if (stats.globalHandlers >= threshold90) {
+    highTypes.push({ type: '__global__', count: stats.globalHandlers, severity: 'critical' });
+  } else if (stats.globalHandlers >= threshold70) {
+    highTypes.push({ type: '__global__', count: stats.globalHandlers, severity: 'high' });
+  } else if (stats.globalHandlers >= threshold50) {
+    highTypes.push({ type: '__global__', count: stats.globalHandlers, severity: 'warning' });
+  }
+
+  if (highTypes.length === 0) {
+    return;
+  }
+
+  // Log the warning
+  state.lastAccumulationWarningAt = now;
+
+  const hasCritical = highTypes.some((h) => h.severity === 'critical');
+  const hasHigh = highTypes.some((h) => h.severity === 'high');
+
+  const logMethod = hasCritical ? 'error' : hasHigh ? 'warn' : 'info';
+  const message = `Event handler accumulation detected - possible memory leak`;
+
+  logger[logMethod](message, {
+    module: 'events',
+    maxHandlersPerType: state.maxHandlersPerType,
+    totalTypeHandlers: stats.totalTypeHandlers,
+    globalHandlers: stats.globalHandlers,
+    registrationCount: stats.registrationCount,
+    affectedTypes: highTypes,
+  });
+}
+
+/**
  * Create event metadata from current scope context.
  */
 function createEventMeta(source: string): EventMeta {
@@ -185,9 +296,11 @@ function validatePayload<T>(type: string, payload: T): T {
  */
 function logHandlerError(type: string, error: unknown): void {
   const err = error instanceof Error ? error : new Error(String(error));
-  console.error(`[events] Handler failed for '${type}':`, {
-    name: err.name,
-    message: err.message,
+  logger.error('Event handler failed', {
+    module: 'events',
+    eventType: type,
+    errorName: err.name,
+    error: err.message,
     stack: err.stack,
   });
 }
@@ -196,6 +309,11 @@ function logHandlerError(type: string, error: unknown): void {
  * The main events API.
  */
 export const events = {
+  /**
+   * KERN-016 FIX: Check if reliable events (outbox) is configured.
+   */
+  isReliableEventsEnabled,
+
   /**
    * Emit an event synchronously (fire-and-forget).
    * Handlers are called in parallel, errors are logged but don't stop other handlers.
@@ -224,7 +342,8 @@ export const events = {
       meta: createEventMeta(source),
     };
 
-    // Get handlers for this event type
+    // KERN-013 FIX: Snapshot handlers before emit to avoid concurrent modification issues
+    // Get handlers for this event type - create snapshot to avoid issues if handlers are modified during emit
     const typeHandlers = state.handlers.get(type) || new Set();
     const allHandlers = [...typeHandlers, ...state.globalHandlers];
 
@@ -233,14 +352,20 @@ export const events = {
       return;
     }
 
-    // Call all handlers in parallel
-    await Promise.all(
-      allHandlers.map((handler) =>
-        handler(event).catch((err) => {
-          logHandlerError(type, err);
-        })
-      )
-    );
+    // KERN-013 FIX: Mark emit in progress to detect concurrent registrations
+    emitInProgress = true;
+    try {
+      // Call all handlers in parallel
+      await Promise.all(
+        allHandlers.map((handler) =>
+          handler(event).catch((err) => {
+            logHandlerError(type, err);
+          })
+        )
+      );
+    } finally {
+      emitInProgress = false;
+    }
   },
 
   /**
@@ -306,6 +431,9 @@ export const events = {
    * @returns Unsubscribe function
    */
   on<T>(type: string, handler: EventHandler<T>): () => void {
+    // KERN-013 FIX: Warn if registering during emit (potential race condition)
+    warnIfConcurrentRegistration('registration');
+
     if (!state.handlers.has(type)) {
       state.handlers.set(type, new Set());
     }
@@ -315,21 +443,32 @@ export const events = {
     // Check for handler limit (memory leak protection)
     if (typeHandlers.size >= state.maxHandlersPerType) {
       const message =
-        `[events] Max handlers (${state.maxHandlersPerType}) reached for '${type}'. ` +
+        `Max handlers (${state.maxHandlersPerType}) reached for '${type}'. ` +
         `This may indicate a memory leak. Consider calling unsubscribe() when handlers are no longer needed.`;
 
       if (state.strictMode) {
         throw new Error(message);
       }
-      console.warn(message);
+      logger.warn(message, { module: 'events', eventType: type, maxHandlers: state.maxHandlersPerType });
     }
 
     typeHandlers.add(handler as EventHandler);
     state.registrationCount++;
 
+    // KERN-004 FIX: Check and log handler accumulation periodically
+    checkAndLogAccumulation();
+
     // Return unsubscribe function
+    // KERN-002 FIX: Clean up empty Sets to prevent memory leak over time
     return () => {
-      state.handlers.get(type)?.delete(handler as EventHandler);
+      const handlers = state.handlers.get(type);
+      if (handlers) {
+        handlers.delete(handler as EventHandler);
+        // Clean up empty Set to prevent memory accumulation
+        if (handlers.size === 0) {
+          state.handlers.delete(type);
+        }
+      }
     };
   },
 
@@ -367,17 +506,21 @@ export const events = {
     // Check for global handler limit
     if (state.globalHandlers.size >= state.maxHandlersPerType) {
       const message =
-        `[events] Max global handlers (${state.maxHandlersPerType}) reached. ` +
+        `Max global handlers (${state.maxHandlersPerType}) reached. ` +
         `This may indicate a memory leak.`;
 
       if (state.strictMode) {
         throw new Error(message);
       }
-      console.warn(message);
+      logger.warn(message, { module: 'events', maxHandlers: state.maxHandlersPerType });
     }
 
     state.globalHandlers.add(handler);
     state.registrationCount++;
+
+    // KERN-004 FIX: Check and log handler accumulation periodically
+    checkAndLogAccumulation();
+
     return () => state.globalHandlers.delete(handler);
   },
 

@@ -1,6 +1,5 @@
 import {
   usersRepository,
-  membershipsRepository,
   type UserCreateInput,
   type UserUpdateInput,
 } from "../data/repo";
@@ -8,7 +7,7 @@ import type { GlobalRole } from "@unisane/kernel";
 import { ERR } from "@unisane/gateway";
 import { logger } from "@unisane/gateway";
 import type { SortField } from "@unisane/kernel";
-import { Email, PhoneE164, Username } from "@unisane/kernel";
+import { Email, PhoneE164, Username, emitTypedReliable } from "@unisane/kernel";
 import { DEFAULT_LOCALE } from "@unisane/kernel";
 import { toUserDto } from "../domain/mappers";
 import type { MinimalUserRow } from "../domain/types";
@@ -232,16 +231,21 @@ export async function getUserGlobalRole(
   return null;
 }
 
+/**
+ * Delete User (Event-Driven)
+ *
+ * Soft-deletes the user (anonymizes PII) and emits `user.deleted` event.
+ * Cascade cleanup is handled by event handlers:
+ * - Identity: Soft-deletes memberships for this user
+ *
+ * Note: Sessions are revoked immediately as a security measure.
+ */
 export async function deleteUser(args: DeleteUserArgs) {
-  const { userId, actorId } = args;
-  // Best-effort cascade: soft-delete memberships, then soft-delete/anonymize user
-  try {
-    await membershipsRepository.softDeleteAllForUser(userId);
-  } catch (err) {
-    logger.warn("Failed to delete memberships during user deletion (best-effort)", { err, userId });
-  }
+  const { userId, actorId, reason = 'admin_action' } = args;
+
   const existing = await usersRepository.findById(userId);
-  if (!existing) return { deleted: false as const };
+  if (!existing) return { deleted: false as const, cascadeStatus: 'none' as const };
+
   const anonEmail = `deleted+${getUserId(existing)}@deleted.local`;
   const update: UserUpdateInput = {
     // Anonymize to avoid unique email conflicts and strip PII
@@ -256,7 +260,27 @@ export async function deleteUser(args: DeleteUserArgs) {
     deletedBy: actorId ?? null,
   };
   const updated = await usersRepository.updateById(userId, update);
-  return { deleted: Boolean(updated) } as const;
+
+  if (!updated) {
+    return { deleted: false as const, cascadeStatus: 'none' as const };
+  }
+
+  // Emit event for cascade handlers
+  await emitTypedReliable('user.deleted', {
+    userId,
+    scopeId: undefined, // User deletion is cross-scope
+    actorId,
+    reason: reason as 'user_request' | 'admin_action' | 'gdpr_compliance' | 'inactive',
+  });
+
+  logger.info('user.deleted.initiated', {
+    userId,
+    actorId,
+    reason,
+    message: 'Cascade handlers will process async',
+  });
+
+  return { deleted: true as const, cascadeStatus: 'pending' as const };
 }
 
 export async function revokeSessions(args: RevokeSessionsArgs) {

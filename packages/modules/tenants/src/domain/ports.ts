@@ -1,17 +1,16 @@
 import type { TenantRow, LatestSub } from './types';
-import type { FilterSpec } from '@unisane/kernel';
+import type { FilterSpec, TenantStatus } from '@unisane/kernel';
 
 export type TenantFilter = FilterSpec<TenantRow> & {
   q?: string;
+  status?: TenantStatus;
 };
 
-export type DeleteTenantCascadeResult = {
-  deleted: boolean;
-  cascade: {
-    apiKeysRevoked: number;
-    membershipsDeleted: number;
-    storageFilesMarked: number;
-  };
+export type UpdateStatusInput = {
+  tenantId: string;
+  status: TenantStatus;
+  reason?: string;
+  actorId: string;
 };
 
 export interface TenantsRepoPort {
@@ -23,8 +22,10 @@ export interface TenantsRepoPort {
   findMany(ids: string[]): Promise<TenantRow[]>;
   // Minimal update helpers used by cross-module services
   updatePlanId(scopeId: string, planId: string): Promise<void>;
-  // Admin-only: cascade soft-delete tenant and related access state
-  deleteCascade(args: { scopeId: string; actorId?: string }): Promise<DeleteTenantCascadeResult>;
+  // Update tenant status (active, suspended, deleted)
+  updateStatus(input: UpdateStatusInput): Promise<TenantRow>;
+  // Soft-delete tenant (own domain only - cascade via events)
+  softDelete(args: { tenantId: string; actorId?: string }): Promise<boolean>;
   // Admin-only listing with seek pagination (server components)
   listPaged(args: {
     limit: number;
@@ -40,6 +41,4 @@ export interface TenantsRepoPort {
     total: number;
     facets: Record<string, Record<string, number>>;
   }>;
-
-
 }

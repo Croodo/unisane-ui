@@ -30,6 +30,8 @@ import type {
   MongoClientOptions,
   ClientSession,
 } from 'mongodb';
+// DB-003 FIX: Import logger from kernel instead of using console.warn
+import { logger } from '@unisane/kernel';
 
 export interface MongoDBAdapterConfig {
   /** MongoDB connection URI */
@@ -52,6 +54,18 @@ export interface MongoDBAdapterConfig {
   retryWrites?: boolean;
   /** Enable automatic retry on read failures */
   retryReads?: boolean;
+  /**
+   * DB-002 FIX: Maximum time to wait for a connection from the pool (ms).
+   *
+   * When the connection pool is exhausted, operations will wait up to this
+   * duration for a connection to become available before throwing an error.
+   *
+   * Lower values (10-30s) are better for fail-fast behavior.
+   * Higher values (60-120s) may be appropriate for batch operations.
+   *
+   * @default 30000 (30 seconds)
+   */
+  waitQueueTimeoutMS?: number;
 }
 
 function parseDbName(uri: string): string {
@@ -128,7 +142,8 @@ export class MongoDBAdapter {
         maxPoolSize: this.config.maxPoolSize ?? 50,
         minPoolSize: this.config.minPoolSize ?? 5,
         maxIdleTimeMS: this.config.maxIdleTimeMS ?? 300_000,
-        waitQueueTimeoutMS: 30_000,
+        // DB-002 FIX: Now configurable via config.waitQueueTimeoutMS
+        waitQueueTimeoutMS: this.config.waitQueueTimeoutMS ?? 30_000,
         serverSelectionTimeoutMS: this.config.serverSelectionTimeoutMS ?? 5000,
         socketTimeoutMS: this.config.socketTimeoutMS ?? 60_000,
         connectTimeoutMS: this.config.connectTimeoutMS ?? 10_000,
@@ -143,7 +158,18 @@ export class MongoDBAdapter {
       await client.connect();
 
       // Verify connection is healthy
-      await client.db(this.dbName).command({ ping: 1 });
+      try {
+        await client.db(this.dbName).command({ ping: 1 });
+      } catch (pingError) {
+        // DB-004 FIX: Close client before nullifying on failed ping
+        // This prevents resource leak when connection succeeds but ping fails
+        try {
+          await client.close();
+        } catch {
+          // Ignore close errors - we're already in error state
+        }
+        throw pingError;
+      }
 
       this.client = client;
       this.database = client.db(this.dbName);
@@ -164,7 +190,11 @@ export class MongoDBAdapter {
       try {
         await this.client.close();
       } catch (error) {
-        console.warn('[mongodb] Error during close:', (error as Error).message);
+        // DB-003 FIX: Use kernel logger instead of console.warn
+        logger.warn('MongoDB close error', {
+          module: 'database-mongodb',
+          error: (error as Error).message,
+        });
       }
       this.client = null;
       this.database = null;
@@ -208,16 +238,32 @@ export class MongoDBAdapter {
 
   /**
    * Run a callback within a transaction
+   *
+   * DB-001 FIX: Restructured to ensure result is always assigned before returning.
+   * Uses a wrapper object to capture the result from the transaction callback,
+   * then validates it was set before returning.
    */
   async withTransaction<T>(fn: (session: ClientSession) => Promise<T>): Promise<T> {
     const session = this.startSession();
 
+    // DB-001 FIX: Use a wrapper to track whether result was set
+    const resultHolder: { value: T | undefined; wasSet: boolean } = {
+      value: undefined,
+      wasSet: false,
+    };
+
     try {
-      let result: T;
       await session.withTransaction(async () => {
-        result = await fn(session);
+        resultHolder.value = await fn(session);
+        resultHolder.wasSet = true;
       });
-      return result!;
+
+      // DB-001 FIX: Validate result was actually set by the transaction
+      if (!resultHolder.wasSet) {
+        throw new Error('Transaction completed but callback did not execute');
+      }
+
+      return resultHolder.value as T;
     } finally {
       await session.endSession();
     }

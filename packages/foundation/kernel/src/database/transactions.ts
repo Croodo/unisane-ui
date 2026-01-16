@@ -43,6 +43,79 @@
  * - Tenant deletion (update memberships, subscriptions, files)
  * - Credit transfers (deduct from one ledger, add to another)
  * - User signup with initial tenant creation
+ *
+ * ## KERN-018: Transaction Boundary Requirements
+ *
+ * ### Transaction Scope Rules
+ *
+ * 1. **All-or-Nothing**: Every operation within a transaction either:
+ *    - Succeeds together (commit)
+ *    - Fails together (abort)
+ *    Never mix transactional and non-transactional operations for related data.
+ *
+ * 2. **Pass Session Consistently**: Always pass the session to EVERY database
+ *    operation within the transaction callback. Missing `{ session }` breaks atomicity.
+ *    ```typescript
+ *    // ✅ CORRECT: Both operations use session
+ *    await withTransaction(async (session) => {
+ *      await col('credits').updateOne({ tenantId }, { $inc: { balance: -100 } }, { session });
+ *      await col('ledger').insertOne({ type: 'debit', amount: 100 }, { session });
+ *    });
+ *
+ *    // ❌ WRONG: Second operation outside transaction
+ *    await withTransaction(async (session) => {
+ *      await col('credits').updateOne({ tenantId }, { $inc: { balance: -100 } }, { session });
+ *      await col('ledger').insertOne({ type: 'debit', amount: 100 }); // NO SESSION!
+ *    });
+ *    ```
+ *
+ * 3. **No Side Effects**: Do NOT perform non-database side effects inside transactions.
+ *    External API calls, emails, webhooks, etc. should happen AFTER the transaction commits.
+ *    ```typescript
+ *    // ✅ CORRECT: Side effects after transaction
+ *    await withTransaction(async (session) => {
+ *      await col('orders').updateOne({ _id }, { $set: { status: 'paid' } }, { session });
+ *    });
+ *    await sendConfirmationEmail(orderId); // After commit
+ *
+ *    // ❌ WRONG: Side effect inside transaction
+ *    await withTransaction(async (session) => {
+ *      await col('orders').updateOne({ _id }, { $set: { status: 'paid' } }, { session });
+ *      await sendConfirmationEmail(orderId); // Might send even if transaction aborts!
+ *    });
+ *    ```
+ *
+ * 4. **Keep Transactions Short**: Long-running transactions can cause lock contention
+ *    and performance issues. Target < 1 second for most transactions.
+ *
+ * ### Operations That REQUIRE Transactions
+ *
+ * | Operation | Why Transaction Required |
+ * |-----------|-------------------------|
+ * | Credit transfer (A → B) | Balance must be deducted and added atomically |
+ * | User deletion cascade | User, memberships, API keys must all be deleted together |
+ * | Tenant creation | Tenant doc, owner membership, initial settings together |
+ * | Subscription change | Plan update and ledger entry must be atomic |
+ * | Idempotent operations | Check-and-insert must be atomic to prevent duplicates |
+ *
+ * ### Operations That DON'T Need Transactions
+ *
+ * | Operation | Why No Transaction |
+ * |-----------|-------------------|
+ * | Single document update | Already atomic in MongoDB |
+ * | Read-only queries | No consistency requirements |
+ * | Audit logging | Eventually consistent is acceptable |
+ * | Analytics writes | Duplicates/gaps are tolerable |
+ *
+ * ### Testing Transactions
+ *
+ * When testing code that uses transactions:
+ * ```typescript
+ * // Option 1: Use replica set in tests (recommended for CI)
+ * // Option 2: Set MONGODB_TRANSACTIONS_ENABLED=false for unit tests
+ * //           (operations run without transaction wrapper)
+ * // Option 3: Use withRetryableTransaction for flaky test environments
+ * ```
  */
 
 import type { ClientSession, TransactionOptions } from 'mongodb';
@@ -95,10 +168,45 @@ export const DEFAULT_TRANSACTION_OPTIONS: TransactionOptions = {
 };
 
 /**
+ * KERN-008 FIX: Sentinel value to indicate no-transaction mode.
+ * When this is the session, MongoDB operations should omit the session option.
+ *
+ * Using undefined is safe because MongoDB driver treats `{ session: undefined }`
+ * the same as omitting the session option entirely.
+ */
+export const NO_TRANSACTION_SESSION = undefined as unknown as ClientSession;
+
+/**
+ * KERN-008 FIX: Check if a session is a real transaction session or the no-op sentinel.
+ *
+ * Use this in code that needs to behave differently based on transaction state.
+ *
+ * @example
+ * ```typescript
+ * await withTransaction(async (session) => {
+ *   if (isRealSession(session)) {
+ *     // Session is a real MongoDB ClientSession
+ *     await col('users').updateOne({ _id }, { $set: { name } }, { session });
+ *   } else {
+ *     // No transaction, session is undefined
+ *     await col('users').updateOne({ _id }, { $set: { name } });
+ *   }
+ * });
+ * ```
+ */
+export function isRealSession(session: ClientSession | undefined): session is ClientSession {
+  return session !== undefined && session !== null;
+}
+
+/**
  * Execute a function within a MongoDB transaction.
  *
  * If transactions are disabled or unavailable (no replica set),
  * the function is executed without a transaction (no-op passthrough).
+ *
+ * KERN-008 FIX: When transactions are disabled, we pass `undefined` instead of `null`.
+ * This is safe because MongoDB driver treats `{ session: undefined }` the same as
+ * omitting the session option. This avoids the unsafe `null as ClientSession` cast.
  *
  * @param fn - Function to execute with the session
  * @param options - Optional transaction options
@@ -118,11 +226,12 @@ export async function withMongoTransaction<T>(
 ): Promise<T> {
   const client = await getMongoClient();
 
-  // If no client or transactions disabled, run without transaction
+  // KERN-008 FIX: Use undefined instead of null when transactions are disabled.
+  // MongoDB driver safely ignores undefined session, whereas null could cause issues.
   if (!client || !isTransactionsEnabled()) {
-    // Create a mock session that does nothing
-    // This allows code to work in both transactional and non-transactional modes
-    return fn(null as unknown as ClientSession);
+    // Pass undefined (typed as ClientSession for API compatibility).
+    // Code using { session } will pass session: undefined which MongoDB driver ignores.
+    return fn(NO_TRANSACTION_SESSION);
   }
 
   const session = client.startSession();

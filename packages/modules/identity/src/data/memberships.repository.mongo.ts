@@ -312,4 +312,17 @@ export const mongoMembershipsRepository: MembershipsApi = {
     );
     return { deletedCount: Number(res.modifiedCount ?? 0) };
   },
+
+  /**
+   * Soft-delete all memberships for a given scope (tenant).
+   * Used during tenant deletion cascade.
+   */
+  async softDeleteAllForScope(scopeId: string): Promise<{ deletedCount: number }> {
+    const now = new Date();
+    const res = await mCol().updateMany(
+      explicitScopeFilterActive('tenant', scopeId, {}) as Document,
+      { $set: { deletedAt: now, updatedAt: now } } as Document
+    );
+    return { deletedCount: Number(res.modifiedCount ?? 0) };
+  },
 };

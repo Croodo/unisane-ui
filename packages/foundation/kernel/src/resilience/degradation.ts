@@ -86,17 +86,24 @@ export async function withFallback<T>(
   const { operationName, critical = false, onFallback, timeoutMs } = options;
   const startTime = Date.now();
 
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
   try {
     // Execute primary with optional timeout
     const primaryPromise = primary();
-    const result = timeoutMs
-      ? await Promise.race([
-          primaryPromise,
-          new Promise<T>((_, reject) =>
-            setTimeout(() => reject(new Error(`${operationName ?? 'Operation'} timed out`)), timeoutMs)
-          ),
-        ])
-      : await primaryPromise;
+    let result: T;
+
+    if (timeoutMs) {
+      const timeoutPromise = new Promise<T>((_, reject) => {
+        timeoutId = setTimeout(
+          () => reject(new Error(`${operationName ?? 'Operation'} timed out`)),
+          timeoutMs
+        );
+      });
+      result = await Promise.race([primaryPromise, timeoutPromise]);
+    } else {
+      result = await primaryPromise;
+    }
 
     return {
       result,
@@ -128,6 +135,10 @@ export async function withFallback<T>(
       error: err,
       durationMs: Date.now() - startTime,
     };
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
   }
 }
 
@@ -240,16 +251,23 @@ export class DegradedModeManager<TFeatures extends Record<string, DegradedFeatur
       return { result: fallbackValue as R, degraded: true };
     }
 
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
     try {
       // Execute with optional timeout
-      const result = config.timeoutMs
-        ? await Promise.race([
-            fn(),
-            new Promise((_, reject) =>
-              setTimeout(() => reject(new Error(`Feature ${String(feature)} timed out`)), config.timeoutMs)
-            ),
-          ])
-        : await fn();
+      let result: unknown;
+
+      if (config.timeoutMs) {
+        const timeoutPromise = new Promise((_, reject) => {
+          timeoutId = setTimeout(
+            () => reject(new Error(`Feature ${String(feature)} timed out`)),
+            config.timeoutMs
+          );
+        });
+        result = await Promise.race([fn(), timeoutPromise]);
+      } else {
+        result = await fn();
+      }
 
       // Success - remove from degraded if it was
       if (this.degradedFeatures.has(feature as string)) {
@@ -294,6 +312,10 @@ export class DegradedModeManager<TFeatures extends Record<string, DegradedFeatur
           : config.fallback;
 
       return { result: fallbackValue as R, degraded: true };
+    } finally {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
     }
   }
 

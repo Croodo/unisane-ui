@@ -14,25 +14,63 @@
  * ```
  */
 
-import { logger, onTyped } from '@unisane/kernel';
+import { logger, onTyped, emitTypedReliable } from '@unisane/kernel';
 import { cleanupOrphanedUploads, cleanupDeletedFiles } from './service/cleanup';
+import { StorageRepo } from './data/storage.repository';
 
 const log = logger.child({ module: 'storage', component: 'event-handlers' });
 
 /**
  * Handle tenant deletion by marking storage files for cleanup.
- * Files will be purged during the regular cleanup cycle.
+ * Marks all files as deleted (actual S3 cleanup happens in cleanup job).
+ * Emits completion event for tracking.
  */
-async function handleTenantDeleted(
-  payload: { scopeId: string; actorId: string }
-): Promise<void> {
-  log.info('tenant deleted - files will be cleaned during regular cleanup', {
-    scopeId: payload.scopeId,
-    deletedBy: payload.actorId,
+async function handleTenantDeleted(payload: {
+  scopeId: string;
+  actorId?: string;
+  timestamp: string;
+}): Promise<void> {
+  const { scopeId, actorId } = payload;
+
+  log.info('storage: handling tenant deletion cascade', { scopeId, actorId });
+
+  let filesMarked = 0;
+  // STOR-004 FIX: Track cascade errors to return in completion event
+  let cascadeError: string | null = null;
+
+  // Mark all files as deleted (actual S3 cleanup is deferred to cleanup job)
+  try {
+    const result = await StorageRepo.markAllDeletedForScope(scopeId);
+    filesMarked = result.markedCount;
+    log.info('storage: marked files for deletion', { scopeId, count: filesMarked });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    cascadeError = errorMessage;
+    log.error('storage: failed to mark files for deletion', {
+      scopeId,
+      error: errorMessage,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    // Continue - don't fail the entire cascade, but track the error
+  }
+
+  // STOR-004 FIX: Include error metadata in completion event
+  await emitTypedReliable('storage.cascade.completed', {
+    sourceEvent: 'tenant.deleted',
+    scopeId,
+    results: {
+      filesMarked,
+      success: cascadeError === null,
+      ...(cascadeError ? { error: cascadeError } : {}),
+    },
   });
 
-  // Files are automatically cleaned up by the regular cleanup job
-  // since they're marked as deleted when tenant is deleted
+  log.info('storage: tenant deletion cascade complete', {
+    scopeId,
+    filesMarked,
+    success: cascadeError === null,
+    ...(cascadeError ? { error: cascadeError } : {}),
+  });
 }
 
 /**

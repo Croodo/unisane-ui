@@ -126,14 +126,14 @@ async function runCheck(
   timeoutMs: number
 ): Promise<CheckResult> {
   const start = Date.now();
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
   try {
-    const result = await Promise.race([
-      check(),
-      new Promise<CheckResult>((_, reject) =>
-        setTimeout(() => reject(new Error('Health check timeout')), timeoutMs)
-      ),
-    ]);
+    const timeoutPromise = new Promise<CheckResult>((_, reject) => {
+      timeoutId = setTimeout(() => reject(new Error('Health check timeout')), timeoutMs);
+    });
+
+    const result = await Promise.race([check(), timeoutPromise]);
 
     return result;
   } catch (err) {
@@ -142,6 +142,10 @@ async function runCheck(
       latencyMs: Date.now() - start,
       message: err instanceof Error ? err.message : String(err),
     };
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
   }
 }
 

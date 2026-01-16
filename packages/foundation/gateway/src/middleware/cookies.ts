@@ -28,11 +28,27 @@ export function buildCsrfCookie(token: string, opts?: { maxAgeSec?: number }) {
   return `csrf_token=${token}; ${attrs.join('; ')}`;
 }
 
+// GW-004 FIX: Bounds for cookie parsing to prevent DoS
+// RFC 6265 recommends at least 4KB per cookie, most browsers support 4-8KB
+// We allow up to 16KB total and 50 cookies max to be generous while preventing abuse
+const MAX_COOKIE_HEADER_LENGTH = 16384; // 16KB
+const MAX_COOKIE_COUNT = 50;
+
 export function parseCookies(header: string | null | undefined): Record<string, string> {
   const out: Record<string, string> = {};
   if (!header) return out;
+
+  // GW-004 FIX: Reject oversized cookie headers
+  if (header.length > MAX_COOKIE_HEADER_LENGTH) {
+    return out; // Return empty - oversized header is suspicious
+  }
+
   const parts = header.split(';');
-  for (const part of parts) {
+
+  // GW-004 FIX: Limit number of cookies parsed
+  const maxParts = Math.min(parts.length, MAX_COOKIE_COUNT);
+  for (let i = 0; i < maxParts; i++) {
+    const part = parts[i]!;
     const [rawK, ...rest] = part.split('=');
     const k = (rawK ?? '').trim();
     if (!k) continue;

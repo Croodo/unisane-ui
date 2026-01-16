@@ -3,6 +3,33 @@
  *
  * Implements the DatabaseProvider interface for MongoDB.
  * This adapter translates generic database operations to MongoDB-specific calls.
+ *
+ * ## ARCH-001 Design Note: MongoDB Types in Kernel
+ *
+ * This file imports MongoDB types directly into the kernel layer. While this
+ * technically violates strict hexagonal architecture (where the kernel should
+ * only define abstract interfaces), this is an **intentional design decision**
+ * made for practical reasons:
+ *
+ * 1. **Developer Ergonomics**: Allows importing everything from `@unisane/kernel`
+ *    without needing a separate `@unisane/database-mongodb` package for basic use.
+ *
+ * 2. **Type Safety**: The DatabaseProvider interface (in types.ts) IS database-agnostic.
+ *    This file only provides a *default implementation* of that interface.
+ *
+ * 3. **Swappability Preserved**: Applications can still use setDatabaseProvider()
+ *    to inject any implementation (Memory, PostgreSQL, etc.) at runtime.
+ *
+ * 4. **Minimal Coupling**: MongoDB types are isolated to this file and mongo-types.ts.
+ *    The rest of the kernel uses the abstract DatabaseProvider interface.
+ *
+ * For projects that need strict hexagonal architecture:
+ * - Use `@unisane/database-mongodb` adapter package directly
+ * - Use setDatabaseProvider() to inject the provider
+ * - Don't import MongoDBProvider from kernel
+ *
+ * @see types.ts for the database-agnostic port interface
+ * @see ../index.ts for re-exports
  */
 
 import type {
@@ -117,9 +144,22 @@ function toMongoSort<T>(sort: Record<string, SortDirection | undefined>): Docume
 }
 
 /**
- * Map MongoDB document to BaseRecord format.
+ * KERN-007 FIX: Validate that a value is a valid MongoDB document.
  */
+function isValidDocument(doc: unknown): doc is WithId<Document> {
+  return (
+    doc !== null &&
+    typeof doc === 'object' &&
+    !Array.isArray(doc) &&
+    '_id' in doc
+  );
+}
+
 function mapDocToRecord<T extends BaseRecord>(doc: WithId<Document>): T {
+  // KERN-007 FIX: Validate document structure before mapping
+  if (!isValidDocument(doc)) {
+    throw new Error('mapDocToRecord: invalid document - expected object with _id');
+  }
   const { _id, ...rest } = doc;
   return {
     id: String(_id),
@@ -129,9 +169,25 @@ function mapDocToRecord<T extends BaseRecord>(doc: WithId<Document>): T {
 
 /**
  * Extract MongoDB ClientSession from TransactionSession.
+ * KERN-007 FIX: Added type guard for session validation.
  */
+function isMongoSession(session: unknown): session is { native: ClientSession } {
+  return (
+    session !== null &&
+    typeof session === 'object' &&
+    'native' in session &&
+    session.native !== null &&
+    typeof session.native === 'object'
+  );
+}
+
 function getMongoSession(options?: SessionOptions): ClientSession | undefined {
   if (!options?.session) return undefined;
+  // KERN-007 FIX: Validate session structure before extracting native session
+  if (!isMongoSession(options.session)) {
+    log.warn('getMongoSession: invalid session structure, ignoring');
+    return undefined;
+  }
   return options.session.native as ClientSession;
 }
 

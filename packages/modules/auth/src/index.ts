@@ -86,3 +86,9 @@ export * from './service/exchange';
 export * from './service/tokenExchangeFactory';
 export * from './service/csrf';
 export * from './service/csrfFactory';
+
+// ════════════════════════════════════════════════════════════════════════════
+// OAuth - Provider Adapters for Token Verification
+// ════════════════════════════════════════════════════════════════════════════
+
+export * from './oauth';

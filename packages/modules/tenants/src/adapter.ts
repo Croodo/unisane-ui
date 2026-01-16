@@ -27,7 +27,7 @@ export const tenantsAdapter: TenantsPort = {
       slug: tenant.slug,
       name: tenant.name,
       planId: tenant.planId,
-      status: "active" as TenantStatus, // Default status for existing tenants
+      status: (tenant.status ?? "active") as TenantStatus,
     };
 
     return view;
@@ -43,7 +43,7 @@ export const tenantsAdapter: TenantsPort = {
         slug: tenant.slug,
         name: tenant.name,
         planId: tenant.planId,
-        status: "active" as TenantStatus,
+        status: (tenant.status ?? "active") as TenantStatus,
       });
     }
 
@@ -52,8 +52,8 @@ export const tenantsAdapter: TenantsPort = {
 
   async isActive(tenantId) {
     const tenant = await readTenant(tenantId);
-    // Tenant is active if it exists (no soft-delete status in current schema)
-    return tenant !== null;
+    if (!tenant) return false;
+    return tenant.status === "active" || tenant.status === undefined;
   },
 
   async getSubscriptionStatus(tenantId) {
@@ -64,7 +64,7 @@ export const tenantsAdapter: TenantsPort = {
 
     // Tenants module doesn't store subscription directly
     // This would be coordinated with billing module
-    // For now, return basic status based on planId presence
+    // Return basic status based on planId presence
     return {
       hasActiveSubscription: !!tenant.planId,
       planId: tenant.planId ?? undefined,
@@ -76,9 +76,10 @@ export const tenantsAdapter: TenantsPort = {
   },
 
   async updateStatus(tenantId, status) {
-    // Current tenants schema doesn't have a status field
-    // This would require schema migration to implement
-    // For now, this is a no-op stub
-    // TODO: Add status field to tenant schema
+    await TenantsRepo.updateStatus({
+      tenantId,
+      status,
+      actorId: "system",
+    });
   },
 };

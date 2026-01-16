@@ -94,13 +94,8 @@ async function handleTenantCreated(payload: {
  */
 async function handleTenantDeleted(payload: {
   scopeId: string;
-  actorId: string;
-  cascade: {
-    memberships: number;
-    files: number;
-    settings: number;
-    credentials: number;
-  };
+  actorId?: string;
+  timestamp: string;
 }): Promise<void> {
   const { scopeId } = payload;
 

@@ -3,6 +3,7 @@ import type { TenantAdminView } from "../../domain/types";
 import { reverseMapPlanIdFromProvider } from "@unisane/kernel";
 import { getEnv } from "@unisane/kernel";
 import { ZPlanId } from "@unisane/kernel";
+import type { TenantStatus } from "@unisane/kernel";
 
 /**
  * Enrichment providers for admin scope list.
@@ -148,6 +149,9 @@ export async function listAdminTenants(args: {
       slug: String((t as { slug?: string }).slug ?? ""),
       name: String((t as { name?: string }).name ?? ""),
       planId,
+      status: ((t as { status?: TenantStatus }).status ?? "active") as TenantStatus,
+      statusReason: (t as { statusReason?: string }).statusReason,
+      statusChangedAt: (t as { statusChangedAt?: Date }).statusChangedAt,
       membersCount: mMap.get(id)?.membersCount ?? 0,
       adminsCount: mMap.get(id)?.adminsCount ?? 0,
       apiKeysCount: apiMap.get(id) ?? 0,

@@ -14,7 +14,7 @@
  * ```
  */
 
-import { logger, onTyped, invalidateEntitlements, reverseMapPlanIdFromProvider } from '@unisane/kernel';
+import { logger, onTyped, emitTypedReliable, invalidateEntitlements, reverseMapPlanIdFromProvider } from '@unisane/kernel';
 import type { BillingEventPayload } from '@unisane/kernel';
 import { TenantsRepo } from './data/tenants.repository';
 
@@ -22,7 +22,7 @@ const log = logger.child({ module: 'tenants', component: 'event-handlers' });
 
 /**
  * Handle Stripe subscription changes.
- * Updates tenant plan when subscription changes.
+ * Updates tenant plan when subscription changes and emits plan.changed event.
  */
 async function handleStripeSubscriptionChanged(
   payload: BillingEventPayload<'webhook.stripe.subscription_changed'>
@@ -47,12 +47,35 @@ async function handleStripeSubscriptionChanged(
     const friendlyPlanId = reverseMapPlanIdFromProvider('stripe', priceId);
 
     if (friendlyPlanId && typeof friendlyPlanId === 'string') {
+      // Get current tenant to determine previous plan
+      const currentTenant = await TenantsRepo.findById(scopeId);
+      const previousPlan = currentTenant?.planId ?? 'free';
+
       await TenantsRepo.updatePlanId(scopeId, friendlyPlanId);
 
       // Invalidate entitlements cache so next request gets fresh data
       await invalidateEntitlements(scopeId).catch((err) => {
         log.warn('failed to invalidate entitlements', { scopeId, error: err?.message });
       });
+
+      // Emit plan.changed event for other modules to react
+      if (previousPlan !== friendlyPlanId) {
+        const changeType = determinePlanChangeType(previousPlan, friendlyPlanId);
+        await emitTypedReliable('plan.changed', {
+          scopeId,
+          previousPlan,
+          newPlan: friendlyPlanId,
+          changeType,
+          effectiveAt: new Date().toISOString(),
+        });
+
+        log.info('plan.changed event emitted', {
+          scopeId,
+          previousPlan,
+          newPlan: friendlyPlanId,
+          changeType,
+        });
+      }
 
       log.info('tenant plan updated via event', {
         scopeId,
@@ -73,8 +96,30 @@ async function handleStripeSubscriptionChanged(
 }
 
 /**
+ * Determine if a plan change is an upgrade, downgrade, or lateral move.
+ * Simple heuristic based on plan naming convention.
+ */
+function determinePlanChangeType(
+  previousPlan: string,
+  newPlan: string
+): 'upgrade' | 'downgrade' | 'lateral' {
+  const planOrder = ['free', 'starter', 'pro', 'business', 'enterprise'];
+  const prevIndex = planOrder.indexOf(previousPlan.toLowerCase());
+  const newIndex = planOrder.indexOf(newPlan.toLowerCase());
+
+  if (prevIndex === -1 || newIndex === -1) {
+    // Unknown plans - default to lateral
+    return 'lateral';
+  }
+
+  if (newIndex > prevIndex) return 'upgrade';
+  if (newIndex < prevIndex) return 'downgrade';
+  return 'lateral';
+}
+
+/**
  * Handle Razorpay subscription changes.
- * Updates tenant plan when subscription changes.
+ * Updates tenant plan when subscription changes and emits plan.changed event.
  */
 async function handleRazorpaySubscriptionChanged(
   payload: BillingEventPayload<'webhook.razorpay.subscription_changed'>
@@ -100,12 +145,35 @@ async function handleRazorpaySubscriptionChanged(
     const friendlyPlanId = reverseMapPlanIdFromProvider('razorpay', planId);
 
     if (friendlyPlanId && typeof friendlyPlanId === 'string') {
+      // Get current tenant to determine previous plan
+      const currentTenant = await TenantsRepo.findById(scopeId);
+      const previousPlan = currentTenant?.planId ?? 'free';
+
       await TenantsRepo.updatePlanId(scopeId, friendlyPlanId);
 
       // Invalidate entitlements cache
       await invalidateEntitlements(scopeId).catch((err) => {
         log.warn('failed to invalidate entitlements', { scopeId, error: err?.message });
       });
+
+      // Emit plan.changed event for other modules to react
+      if (previousPlan !== friendlyPlanId) {
+        const changeType = determinePlanChangeType(previousPlan, friendlyPlanId);
+        await emitTypedReliable('plan.changed', {
+          scopeId,
+          previousPlan,
+          newPlan: friendlyPlanId,
+          changeType,
+          effectiveAt: new Date().toISOString(),
+        });
+
+        log.info('plan.changed event emitted', {
+          scopeId,
+          previousPlan,
+          newPlan: friendlyPlanId,
+          changeType,
+        });
+      }
 
       log.info('tenant plan updated via event', {
         scopeId,
@@ -122,6 +190,63 @@ async function handleRazorpaySubscriptionChanged(
       error: error instanceof Error ? error.message : String(error),
     });
     throw error;
+  }
+}
+
+/**
+ * Handle subscription cancellation.
+ * Downgrades tenant to free plan and emits plan.changed event.
+ */
+async function handleSubscriptionCancelled(payload: {
+  scopeId: string;
+  atPeriodEnd: boolean;
+}): Promise<void> {
+  const { scopeId, atPeriodEnd } = payload;
+
+  log.info('tenants: handling subscription cancellation', { scopeId, atPeriodEnd });
+
+  // If cancelled at period end, the downgrade will happen when the period ends
+  // via a separate webhook event. For immediate cancellation, downgrade now.
+  if (!atPeriodEnd) {
+    try {
+      // Get current plan before downgrade
+      const currentTenant = await TenantsRepo.findById(scopeId);
+      const previousPlan = currentTenant?.planId ?? 'free';
+
+      await TenantsRepo.updatePlanId(scopeId, 'free');
+
+      // Invalidate entitlements cache
+      await invalidateEntitlements(scopeId).catch((err) => {
+        log.warn('failed to invalidate entitlements', { scopeId, error: err?.message });
+      });
+
+      // Emit plan.changed event for other modules to react
+      if (previousPlan !== 'free') {
+        await emitTypedReliable('plan.changed', {
+          scopeId,
+          previousPlan,
+          newPlan: 'free',
+          changeType: 'downgrade' as const,
+          effectiveAt: new Date().toISOString(),
+        });
+
+        log.info('plan.changed event emitted after cancellation', {
+          scopeId,
+          previousPlan,
+          newPlan: 'free',
+        });
+      }
+
+      log.info('tenants: downgraded to free plan after subscription cancellation', { scopeId });
+    } catch (error) {
+      log.error('tenants: failed to downgrade plan after subscription cancellation', {
+        scopeId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      // Don't throw - plan update failure shouldn't block other cascade handlers
+    }
+  } else {
+    log.info('tenants: subscription will end at period end, no immediate downgrade', { scopeId });
   }
 }
 
@@ -147,6 +272,13 @@ export function registerTenantEventHandlers(): () => void {
   unsubscribers.push(
     onTyped('webhook.razorpay.subscription_changed', async (event) => {
       await handleRazorpaySubscriptionChanged(event.payload);
+    })
+  );
+
+  // Subscription cancellation (from billing module)
+  unsubscribers.push(
+    onTyped('billing.subscription.cancelled', async (event) => {
+      await handleSubscriptionCancelled(event.payload);
     })
   );
 

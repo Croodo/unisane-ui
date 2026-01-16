@@ -1,6 +1,7 @@
 import { sendEmail as sendEmailKernel } from "@unisane/kernel";
 import { isSuppressed } from "./suppression";
 import { renderEmail } from "@unisane/kernel";
+import { hasOptedOut } from "./prefs";
 
 import type { SendEmailInput, SendEmailResult } from "../domain/types";
 export type { SendEmailInput, SendEmailResult };
@@ -10,7 +11,7 @@ export type { SendEmailInput, SendEmailResult };
  *
  * Checks:
  * 1. Suppression list (hard bounces/complaints) - always checked
- * 2. User preferences (opt-out per category) - only if category + userId provided
+ * 2. User preferences (opt-out per category) - only if category + userId + scopeId provided
  *
  * System emails (auth, password reset) should NOT provide category to bypass prefs.
  */
@@ -23,10 +24,14 @@ export async function sendEmail(
     return { sent: false, reason: "suppressed" };
   }
 
-  // 2. Check user preferences (if category and userId provided)
-  // Note: getPrefs() uses context, so preference checking requires the caller
-  // to set up proper context. For system emails, skip preference checking.
-  // TODO: Consider adding a version that accepts explicit scopeId/userId
+  // 2. Check user preferences (if category, userId, and scopeId provided)
+  // System/transactional emails automatically pass (canOptOutOfCategory returns false)
+  if (input.category && input.userId && input.scopeId) {
+    const optedOut = await hasOptedOut(input.scopeId, input.userId, input.category);
+    if (optedOut) {
+      return { sent: false, reason: "opted_out" };
+    }
+  }
 
   // 3. Render email template
   const rendered = await renderEmail(

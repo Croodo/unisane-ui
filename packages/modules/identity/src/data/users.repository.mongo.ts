@@ -70,10 +70,20 @@ function usersCol(): Collection<UserDoc> {
 /**
  * Get the encryption key from environment
  * Returns null if DATA_ENCRYPTION_KEY is not configured (migration mode)
+ *
+ * IDEN-005 FIX: Warn in production if encryption key is not configured
  */
 function getEncryptionKey(): Buffer | null {
   const keyBase64 = process.env.DATA_ENCRYPTION_KEY;
   if (!keyBase64) {
+    // IDEN-005 FIX: Warn in production environment to prevent accidental unencrypted PII
+    const env = process.env.APP_ENV ?? process.env.NODE_ENV ?? 'development';
+    if (env === 'prod' || env === 'production') {
+      console.warn(
+        '[identity] WARNING: DATA_ENCRYPTION_KEY not configured in production. ' +
+        'PII fields will not be encrypted. This is a security risk.'
+      );
+    }
     return null; // Encryption not yet enabled (migration phase)
   }
   return parseEncryptionKey(keyBase64);

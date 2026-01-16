@@ -7,7 +7,7 @@ export type Theme = "light" | "dark" | "system";
 export type RadiusTheme = "none" | "minimal" | "sharp" | "standard" | "soft";
 export type ColorScheme = "tonal" | "monochrome" | "neutral";
 export type ContrastLevel = "standard" | "medium" | "high";
-export type ColorTheme = "blue" | "purple" | "pink" | "red" | "orange" | "yellow" | "green" | "cyan" | "black";
+export type ColorTheme = "blue" | "purple" | "pink" | "red" | "orange" | "yellow" | "green" | "cyan" | "black" | "neutral";
 export type Elevation = "flat" | "subtle" | "standard" | "pronounced";
 
 // Valid values for runtime validation
@@ -16,7 +16,7 @@ const VALID_THEMES: Theme[] = ["light", "dark", "system"];
 const VALID_RADII: RadiusTheme[] = ["none", "minimal", "sharp", "standard", "soft"];
 const VALID_SCHEMES: ColorScheme[] = ["tonal", "monochrome", "neutral"];
 const VALID_CONTRASTS: ContrastLevel[] = ["standard", "medium", "high"];
-const VALID_COLOR_THEMES: ColorTheme[] = ["blue", "purple", "pink", "red", "orange", "yellow", "green", "cyan", "black"];
+const VALID_COLOR_THEMES: ColorTheme[] = ["blue", "purple", "pink", "red", "orange", "yellow", "green", "cyan", "black", "neutral"];
 const VALID_ELEVATIONS: Elevation[] = ["flat", "subtle", "standard", "pronounced"];
 
 // Validation helper

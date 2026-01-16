@@ -169,6 +169,13 @@ export function shouldLogRequest(path: string, op: string | null = null): boolea
  * Check if bodies should be logged for a given path.
  */
 export function shouldLogBodies(path: string): boolean {
+  // Debug: log current config state
+  gatewayLogger.debug('shouldLogBodies check', {
+    path,
+    logBodies: config.logBodies,
+    neverLogBodies: config.neverLogBodies,
+  });
+
   if (!config.logBodies) {
     return false;
   }
@@ -304,7 +311,19 @@ export function logRequestCompleted(
     ...(data.userId && { userId: data.userId }),
   };
 
-  if (response.body !== undefined && shouldLogBodies(data.path)) {
+  const shouldLog = shouldLogBodies(data.path);
+  const hasBody = response.body !== undefined;
+
+  // Debug: always log what we're checking
+  gatewayLogger.info('response body check', {
+    path: data.path,
+    hasBody,
+    bodyType: hasBody ? typeof response.body : 'N/A',
+    shouldLog,
+    configLogBodies: config.logBodies,
+  });
+
+  if (hasBody && shouldLog) {
     logData.responseBody = prepareBodyForLogging(response.body);
   }
 

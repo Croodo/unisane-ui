@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { LoginForm } from "./login-form";
-import { getAuthConfig } from '@/src/platform/auth/config';
+import { getAuthConfig } from '@/src/config';
 import { createApi } from "@/src/sdk/server";
 import { redirect } from "next/navigation";
 

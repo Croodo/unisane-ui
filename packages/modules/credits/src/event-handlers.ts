@@ -12,6 +12,25 @@
  * // In bootstrap.ts
  * registerCreditEventHandlers();
  * ```
+ *
+ * CRED-006 FIX (Architecture Design Decision):
+ * This module listens to `webhook.stripe.*` and `webhook.razorpay.*` events which are
+ * domain events emitted by the webhooks module after processing inbound webhooks.
+ * This is intentional and follows hexagonal architecture principles:
+ *
+ * 1. The credits module does NOT directly import Stripe/Razorpay SDKs
+ * 2. The webhooks module translates raw webhook payloads into typed domain events
+ * 3. The credits module only depends on kernel event types (BillingEventPayload)
+ * 4. All coupling is through the kernel's type-safe event system
+ *
+ * The event names like `webhook.stripe.topup_completed` are domain events, NOT raw
+ * webhook events. The webhooks adapter layer transforms raw Stripe/Razorpay payloads
+ * into these standardized domain events.
+ *
+ * Alternative approach (not implemented): Define abstract billing events like
+ * `billing.payment.completed` that both Stripe and Razorpay handlers emit.
+ * This would provide better abstraction but adds complexity for minimal benefit
+ * since the credit granting logic may differ per provider.
  */
 
 import { events, logger, onTyped } from '@unisane/kernel';
